@@ -108,6 +108,7 @@
       </div>
       <div class="app-toolbar-sep"></div>
       <button class="btn btn-primary" id="btn-fit">▶  Fit</button>
+      <button class="btn" id="btn-try-all" title="Fit every built-in model and rank by R²">Try All</button>
       <button class="btn btn-danger" id="btn-clear-fit" title="Remove the selected fit">✕  Remove Fit</button>
       <div class="app-toolbar-sep"></div>
       <div class="app-toolbar-group">
@@ -263,7 +264,10 @@
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
             <span class="ctrl-label" style="margin:0">Parameters</span>
-            <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-auto-init" title="Auto-estimate initial values from the loaded data">Auto Init</button>
+            <div style="display:flex;gap:4px">
+              <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-auto-init" title="Auto-estimate initial values from the loaded data">Auto Init</button>
+              <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-copy-params" title="Copy fit parameters to clipboard">Copy</button>
+            </div>
           </div>
           <div class="param-table-header">
             <span>Name</span><span>Initial</span><span>Min</span><span>Max</span>
@@ -329,6 +333,22 @@
         <div class="ctrl-section">
           <label class="ctrl-label">Fit Curve Points</label>
           <input class="ctrl-input" id="opt-curve-pts" type="number" value="300" min="50" max="5000">
+        </div>
+
+        <!-- Extrapolation range -->
+        <div class="ctrl-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+            <label class="ctrl-label" style="margin:0">Extrapolation Range</label>
+            <button class="btn" style="padding:1px 7px;font-size:.65em" id="btn-extrap-reset" title="Reset to data range">Reset</button>
+          </div>
+          <div class="ctrl-row">
+            <label class="ctrl-label" style="margin:0;min-width:44px">X min</label>
+            <input class="ctrl-input" id="opt-extrap-xmin" type="number" placeholder="auto">
+          </div>
+          <div class="ctrl-row" style="margin-top:5px">
+            <label class="ctrl-label" style="margin:0;min-width:44px">X max</label>
+            <input class="ctrl-input" id="opt-extrap-xmax" type="number" placeholder="auto">
+          </div>
         </div>
 
       </div><!-- end app-right -->
@@ -538,6 +558,17 @@
       <button class="btn" id="example-modal-cancel">Cancel</button>
       <button class="btn btn-primary" id="example-modal-load">Load Dataset</button>
     </div>
+  </div>
+</div>
+
+<!-- Model Comparison Modal -->
+<div class="modal-backdrop" id="model-compare-modal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="width:600px;max-width:96vw">
+    <div class="modal-header">
+      <span class="modal-title">Model Comparison</span>
+      <button class="modal-close" id="model-compare-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;max-height:60vh;overflow-y:auto" id="model-compare-body"></div>
   </div>
 </div>
 

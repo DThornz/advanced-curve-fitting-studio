@@ -948,7 +948,7 @@ const state = {
   fits: [],        // {id, dsId, model, params, result, color, visible, label}
   activeDatasetId: null,
   activeFitId: null,
-  fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [] },
+  fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
   plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   selection: { dsId: null, indices: new Set() },
@@ -1227,7 +1227,9 @@ function buildMainTraces() {
     if (!fit.visible || !fit.result) continue;
     const ds = state.datasets.find(d => d.id === fit.dsId);
     if (!ds) continue;
-    const xs = linspace(Math.min(...ds.x), Math.max(...ds.x), fit.curvePoints || 300);
+    const xMin = state.fitConfig.xExtraMin ?? Math.min(...ds.x);
+    const xMax = state.fitConfig.xExtraMax ?? Math.max(...ds.x);
+    const xs = linspace(xMin, xMax, fit.curvePoints || 300);
     const ys = xs.map(x => {
       const v = fitEval(fit, x);
       return isFinite(v) ? v : null;
@@ -1891,6 +1893,103 @@ function runFit() {
   renderParamResults(fitRecord);
   renderStats(fitRecord);
   updatePlots();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TRY ALL MODELS
+═══════════════════════════════════════════════════════════ */
+function tryAllModels() {
+  const dsId = parseInt(document.getElementById('fit-dataset-select').value);
+  const ds   = state.datasets.find(d => d.id === dsId);
+  if (!ds) { setConsole('No dataset selected.', 'error'); return; }
+  const excluded = ds.excludedIndices || new Set();
+  const xArr = ds.x.filter((_, i) => !excluded.has(i));
+  const yArr = ds.y.filter((_, i) => !excluded.has(i));
+  if (xArr.length < 3) { setConsole('Need at least 3 non-masked points.', 'error'); return; }
+
+  setConsole('Running all models…', '');
+  const opts = { maxIter: 500, tol: 1e-7 };
+  const rows = [];
+
+  for (const [key, m] of Object.entries(MODELS)) {
+    if (key === 'Custom') continue;
+    try {
+      let result, modelFn;
+      if (m.analytic) {
+        result  = fitPolynomialAnalytic(m.degree, xArr, yArr);
+        modelFn = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, m.degree - j), 0);
+      } else {
+        modelFn = m.fn;
+        const p0 = m.autoInit(xArr, yArr);
+        result = levenbergMarquardt(modelFn, xArr, yArr, p0, opts);
+      }
+      if (isFinite(result.rSq)) {
+        rows.push({ key, rSq: result.rSq, rmse: result.rmse, aic: result.aic, bic: result.bic,
+                    result, modelFn, paramNames: m.params });
+      }
+    } catch (_) { /* skip models that error */ }
+  }
+
+  rows.sort((a, b) => b.rSq - a.rSq);
+  setConsole(`Compared ${rows.length} models. Best: ${rows[0]?.key} (R²=${rows[0]?.rSq.toFixed(4)}).`, '');
+  showModelCompareModal(rows, dsId, ds);
+}
+
+function showModelCompareModal(rows, dsId, ds) {
+  const body = document.getElementById('model-compare-body');
+  const fmtN = v => isFinite(v) ? v.toPrecision(4) : '—';
+  body.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:.8em">
+      <thead>
+        <tr style="position:sticky;top:0;background:var(--panel-bg);border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:6px 10px">Model</th>
+          <th style="text-align:right;padding:6px 8px">R²</th>
+          <th style="text-align:right;padding:6px 8px">RMSE</th>
+          <th style="text-align:right;padding:6px 8px">AIC</th>
+          <th style="text-align:right;padding:6px 8px">BIC</th>
+          <th style="padding:6px 8px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map((r, i) => `
+          <tr style="border-bottom:1px solid var(--border);${i === 0 ? 'font-weight:600' : ''}">
+            <td style="padding:5px 10px">${r.key}</td>
+            <td style="text-align:right;padding:5px 8px;font-family:var(--mono)">${fmtN(r.rSq)}</td>
+            <td style="text-align:right;padding:5px 8px;font-family:var(--mono)">${fmtN(r.rmse)}</td>
+            <td style="text-align:right;padding:5px 8px;font-family:var(--mono)">${fmtN(r.aic)}</td>
+            <td style="text-align:right;padding:5px 8px;font-family:var(--mono)">${fmtN(r.bic)}</td>
+            <td style="padding:5px 8px">
+              <button class="btn btn-primary" style="font-size:.7em;padding:2px 9px" data-idx="${i}">Apply</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  body.querySelectorAll('[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const r = rows[parseInt(btn.dataset.idx)];
+      const fitColor = state.fits.some(f => f.dsId === dsId) ? nextColor() : ds.color;
+      const fitRecord = {
+        id: nextId(), dsId, model: r.key, algo: 'lm',
+        label: `${r.key} [LM] (R²=${r.rSq.toFixed(4)})`,
+        color: fitColor, result: r.result, fn: r.modelFn,
+        visible: true, paramNames: r.paramNames, curvePoints: 300,
+      };
+      state.fits.push(fitRecord);
+      state.activeFitId = fitRecord.id;
+      document.getElementById('model-select').value = r.key;
+      syncModelCustomSection();
+      renderFitList();
+      renderParamResults(fitRecord);
+      renderStats(fitRecord);
+      renderCorrMatrix(fitRecord);
+      updatePlots();
+      setConsole(`Applied ${r.key} (R²=${r.rSq.toFixed(4)}).`, '');
+      document.getElementById('model-compare-modal').style.display = 'none';
+    });
+  });
+
+  document.getElementById('model-compare-modal').style.display = 'flex';
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2985,6 +3084,45 @@ function initEvents() {
 
   /* ── Auto init ────────────────────────────────────────── */
   document.getElementById('btn-auto-init').addEventListener('click', autoInitParams);
+  document.getElementById('btn-try-all').addEventListener('click', tryAllModels);
+  document.getElementById('model-compare-close').addEventListener('click', () => {
+    document.getElementById('model-compare-modal').style.display = 'none';
+  });
+  document.getElementById('model-compare-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+  });
+
+  document.getElementById('btn-copy-params').addEventListener('click', () => {
+    const fit = state.fits.find(f => f.id === state.activeFitId);
+    if (!fit || !fit.result || !fit.paramNames.length) { setConsole('No active fit parameters to copy.', 'error'); return; }
+    const lines = [`Model: ${fit.label}`];
+    fit.paramNames.forEach((name, i) => {
+      const val = fit.result.params[i];
+      const err = fit.result.paramErrors && fit.result.paramErrors[i];
+      lines.push(err && isFinite(err) ? `${name} = ${fmt(val)} ± ${fmt(err)}` : `${name} = ${fmt(val)}`);
+    });
+    navigator.clipboard.writeText(lines.join('\n'))
+      .then(() => setConsole('Parameters copied to clipboard.', ''))
+      .catch(() => setConsole('Clipboard access denied.', 'error'));
+  });
+
+  document.getElementById('opt-extrap-xmin').addEventListener('input', function () {
+    const v = parseFloat(this.value);
+    state.fitConfig.xExtraMin = isFinite(v) ? v : null;
+    if (state.fits.length) updatePlots();
+  });
+  document.getElementById('opt-extrap-xmax').addEventListener('input', function () {
+    const v = parseFloat(this.value);
+    state.fitConfig.xExtraMax = isFinite(v) ? v : null;
+    if (state.fits.length) updatePlots();
+  });
+  document.getElementById('btn-extrap-reset').addEventListener('click', () => {
+    state.fitConfig.xExtraMin = null;
+    state.fitConfig.xExtraMax = null;
+    document.getElementById('opt-extrap-xmin').value = '';
+    document.getElementById('opt-extrap-xmax').value = '';
+    if (state.fits.length) updatePlots();
+  });
 
   /* ── Toggle buttons ───────────────────────────────────── */
   document.getElementById('btn-toggle-residuals').addEventListener('click', function () {
