@@ -2654,6 +2654,13 @@ function initEvents() {
   /* ── Session ──────────────────────────────────────────── */
   document.getElementById('btn-save').addEventListener('click', saveSession);
   document.getElementById('btn-load').addEventListener('click', loadSession);
+  document.getElementById('btn-auto-restore').addEventListener('click', () => {
+    const isOn = localStorage.getItem('cfs_autorestore') !== '0';
+    const next = !isOn;
+    localStorage.setItem('cfs_autorestore', next ? '1' : '0');
+    document.getElementById('btn-auto-restore').classList.toggle('active', next);
+    setConsole(next ? 'Auto-restore ON — saved session will be restored on next reload.' : 'Auto-restore OFF — next reload will start fresh.', '');
+  });
 
   /* ── Save modal ───────────────────────────────────────── */
   const saveModal = document.getElementById('save-modal');
@@ -2740,8 +2747,10 @@ function init() {
   initEditMode();
 
   // Auto-restore saved session or load example on first visit
+  const autoRestore = localStorage.getItem('cfs_autorestore') !== '0';
+  document.getElementById('btn-auto-restore').classList.toggle('active', autoRestore);
   const saved = localStorage.getItem('cfs_session');
-  if (saved) {
+  if (autoRestore && saved) {
     try { restoreMultiTabPayload(JSON.parse(saved)); return; } catch (_) {}
   }
   loadDefaultExample();
