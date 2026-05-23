@@ -451,7 +451,18 @@ const MODELS = {
     params: ['a', 'b'],
     fn: (x, [a, b]) => a * Math.pow(Math.abs(x) + 1e-12, b),
     analytic: false,
-    autoInit(x, y) { return [mean(y) / (mean(x) || 1), 1]; }
+    autoInit(x, y) {
+      // Log-linear regression on positive pairs: ln(y) = ln(a) + b*ln(x)
+      const pairs = x.map((xi, i) => [xi, y[i]]).filter(([xi, yi]) => xi > 0 && yi > 0);
+      if (pairs.length < 2) return [Math.abs(mean(y)) || 1, 1];
+      const lx = pairs.map(([xi]) => Math.log(xi));
+      const ly = pairs.map(([, yi]) => Math.log(yi));
+      const xlm = mean(lx), ylm = mean(ly);
+      const denom = lx.reduce((s, lxi) => s + (lxi - xlm) ** 2, 0) || 1;
+      const b = lx.reduce((s, lxi, i) => s + (lxi - xlm) * (ly[i] - ylm), 0) / denom;
+      const a = Math.exp(ylm - b * xlm);
+      return [isFinite(a) ? a : 1, isFinite(b) ? b : 1];
+    }
   },
   'Polynomial-2': { params: ['c₂','c₁','c₀'], analytic: true, degree: 2 },
   'Polynomial-3': { params: ['c₃','c₂','c₁','c₀'], analytic: true, degree: 3 },
@@ -491,7 +502,17 @@ const MODELS = {
     params: ['L', 'k', 'x₀'],
     fn: (x, [L, k, x0]) => L / (1 + Math.exp(-k * (x - x0))),
     analytic: false,
-    autoInit(x, y) { return [Math.max(...y), 1, mean(x)]; }
+    autoInit(x, y) {
+      const L = Math.max(...y) * 1.05;
+      const half = L / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      const x0 = x[idx];
+      // Estimate k from local slope at midpoint: dy/dx|x0 ≈ L*k/4
+      const i1 = Math.max(idx - 2, 0), i2 = Math.min(idx + 2, x.length - 1);
+      const slope = i2 > i1 ? (y[i2] - y[i1]) / (x[i2] - x[i1] || 1) : 1;
+      const k = Math.max(4 * slope / L, 0.01);
+      return [L, k, x0];
+    }
   },
   'Gaussian': {
     params: ['A', 'μ', 'σ', 'C'],
@@ -519,33 +540,58 @@ const MODELS = {
     fn: (x, [A, x0, g, C]) => A * g * g / ((x - x0) ** 2 + g * g) + C,
     analytic: false,
     autoInit(x, y) {
-      const C = mean(y);
+      const sortedY = y.slice().sort((a, b) => a - b);
+      const nBase = Math.max(2, Math.ceil(y.length * 0.25));
+      const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
       const maxI = shifted.indexOf(Math.max(...shifted));
-      const rng = (Math.max(...x) - Math.min(...x)) / 8;
-      return [shifted[maxI] || 1, x[maxI], rng, C];
+      const A = Math.max(shifted[maxI], 1e-6);
+      const x0 = x[maxI];
+      // HWHM estimate from left side of peak
+      const halfAmp = A / 2;
+      let half = -1;
+      for (let i = 0; i < maxI; i++) { if (shifted[i] >= halfAmp) { half = i; break; } }
+      const xRange = Math.max(...x) - Math.min(...x);
+      const g = half >= 0 ? Math.max(Math.abs(x[half] - x0), xRange / 10) : xRange / 8;
+      return [A, x0, g, C];
     }
   },
   'Michaelis-Menten': {
     params: ['Vmax', 'Km'],
     fn: (x, [Vm, Km]) => Vm * x / ((Km || 1e-10) + x),
     analytic: false,
-    autoInit(x, y) { return [Math.max(...y), mean(x)]; }
+    autoInit(x, y) {
+      const Vmax = Math.max(...y) * 1.5;
+      const half = Math.max(...y) / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      return [Vmax, Math.max(x[idx], 1e-6)];
+    }
   },
   'Hill': {
     params: ['Vmax', 'Kd', 'n'],
     fn: (x, [Vm, Kd, n]) => Vm * Math.pow(x, n) / (Math.pow(Math.abs(Kd), n) + Math.pow(x, n)),
     analytic: false,
-    autoInit(x, y) { return [Math.max(...y), mean(x), 1]; }
+    autoInit(x, y) {
+      const Vmax = Math.max(...y) * 1.2;
+      const half = Math.max(...y) / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      return [Vmax, Math.max(x[idx], 1e-6), 1.5];
+    }
   },
   'Sine': {
     params: ['A', 'ω', 'φ', 'C'],
     fn: (x, [A, w, phi, C]) => A * Math.sin(w * x + phi) + C,
     analytic: false,
     autoInit(x, y) {
-      const amp = (Math.max(...y) - Math.min(...y)) / 2;
-      const rng = Math.max(...x) - Math.min(...x);
-      return [amp, (2 * Math.PI) / Math.max(rng, 1e-10), 0, mean(y)];
+      const C = (Math.max(...y) + Math.min(...y)) / 2;
+      const A = (Math.max(...y) - Math.min(...y)) / 2;
+      const centered = y.map(v => v - C);
+      // Count zero crossings to estimate frequency
+      let zc = 0;
+      for (let i = 1; i < centered.length; i++) { if (centered[i - 1] * centered[i] < 0) zc++; }
+      const xRange = Math.max(...x) - Math.min(...x);
+      const omega = zc > 1 ? Math.PI * zc / xRange : 2 * Math.PI / Math.max(xRange, 1e-10);
+      return [A, omega, 0, C];
     }
   },
   'Damped-Sine': {
@@ -553,16 +599,42 @@ const MODELS = {
     fn: (x, [A, g, w, phi, C]) => A * Math.exp(-g * x) * Math.sin(w * x + phi) + C,
     analytic: false,
     autoInit(x, y) {
-      const amp = (Math.max(...y) - Math.min(...y)) / 2;
-      const rng = Math.max(...x) - Math.min(...x);
-      return [amp, 0.1, (2 * Math.PI * 2) / Math.max(rng, 1e-10), 0, mean(y)];
+      const C = mean(y);
+      const centered = y.map(v => v - C);
+      const A = Math.max(...centered.map(Math.abs)) || 1;
+      let zc = 0;
+      for (let i = 1; i < centered.length; i++) { if (centered[i - 1] * centered[i] < 0) zc++; }
+      const xRange = Math.max(...x) - Math.min(...x);
+      const omega = zc > 1 ? Math.PI * zc / xRange : 4 * Math.PI / Math.max(xRange, 1e-10);
+      // Estimate damping from ratio of early vs late peak amplitudes
+      const q = Math.ceil(y.length / 4);
+      const earlyAmp = Math.max(...centered.slice(0, q).map(Math.abs)) || A;
+      const lateAmp  = Math.max(...centered.slice(y.length - q).map(Math.abs)) || 0.01;
+      const gamma = earlyAmp > lateAmp ? Math.log(earlyAmp / lateAmp) / (xRange * 0.75) : 0.1;
+      return [A, Math.max(gamma, 0.01), omega, 0, C];
     }
   },
   'Weibull': {
     params: ['λ', 'k'],
     fn: (x, [lam, k]) => 1 - Math.exp(-Math.pow(Math.max(x, 1e-12) / (lam || 1e-10), k)),
     analytic: false,
-    autoInit(x) { return [mean(x), 2]; }
+    autoInit(x, y) {
+      // λ ≈ x where F ≈ 0.632 (= 1−1/e, the Weibull scale characteristic)
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - 0.632) < Math.abs(y[b] - 0.632) ? i : b, 0);
+      const lam = Math.max(x[idx], x[0], 1e-6);
+      // Log-log linearisation: ln(−ln(1−F)) = k·ln(x) − k·ln(λ) → slope = k
+      const valid = x.map((xi, i) => [xi, y[i]]).filter(([xi, yi]) => xi > 0 && yi > 0 && yi < 1);
+      let k = 2;
+      if (valid.length >= 3) {
+        const lx = valid.map(([xi]) => Math.log(xi));
+        const ly = valid.map(([, yi]) => Math.log(-Math.log(1 - yi)));
+        const xlm = mean(lx), ylm = mean(ly);
+        const kEst = lx.reduce((s, lxi, i) => s + (lxi - xlm) * (ly[i] - ylm), 0) /
+                     (lx.reduce((s, lxi) => s + (lxi - xlm) ** 2, 0) || 1);
+        if (isFinite(kEst) && kEst > 0.1) k = Math.min(kEst, 20);
+      }
+      return [lam, k];
+    }
   },
   'Custom': {
     params: [],
@@ -859,7 +931,10 @@ function importDataset(name, x, y, color) {
   if (!x.length || !y.length) return null;
   const ds = { id: nextId(), name: name || `Dataset ${state.datasets.length + 1}`, x, y, originalY: y.slice(), color: color || nextColor(), visible: true };
   state.datasets.push(ds);
-  if (!state.activeDatasetId) state.activeDatasetId = ds.id;
+  if (!state.activeDatasetId) {
+    state.activeDatasetId = ds.id;
+    autoNameTab(ds.name);
+  }
   return ds;
 }
 
@@ -1348,6 +1423,49 @@ function autoInitParams() {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   MULTI-START WRAPPER
+   Runs nStarts pilot fits from randomly perturbed starting
+   points, then polishes the best with full iterations.
+═══════════════════════════════════════════════════════════ */
+function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
+  const pilotOpts = { ...opts, maxIter: Math.max(150, Math.ceil(opts.maxIter / 4)) };
+
+  function quickSSE(params) {
+    let s = 0;
+    for (let i = 0; i < xArr.length; i++) {
+      const v = modelFn(xArr[i], params);
+      if (isFinite(v)) s += (yArr[i] - v) ** 2;
+    }
+    return isFinite(s) ? s : Infinity;
+  }
+
+  // Run pilot from user's p0 first
+  let best = solve(modelFn, xArr, yArr, p0, pilotOpts);
+
+  // Perturbed pilots
+  for (let s = 1; s < nStarts; s++) {
+    const pPerturb = p0.map((v, i) => {
+      const row = state.paramRows[i];
+      // Log-scale perturbation: multiply by 10^U(-1,1)
+      let pv = Math.abs(v) > 1e-10
+        ? v * Math.pow(10, (Math.random() * 2 - 1))
+        : (Math.random() * 2 - 1) * 2;
+      if (row) {
+        if (row.min > -1e9) pv = Math.max(pv, row.min);
+        if (row.max <  1e9) pv = Math.min(pv, row.max);
+      }
+      return isFinite(pv) ? pv : v;
+    });
+    const r = solve(modelFn, xArr, yArr, pPerturb, pilotOpts);
+    if (r.sse < best.sse) best = r;
+  }
+
+  // Full polish from best pilot
+  const polished = solve(modelFn, xArr, yArr, best.params, opts);
+  return polished.sse <= best.sse ? polished : best;
+}
+
+/* ═══════════════════════════════════════════════════════════
    FIT ENGINE — DISPATCH
 ═══════════════════════════════════════════════════════════ */
 function runFit() {
@@ -1361,6 +1479,7 @@ function runFit() {
   const tol      = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
   const curvePts = parseInt(document.getElementById('opt-curve-pts').value) || 300;
   const algoKey  = document.getElementById('opt-algo').value;
+  const nStarts  = parseInt(document.getElementById('opt-n-starts').value)  || 1;
 
   const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
   const solve = SOLVERS[algoKey] || levenbergMarquardt;
@@ -1369,6 +1488,7 @@ function runFit() {
 
   let result, modelFn, paramNames;
   const m = MODELS[model];
+  const opts = { maxIter, tol };
 
   if (m && m.analytic) {
     const degree = m.degree;
@@ -1389,14 +1509,18 @@ function runFit() {
     const p0 = state.paramRows.length === paramNames.length
       ? state.paramRows.map(r => r.init)
       : paramNames.map(() => 1);
-    result = solve(modelFn, ds.x, ds.y, p0, { maxIter, tol });
+    result = nStarts > 1
+      ? multiStartFit(solve, modelFn, ds.x, ds.y, p0, opts, nStarts)
+      : solve(modelFn, ds.x, ds.y, p0, opts);
   } else if (m && m.fn) {
     paramNames = m.params;
     modelFn = m.fn;
     const p0 = state.paramRows.length === paramNames.length
       ? state.paramRows.map(r => r.init)
       : m.autoInit(ds.x, ds.y);
-    result = solve(modelFn, ds.x, ds.y, p0, { maxIter, tol });
+    result = nStarts > 1
+      ? multiStartFit(solve, modelFn, ds.x, ds.y, p0, opts, nStarts)
+      : solve(modelFn, ds.x, ds.y, p0, opts);
   } else {
     setConsole('Unknown model.', 'error');
     return;
@@ -1405,7 +1529,8 @@ function runFit() {
   const fitColor = nextColor();
   const algoNames = { lm: 'LM', gn: 'GN', nm: 'NM', bfgs: 'BFGS' };
   const rSqStr    = isFinite(result.rSq) ? ` (R²=${result.rSq.toFixed(4)})` : '';
-  const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}]${rSqStr}`;
+  const msTag     = (nStarts > 1 && !m?.analytic) ? `×${nStarts}` : '';
+  const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}${msTag}]${rSqStr}`;
 
   const fitRecord = {
     id: nextId(), dsId, model, algo: algoKey,
@@ -1849,6 +1974,14 @@ let activeTabId = null;
 
 function nextTabId() { return 'tab_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
 
+function autoNameTab(name) {
+  if (!activeTabId || !name) return;
+  const tab = tabList.find(t => t.id === activeTabId);
+  if (!tab || !tab.autoNamed) return;
+  tab.name = name.replace(/\.[^.]+$/, '').slice(0, 30).trim() || tab.name;
+  renderTabBar();
+}
+
 function clearWorkspace() {
   state.datasets = [];
   state.fits = [];
@@ -1885,7 +2018,7 @@ function activateTab(id) {
 
 function addNewTab(name) {
   const id = nextTabId();
-  tabList.push({ id, name: name || `Tab ${tabList.length + 1}`, payload: null });
+  tabList.push({ id, name: name || `Tab ${tabList.length + 1}`, payload: null, autoNamed: true });
   activateTab(id);
 }
 
@@ -1930,7 +2063,9 @@ function renderTabBar() {
       sel.removeAllRanges(); sel.addRange(range);
       const finish = () => {
         label.contentEditable = 'false';
-        tab.name = label.textContent.trim() || old;
+        const newName = label.textContent.trim();
+        if (newName && newName !== old) { tab.name = newName; tab.autoNamed = false; }
+        else { tab.name = old; }
         label.textContent = tab.name;
         label.removeEventListener('blur', finish);
         label.removeEventListener('keydown', onKey);
@@ -1996,6 +2131,7 @@ function buildSessionPayload() {
       tol:      parseFloat(document.getElementById('opt-tol').value)     || 1e-8,
       curvePts: parseInt(document.getElementById('opt-curve-pts').value) || 300,
       algo:     document.getElementById('opt-algo').value || 'lm',
+      nStarts:  parseInt(document.getElementById('opt-n-starts').value)  || 1,
     },
     activeDatasetId: state.activeDatasetId,
     activeFitId: state.activeFitId,
@@ -2063,6 +2199,7 @@ function restoreSessionPayload(payload) {
     if (o.tol      != null) document.getElementById('opt-tol').value       = o.tol;
     if (o.curvePts != null) document.getElementById('opt-curve-pts').value = o.curvePts;
     if (o.algo     != null) document.getElementById('opt-algo').value      = o.algo;
+    if (o.nStarts  != null) document.getElementById('opt-n-starts').value  = o.nStarts;
   }
 
   syncFitDatasetSelect();
@@ -2095,14 +2232,14 @@ function buildMultiTabPayload() {
   return {
     version: 3,
     savedAt: new Date().toISOString(),
-    tabs: tabList.map(t => ({ id: t.id, name: t.name, payload: t.payload })),
+    tabs: tabList.map(t => ({ id: t.id, name: t.name, payload: t.payload, autoNamed: t.autoNamed ?? false })),
     activeTabId,
   };
 }
 
 function restoreMultiTabPayload(data) {
   if (data.version === 3 && Array.isArray(data.tabs) && data.tabs.length) {
-    tabList = data.tabs.map(t => ({ id: t.id, name: t.name, payload: t.payload }));
+    tabList = data.tabs.map(t => ({ id: t.id, name: t.name, payload: t.payload, autoNamed: t.autoNamed ?? false }));
     activeTabId = data.activeTabId || tabList[0].id;
     if (!tabList.find(t => t.id === activeTabId)) activeTabId = tabList[0].id;
     renderTabBar();
@@ -2547,7 +2684,7 @@ function loadDefaultExample() {
 
 function init() {
   // Initialise tab system with one default tab
-  tabList = [{ id: nextTabId(), name: 'Tab 1', payload: null }];
+  tabList = [{ id: nextTabId(), name: 'Tab 1', payload: null, autoNamed: true }];
   activeTabId = tabList[0].id;
 
   initEvents();

@@ -276,6 +276,10 @@
             <label class="ctrl-label" style="margin:0;min-width:72px">Tolerance</label>
             <input class="ctrl-input" id="opt-tol" type="text" value="1e-8">
           </div>
+          <div class="ctrl-row" style="margin-top:5px">
+            <label class="ctrl-label" style="margin:0;min-width:72px" title="Random multi-start attempts to escape local minima. 1 = off.">Multi-start</label>
+            <input class="ctrl-input" id="opt-n-starts" type="number" value="8" min="1" max="64" title="Number of random starting points (1 = single run, 8 = default)">
+          </div>
         </div>
 
         <!-- Plot labels -->
