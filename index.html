@@ -204,6 +204,11 @@
         <button class="btn btn-toggle" id="btn-toggle-residuals" title="Show / hide residual plot">Residuals</button>
         <button class="btn btn-toggle" id="btn-log-x" title="Toggle logarithmic X axis">Log X</button>
         <button class="btn btn-toggle" id="btn-log-y" title="Toggle logarithmic Y axis">Log Y</button>
+        <button class="btn btn-toggle" id="btn-edit-mode" title="Edit point positions — click to select, drag or arrow keys to move up/down">✏ Edit</button>
+      </div>
+      <div id="edit-mode-controls" style="display:none;align-items:center;gap:4px;flex-shrink:0">
+        <span style="font-size:.72em;color:var(--dim);white-space:nowrap">Step:</span>
+        <input class="ctrl-input" id="edit-nudge-step" type="number" value="0.1" step="any" title="Arrow-key nudge amount" style="width:54px;padding:2px 5px">
       </div>
       <div class="app-toolbar-sep"></div>
       <div class="app-toolbar-group">
@@ -381,6 +386,22 @@
 
   </div><!-- end app-shell -->
 </div><!-- end app-section -->
+
+<!-- Example Generator Modal -->
+<div class="modal-backdrop" id="example-modal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="width:420px;max-width:96vw">
+    <div class="modal-header">
+      <span class="modal-title" id="example-modal-title">Example Generator</span>
+      <button class="modal-close" id="example-modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="example-modal-body"></div>
+    <div class="modal-footer" style="align-items:center">
+      <span style="font-size:.72em;color:var(--muted);flex:1;line-height:1.4">Noise is re-randomised each time you load.</span>
+      <button class="btn" id="example-modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="example-modal-load">Load Dataset</button>
+    </div>
+  </div>
+</div>
 
 <!-- Paste Modal -->
 <div class="modal-backdrop" id="paste-modal" style="display:none">

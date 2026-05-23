@@ -372,37 +372,107 @@ function gauss() {
 function noisyGauss(arr, sigma) { return arr.map(v => v + gauss() * sigma); }
 
 const EXAMPLES = {
-  'exponential-decay': () => {
-    const t = linspace(0, 20, 24);
-    const y = noisyGauss(t.map(x => 95 * Math.exp(-0.18 * x) + 2), 1.5);
-    return { name: 'Exp Decay (Radioactive)', x: t, y, xlabel: 'Time (s)', ylabel: 'Activity (Bq)', suggestModel: 'Exp-Decay-Offset' };
+  'exponential-decay': {
+    title: 'Exp Decay (Radioactive)',
+    params: [
+      { key: 'A',    label: 'Amplitude (A)',  value: 95,   min: 1,    max: 500,  step: 1    },
+      { key: 'b',    label: 'Decay rate (b)', value: 0.18, min: 0.01, max: 5,    step: 0.01 },
+      { key: 'C',    label: 'Offset (C)',      value: 2,    min: -100, max: 200,  step: 0.5  },
+      { key: 'noise',label: 'Noise (σ)',       value: 1.5,  min: 0,    max: 30,   step: 0.1  },
+      { key: 'N',    label: 'Points (N)',      value: 24,   min: 5,    max: 200,  step: 1    },
+      { key: 'xmax', label: 'x max',           value: 20,   min: 1,    max: 200,  step: 1    },
+    ],
+    generate(p) {
+      const t = linspace(0, p.xmax, p.N);
+      return { name: 'Exp Decay (Radioactive)', x: t, y: noisyGauss(t.map(x => p.A * Math.exp(-p.b * x) + p.C), p.noise), xlabel: 'Time (s)', ylabel: 'Activity (Bq)', suggestModel: 'Exp-Decay-Offset' };
+    }
   },
-  'gaussian-peak': () => {
-    const x = linspace(-6, 6, 40);
-    const y = noisyGauss(x.map(xi => 120 * Math.exp(-0.5 * ((xi - 0.5) / 1.2) ** 2) + 5), 3);
-    return { name: 'Gaussian Peak (Spectroscopy)', x, y, xlabel: 'Wavenumber (cm⁻¹)', ylabel: 'Absorbance', suggestModel: 'Gaussian' };
+  'gaussian-peak': {
+    title: 'Gaussian Peak (Spectroscopy)',
+    params: [
+      { key: 'A',    label: 'Amplitude (A)', value: 120,  min: 1,    max: 1000, step: 1    },
+      { key: 'mu',   label: 'Center (μ)',     value: 0.5,  min: -20,  max: 20,   step: 0.1  },
+      { key: 'sig',  label: 'Width (σ)',      value: 1.2,  min: 0.05, max: 20,   step: 0.05 },
+      { key: 'C',    label: 'Baseline (C)',   value: 5,    min: -50,  max: 200,  step: 1    },
+      { key: 'noise',label: 'Noise (σ)',      value: 3,    min: 0,    max: 50,   step: 0.5  },
+      { key: 'N',    label: 'Points (N)',     value: 40,   min: 5,    max: 200,  step: 1    },
+      { key: 'xmin', label: 'x min',          value: -6,   min: -50,  max: 0,    step: 0.5  },
+      { key: 'xmax', label: 'x max',          value: 6,    min: 0,    max: 50,   step: 0.5  },
+    ],
+    generate(p) {
+      const x = linspace(p.xmin, p.xmax, p.N);
+      return { name: 'Gaussian Peak (Spectroscopy)', x, y: noisyGauss(x.map(xi => p.A * Math.exp(-0.5 * ((xi - p.mu) / p.sig) ** 2) + p.C), p.noise), xlabel: 'Wavenumber (cm⁻¹)', ylabel: 'Absorbance', suggestModel: 'Gaussian' };
+    }
   },
-  'logistic-growth': () => {
-    const t = linspace(0, 48, 32);
-    const y = noisyGauss(t.map(x => 1e6 / (1 + Math.exp(-0.18 * (x - 20)))), 1.5e4);
-    return { name: 'Logistic Growth (Cell Culture)', x: t, y, xlabel: 'Time (h)', ylabel: 'Cell Count', suggestModel: 'Logistic' };
+  'logistic-growth': {
+    title: 'Logistic Growth (Cell Culture)',
+    params: [
+      { key: 'L',    label: 'Capacity (L)',    value: 1e6,  min: 100,  max: 1e9,  step: 1e4  },
+      { key: 'k',    label: 'Growth rate (k)', value: 0.18, min: 0.01, max: 2,    step: 0.01 },
+      { key: 'x0',   label: 'Midpoint (x₀)',   value: 20,   min: 1,    max: 100,  step: 0.5  },
+      { key: 'noise',label: 'Noise (σ)',        value: 1.5e4,min: 0,    max: 5e5,  step: 1e3  },
+      { key: 'N',    label: 'Points (N)',       value: 32,   min: 5,    max: 200,  step: 1    },
+      { key: 'xmax', label: 'x max',            value: 48,   min: 5,    max: 200,  step: 1    },
+    ],
+    generate(p) {
+      const t = linspace(0, p.xmax, p.N);
+      return { name: 'Logistic Growth (Cell Culture)', x: t, y: noisyGauss(t.map(x => p.L / (1 + Math.exp(-p.k * (x - p.x0)))), p.noise), xlabel: 'Time (h)', ylabel: 'Cell Count', suggestModel: 'Logistic' };
+    }
   },
-  'michaelis-menten': () => {
-    const S = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 40, 80, 150, 250];
-    const y = noisyGauss(S.map(s => 450 * s / (12 + s)), 8);
-    return { name: 'Michaelis-Menten (Enzyme Kinetics)', x: S, y, xlabel: '[S] (mM)', ylabel: 'v (μmol·min⁻¹)', suggestModel: 'Michaelis-Menten' };
+  'michaelis-menten': {
+    title: 'Michaelis-Menten (Enzyme Kinetics)',
+    params: [
+      { key: 'Vmax', label: 'Vmax',          value: 450,  min: 1,    max: 5000, step: 10   },
+      { key: 'Km',   label: 'Km',            value: 12,   min: 0.01, max: 500,  step: 0.5  },
+      { key: 'noise',label: 'Noise (σ)',      value: 8,    min: 0,    max: 100,  step: 0.5  },
+    ],
+    generate(p) {
+      const S = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 40, 80, 150, 250];
+      return { name: 'Michaelis-Menten (Enzyme Kinetics)', x: S, y: noisyGauss(S.map(s => p.Vmax * s / (p.Km + s)), p.noise), xlabel: '[S] (mM)', ylabel: 'v (μmol·min⁻¹)', suggestModel: 'Michaelis-Menten' };
+    }
   },
-  'damped-oscillation': () => {
-    const t = linspace(0, 10, 60);
-    const y = noisyGauss(t.map(x => 8 * Math.exp(-0.3 * x) * Math.sin(3.2 * x + 0.5)), 0.3);
-    return { name: 'Damped Oscillation (Vibration)', x: t, y, xlabel: 'Time (s)', ylabel: 'Displacement (mm)', suggestModel: 'Damped-Sine' };
+  'damped-oscillation': {
+    title: 'Damped Oscillation (Vibration)',
+    params: [
+      { key: 'A',     label: 'Amplitude (A)', value: 8,    min: 0.1,   max: 100,  step: 0.5  },
+      { key: 'gamma', label: 'Damping (γ)',    value: 0.3,  min: 0,     max: 5,    step: 0.05 },
+      { key: 'omega', label: 'Frequency (ω)', value: 3.2,  min: 0.1,   max: 20,   step: 0.1  },
+      { key: 'phi',   label: 'Phase (φ)',      value: 0.5,  min: -3.14, max: 3.14, step: 0.1  },
+      { key: 'noise', label: 'Noise (σ)',      value: 0.3,  min: 0,     max: 10,   step: 0.05 },
+      { key: 'N',     label: 'Points (N)',     value: 60,   min: 5,     max: 300,  step: 1    },
+      { key: 'xmax',  label: 'x max',          value: 10,   min: 1,     max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const t = linspace(0, p.xmax, p.N);
+      return { name: 'Damped Oscillation (Vibration)', x: t, y: noisyGauss(t.map(x => p.A * Math.exp(-p.gamma * x) * Math.sin(p.omega * x + p.phi)), p.noise), xlabel: 'Time (s)', ylabel: 'Displacement (mm)', suggestModel: 'Damped-Sine' };
+    }
   },
-  'linear-calibration': () => {
-    const c = linspace(0, 10, 18);
-    const y = noisyGauss(c.map(x => 2.45 * x + 0.12), 0.15);
-    return { name: 'Linear Calibration', x: c, y, xlabel: 'Concentration (mM)', ylabel: 'Absorbance', suggestModel: 'Linear' };
+  'linear-calibration': {
+    title: 'Linear Calibration',
+    params: [
+      { key: 'm',    label: 'Slope (m)',      value: 2.45, min: -100, max: 100,  step: 0.05 },
+      { key: 'b',    label: 'Intercept (b)',  value: 0.12, min: -100, max: 100,  step: 0.05 },
+      { key: 'noise',label: 'Noise (σ)',       value: 0.15, min: 0,    max: 20,   step: 0.05 },
+      { key: 'N',    label: 'Points (N)',      value: 18,   min: 3,    max: 200,  step: 1    },
+      { key: 'xmax', label: 'x max',           value: 10,   min: 1,    max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const c = linspace(0, p.xmax, p.N);
+      return { name: 'Linear Calibration', x: c, y: noisyGauss(c.map(x => p.m * x + p.b), p.noise), xlabel: 'Concentration (mM)', ylabel: 'Absorbance', suggestModel: 'Linear' };
+    }
   }
 };
+
+function generateExample(key, overrides) {
+  const ex = EXAMPLES[key];
+  if (!ex) return null;
+  const p = {};
+  ex.params.forEach(d => { p[d.key] = d.value; });
+  if (overrides) Object.assign(p, overrides);
+  // Round integer params
+  ex.params.forEach(d => { if (d.step === 1) p[d.key] = Math.round(p[d.key]); });
+  return ex.generate(p);
+}
 
 /* ═══════════════════════════════════════════════════════════
    APPLICATION STATE
@@ -421,6 +491,8 @@ const state = {
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [] },
   plotConfig: { showResiduals: true, logX: false, logY: false },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
+  editMode: false,
+  selection: { dsId: null, indices: new Set() },
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -532,6 +604,7 @@ function baseLayout(extra) {
     },
     hovermode: 'closest',
     showlegend: true,
+    dragmode: state.editMode ? false : 'zoom',
   };
   return Object.assign(base, extra || {});
 }
@@ -565,6 +638,19 @@ function buildMainTraces() {
       line: { color: fit.color || ds.color, width: 2, dash: 'solid' },
       showlegend: true,
     });
+  }
+  // Selection overlay in edit mode
+  if (state.editMode && state.selection.dsId && state.selection.indices.size) {
+    const sds = state.datasets.find(d => d.id === state.selection.dsId);
+    if (sds) {
+      const sx = [], sy = [];
+      state.selection.indices.forEach(i => { if (i < sds.x.length) { sx.push(sds.x[i]); sy.push(sds.y[i]); } });
+      if (sx.length) traces.push({
+        x: sx, y: sy, mode: 'markers', type: 'scatter',
+        name: '_sel', showlegend: false, hoverinfo: 'skip',
+        marker: { color: 'rgba(0,0,0,0)', size: 16, line: { color: '#f59e0b', width: 2.5 } },
+      });
+    }
   }
   return traces;
 }
@@ -669,6 +755,7 @@ function renderDatasetList() {
       const id = parseInt(btn.dataset.delid);
       state.datasets = state.datasets.filter(d => d.id !== id);
       state.fits = state.fits.filter(f => f.dsId !== id);
+      if (state.selection.dsId === id) state.selection = { dsId: null, indices: new Set() };
       if (state.activeDatasetId === id) {
         state.activeDatasetId = state.datasets.length ? state.datasets[state.datasets.length - 1].id : null;
       }
@@ -1037,6 +1124,159 @@ function exportReport() {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   EXAMPLE GENERATOR MODAL
+═══════════════════════════════════════════════════════════ */
+let currentExampleKey = null;
+
+function openExampleEditor(key) {
+  const ex = EXAMPLES[key];
+  if (!ex) return;
+  currentExampleKey = key;
+  document.getElementById('example-modal-title').textContent = ex.title;
+  const body = document.getElementById('example-modal-body');
+  body.innerHTML = ex.params.map(p => `
+    <div class="ex-param-row">
+      <label class="ex-param-label">${p.label}</label>
+      <input class="ctrl-input ex-param-input" type="number"
+        data-key="${p.key}" value="${p.value}"
+        min="${p.min}" max="${p.max}" step="${p.step}">
+    </div>`).join('');
+  document.getElementById('example-modal').style.display = 'flex';
+}
+
+function closeExampleModal() {
+  document.getElementById('example-modal').style.display = 'none';
+  currentExampleKey = null;
+}
+
+function loadExampleFromModal() {
+  if (!currentExampleKey) return;
+  const ex = EXAMPLES[currentExampleKey];
+  const p = {};
+  document.getElementById('example-modal-body').querySelectorAll('.ex-param-input').forEach(inp => {
+    let v = parseFloat(inp.value);
+    if (!isFinite(v)) v = parseFloat(inp.min) || 0;
+    p[inp.dataset.key] = v;
+  });
+  // Round integer params
+  ex.params.forEach(d => { if (d.step === 1) p[d.key] = Math.max(d.min, Math.round(p[d.key])); });
+
+  const data = ex.generate(p);
+  closeExampleModal();
+  const ds = importDataset(data.name, data.x, data.y);
+  if (!ds) return;
+  applyParsedMeta({ xlabel: data.xlabel, ylabel: data.ylabel, title: null });
+  if (data.suggestModel) {
+    document.getElementById('model-select').value = data.suggestModel;
+    syncModelCustomSection();
+  }
+  syncFitDatasetSelect();
+  renderDatasetList();
+  updatePlots();
+  setConsole(`Loaded: ${data.name} (${data.x.length} points).  Press ▶ Fit to fit.`, '');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   POINT EDIT MODE
+═══════════════════════════════════════════════════════════ */
+function computeYDataDelta(pixelDY, mainEl) {
+  const fl = mainEl._fullLayout;
+  if (fl && fl.yaxis && fl.yaxis._length) {
+    const ya = fl.yaxis;
+    if (state.plotConfig.logY) {
+      // range is in log10 units; convert pixel delta to log10 delta
+      return -pixelDY * (ya.range[1] - ya.range[0]) / ya._length;
+    }
+    return -pixelDY * (ya.range[1] - ya.range[0]) / ya._length;
+  }
+  // Fallback via public layout + margins
+  const layout = mainEl.layout;
+  if (!layout || !layout.yaxis || !layout.yaxis.range) return 0;
+  const m = layout.margin || { t: 28, b: 44 };
+  const h = mainEl.offsetHeight - (m.t || 28) - (m.b || 44);
+  if (h <= 0) return 0;
+  const [y0, y1] = layout.yaxis.range;
+  return -pixelDY * (y1 - y0) / h;
+}
+
+function nudgeSelection(delta) {
+  const ds = state.datasets.find(d => d.id === state.selection.dsId);
+  if (!ds) return;
+  const logY = state.plotConfig.logY;
+  state.selection.indices.forEach(i => {
+    if (i < 0 || i >= ds.y.length) return;
+    if (logY) {
+      // delta is a log10 delta; shift y multiplicatively
+      ds.y[i] = ds.y[i] > 0 ? Math.pow(10, Math.log10(ds.y[i]) + delta) : ds.y[i];
+    } else {
+      ds.y[i] += delta;
+    }
+  });
+  updatePlots();
+}
+
+function initEditMode() {
+  const mainEl = document.getElementById('main-plot');
+  let editDragActive = false;
+  let editJustDragged = false;
+
+  // Start drag only when mousedown on the plot with an active selection
+  mainEl.addEventListener('mousedown', () => {
+    if (!state.editMode || !state.selection.indices.size) return;
+    editDragActive = true;
+    editJustDragged = false;
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!editDragActive || !state.editMode) return;
+    if (e.buttons !== 1) { editDragActive = false; return; }
+    const dy = e.movementY;
+    if (!dy) return;
+    editJustDragged = true;
+    nudgeSelection(computeYDataDelta(dy, mainEl));
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (editDragActive) editDragActive = false;
+    // Keep editJustDragged set briefly so plotly_click suppression fires
+    setTimeout(() => { editJustDragged = false; }, 80);
+  });
+
+  // Click-to-select via Plotly's event
+  mainEl.on('plotly_click', function(data) {
+    if (!state.editMode) return;
+    if (editJustDragged) { editJustDragged = false; return; }
+    const pt = data.points[0];
+    if (!pt || pt.data.mode !== 'markers' || pt.data.name === '_sel') return;
+
+    const ds = state.datasets.find(d => d.name === pt.data.name);
+    if (!ds) return;
+    const idx = pt.pointIndex;
+    const shift = data.event && data.event.shiftKey;
+
+    if (shift && state.selection.dsId === ds.id) {
+      state.selection.indices.has(idx)
+        ? state.selection.indices.delete(idx)
+        : state.selection.indices.add(idx);
+    } else {
+      state.selection = { dsId: ds.id, indices: new Set([idx]) };
+    }
+    updatePlots();
+  });
+
+  // Arrow-key nudge
+  document.addEventListener('keydown', e => {
+    if (!state.editMode || !state.selection.indices.size) return;
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    e.preventDefault();
+    const step = parseFloat(document.getElementById('edit-nudge-step').value) || 0.1;
+    nudgeSelection(e.key === 'ArrowUp' ? step : -step);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
    SESSION PERSISTENCE
 ═══════════════════════════════════════════════════════════ */
 function buildSessionPayload() {
@@ -1302,23 +1542,18 @@ function initEvents() {
   document.getElementById('examples-menu').querySelectorAll('.app-dropdown-item').forEach(item => {
     item.addEventListener('click', () => {
       const key = item.dataset.example;
-      const gen = EXAMPLES[key];
-      if (!gen) return;
-      const ex = gen();
-      const ds = importDataset(ex.name, ex.x, ex.y);
-      if (!ds) return;
+      if (!EXAMPLES[key]) return;
       document.getElementById('examples-menu').classList.remove('open');
-      if (ex.xlabel) document.getElementById('plot-xlabel').value = ex.xlabel;
-      if (ex.ylabel) document.getElementById('plot-ylabel').value = ex.ylabel;
-      if (ex.suggestModel) {
-        document.getElementById('model-select').value = ex.suggestModel;
-        syncModelCustomSection();
-      }
-      syncFitDatasetSelect();
-      renderDatasetList();
-      updatePlots();
-      setConsole(`Loaded: ${ex.name} (${ds.x.length} points).  Press ▶ Fit to fit.`, '');
+      openExampleEditor(key);
     });
+  });
+
+  /* ── Example modal ────────────────────────────────────── */
+  document.getElementById('example-modal-load').addEventListener('click', loadExampleFromModal);
+  document.getElementById('example-modal-cancel').addEventListener('click', closeExampleModal);
+  document.getElementById('example-modal-close').addEventListener('click', closeExampleModal);
+  document.getElementById('example-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('example-modal')) closeExampleModal();
   });
 
   /* ── CSV Import ───────────────────────────────────────── */
@@ -1424,6 +1659,7 @@ function initEvents() {
   document.getElementById('btn-clear-all').addEventListener('click', () => {
     state.datasets = []; state.fits = [];
     state.activeDatasetId = null; state.activeFitId = null;
+    state.selection = { dsId: null, indices: new Set() };
     syncFitDatasetSelect(); renderDatasetList(); renderFitList();
     updatePlots();
     setConsole('All datasets and fits cleared.', '');
@@ -1489,10 +1725,23 @@ function initEvents() {
     if (plotsInitialised) { Plotly.Plots.resize('main-plot'); Plotly.Plots.resize('residual-plot'); }
   });
 
+  /* ── Edit mode toggle ─────────────────────────────────── */
+  document.getElementById('btn-edit-mode').addEventListener('click', function () {
+    state.editMode = !state.editMode;
+    this.classList.toggle('active', state.editMode);
+    document.querySelector('.app-shell').classList.toggle('edit-mode', state.editMode);
+    const ctrl = document.getElementById('edit-mode-controls');
+    ctrl.style.display = state.editMode ? 'flex' : 'none';
+    if (!state.editMode) state.selection = { dsId: null, indices: new Set() };
+    updatePlots();
+    if (state.editMode) setConsole('Edit mode ON — click a data point to select it. Shift+click for multi-select. Drag or use ↑↓ arrow keys to move.', '');
+  });
+
   /* ── Initial state ────────────────────────────────────── */
   document.getElementById('btn-toggle-residuals').classList.add('active');
   syncModelCustomSection();
   initResizablePanels();
+  initEditMode();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1503,10 +1752,9 @@ function init() {
   updatePlots(); // Render empty plots
   // Auto-load example on first visit
   if (!localStorage.getItem('cfs_session')) {
-    const ex = EXAMPLES['exponential-decay']();
+    const ex = generateExample('exponential-decay');
     importDataset(ex.name, ex.x, ex.y);
-    document.getElementById('plot-xlabel').value = ex.xlabel;
-    document.getElementById('plot-ylabel').value = ex.ylabel;
+    applyParsedMeta({ xlabel: ex.xlabel, ylabel: ex.ylabel, title: null });
     document.getElementById('model-select').value = ex.suggestModel;
     syncModelCustomSection();
     syncFitDatasetSelect();

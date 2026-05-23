@@ -414,6 +414,15 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 }
 .paste-area:focus{border-color:var(--teal)}
 
+/* ── Example generator ───────────────────────────────────── */
+.ex-param-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ex-param-label{flex:0 0 150px;font-size:.77em;color:var(--dim);line-height:1.3}
+.ex-param-input{flex:1;min-width:0}
+
+/* ── Edit mode ────────────────────────────────────────────── */
+.app-shell.edit-mode .app-center{outline:2px solid rgba(11,122,110,.35);outline-offset:-2px}
+body.dark-mode .app-shell.edit-mode .app-center{outline-color:rgba(45,212,191,.3)}
+
 /* ── Panel resize handles ────────────────────────────────── */
 .panel-resize{
   flex-shrink:0;background:var(--border);
