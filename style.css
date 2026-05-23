@@ -256,7 +256,7 @@ body.size-lg .app-shell{font-size:16px!important}
   padding:0 2px;border-radius:3px;
   opacity:0;transition:opacity .12s,color .12s;
 }
-.ds-item:hover .ds-delete{opacity:1}
+.ds-item:hover .ds-delete,.fit-item:hover .ds-delete{opacity:1}
 .ds-delete:hover{color:var(--red)!important}
 body.dark-mode .ds-delete:hover{color:#ef4444!important}
 .fit-item-eq{font-size:.65em;color:var(--dimmer);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:1px}

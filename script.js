@@ -505,7 +505,9 @@ function baseLayout(extra) {
       font: { size: 10, color: tc.textCol },
       bgcolor: isDark() ? 'rgba(10,22,40,0.82)' : 'rgba(255,255,255,0.82)',
       bordercolor: tc.gridCol, borderwidth: 1,
-      x: 0.99, y: 0.99, xanchor: 'right', yanchor: 'top',
+      x: (state.plotConfig.legendPos && state.plotConfig.legendPos.x != null) ? state.plotConfig.legendPos.x : 0.99,
+      y: (state.plotConfig.legendPos && state.plotConfig.legendPos.y != null) ? state.plotConfig.legendPos.y : 0.99,
+      xanchor: 'right', yanchor: 'top',
     },
     hovermode: 'closest',
     showlegend: true,
@@ -677,13 +679,28 @@ function renderFitList() {
         <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fit.label}</span>
         <span class="fit-item-eq">${fit.model}</span>
       </span>
+      <button class="ds-delete" data-delid="${fit.id}" title="Remove fit">×</button>
     </div>`).join('');
-  el.querySelectorAll('.fit-item').forEach(el => {
-    el.addEventListener('click', () => {
-      state.activeFitId = parseInt(el.dataset.fitid);
+  el.querySelectorAll('.fit-item').forEach(item => {
+    item.addEventListener('click', () => {
+      state.activeFitId = parseInt(item.dataset.fitid);
       renderFitList();
       const fit = state.fits.find(f => f.id === state.activeFitId);
       if (fit && fit.result) renderStats(fit);
+    });
+  });
+  el.querySelectorAll('.ds-delete').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.delid);
+      state.fits = state.fits.filter(f => f.id !== id);
+      if (state.activeFitId === id) {
+        state.activeFitId = state.fits.length ? state.fits[state.fits.length - 1].id : null;
+      }
+      renderFitList();
+      updatePlots();
+      const active = state.fits.find(f => f.id === state.activeFitId);
+      if (active) renderStats(active); else setConsole('Fit removed.', '');
     });
   });
 }
@@ -1002,8 +1019,20 @@ function exportReport() {
    SESSION PERSISTENCE
 ═══════════════════════════════════════════════════════════ */
 function buildSessionPayload() {
+  // Capture legend position from live Plotly figure (user may have dragged it)
+  const mainEl = document.getElementById('main-plot');
+  let legendPos = null;
+  if (mainEl && mainEl.layout && mainEl.layout.legend != null) {
+    const ll = mainEl.layout.legend;
+    if (ll.x != null) legendPos = { x: ll.x, y: ll.y != null ? ll.y : 0.99 };
+  }
+
+  const leftPanel  = document.getElementById('panel-left');
+  const rightPanel = document.getElementById('panel-right');
+  const residualEl = document.getElementById('residual-plot');
+
   return {
-    version: 1,
+    version: 2,
     savedAt: new Date().toISOString(),
     datasets: state.datasets,
     fits: state.fits.map(f => ({
@@ -1013,7 +1042,23 @@ function buildSessionPayload() {
       customExpr: f.customExpr || null,
     })),
     fitConfig: state.fitConfig,
-    plotConfig: state.plotConfig,
+    plotConfig: Object.assign({}, state.plotConfig, { legendPos }),
+    paramRows: state.paramRows,
+    axisLabels: {
+      xlabel: document.getElementById('plot-xlabel').value,
+      ylabel: document.getElementById('plot-ylabel').value,
+      title:  document.getElementById('plot-title').value,
+    },
+    panelSizes: {
+      left:     leftPanel  ? leftPanel.offsetWidth   : null,
+      right:    rightPanel ? rightPanel.offsetWidth  : null,
+      residual: residualEl ? residualEl.offsetHeight : null,
+    },
+    optimizerOptions: {
+      maxIter:  parseInt(document.getElementById('opt-max-iter').value)  || 1000,
+      tol:      parseFloat(document.getElementById('opt-tol').value)     || 1e-8,
+      curvePts: parseInt(document.getElementById('opt-curve-pts').value) || 300,
+    },
     activeDatasetId: state.activeDatasetId,
     activeFitId: state.activeFitId,
   };
@@ -1046,6 +1091,9 @@ function restoreSessionPayload(payload) {
   state.activeDatasetId = payload.activeDatasetId;
   state.activeFitId = payload.activeFitId;
 
+  // Restore paramRows before syncModelCustomSection so renderParamTable picks them up
+  if (payload.paramRows) state.paramRows = payload.paramRows;
+
   const modelSel = document.getElementById('model-select');
   if (modelSel) { modelSel.value = state.fitConfig.model; syncModelCustomSection(); }
   const eqInput = document.getElementById('custom-eq-input');
@@ -1054,10 +1102,42 @@ function restoreSessionPayload(payload) {
     const btn = document.getElementById('btn-' + k.replace(/[A-Z]/g, ch => '-' + ch.toLowerCase()));
     if (btn && state.plotConfig[k]) btn.classList.add('active');
   });
+
+  // Restore axis labels before updatePlots() reads them
+  if (payload.axisLabels) {
+    if (payload.axisLabels.xlabel != null) document.getElementById('plot-xlabel').value = payload.axisLabels.xlabel;
+    if (payload.axisLabels.ylabel != null) document.getElementById('plot-ylabel').value = payload.axisLabels.ylabel;
+    if (payload.axisLabels.title  != null) document.getElementById('plot-title').value  = payload.axisLabels.title;
+  }
+
+  // Restore optimizer options
+  if (payload.optimizerOptions) {
+    const o = payload.optimizerOptions;
+    if (o.maxIter  != null) document.getElementById('opt-max-iter').value  = o.maxIter;
+    if (o.tol      != null) document.getElementById('opt-tol').value       = o.tol;
+    if (o.curvePts != null) document.getElementById('opt-curve-pts').value = o.curvePts;
+  }
+
   syncFitDatasetSelect();
   renderDatasetList();
   renderFitList();
   updatePlots();
+
+  // Restore panel sizes after plots are initialised, then trigger Plotly resize
+  if (payload.panelSizes) {
+    const leftPanel  = document.getElementById('panel-left');
+    const rightPanel = document.getElementById('panel-right');
+    const residualEl = document.getElementById('residual-plot');
+    if (payload.panelSizes.left     && leftPanel)  leftPanel.style.width   = payload.panelSizes.left     + 'px';
+    if (payload.panelSizes.right    && rightPanel) rightPanel.style.width  = payload.panelSizes.right    + 'px';
+    if (payload.panelSizes.residual && residualEl) residualEl.style.height = payload.panelSizes.residual + 'px';
+    requestAnimationFrame(() => {
+      Plotly.Plots.resize('main-plot');
+      const resEl = document.getElementById('residual-plot');
+      if (resEl && !resEl.classList.contains('hidden')) Plotly.Plots.resize('residual-plot');
+    });
+  }
+
   const active = state.fits.find(f => f.id === state.activeFitId);
   if (active) { renderStats(active); renderParamResults(active); }
 }
@@ -1317,6 +1397,15 @@ function initEvents() {
     syncFitDatasetSelect(); renderDatasetList(); renderFitList();
     updatePlots();
     setConsole('All datasets and fits cleared.', '');
+  });
+
+  /* ── Clear all fits ───────────────────────────────────── */
+  document.getElementById('btn-clear-all-fits').addEventListener('click', () => {
+    state.fits = [];
+    state.activeFitId = null;
+    renderFitList();
+    updatePlots();
+    setConsole('All fits cleared.', '');
   });
 
   /* ── Model select ─────────────────────────────────────── */
