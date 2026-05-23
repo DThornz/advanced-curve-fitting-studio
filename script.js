@@ -2748,10 +2748,10 @@ function init() {
 
   // Hide nav when app section scrolls into view
   const siteNav = document.querySelector('.site-nav');
-  const appSection = document.getElementById('app');
-  if (siteNav && appSection) {
+  const appAnchor = document.querySelector('.app-section-header');
+  if (siteNav && appAnchor) {
     window.addEventListener('scroll', () => {
-      siteNav.classList.toggle('nav-hidden', appSection.getBoundingClientRect().top <= 44);
+      siteNav.classList.toggle('nav-hidden', appAnchor.getBoundingClientRect().top <= 160);
     }, { passive: true });
   }
 
