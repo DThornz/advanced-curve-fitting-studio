@@ -553,7 +553,7 @@ function applyParsedMeta({ xlabel, ylabel, title }) {
 
 function importDataset(name, x, y, color) {
   if (!x.length || !y.length) return null;
-  const ds = { id: nextId(), name: name || `Dataset ${state.datasets.length + 1}`, x, y, color: color || nextColor(), visible: true };
+  const ds = { id: nextId(), name: name || `Dataset ${state.datasets.length + 1}`, x, y, originalY: y.slice(), color: color || nextColor(), visible: true };
   state.datasets.push(ds);
   if (!state.activeDatasetId) state.activeDatasetId = ds.id;
   return ds;
@@ -1258,6 +1258,16 @@ function nudgeSelection(delta) {
   updatePlots();
 }
 
+function resetSelectionToOriginal() {
+  const ds = state.datasets.find(d => d.id === state.selection.dsId);
+  if (!ds || !ds.originalY) return;
+  pushEditHistory();
+  state.selection.indices.forEach(i => {
+    if (i >= 0 && i < ds.originalY.length) ds.y[i] = ds.originalY[i];
+  });
+  updatePlots();
+}
+
 /* ── Edit history (undo/redo) ────────────────────────── */
 function pushEditHistory() {
   const ds = state.datasets.find(d => d.id === state.selection.dsId);
@@ -1300,8 +1310,10 @@ function redoEdit() {
 function syncUndoRedoButtons() {
   const bu = document.getElementById('btn-edit-undo');
   const br = document.getElementById('btn-edit-redo');
+  const bx = document.getElementById('btn-edit-reset');
   if (bu) bu.disabled = !state.editHistory.undo.length;
   if (br) br.disabled = !state.editHistory.redo.length;
+  if (bx) bx.disabled = !state.selection.indices.size;
 }
 
 /* ── Radius canvas overlay ───────────────────────────── */
@@ -1427,6 +1439,7 @@ function initEditMode() {
       }
     }
     updatePlots();
+    syncUndoRedoButtons();
   });
 
   // Arrow-key nudge + Ctrl+Z/Y
@@ -1497,7 +1510,10 @@ function buildSessionPayload() {
 }
 
 function restoreSessionPayload(payload) {
-  state.datasets = payload.datasets || [];
+  state.datasets = (payload.datasets || []).map(d => {
+    if (!d.originalY) d.originalY = d.y.slice();  // backfill for older saves
+    return d;
+  });
   state.fits = [];
   for (const f of (payload.fits || [])) {
     const m = MODELS[f.model];
@@ -1917,9 +1933,10 @@ function initEvents() {
     updatePlots();
   });
 
-  /* ── Undo / Redo buttons ──────────────────────────────── */
+  /* ── Undo / Redo / Reset buttons ─────────────────────── */
   document.getElementById('btn-edit-undo').addEventListener('click', undoEdit);
   document.getElementById('btn-edit-redo').addEventListener('click', redoEdit);
+  document.getElementById('btn-edit-reset').addEventListener('click', resetSelectionToOriginal);
 
   /* ── Initial state ────────────────────────────────────── */
   document.getElementById('btn-toggle-residuals').classList.add('active');
