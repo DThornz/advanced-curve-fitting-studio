@@ -25,7 +25,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Outlier detection** | Highlights points where \|residual\| > 2.5σ for the active fit with red rings; updates live as points are moved |
 | **Point masking** | Mask 2.5σ outliers to exclude them from fitting; Unmask All to restore; masked count shown in panel |
 | **Smart point editing** | Always-on context-aware interaction: click near a point to select/drag, click and drag away from points to pan, scroll to zoom; no mode toggle required |
-| **Residual analysis tabs** | Four sub-panels below the main plot: Residuals vs X · Q-Q Plot (Blom quantile approx vs normal) · Histogram (Sturges bins + normal overlay) · Convergence (SSE vs iteration, log scale) |
+| **Residual analysis tabs** | Four sub-panels below the main plot: Residuals vs X · Q-Q Plot (Blom quantile approx vs normal) · Histogram (Sturges bins + normal overlay) · Convergence (SSE vs iteration; Log/Linear X and Y toggles, default Log Y) |
 | **Normalized residuals** | Toggle residual plot between raw units and σ (RMSE-normalized) units |
 | **Web Worker fitting** | All nonlinear solvers run in a background Web Worker — UI stays responsive; live SSE progress shown in the status bar; ✕ Cancel button terminates the fit instantly |
 | **Input validation** | Pre-flight checks before fitting: minimum point count, finite data, non-constant Y, model output sanity at initial parameters — with plain-language error messages |
@@ -122,7 +122,7 @@ Four tabs sit below the main plot:
 | **Residuals** | Residuals $y_i - \hat{y}_i$ vs. $x_i$ for all visible fits; dots dim when the source dataset is disabled |
 | **Q-Q Plot** | Standardised sample residuals vs. theoretical normal quantiles (Blom approximation); points on the reference line indicate Gaussian residuals |
 | **Histogram** | Residual distribution with Sturges binning and a fitted normal density overlay |
-| **Convergence** | SSE vs. iteration on a log scale; for multi-start fits the pilot-selection phase appears left of the polish phase on the same monotonic x-axis |
+| **Convergence** | SSE vs. iteration; default Log Y / Linear X; in-chart buttons toggle each axis independently (Log X · Linear X · Log Y · Linear Y); for multi-start fits the pilot-selection phase and polish share a monotonic x-axis |
 
 The whole panel dims while a fit is running and when the active fit's source dataset is disabled.
 
