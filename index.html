@@ -75,7 +75,7 @@
   <div class="section-body">
     <p><strong>Curve fitting</strong> — also called regression analysis or parameter estimation — is the process of constructing a mathematical model that best describes a set of measured data. It is one of the most fundamental quantitative techniques across scientific and engineering disciplines: from pharmacokinetics and enzyme kinetics in biology, to signal processing and materials characterisation in engineering, to cosmological parameter fitting in physics.</p>
     <p>The core problem: given $n$ data pairs $\{(x_i, y_i)\}_{i=1}^n$ and a parameterised model $f(x;\,\boldsymbol{p})$, find the parameter vector $\boldsymbol{p} \in \mathbb{R}^m$ that makes $f$ agree with the data as closely as possible in a well-defined sense. The standard criterion is <strong>ordinary least squares (OLS)</strong> — minimise the sum of squared residuals. For Gaussian measurement noise this coincides with maximum-likelihood estimation.</p>
-    <p>Linear models — where $f$ is linear in $\boldsymbol{p}$ — admit a closed-form analytic solution. Most physically motivated models (exponential decays, Gaussian peaks, Michaelis-Menten kinetics, logistic growth) are <strong>nonlinear</strong> in their parameters and require iterative numerical optimisation. This application implements the industry-standard Levenberg-Marquardt algorithm for all nonlinear models, and analytic normal-equation solving for polynomials.</p>
+    <p>Linear models — where $f$ is linear in $\boldsymbol{p}$ — admit a closed-form analytic solution. Most physically motivated models (exponential decays, Gaussian peaks, Michaelis-Menten kinetics, logistic growth) are <strong>nonlinear</strong> in their parameters and require iterative numerical optimisation. This application implements four nonlinear solvers — Levenberg-Marquardt, Gauss-Newton, Nelder-Mead Simplex, and BFGS — selectable per fit, and analytic normal-equation solving for polynomials.</p>
   </div>
   <div class="callout">
     <div class="callout-title">Fully Local &amp; Offline</div>
@@ -107,10 +107,10 @@
       <div class="eq-sep"></div>
       <div class="eq-row">
         <span class="eq-label">Normal eqs.:</span>
-        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
         <span class="eq-comment">linearised (Gauss-Newton) step</span>
       </div>
-      <div class="eq-note">$r_i$ is the $i$-th residual, $\mathbf{J}$ is the $n\times m$ Jacobian of the residual vector, $\varepsilon = 10^{-7}$. The Jacobian is evaluated numerically at the current iterate.</div>
+      <div class="eq-note">$r_i = y_i - f(x_i;\boldsymbol{p})$ is the $i$-th residual; $\mathbf{J}$ is the $n\times m$ Jacobian of the residual vector ($J_{ij} = \partial r_i/\partial p_j \approx [r_i(\boldsymbol{p}+h\mathbf{e}_j)-r_i(\boldsymbol{p})]/h$); $\varepsilon = 10^{-7}$. The negative sign arises because $r = y - f$, so $\partial r_i/\partial p_j = -\partial f_i/\partial p_j$; equivalently, using the Jacobian of $f$ gives $\mathbf{J}_f^\top\mathbf{J}_f\,\Delta\boldsymbol{p} = \mathbf{J}_f^\top\mathbf{r}$ (positive sign, since $\mathbf{J}_f = -\mathbf{J}$).</div>
     </div>
 
     <p>The goodness-of-fit is characterised by several complementary statistics computed after convergence:</p>
@@ -142,8 +142,8 @@
     <div class="eq-block">
       <div class="eq-row">
         <span class="eq-label">LM step:</span>
-        <span class="eq-main">$\bigl(\mathbf{J}^\top\mathbf{J} + \lambda\,\mathrm{diag}(\mathbf{J}^\top\mathbf{J})\bigr)\,\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$</span>
-        <span class="eq-comment">Marquardt scaling</span>
+        <span class="eq-main">$\bigl(\mathbf{J}^\top\mathbf{J} + \lambda\,\mathrm{diag}(\mathbf{J}^\top\mathbf{J})\bigr)\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-comment">Marquardt scaling; $\mathbf{J}$ is Jacobian of residuals $r_i = y_i - f_i$</span>
       </div>
       <div class="eq-row">
         <span class="eq-label">Update $\lambda$:</span>
@@ -157,8 +157,8 @@
     <div class="eq-block">
       <div class="eq-row">
         <span class="eq-label">GN step:</span>
-        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$</span>
-        <span class="eq-comment">no damping</span>
+        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-comment">no damping ($\mathbf{J}$ = residual Jacobian)</span>
       </div>
       <div class="eq-row">
         <span class="eq-label">Line search:</span>
@@ -530,7 +530,7 @@
       <tr><td>Gaussian Peak</td><td>$y = A\,e^{-(x-\mu)^2/2\sigma^2}+C$</td><td>A, μ, σ, C</td><td>Spectroscopy, chromatography peaks</td></tr>
       <tr><td>Lorentzian Peak</td><td>$y = A\,\gamma^2/[(x-x_0)^2+\gamma^2]+C$</td><td>A, x₀, γ, C</td><td>NMR, resonance linewidths</td></tr>
       <tr><td>Michaelis-Menten</td><td>$y = V_{\max}\,x\,/\,(K_m+x)$</td><td>Vmax, Km</td><td>Enzyme kinetics, Langmuir adsorption</td></tr>
-      <tr><td>Hill Equation</td><td>$y = V_{\max}\,x^n\,/\,(K_d+x^n)$</td><td>Vmax, Kd, n</td><td>Cooperative binding, Hill coefficient</td></tr>
+      <tr><td>Hill Equation</td><td>$y = V_{\max}\,x^n\,/\,(K_d^n+x^n)$</td><td>Vmax, Kd, n</td><td>Cooperative binding, Hill coefficient</td></tr>
       <tr><td>Sinusoidal</td><td>$y = A\sin(\omega x+\phi)+C$</td><td>A, ω, φ, C</td><td>Periodic oscillations, seasonal signals</td></tr>
       <tr><td>Damped Sinusoid</td><td>$y = A\,e^{-\gamma x}\sin(\omega x+\phi)+C$</td><td>A, γ, ω, φ, C</td><td>Mechanical vibration, RLC circuits</td></tr>
       <tr><td>Weibull CDF</td><td>$y = 1 - e^{-(x/\lambda)^k}$</td><td>λ, k</td><td>Reliability, survival analysis</td></tr>
