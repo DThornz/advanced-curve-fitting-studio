@@ -949,7 +949,7 @@ const state = {
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
-  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false },
+  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false, showLegend: true },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   selection: { dsId: null, indices: new Set() },
   editHistory: { undo: [], redo: [] },
@@ -1160,7 +1160,7 @@ function baseLayout(extra) {
       };
     })(),
     hovermode: 'closest',
-    showlegend: true,
+    showlegend: state.plotConfig.showLegend,
     dragmode: 'pan',
   };
   return Object.assign(base, extra || {});
@@ -1338,7 +1338,24 @@ function updatePlots() {
   const residEl = document.getElementById('residual-plot');
 
   if (!plotsInitialised) {
-    const plotCfg = { responsive: true, displaylogo: false, scrollZoom: true, edits: { legendPosition: true }, modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'] };
+    const legendIcon = {
+      width: 857, height: 1000,
+      path: 'M0 143h143v-143h-143v143z m214 0h643v-143h-643v143z m-214 286h143v-143h-143v143z m214 0h643v-143h-643v143z m-214 286h143v-143h-143v143z m214 0h643v-143h-643v143z',
+      ascent: 850, descent: -150,
+    };
+    const plotCfg = {
+      responsive: true, displaylogo: false, scrollZoom: true,
+      edits: { legendPosition: true },
+      modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'],
+      modeBarButtonsToAdd: [{
+        name: 'Toggle legend',
+        icon: legendIcon,
+        click() {
+          state.plotConfig.showLegend = !state.plotConfig.showLegend;
+          updatePlots();
+        },
+      }],
+    };
     Plotly.newPlot(mainEl, mainTraces, mainLayout, plotCfg);
     const resTraces = buildResidualTraces();
     const resLayout = baseLayout({
