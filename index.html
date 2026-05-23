@@ -112,6 +112,8 @@
       <div style="flex:1"></div>
       <div class="app-toolbar-group">
         <button class="btn btn-toggle" id="btn-toggle-residuals" title="Show / hide residual plot">Residuals</button>
+        <button class="btn btn-toggle" id="btn-ci-bands" title="Show 95% confidence bands around each fit curve">CI Bands</button>
+        <button class="btn btn-toggle" id="btn-norm-resid" title="Normalize residuals by RMSE (show σ units)">Norm. Res.</button>
         <button class="btn btn-toggle" id="btn-log-x" title="Toggle logarithmic X axis">Log X</button>
         <button class="btn btn-toggle" id="btn-log-y" title="Toggle logarithmic Y axis">Log Y</button>
         <button class="btn btn-toggle" id="btn-edit-mode" title="Edit point positions — click to select, drag or arrow keys to move up/down">✏ Edit</button>
@@ -259,6 +261,7 @@
           <div id="param-table-container">
             <div class="panel-empty-hint">Select a model.</div>
           </div>
+          <div id="corr-matrix-container"></div>
         </div>
 
         <!-- Algorithm options -->

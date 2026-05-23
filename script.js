@@ -91,6 +91,24 @@ function fmt(v, precision) {
   return v.toPrecision(p).replace(/\.?0+$/, '');
 }
 
+function tCritical95(df) {
+  if (df <= 0) return Infinity;
+  const tbl = [12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,
+               2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086];
+  if (df <= 20) return tbl[df - 1];
+  if (df <= 30) return 2.086 - (df - 20) * 0.044 / 10;
+  if (df <= 60) return 2.042 - (df - 30) * 0.042 / 30;
+  if (df <= 120) return 2.000 - (df - 60) * 0.020 / 60;
+  return 1.960;
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 /* ═══════════════════════════════════════════════════════════
    FITTING ENGINE — LEVENBERG-MARQUARDT
 ═══════════════════════════════════════════════════════════ */
@@ -194,8 +212,19 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
   const rmse = Math.sqrt(sseVal / Math.max(n - m, 1));
   const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
   const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
+  const dof = Math.max(n - m, 1);
+  let paramErrors = coeffs.map(() => NaN);
+  let covMatrix = null;
+  try {
+    const sig2 = sseVal / dof;
+    const inv = invertMatrix(VtV);
+    if (inv) {
+      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
+      covMatrix = inv.map(row => row.map(v => sig2 * v));
+    }
+  } catch (_) {}
   return {
-    params: coeffs, paramErrors: coeffs.map(() => NaN),
+    params: coeffs, paramErrors, covMatrix, dof,
     rSq, adjRSq, rmse, sse: sseVal, aic, bic,
     converged: true, iter: 0, n, residuals
   };
@@ -413,6 +442,8 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
   const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
   const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
   let paramErrors = p.map(() => NaN);
+  let covMatrix = null;
+  const dof = Math.max(n - m, 1);
   try {
     const J_cols = [];
     for (let j = 0; j < m; j++) {
@@ -424,11 +455,14 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
     }
     const JtJ = Array.from({ length: m }, (_, a) =>
       Array.from({ length: m }, (_, b) => J_cols[a].reduce((s, _, i) => s + J_cols[a][i] * J_cols[b][i], 0)));
-    const sig2 = sseVal / Math.max(n - m, 1);
+    const sig2 = sseVal / dof;
     const inv = invertMatrix(JtJ);
-    if (inv) paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
+    if (inv) {
+      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
+      covMatrix = inv.map(row => row.map(v => sig2 * v));
+    }
   } catch (_) {}
-  return { params: p, paramErrors, rSq, adjRSq, rmse, sse: sseVal, aic, bic,
+  return { params: p, paramErrors, covMatrix, dof, rSq, adjRSq, rmse, sse: sseVal, aic, bic,
            converged: meta.converged, iter: meta.iter, n, residuals: r };
 }
 
@@ -865,7 +899,7 @@ const state = {
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [] },
-  plotConfig: { showResiduals: true, logX: false, logY: false },
+  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   editMode: false,
   selection: { dsId: null, indices: new Set() },
@@ -1016,6 +1050,34 @@ function baseLayout(extra) {
   return Object.assign(base, extra || {});
 }
 
+function computeCIBands(fit, xs) {
+  const { covMatrix, dof, params } = fit.result;
+  if (!covMatrix || dof <= 0) return null;
+  const m = params.length;
+  const tCrit = tCritical95(dof);
+  const EPS = 1e-7;
+  const lower = [], upper = [];
+  for (const x of xs) {
+    const y0 = fitEval(fit, x);
+    if (!isFinite(y0)) { lower.push(null); upper.push(null); continue; }
+    const g = params.map((_, j) => {
+      const pp = params.slice();
+      const h = Math.max(Math.abs(pp[j]) * EPS, EPS);
+      pp[j] += h;
+      try { const v = fit.fn(x, pp); return isFinite(v) ? (v - y0) / h : 0; } catch (_) { return 0; }
+    });
+    let variance = 0;
+    for (let i = 0; i < m; i++)
+      for (let j = 0; j < m; j++)
+        variance += g[i] * covMatrix[i][j] * g[j];
+    if (!isFinite(variance) || variance < 0) variance = 0;
+    const hw = tCrit * Math.sqrt(variance);
+    lower.push(y0 - hw);
+    upper.push(y0 + hw);
+  }
+  return { lower, upper };
+}
+
 function buildMainTraces() {
   const traces = [];
   for (const ds of state.datasets) {
@@ -1040,6 +1102,19 @@ function buildMainTraces() {
       const v = fitEval(fit, x);
       return isFinite(v) ? v : null;
     });
+    if (state.plotConfig.showCI && fit.fn) {
+      const bands = computeCIBands(fit, xs);
+      if (bands) {
+        const bandColor = hexToRgba(fit.color || ds.color, 0.14);
+        traces.push({
+          x: [...xs, ...xs.slice().reverse()],
+          y: [...bands.upper, ...bands.lower.slice().reverse()],
+          fill: 'toself', fillcolor: bandColor,
+          line: { color: 'transparent' }, mode: 'none', type: 'scatter',
+          showlegend: false, hoverinfo: 'skip', name: '_ci_' + fit.id,
+        });
+      }
+    }
     traces.push({
       x: xs, y: ys,
       mode: 'lines', type: 'scatter',
@@ -1066,11 +1141,13 @@ function buildMainTraces() {
 
 function buildResidualTraces() {
   const traces = [];
+  const normalize = state.plotConfig.normalizeResiduals;
   for (const fit of state.fits) {
     if (!fit.visible || !fit.result) continue;
     const ds = state.datasets.find(d => d.id === fit.dsId);
     if (!ds) continue;
-    const residuals = fit.result.residuals;
+    const scale = normalize && fit.result.rmse > 0 ? 1 / fit.result.rmse : 1;
+    const residuals = fit.result.residuals.map(v => v * scale);
     traces.push({
       x: ds.x, y: residuals,
       mode: 'markers', type: 'scatter',
@@ -1110,7 +1187,7 @@ function updatePlots() {
     const resTraces = buildResidualTraces();
     const resLayout = baseLayout({
       margin: { l: 56, r: 20, t: 10, b: 36 },
-      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Residuals', font: { size: 10, color: tc.tickCol } }, zeroline: true }),
+      yaxis: Object.assign(baseLayout().yaxis, { title: { text: state.plotConfig.normalizeResiduals ? 'Norm. Residuals (σ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, zeroline: true }),
       xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 10, color: tc.tickCol } } }),
       showlegend: false,
     });
@@ -1121,7 +1198,7 @@ function updatePlots() {
     const resTraces = buildResidualTraces();
     const resLayout = baseLayout({
       margin: { l: 56, r: 20, t: 10, b: 36 },
-      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Residuals', font: { size: 10, color: tc.tickCol } }, zeroline: true }),
+      yaxis: Object.assign(baseLayout().yaxis, { title: { text: state.plotConfig.normalizeResiduals ? 'Norm. Residuals (σ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, zeroline: true }),
       xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 10, color: tc.tickCol } } }),
       showlegend: false,
     });
@@ -1203,6 +1280,8 @@ function renderFitList() {
   cnt.textContent = state.fits.length;
   if (!state.fits.length) {
     el.innerHTML = '<div class="panel-empty-hint">Press <strong>▶ Fit</strong><br>after loading data.</div>';
+    const corrEl = document.getElementById('corr-matrix-container');
+    if (corrEl) corrEl.innerHTML = '';
     return;
   }
   el.innerHTML = state.fits.map(fit => `
@@ -1299,6 +1378,45 @@ function renderParamResults(fit) {
       state.paramRows[i].init = params[i];
     }
   });
+  renderCorrMatrix(fit);
+}
+
+function renderCorrMatrix(fit) {
+  const el = document.getElementById('corr-matrix-container');
+  if (!el) return;
+  const { covMatrix, params } = fit.result || {};
+  const names = fit.paramNames || [];
+  if (!covMatrix || names.length < 2) { el.innerHTML = ''; return; }
+  const m = names.length;
+  const corr = Array.from({ length: m }, (_, i) =>
+    Array.from({ length: m }, (_, j) => {
+      const denom = Math.sqrt(Math.abs(covMatrix[i][i] * covMatrix[j][j]));
+      return denom < 1e-20 ? (i === j ? 1 : 0) : covMatrix[i][j] / denom;
+    })
+  );
+  function corrColor(v) {
+    const c = Math.max(-1, Math.min(1, v));
+    if (c >= 0) {
+      const t = c;
+      const r = Math.round(255 - t * (255 - 29)), g = Math.round(255 - t * (255 - 78)), b = Math.round(255 - t * (255 - 216));
+      return `rgb(${r},${g},${b})`;
+    } else {
+      const t = -c;
+      const r = Math.round(255 - t * (255 - 220)), g = Math.round(255 - t * (255 - 38)), b = Math.round(255 - t * (255 - 38));
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+  const isDk = document.body.classList.contains('dark-mode');
+  const header = `<tr><th></th>${names.map(n => `<th title="${n}">${n.length > 4 ? n.slice(0,4) : n}</th>`).join('')}</tr>`;
+  const bodyRows = corr.map((row, i) =>
+    `<tr><td>${names[i].length > 4 ? names[i].slice(0,4) : names[i]}</td>` +
+    row.map((v, j) => {
+      const bg = corrColor(v);
+      const txtClr = Math.abs(v) > 0.55 ? '#fff' : (isDk ? '#e2e8f0' : '#1a202c');
+      return `<td style="background:${bg};color:${txtClr}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+  el.innerHTML = `<div class="corr-matrix-label">Parameter Correlations</div><table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
 }
 
 let _consoleMsg = { text: '', type: '', timer: null };
@@ -2225,13 +2343,15 @@ function restoreSessionPayload(payload) {
   const eqInput = document.getElementById('custom-eq-input');
   if (eqInput && state.fitConfig.customExpr) { eqInput.value = state.fitConfig.customExpr; parseCustomEquation(state.fitConfig.customExpr); }
   // Reset toggle button states before restoring to prevent state leak across tabs
-  ['btn-log-x', 'btn-log-y', 'btn-toggle-residuals'].forEach(id => {
+  ['btn-log-x', 'btn-log-y', 'btn-toggle-residuals', 'btn-ci-bands', 'btn-norm-resid'].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.classList.remove('active');
   });
-  if (state.plotConfig.logX)          document.getElementById('btn-log-x').classList.add('active');
-  if (state.plotConfig.logY)          document.getElementById('btn-log-y').classList.add('active');
+  if (state.plotConfig.logX)               document.getElementById('btn-log-x').classList.add('active');
+  if (state.plotConfig.logY)               document.getElementById('btn-log-y').classList.add('active');
   if (state.plotConfig.showResiduals !== false) document.getElementById('btn-toggle-residuals').classList.add('active');
+  if (state.plotConfig.showCI)             document.getElementById('btn-ci-bands').classList.add('active');
+  if (state.plotConfig.normalizeResiduals) document.getElementById('btn-norm-resid').classList.add('active');
   document.getElementById('residual-plot').classList.toggle('hidden', state.plotConfig.showResiduals === false);
 
   // Restore axis labels before updatePlots() reads them
@@ -2639,6 +2759,16 @@ function initEvents() {
     this.classList.toggle('active', state.plotConfig.showResiduals);
     document.getElementById('residual-plot').classList.toggle('hidden', !state.plotConfig.showResiduals);
     if (state.plotConfig.showResiduals) Plotly.Plots.resize('residual-plot');
+  });
+  document.getElementById('btn-ci-bands').addEventListener('click', function () {
+    state.plotConfig.showCI = !state.plotConfig.showCI;
+    this.classList.toggle('active', state.plotConfig.showCI);
+    updatePlots();
+  });
+  document.getElementById('btn-norm-resid').addEventListener('click', function () {
+    state.plotConfig.normalizeResiduals = !state.plotConfig.normalizeResiduals;
+    this.classList.toggle('active', state.plotConfig.normalizeResiduals);
+    updatePlots();
   });
   document.getElementById('btn-log-x').addEventListener('click', function () {
     state.plotConfig.logX = !state.plotConfig.logX;

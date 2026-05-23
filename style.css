@@ -629,3 +629,14 @@ body.dark-mode .param-name{color:#2dd4bf!important}
 body.dark-mode .param-result{color:#2dd4bf!important}
 body.dark-mode .panel-fit-count{background:#0b7a6e!important}
 body.dark-mode .param-table-header{color:#3d5470!important}
+
+/* ── Correlation matrix ──────────────────────────────────── */
+#corr-matrix-container{margin-top:8px}
+.corr-matrix-label{font-size:.65em;text-transform:uppercase;letter-spacing:.07em;color:var(--dimmer);margin-bottom:5px;font-family:var(--sans)}
+.corr-matrix{border-collapse:collapse;width:100%;font-size:.68em;font-family:var(--mono)}
+.corr-matrix th{padding:2px 4px;text-align:center;color:var(--dimmer);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px}
+.corr-matrix th:first-child{text-align:right;color:var(--dimmer)}
+.corr-matrix td{padding:2px 4px;text-align:center;border-radius:3px;transition:opacity .1s}
+.corr-matrix td:first-child{text-align:right;color:var(--muted);font-size:.85em;background:none!important;padding-right:6px}
+body.dark-mode .corr-matrix th{color:#3d5470!important}
+body.dark-mode .corr-matrix td:first-child{color:#7a90ae!important}
