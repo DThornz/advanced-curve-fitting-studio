@@ -711,6 +711,22 @@ function gauss() {
   return u * Math.sqrt(-2 * Math.log(u * u + v * v) / (u * u + v * v));
 }
 function noisyGauss(arr, sigma) { return arr.map(v => v + gauss() * sigma); }
+function injectOutliers(arr, count) {
+  if (!count || count <= 0) return arr;
+  const result = arr.slice();
+  const n = result.length;
+  const finite = arr.filter(v => isFinite(v));
+  if (!finite.length) return result;
+  const lo = Math.min(...finite), hi = Math.max(...finite);
+  const range = Math.max(hi - lo, Math.abs(hi + lo) * 0.1, 1e-10);
+  const pool = Array.from({ length: n }, (_, i) => i);
+  for (let k = 0; k < Math.min(count, n); k++) {
+    const j = Math.floor(Math.random() * pool.length);
+    const i = pool.splice(j, 1)[0];
+    result[i] += (Math.random() < 0.5 ? 1 : -1) * range * (3 + Math.random() * 3);
+  }
+  return result;
+}
 
 const EXAMPLES = {
   'exponential-decay': {
@@ -719,9 +735,10 @@ const EXAMPLES = {
       { key: 'A',    label: 'Amplitude (A)',  value: 95,   min: 1,    max: 500,  step: 1    },
       { key: 'b',    label: 'Decay rate (b)', value: 0.18, min: 0.01, max: 5,    step: 0.01 },
       { key: 'C',    label: 'Offset (C)',      value: 2,    min: -100, max: 200,  step: 0.5  },
-      { key: 'noise',label: 'Noise (σ)',       value: 1.5,  min: 0,    max: 30,   step: 0.1  },
-      { key: 'N',    label: 'Points (N)',      value: 24,   min: 5,    max: 200,  step: 1    },
-      { key: 'xmax', label: 'x max',           value: 20,   min: 1,    max: 200,  step: 1    },
+      { key: 'noise',   label: 'Noise (σ)',       value: 1.5,  min: 0,    max: 30,   step: 0.1  },
+      { key: 'N',       label: 'Points (N)',      value: 24,   min: 5,    max: 200,  step: 1    },
+      { key: 'xmax',    label: 'x max',           value: 20,   min: 1,    max: 200,  step: 1    },
+      { key: 'outliers',label: 'Outliers',         value: 0,    min: 0,    max: 8,    step: 1    },
     ],
     generate(p) {
       const t = linspace(0, p.xmax, p.N);
@@ -735,10 +752,11 @@ const EXAMPLES = {
       { key: 'mu',   label: 'Center (μ)',     value: 0.5,  min: -20,  max: 20,   step: 0.1  },
       { key: 'sig',  label: 'Width (σ)',      value: 1.2,  min: 0.05, max: 20,   step: 0.05 },
       { key: 'C',    label: 'Baseline (C)',   value: 5,    min: -50,  max: 200,  step: 1    },
-      { key: 'noise',label: 'Noise (σ)',      value: 3,    min: 0,    max: 50,   step: 0.5  },
-      { key: 'N',    label: 'Points (N)',     value: 40,   min: 5,    max: 200,  step: 1    },
-      { key: 'xmin', label: 'x min',          value: -6,   min: -50,  max: 0,    step: 0.5  },
-      { key: 'xmax', label: 'x max',          value: 6,    min: 0,    max: 50,   step: 0.5  },
+      { key: 'noise',   label: 'Noise (σ)',      value: 3,    min: 0,    max: 50,   step: 0.5  },
+      { key: 'N',       label: 'Points (N)',     value: 40,   min: 5,    max: 200,  step: 1    },
+      { key: 'xmin',    label: 'x min',          value: -6,   min: -50,  max: 0,    step: 0.5  },
+      { key: 'xmax',    label: 'x max',          value: 6,    min: 0,    max: 50,   step: 0.5  },
+      { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,    max: 8,    step: 1    },
     ],
     generate(p) {
       const x = linspace(p.xmin, p.xmax, p.N);
@@ -751,9 +769,10 @@ const EXAMPLES = {
       { key: 'L',    label: 'Capacity (L)',    value: 1e6,  min: 100,  max: 1e9,  step: 1e4  },
       { key: 'k',    label: 'Growth rate (k)', value: 0.18, min: 0.01, max: 2,    step: 0.01 },
       { key: 'x0',   label: 'Midpoint (x₀)',   value: 20,   min: 1,    max: 100,  step: 0.5  },
-      { key: 'noise',label: 'Noise (σ)',        value: 1.5e4,min: 0,    max: 5e5,  step: 1e3  },
-      { key: 'N',    label: 'Points (N)',       value: 32,   min: 5,    max: 200,  step: 1    },
-      { key: 'xmax', label: 'x max',            value: 48,   min: 5,    max: 200,  step: 1    },
+      { key: 'noise',   label: 'Noise (σ)',        value: 1.5e4,min: 0,    max: 5e5,  step: 1e3  },
+      { key: 'N',       label: 'Points (N)',       value: 32,   min: 5,    max: 200,  step: 1    },
+      { key: 'xmax',    label: 'x max',            value: 48,   min: 5,    max: 200,  step: 1    },
+      { key: 'outliers',label: 'Outliers',          value: 0,    min: 0,    max: 8,    step: 1    },
     ],
     generate(p) {
       const t = linspace(0, p.xmax, p.N);
@@ -764,8 +783,9 @@ const EXAMPLES = {
     title: 'Michaelis-Menten (Enzyme Kinetics)',
     params: [
       { key: 'Vmax', label: 'Vmax',          value: 450,  min: 1,    max: 5000, step: 10   },
-      { key: 'Km',   label: 'Km',            value: 12,   min: 0.01, max: 500,  step: 0.5  },
-      { key: 'noise',label: 'Noise (σ)',      value: 8,    min: 0,    max: 100,  step: 0.5  },
+      { key: 'Km',      label: 'Km',            value: 12,   min: 0.01, max: 500,  step: 0.5  },
+      { key: 'noise',   label: 'Noise (σ)',      value: 8,    min: 0,    max: 100,  step: 0.5  },
+      { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,    max: 6,    step: 1    },
     ],
     generate(p) {
       const S = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 40, 80, 150, 250];
@@ -779,9 +799,10 @@ const EXAMPLES = {
       { key: 'gamma', label: 'Damping (γ)',    value: 0.3,  min: 0,     max: 5,    step: 0.05 },
       { key: 'omega', label: 'Frequency (ω)', value: 3.2,  min: 0.1,   max: 20,   step: 0.1  },
       { key: 'phi',   label: 'Phase (φ)',      value: 0.5,  min: -3.14, max: 3.14, step: 0.1  },
-      { key: 'noise', label: 'Noise (σ)',      value: 0.3,  min: 0,     max: 10,   step: 0.05 },
-      { key: 'N',     label: 'Points (N)',     value: 60,   min: 5,     max: 300,  step: 1    },
-      { key: 'xmax',  label: 'x max',          value: 10,   min: 1,     max: 100,  step: 1    },
+      { key: 'noise',   label: 'Noise (σ)',      value: 0.3,  min: 0,     max: 10,   step: 0.05 },
+      { key: 'N',       label: 'Points (N)',     value: 60,   min: 5,     max: 300,  step: 1    },
+      { key: 'xmax',    label: 'x max',          value: 10,   min: 1,     max: 100,  step: 1    },
+      { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,     max: 8,    step: 1    },
     ],
     generate(p) {
       const t = linspace(0, p.xmax, p.N);
@@ -793,9 +814,10 @@ const EXAMPLES = {
     params: [
       { key: 'm',    label: 'Slope (m)',      value: 2.45, min: -100, max: 100,  step: 0.05 },
       { key: 'b',    label: 'Intercept (b)',  value: 0.12, min: -100, max: 100,  step: 0.05 },
-      { key: 'noise',label: 'Noise (σ)',       value: 0.15, min: 0,    max: 20,   step: 0.05 },
-      { key: 'N',    label: 'Points (N)',      value: 18,   min: 3,    max: 200,  step: 1    },
-      { key: 'xmax', label: 'x max',           value: 10,   min: 1,    max: 100,  step: 1    },
+      { key: 'noise',   label: 'Noise (σ)',       value: 0.15, min: 0,    max: 20,   step: 0.05 },
+      { key: 'N',       label: 'Points (N)',      value: 18,   min: 3,    max: 200,  step: 1    },
+      { key: 'xmax',    label: 'x max',           value: 10,   min: 1,    max: 100,  step: 1    },
+      { key: 'outliers',label: 'Outliers',         value: 0,    min: 0,    max: 8,    step: 1    },
     ],
     generate(p) {
       const c = linspace(0, p.xmax, p.N);
@@ -807,8 +829,9 @@ const EXAMPLES = {
     params: [
       { key: 'Vmax', label: 'Vmax',            value: 300,  min: 1,    max: 5000, step: 10   },
       { key: 'Kd',   label: 'Kd (EC50)',       value: 4,    min: 0.01, max: 200,  step: 0.1  },
-      { key: 'n',    label: 'Hill coeff. (n)', value: 2.5,  min: 0.1,  max: 10,   step: 0.1  },
-      { key: 'noise',label: 'Noise (σ)',        value: 6,    min: 0,    max: 100,  step: 1    },
+      { key: 'n',       label: 'Hill coeff. (n)', value: 2.5,  min: 0.1,  max: 10,   step: 0.1  },
+      { key: 'noise',   label: 'Noise (σ)',        value: 6,    min: 0,    max: 100,  step: 1    },
+      { key: 'outliers',label: 'Outliers',          value: 0,    min: 0,    max: 6,    step: 1    },
     ],
     generate(p) {
       const S = [0.1,0.25,0.5,1,1.5,2,3,4,6,8,12,18,25,35,50,75,100];
@@ -820,8 +843,9 @@ const EXAMPLES = {
     params: [
       { key: 'a',    label: 'Scale (a)',   value: 0.014, min: 0.001, max: 100,  step: 0.001 },
       { key: 'b',    label: 'Exponent (b)',value: 0.75,  min: 0.1,   max: 3,    step: 0.05  },
-      { key: 'noise',label: 'Noise (σ%)',  value: 8,     min: 0,     max: 50,   step: 1     },
-      { key: 'N',    label: 'Points (N)',  value: 24,    min: 4,     max: 100,  step: 1     },
+      { key: 'noise',   label: 'Noise (σ%)',  value: 8,     min: 0,     max: 50,   step: 1     },
+      { key: 'N',       label: 'Points (N)',  value: 24,    min: 4,     max: 100,  step: 1     },
+      { key: 'outliers',label: 'Outliers',     value: 0,     min: 0,     max: 8,    step: 1     },
     ],
     generate(p) {
       const masses = [0.01,0.03,0.07,0.15,0.3,0.5,1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,30000,60000,100000,300000,700000];
@@ -838,8 +862,9 @@ const EXAMPLES = {
       { key: 'x0',   label: 'Center (x₀)',   value: 3.6,  min: -50,  max: 50,   step: 0.1  },
       { key: 'g',    label: 'Half-width (γ)', value: 0.4,  min: 0.01, max: 10,   step: 0.05 },
       { key: 'C',    label: 'Baseline (C)',   value: 4,    min: -50,  max: 200,  step: 1    },
-      { key: 'noise',label: 'Noise (σ)',      value: 4,    min: 0,    max: 50,   step: 0.5  },
-      { key: 'N',    label: 'Points (N)',     value: 50,   min: 5,    max: 200,  step: 1    },
+      { key: 'noise',   label: 'Noise (σ)',      value: 4,    min: 0,    max: 50,   step: 0.5  },
+      { key: 'N',       label: 'Points (N)',     value: 50,   min: 5,    max: 200,  step: 1    },
+      { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,    max: 8,    step: 1    },
     ],
     generate(p) {
       const x = linspace(p.x0 - 6 * p.g, p.x0 + 6 * p.g, p.N);
@@ -851,8 +876,9 @@ const EXAMPLES = {
     params: [
       { key: 'lam',  label: 'Scale (λ)',      value: 500,  min: 10,   max: 10000, step: 10  },
       { key: 'k',    label: 'Shape (k)',       value: 2.2,  min: 0.5,  max: 10,    step: 0.1 },
-      { key: 'noise',label: 'Noise (σ)',       value: 0.02, min: 0,    max: 0.2,   step: 0.005},
-      { key: 'N',    label: 'Points (N)',      value: 30,   min: 5,    max: 100,   step: 1   },
+      { key: 'noise',   label: 'Noise (σ)',       value: 0.02, min: 0,    max: 0.2,   step: 0.005},
+      { key: 'N',       label: 'Points (N)',      value: 30,   min: 5,    max: 100,   step: 1   },
+      { key: 'outliers',label: 'Outliers',         value: 0,    min: 0,    max: 8,     step: 1   },
     ],
     generate(p) {
       const t = linspace(10, p.lam * 2, p.N);
@@ -866,9 +892,10 @@ const EXAMPLES = {
       { key: 'a2',   label: 'a₂ (quadratic)', value: 0.22,   min: -5,   max: 5,    step: 0.01  },
       { key: 'a1',   label: 'a₁ (linear)',    value: 1.85,   min: -20,  max: 20,   step: 0.05  },
       { key: 'a0',   label: 'a₀ (offset)',    value: 0.05,   min: -10,  max: 10,   step: 0.01  },
-      { key: 'noise',label: 'Noise (σ)',       value: 0.4,    min: 0,    max: 5,    step: 0.05  },
-      { key: 'N',    label: 'Points (N)',      value: 22,     min: 5,    max: 100,  step: 1     },
-      { key: 'xmax', label: 'x max',           value: 20,     min: 1,    max: 100,  step: 1     },
+      { key: 'noise',   label: 'Noise (σ)',       value: 0.4,    min: 0,    max: 5,    step: 0.05  },
+      { key: 'N',       label: 'Points (N)',      value: 22,     min: 5,    max: 100,  step: 1     },
+      { key: 'xmax',    label: 'x max',           value: 20,     min: 1,    max: 100,  step: 1     },
+      { key: 'outliers',label: 'Outliers',         value: 0,      min: 0,    max: 8,    step: 1     },
     ],
     generate(p) {
       const x = linspace(0, p.xmax, p.N);
@@ -882,9 +909,10 @@ const EXAMPLES = {
       { key: 'omega',label: 'Frequency (ω)', value: 1.4,  min: 0.05,  max: 20,   step: 0.05 },
       { key: 'phi',  label: 'Phase (φ)',      value: 0.8,  min: -3.14, max: 3.14, step: 0.05 },
       { key: 'C',    label: 'Offset (C)',     value: 1.2,  min: -50,   max: 50,   step: 0.1  },
-      { key: 'noise',label: 'Noise (σ)',      value: 0.4,  min: 0,     max: 10,   step: 0.05 },
-      { key: 'N',    label: 'Points (N)',     value: 60,   min: 10,    max: 300,  step: 1    },
-      { key: 'xmax', label: 'x max (periods)',value: 8,    min: 1,     max: 50,   step: 0.5  },
+      { key: 'noise',   label: 'Noise (σ)',      value: 0.4,  min: 0,     max: 10,   step: 0.05 },
+      { key: 'N',       label: 'Points (N)',     value: 60,   min: 10,    max: 300,  step: 1    },
+      { key: 'xmax',    label: 'x max (periods)',value: 8,    min: 1,     max: 50,   step: 0.5  },
+      { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,     max: 8,    step: 1    },
     ],
     generate(p) {
       const xmax = p.xmax * (2 * Math.PI / p.omega);
@@ -1175,11 +1203,13 @@ function buildMainTraces() {
     // Active (non-excluded) points
     const activeX = ds.x.filter((_, i) => !excluded.has(i));
     const activeY = ds.y.filter((_, i) => !excluded.has(i));
+    const activeOrigIdx = ds.x.map((_, i) => i).filter(i => !excluded.has(i));
     traces.push({
       x: activeX, y: activeY,
       mode: 'markers', type: 'scatter', name: ds.name,
       marker: { color: ds.color, size: 6, opacity: dimmed ? 0.25 : 0.85 },
       opacity: dimmed ? 0.3 : 1, showlegend: true,
+      customdata: activeOrigIdx,
     });
     // Excluded (masked) points — shown as dim crosses
     if (excluded.size > 0) {
@@ -1960,6 +1990,7 @@ function loadExampleFromModal() {
   ex.params.forEach(d => { if (d.step === 1) p[d.key] = Math.max(d.min, Math.round(p[d.key])); });
 
   const data = ex.generate(p);
+  if (p.outliers > 0) data.y = injectOutliers(data.y, Math.round(p.outliers));
   closeExampleModal();
   const ds = importDataset(data.name, data.x, data.y);
   if (!ds) return;
@@ -2221,10 +2252,10 @@ function initEditMode() {
     } else {
       // Exact click
       const pt = data.points[0];
-      if (!pt || pt.data.mode !== 'markers' || pt.data.name === '_sel') return;
+      if (!pt || pt.data.mode !== 'markers' || (pt.data.name || '').startsWith('_')) return;
       const ds = state.datasets.find(d => d.name === pt.data.name);
       if (!ds) return;
-      const idx = pt.pointIndex;
+      const idx = (pt.customdata != null && pt.customdata >= 0) ? pt.customdata : pt.pointIndex;
       if (shift && state.selection.dsId === ds.id) {
         // Shift+click: toggle this point
         state.selection.indices.has(idx) ? state.selection.indices.delete(idx) : state.selection.indices.add(idx);
