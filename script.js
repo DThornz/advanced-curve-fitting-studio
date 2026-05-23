@@ -629,13 +629,34 @@ function renderDatasetList() {
       <span class="ds-swatch" style="background:${ds.color}"></span>
       <span class="ds-label" title="${ds.name}">${ds.name}</span>
       <span class="ds-count">${ds.x.length}pt</span>
+      <button class="ds-delete" data-delid="${ds.id}" title="Remove dataset">×</button>
     </div>`).join('');
-  el.querySelectorAll('.ds-item').forEach(el => {
-    el.addEventListener('click', () => {
-      state.activeDatasetId = parseInt(el.dataset.dsid);
+  el.querySelectorAll('.ds-item').forEach(item => {
+    item.addEventListener('click', () => {
+      state.activeDatasetId = parseInt(item.dataset.dsid);
       syncFitDatasetSelect();
       renderDatasetList();
       renderFitList();
+    });
+  });
+  el.querySelectorAll('.ds-delete').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.delid);
+      state.datasets = state.datasets.filter(d => d.id !== id);
+      state.fits = state.fits.filter(f => f.dsId !== id);
+      if (state.activeDatasetId === id) {
+        state.activeDatasetId = state.datasets.length ? state.datasets[state.datasets.length - 1].id : null;
+      }
+      if (state.activeFitId && !state.fits.find(f => f.id === state.activeFitId)) {
+        state.activeFitId = state.fits.length ? state.fits[state.fits.length - 1].id : null;
+      }
+      syncFitDatasetSelect();
+      renderDatasetList();
+      renderFitList();
+      updatePlots();
+      const active = state.fits.find(f => f.id === state.activeFitId);
+      if (active) renderStats(active); else setConsole('Dataset removed.', '');
     });
   });
 }

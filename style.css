@@ -250,6 +250,16 @@ body.size-lg .app-shell{font-size:16px!important}
 .ds-swatch{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .ds-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ds-count{font-size:.65em;color:var(--dimmer);margin-left:auto}
+.ds-delete{
+  flex-shrink:0;margin-left:4px;
+  background:none;border:none;cursor:pointer;
+  color:var(--dimmer);font-size:.85em;line-height:1;
+  padding:0 2px;border-radius:3px;
+  opacity:0;transition:opacity .12s,color .12s;
+}
+.ds-item:hover .ds-delete{opacity:1}
+.ds-delete:hover{color:var(--red)!important}
+body.dark-mode .ds-delete:hover{color:#ef4444!important}
 .fit-item-eq{font-size:.65em;color:var(--dimmer);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:1px}
 
 /* ── Center plot area ────────────────────────────────────── */
