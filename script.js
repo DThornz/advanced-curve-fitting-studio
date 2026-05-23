@@ -2264,11 +2264,6 @@ function initEditMode() {
     isDragging = false;
     histPushed = false;
 
-    // Auto-reveal edit controls on first interaction
-    const ctrl = document.getElementById('edit-mode-controls');
-    if (ctrl && ctrl.style.display !== 'flex') ctrl.style.display = 'flex';
-    document.getElementById('btn-edit-mode').classList.add('active');
-
     updatePlots();
     syncUndoRedoButtons();
   }, { capture: true });
