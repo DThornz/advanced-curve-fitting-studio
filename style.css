@@ -227,7 +227,7 @@ body.size-lg .app-shell{font-size:16px!important}
 .app-toolbar-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
 
 /* ── Workspace ────────────────────────────────────────────── */
-.app-workspace{display:flex;height:680px;min-height:320px;flex-shrink:0;overflow:hidden}
+.app-workspace{display:flex;height:760px;min-height:320px;flex-shrink:0;overflow:hidden}
 
 /* ── Left panel ──────────────────────────────────────────── */
 .app-left{
