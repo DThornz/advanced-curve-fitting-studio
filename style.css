@@ -130,6 +130,14 @@ body.dark-mode .acc-toggle-label{color:#94a3b8}
 body.dark-mode .acc-opt{background:#132240;border-color:#1c3050;color:#7a90ae}
 body.dark-mode .acc-opt.active{background:rgba(45,212,191,.15);border-color:#2dd4bf;color:#2dd4bf}
 
+/* ── Scroll reveal ───────────────────────────────────────── */
+.reveal{
+  opacity:0;
+  transform:translateY(18px) scale(0.975);
+  transition:opacity .55s cubic-bezier(.22,.68,0,1.2), transform .55s cubic-bezier(.22,.68,0,1.2)
+}
+.reveal.visible{opacity:1;transform:translateY(0) scale(1)}
+
 /* ─── Font & Size variants ───────────────────────────────── */
 body.font-serif,body.font-serif *:not(code):not(pre){font-family:'DM Serif Display',Georgia,serif!important}
 body.font-mono,body.font-mono *:not(code):not(pre){font-family:'DM Mono','Courier New',monospace!important}
@@ -425,7 +433,7 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 .console-status-err{font-size:.75em;color:var(--red);font-family:var(--mono)}
 
 /* ── Stats table ─────────────────────────────────────────── */
-.stats-table-wrap{overflow-y:auto;max-height:196px;width:100%}
+.stats-table-wrap{overflow-y:auto;max-height:128px;width:100%}
 .stats-table{width:100%;border-collapse:collapse;font-size:.73em;font-family:var(--mono);table-layout:fixed}
 .stats-table thead{position:sticky;top:0;z-index:2}
 .stats-table thead tr{background:var(--bg3)}

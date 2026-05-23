@@ -75,7 +75,7 @@
      LAUNCH CARD
 ══════════════════════════════════════════════════════════ -->
 <div class="app-section app-launch-section" id="app">
-  <div class="app-launch-card">
+  <div class="app-launch-card reveal">
     <div class="app-launch-icon">📈</div>
     <h2 class="app-launch-title">Advanced Curve Fitting Studio</h2>
     <p class="app-launch-desc">Browser-native nonlinear regression — 16+ built-in models, four algorithms, interactive Plotly plots, custom equations. All computation runs locally; no server, no install.</p>
@@ -345,13 +345,16 @@
 <!-- ══════════════════════════════════════════════════════════
      §2  BACKGROUND
 ══════════════════════════════════════════════════════════ -->
-<div class="section">
+<div class="section reveal">
   <div class="section-num">§ 2</div>
   <h2 class="section-title">Background</h2>
   <div class="section-body">
     <p><strong>Curve fitting</strong> — also called regression analysis or parameter estimation — is the process of constructing a mathematical model that best describes a set of measured data. It is one of the most fundamental quantitative techniques across scientific and engineering disciplines: from pharmacokinetics and enzyme kinetics in biology, to signal processing and materials characterisation in engineering, to cosmological parameter fitting in physics.</p>
     <p>The core problem: given $n$ data pairs $\{(x_i, y_i)\}_{i=1}^n$ and a parameterised model $f(x;\,\boldsymbol{p})$, find the parameter vector $\boldsymbol{p} \in \mathbb{R}^m$ that makes $f$ agree with the data as closely as possible in a well-defined sense. The standard criterion is <strong>ordinary least squares (OLS)</strong> — minimise the sum of squared residuals. For Gaussian measurement noise this coincides with maximum-likelihood estimation.</p>
     <p>Linear models — where $f$ is linear in $\boldsymbol{p}$ — admit a closed-form analytic solution. Most physically motivated models (exponential decays, Gaussian peaks, Michaelis-Menten kinetics, logistic growth) are <strong>nonlinear</strong> in their parameters and require iterative numerical optimisation. This application implements four nonlinear solvers — Levenberg-Marquardt, Gauss-Newton, Nelder-Mead Simplex, and BFGS — selectable per fit, and analytic normal-equation solving for polynomials.</p>
+    <p><strong>Local minima and initial values.</strong> The SSE landscape for nonlinear models is generally non-convex: multiple local minima may exist, and gradient-based solvers converge to whichever basin their starting point falls in. Poor initial parameter guesses can therefore produce meaningless results even when the algorithm reports convergence. The app provides data-driven <em>Auto Init</em> heuristics for every built-in model, and an optional <em>multi-start</em> strategy that launches several pilot runs from log-scale-perturbed starting points and polishes the best candidate — substantially reducing the risk of landing in a spurious local minimum.</p>
+    <p><strong>Overfitting and model selection.</strong> A model with more free parameters will always achieve a lower SSE, but at the cost of fitting noise rather than signal. The Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) each penalise model complexity explicitly, allowing fair comparison across models of different sizes on the same dataset. Adjusted $R^2$ applies a degrees-of-freedom correction for the same reason. As a rule of thumb: prefer the simpler model whose AIC/BIC is within 2 units of the best-scoring model; a difference greater than 10 is considered very strong evidence in favour of the lower-scoring model.</p>
+    <p><strong>Parameter identifiability.</strong> A parameter is <em>identifiable</em> if it can be uniquely recovered from noise-free data. Some models are structurally non-identifiable — for example, $y = (a \cdot b)\,e^{cx}$ conflates $a$ and $b$ into a single effective amplitude. Over-parameterised custom equations can exhibit the same pathology, manifesting as near-singular Jacobians and unreliable parameter standard errors. If standard errors are reported as <code>NaN</code> or are orders of magnitude larger than the parameter values, the model is likely non-identifiable given the available data.</p>
   </div>
   <div class="callout">
     <div class="callout-title">Fully Local &amp; Offline</div>
@@ -362,7 +365,7 @@
 <!-- ══════════════════════════════════════════════════════════
      §3  MATHEMATICAL FORMULATION
 ══════════════════════════════════════════════════════════ -->
-<div class="section">
+<div class="section reveal">
   <div class="section-num">§ 3</div>
   <h2 class="section-title">Mathematical Formulation</h2>
   <div class="section-body">
@@ -408,7 +411,7 @@
 <!-- ══════════════════════════════════════════════════════════
      §4  FITTING ALGORITHMS
 ══════════════════════════════════════════════════════════ -->
-<div class="section">
+<div class="section reveal">
   <div class="section-num">§ 4</div>
   <h2 class="section-title">Fitting Algorithms</h2>
   <div class="section-body">
@@ -487,7 +490,7 @@
   </div>
 </div>
 
-</div><!-- end theory-wrap §1-3 -->
+</div><!-- end theory-wrap §2-4 -->
 
 <!-- Example Generator Modal -->
 <div class="modal-backdrop" id="example-modal" style="display:none;align-items:center;justify-content:center">
@@ -565,31 +568,120 @@
 <div class="page-wrap">
 
 <!-- ══════════════════════════════════════════════════════════
-     §5  MODEL REFERENCE
+     §5  USING THE STUDIO
 ══════════════════════════════════════════════════════════ -->
-<div class="section">
+<div class="section reveal">
   <div class="section-num">§ 5</div>
+  <h2 class="section-title">Using the Studio</h2>
+  <div class="section-body">
+
+    <p><strong>Quick-start workflow.</strong> Click <em>Start Advanced Curve Fitting Studio</em> on this page to open the full-screen app. Load a dataset (Examples, Import, or Paste), select a model from the right panel, press <kbd>▶ Fit</kbd> (or <kbd>Ctrl+Enter</kbd>), and read the diagnostics from the stats bar at the bottom. That's the entire core loop.</p>
+
+    <p><strong>Loading data.</strong> Three routes are available:</p>
+    <ul style="margin:8px 0 8px 20px;line-height:1.8">
+      <li><strong>Examples</strong> — 12 built-in synthetic datasets with adjustable noise, covering every major model family. Each example pre-selects the matching model and sensible initial parameters.</li>
+      <li><strong>Import CSV / TSV / TXT</strong> — drag a file onto the plot area or use the Import button. Headers are optional; the first two numeric columns are used as X and Y. Comma, semicolon, tab, and space delimiters are all detected automatically.</li>
+      <li><strong>Paste Data</strong> — paste directly from Excel, a terminal, or any text editor. The delimiter auto-detection handles mixed formats.</li>
+    </ul>
+    <p>Multiple datasets can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled for fitting using the toggle button (●) that appears on hover.</p>
+
+    <p><strong>Selecting a model.</strong> The right panel lists 16 built-in models grouped by family. A guide to choosing:</p>
+    <table class="param-table" style="margin:10px 0;font-size:.8em">
+      <thead><tr><th>If your data looks like…</th><th>Try</th></tr></thead>
+      <tbody>
+        <tr><td>Straight line</td><td>Linear</td></tr>
+        <tr><td>Curved but monotone, passes through origin at a power</td><td>Power Law</td></tr>
+        <tr><td>Smooth curve of unknown shape</td><td>Polynomial (start degree 3–4, compare AIC)</td></tr>
+        <tr><td>Rapid initial rise/fall that levels off</td><td>Exp Decay + Offset or Michaelis-Menten</td></tr>
+        <tr><td>S-shaped transition between two plateaux</td><td>Logistic / Sigmoid or Hill Equation</td></tr>
+        <tr><td>Symmetric bell-shaped peak</td><td>Gaussian Peak</td></tr>
+        <tr><td>Sharper, heavier-tailed peak</td><td>Lorentzian Peak</td></tr>
+        <tr><td>Periodic oscillation</td><td>Sinusoidal</td></tr>
+        <tr><td>Oscillation with decaying amplitude</td><td>Damped Sinusoid</td></tr>
+        <tr><td>CDF-shaped curve reaching a plateau at 1</td><td>Weibull CDF</td></tr>
+        <tr><td>None of the above</td><td>Custom Equation</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Initial parameter strategy.</strong> For iterative (nonlinear) models, the quality of the initial guess strongly affects convergence. Click <strong>Auto Init</strong> to run data-driven heuristics: amplitudes are estimated from the data range, rate constants from zero-crossing counts or log-linear regression, peak centres from the data maximum, and so on. If Auto Init produces a poor fit, inspect the parameter table and adjust manually — look at the plot to understand what each parameter physically controls. Enabling <strong>Multi-start</strong> (default: 8 pilots) perturbs the initial guess log-uniformly across an order of magnitude and picks the best result automatically, at the cost of ~4× compute time.</p>
+
+    <p><strong>Interpreting fit diagnostics.</strong> The stats bar at the bottom shows all active fits side-by-side:</p>
+    <table class="param-table" style="margin:10px 0;font-size:.8em">
+      <thead><tr><th>Metric</th><th>What it tells you</th><th>Good range</th></tr></thead>
+      <tbody>
+        <tr><td>$R^2$</td><td>Fraction of variance in $y$ explained by the model</td><td>0.99+ for precise data; 0.95+ acceptable</td></tr>
+        <tr><td>Adj. $R^2$</td><td>$R^2$ penalised for extra parameters — use this to compare models of different complexity</td><td>Higher is better; should be close to $R^2$</td></tr>
+        <tr><td>RMSE</td><td>Typical residual size in the same units as $y$</td><td>Should be comparable to your measurement noise</td></tr>
+        <tr><td>AIC / BIC</td><td>Model quality penalised for complexity — allows fair comparison across models</td><td>Lower is better; difference &gt; 10 is decisive</td></tr>
+        <tr><td>Status</td><td>✓ = converged within tolerance; ⚠ = hit iteration limit without converging</td><td>Always aim for ✓</td></tr>
+      </tbody>
+    </table>
+    <p>Toggle the <strong>Residuals</strong> panel to inspect $y_i - \hat{y}_i$ vs. $x_i$. A good fit shows randomly scattered residuals around zero with no systematic trend. Curved residuals indicate the wrong model family. Fanning residuals (variance growing with $x$) suggest heteroscedasticity — consider log-transforming $y$.</p>
+
+    <p><strong>Custom equations.</strong> Select <em>Custom Equation</em> from the model dropdown. Type any expression in the variable <code>x</code> using Math.js syntax. Parameters are any symbols other than <code>x</code> and standard math functions. Examples:</p>
+    <div class="eq-block" style="margin:10px 0">
+      <div class="eq-row"><span class="eq-label">Double exp.:</span><span class="eq-main"><code>a * exp(-b*x) + c * exp(-d*x)</code></span></div>
+      <div class="eq-row"><span class="eq-label">Power + offset:</span><span class="eq-main"><code>a * x^b + c</code></span></div>
+      <div class="eq-row"><span class="eq-label">Stretched exp.:</span><span class="eq-main"><code>a * exp(-(x/tau)^beta)</code></span></div>
+      <div class="eq-row"><span class="eq-label">Rational:</span><span class="eq-main"><code>(a*x + b) / (x^2 + c*x + d)</code></span></div>
+      <div class="eq-note">Supported functions include <code>exp</code>, <code>log</code>, <code>sin</code>, <code>cos</code>, <code>sqrt</code>, <code>abs</code>, <code>atan</code>, and all Math.js builtins. Use <code>^</code> or <code>**</code> for powers.</div>
+    </div>
+
+    <p><strong>Multi-tab workflow.</strong> Each tab maintains a completely independent workspace — datasets, fits, axis labels, plot config, and solver settings. Tabs are auto-named from the first dataset loaded into them; double-click a tab name to rename it. Use <strong>Save Session</strong> to export one, some, or all tabs to a JSON file that can be reloaded later with <strong>Load Session</strong>. Enable <strong>Auto-restore</strong> to automatically reload the last saved session on page refresh; disable it to always start fresh.</p>
+
+    <p><strong>Export options.</strong></p>
+    <table class="param-table" style="margin:10px 0;font-size:.8em">
+      <thead><tr><th>Format</th><th>Contents</th></tr></thead>
+      <tbody>
+        <tr><td>PNG</td><td>Raster plot image at screen resolution — for presentations and quick sharing</td></tr>
+        <tr><td>SVG</td><td>Vector plot — scales perfectly for publication; editable in Inkscape / Illustrator</td></tr>
+        <tr><td>CSV</td><td>All fit results: model, parameters ± std errors, R², RMSE, AIC, BIC, SSE, N</td></tr>
+        <tr><td>TXT Report</td><td>Full human-readable fit report with all statistics and parameter table</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">Keyboard Shortcuts</div>
+    <table class="param-table" style="font-size:.8em;margin-top:4px">
+      <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><kbd>Ctrl + Enter</kbd></td><td>Run fit</td></tr>
+        <tr><td><kbd>Ctrl + Z / Y</kbd></td><td>Undo / redo (in Edit mode)</td></tr>
+        <tr><td><kbd>← → ↑ ↓</kbd></td><td>Nudge selected points (in Edit mode)</td></tr>
+        <tr><td><kbd>Scroll wheel</kbd></td><td>Adjust edit radius (in Edit mode)</td></tr>
+        <tr><td><kbd>Escape</kbd></td><td>Close full-screen app</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     §6  MODEL REFERENCE
+══════════════════════════════════════════════════════════ -->
+<div class="section reveal">
+  <div class="section-num">§ 6</div>
   <h2 class="section-title">Built-in Model Reference</h2>
   <div class="section-body">
-    <p>All built-in models and their equations, parameters, and typical use cases. Polynomial models use analytic least-squares (single-pass, no iteration). All other models support four iterative solvers selectable in the Algorithm Options panel: Levenberg-Marquardt (default), Gauss-Newton, Nelder-Mead Simplex, and BFGS. Custom equations are parsed by Math.js — any symbol other than $x$ is treated as a free parameter.</p>
+    <p>All built-in models, their equations, parameters, and physical interpretation. Polynomial models use analytic least-squares (Vandermonde normal equations — single pass, no iteration). All other models support four iterative solvers selectable in the Algorithm Options panel. Custom equations are parsed by Math.js — any symbol other than <code>x</code> and standard math functions is treated as a free parameter.</p>
   </div>
-  <table class="param-table" style="margin-top:8px;font-size:.8em">
-    <thead><tr><th>Model</th><th>Equation</th><th>Parameters</th><th>Use Case</th></tr></thead>
+  <table class="param-table" style="margin-top:12px;font-size:.8em">
+    <thead><tr><th>Model</th><th>Equation</th><th>Parameters</th><th>Use Case &amp; Notes</th></tr></thead>
     <tbody>
-      <tr><td>Linear</td><td>$y = a\,x + b$</td><td>a, b</td><td>Calibration curves, trend lines</td></tr>
-      <tr><td>Power Law</td><td>$y = a\,|x|^b$</td><td>a, b</td><td>Allometric scaling, fractal data</td></tr>
-      <tr><td>Polynomial (deg. $n$)</td><td>$y = \sum_{k=0}^{n} c_k\,x^k$</td><td>$n+1$ coefficients</td><td>General polynomial regression</td></tr>
-      <tr><td>Exponential</td><td>$y = a\,e^{bx}$</td><td>a, b</td><td>Unrestricted growth or decay</td></tr>
-      <tr><td>Exp Decay + Offset</td><td>$y = a\,e^{-bx} + c$</td><td>a, b, c</td><td>Radioactive decay, RC discharge</td></tr>
-      <tr><td>Logistic / Sigmoid</td><td>$y = L\,/\,(1+e^{-k(x-x_0)})$</td><td>L, k, x₀</td><td>Population growth, dose-response</td></tr>
-      <tr><td>Gaussian Peak</td><td>$y = A\,e^{-(x-\mu)^2/2\sigma^2}+C$</td><td>A, μ, σ, C</td><td>Spectroscopy, chromatography peaks</td></tr>
-      <tr><td>Lorentzian Peak</td><td>$y = A\,\gamma^2/[(x-x_0)^2+\gamma^2]+C$</td><td>A, x₀, γ, C</td><td>NMR, resonance linewidths</td></tr>
-      <tr><td>Michaelis-Menten</td><td>$y = V_{\max}\,x\,/\,(K_m+x)$</td><td>Vmax, Km</td><td>Enzyme kinetics, Langmuir adsorption</td></tr>
-      <tr><td>Hill Equation</td><td>$y = V_{\max}\,x^n\,/\,(K_d^n+x^n)$</td><td>Vmax, Kd, n</td><td>Cooperative binding, Hill coefficient</td></tr>
-      <tr><td>Sinusoidal</td><td>$y = A\sin(\omega x+\phi)+C$</td><td>A, ω, φ, C</td><td>Periodic oscillations, seasonal signals</td></tr>
-      <tr><td>Damped Sinusoid</td><td>$y = A\,e^{-\gamma x}\sin(\omega x+\phi)+C$</td><td>A, γ, ω, φ, C</td><td>Mechanical vibration, RLC circuits</td></tr>
-      <tr><td>Weibull CDF</td><td>$y = 1 - e^{-(x/\lambda)^k}$</td><td>λ, k</td><td>Reliability, survival analysis</td></tr>
-      <tr><td>Custom Equation</td><td>Any Math.js expression in $x$</td><td>Auto-detected</td><td>Any application</td></tr>
+      <tr><td><strong>Linear</strong></td><td>$y = a\,x + b$</td><td>a (slope), b (intercept)</td><td>Calibration curves, proportional relationships. Analytic solution.</td></tr>
+      <tr><td><strong>Power Law</strong></td><td>$y = a\,|x|^b$</td><td>a (amplitude), b (exponent)</td><td>Allometric scaling ($b \approx 0.75$ in metabolic rate), fractal geometry, material hardness. Initial guess via log-linear regression.</td></tr>
+      <tr><td><strong>Polynomial (2–6)</strong></td><td>$y = \sum_{k=0}^{n} c_k\,x^k$</td><td>$n+1$ coefficients $c_0\ldots c_n$</td><td>General smooth nonlinearity. Use AIC/BIC to select degree — higher is not always better. Analytic Vandermonde solution.</td></tr>
+      <tr><td><strong>Exponential</strong></td><td>$y = a\,e^{bx}$</td><td>a (pre-factor), b (rate)</td><td>Unrestricted growth ($b>0$) or decay ($b<0$). First model to try for monotone data crossing zero.</td></tr>
+      <tr><td><strong>Exp Decay + Offset</strong></td><td>$y = a\,e^{-bx} + c$</td><td>a (amplitude), b (rate), c (offset)</td><td>Radioactive decay to background, RC circuit discharge, first-order chemical reaction. $c$ absorbs baseline.</td></tr>
+      <tr><td><strong>Logistic / Sigmoid</strong></td><td>$y = \dfrac{L}{1+e^{-k(x-x_0)}}$</td><td>L (upper asymptote), k (steepness), x₀ (midpoint)</td><td>Population growth with carrying capacity, technology adoption, dose-response without cooperativity. $x_0$ is the EC50.</td></tr>
+      <tr><td><strong>Gaussian Peak</strong></td><td>$y = A\,e^{-(x-\mu)^2/2\sigma^2}+C$</td><td>A (height), μ (centre), σ (width), C (baseline)</td><td>Spectroscopic peaks, chromatography, probability density. FWHM $= 2\sqrt{2\ln 2}\,\sigma \approx 2.355\,\sigma$.</td></tr>
+      <tr><td><strong>Lorentzian Peak</strong></td><td>$y = A\dfrac{\gamma^2}{(x-x_0)^2+\gamma^2}+C$</td><td>A (height), x₀ (centre), γ (half-width), C (baseline)</td><td>NMR and optical resonance lineshapes, homogeneous broadening. Heavier tails than Gaussian. FWHM $= 2\gamma$.</td></tr>
+      <tr><td><strong>Michaelis-Menten</strong></td><td>$y = \dfrac{V_{\max}\,x}{K_m+x}$</td><td>Vmax (saturation), Km (half-sat. conc.)</td><td>Enzyme kinetics: $V_{\max}$ is maximum reaction rate; $K_m$ is the substrate concentration at half-max rate. Also Langmuir adsorption isotherm.</td></tr>
+      <tr><td><strong>Hill Equation</strong></td><td>$y = \dfrac{V_{\max}\,x^n}{K_d^n+x^n}$</td><td>Vmax, Kd (EC50), n (Hill coefficient)</td><td>Cooperative ligand binding, dose-response curves. $n=1$ reduces to Michaelis-Menten; $n>1$ indicates positive cooperativity; $n<1$ indicates negative cooperativity.</td></tr>
+      <tr><td><strong>Sinusoidal</strong></td><td>$y = A\sin(\omega x+\phi)+C$</td><td>A (amplitude), ω (angular freq.), φ (phase), C (offset)</td><td>Periodic oscillations, seasonal time series, AC signal characterisation. Period $T = 2\pi/\omega$.</td></tr>
+      <tr><td><strong>Damped Sinusoid</strong></td><td>$y = A\,e^{-\gamma x}\sin(\omega x+\phi)+C$</td><td>A, γ (decay rate), ω, φ, C</td><td>Free vibration of under-damped systems, RLC transient, acoustic decay. Quality factor $Q = \omega/(2\gamma)$.</td></tr>
+      <tr><td><strong>Weibull CDF</strong></td><td>$y = 1 - e^{-(x/\lambda)^k}$</td><td>λ (scale / characteristic life), k (shape)</td><td>Reliability and survival analysis. $k<1$: infant mortality; $k=1$: exponential (random failure); $k>1$: wear-out. $\lambda$ is the 63.2th-percentile lifetime.</td></tr>
+      <tr><td><strong>Custom Equation</strong></td><td>Any Math.js expression in $x$</td><td>Auto-detected symbols</td><td>Any application. Supports <code>exp</code>, <code>log</code>, <code>sin</code>, <code>cos</code>, <code>sqrt</code>, <code>abs</code>, <code>atan</code>, <code>^</code>, and all Math.js builtins.</td></tr>
     </tbody>
   </table>
 </div>
@@ -597,38 +689,20 @@
 <!-- ══════════════════════════════════════════════════════════
      REFERENCES
 ══════════════════════════════════════════════════════════ -->
-<div class="section" style="margin-top:56px">
+<div class="section reveal">
   <div class="section-num">References</div>
   <h2 class="section-title">References</h2>
   <ol class="ref-list">
-    <li class="ref-item">
-      <span class="ref-num">[1]</span>
-      <span>Levenberg, K. (1944). A method for the solution of certain non-linear problems in least squares. <em>Quarterly of Applied Mathematics</em>, <em>2</em>(2), 164–168.</span>
-    </li>
-    <li class="ref-item">
-      <span class="ref-num">[2]</span>
-      <span>Marquardt, D.W. (1963). An algorithm for least-squares estimation of nonlinear parameters. <em>SIAM Journal on Applied Mathematics</em>, <em>11</em>(2), 431–441.</span>
-    </li>
-    <li class="ref-item">
-      <span class="ref-num">[3]</span>
-      <span>Press, W.H., Teukolsky, S.A., Vetterling, W.T., &amp; Flannery, B.P. (2007). <em>Numerical Recipes: The Art of Scientific Computing</em> (3rd ed.). Cambridge University Press.</span>
-    </li>
-    <li class="ref-item">
-      <span class="ref-num">[4]</span>
-      <span>Seber, G.A.F. &amp; Wild, C.J. (2003). <em>Nonlinear Regression</em>. Wiley-Interscience.</span>
-    </li>
-    <li class="ref-item">
-      <span class="ref-num">[5]</span>
-      <span>MathWorks. (2024). <em>Curve Fitting Toolbox User's Guide</em>. Retrieved from <a href="https://www.mathworks.com/help/curvefit/">https://www.mathworks.com/help/curvefit/</a></span>
-    </li>
-    <li class="ref-item">
-      <span class="ref-num">[6]</span>
-      <span>Math.js. (2024). <em>Math.js: An extensive math library for JavaScript and Node.js</em>. Retrieved from <a href="https://mathjs.org">https://mathjs.org</a></span>
-    </li>
-    <li class="ref-item">
-      <span class="ref-num">[7]</span>
-      <span>Plotly JavaScript Graphing Library. (2024). <em>Plotly JavaScript Open Source Graphing Library</em>. Retrieved from <a href="https://plotly.com/javascript/">https://plotly.com/javascript/</a></span>
-    </li>
+    <li class="ref-item"><span class="ref-num">[1]</span><span>Levenberg, K. (1944). A method for the solution of certain non-linear problems in least squares. <em>Quarterly of Applied Mathematics</em>, <em>2</em>(2), 164–168.</span></li>
+    <li class="ref-item"><span class="ref-num">[2]</span><span>Marquardt, D.W. (1963). An algorithm for least-squares estimation of nonlinear parameters. <em>SIAM Journal on Applied Mathematics</em>, <em>11</em>(2), 431–441.</span></li>
+    <li class="ref-item"><span class="ref-num">[3]</span><span>Nelder, J.A. &amp; Mead, R. (1965). A simplex method for function minimization. <em>The Computer Journal</em>, <em>7</em>(4), 308–313.</span></li>
+    <li class="ref-item"><span class="ref-num">[4]</span><span>Broyden, C.G. (1970); Fletcher, R. (1970); Goldfarb, D. (1970); Shanno, D.F. (1970). The BFGS quasi-Newton update. <em>Mathematics of Computation</em> / <em>The Computer Journal</em>.</span></li>
+    <li class="ref-item"><span class="ref-num">[5]</span><span>Press, W.H., Teukolsky, S.A., Vetterling, W.T., &amp; Flannery, B.P. (2007). <em>Numerical Recipes: The Art of Scientific Computing</em> (3rd ed.). Cambridge University Press.</span></li>
+    <li class="ref-item"><span class="ref-num">[6]</span><span>Seber, G.A.F. &amp; Wild, C.J. (2003). <em>Nonlinear Regression</em>. Wiley-Interscience.</span></li>
+    <li class="ref-item"><span class="ref-num">[7]</span><span>Akaike, H. (1974). A new look at the statistical model identification. <em>IEEE Transactions on Automatic Control</em>, <em>19</em>(6), 716–723.</span></li>
+    <li class="ref-item"><span class="ref-num">[8]</span><span>MathWorks. (2024). <em>Curve Fitting Toolbox User's Guide</em>. <a href="https://www.mathworks.com/help/curvefit/">mathworks.com/help/curvefit</a></span></li>
+    <li class="ref-item"><span class="ref-num">[9]</span><span>Math.js. (2024). <em>An extensive math library for JavaScript and Node.js</em>. <a href="https://mathjs.org">mathjs.org</a></span></li>
+    <li class="ref-item"><span class="ref-num">[10]</span><span>Plotly Technologies Inc. (2024). <em>Plotly JavaScript Open Source Graphing Library</em>. <a href="https://plotly.com/javascript/">plotly.com/javascript</a></span></li>
   </ol>
 </div>
 

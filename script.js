@@ -2776,6 +2776,12 @@ function init() {
   updatePlots(); // Must run before initEditMode so Plotly element exists
   initEditMode();
 
+  // Scroll-reveal for page sections
+  const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.07 });
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
   // Hide nav when app section scrolls into view
   const siteNav = document.querySelector('.site-nav');
   const appAnchor = document.querySelector('.app-section-header');
