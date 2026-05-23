@@ -3395,6 +3395,7 @@ function initEvents() {
   function openApp() {
     appOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    document.getElementById('accBtn').style.display = 'none';
     requestAnimationFrame(() => {
       if (!appEverOpened) {
         // First open: plots were init'd in a hidden zero-size div — do a full re-render
@@ -3411,6 +3412,7 @@ function initEvents() {
   function closeApp() {
     appOverlay.classList.remove('open');
     document.body.style.overflow = '';
+    document.getElementById('accBtn').style.display = '';
   }
   const btnLaunch = document.getElementById('btn-launch-app');
   if (btnLaunch) btnLaunch.addEventListener('click', openApp);
