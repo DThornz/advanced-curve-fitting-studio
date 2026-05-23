@@ -48,7 +48,7 @@
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
-    <span class="pill">Levenberg-Marquardt</span>
+    <span class="pill">LM · Gauss-Newton · Nelder-Mead · BFGS</span>
     <span class="pill">Custom Equations</span>
     <span class="pill">Plotly.js</span>
     <span class="pill">Math.js</span>
@@ -133,33 +133,78 @@
   <div class="section-num">§ 3</div>
   <h2 class="section-title">Fitting Algorithms</h2>
   <div class="section-body">
-    <p>This application implements the <strong>Levenberg-Marquardt (LM)</strong> algorithm — the industry-standard method for nonlinear least-squares. LM interpolates between Gauss-Newton (fast near the minimum) and gradient descent (robust far from it) by augmenting the normal equations with a damping factor $\lambda$:</p>
+    <p>Four solvers are available for nonlinear models. Polynomial models always use the analytic normal-equation path regardless of solver selection. The solver is chosen per-fit in the Algorithm Options panel.</p>
 
+    <p><strong>Levenberg-Marquardt (LM)</strong> — the industry-standard gradient-based method. Interpolates between Gauss-Newton (fast near the minimum) and gradient descent (robust far from it) via a damping factor $\lambda$:</p>
     <div class="eq-block">
       <div class="eq-row">
-        <span class="eq-label">LM Step:</span>
+        <span class="eq-label">LM step:</span>
         <span class="eq-main">$\bigl(\mathbf{J}^\top\mathbf{J} + \lambda\,\mathrm{diag}(\mathbf{J}^\top\mathbf{J})\bigr)\,\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$</span>
         <span class="eq-comment">Marquardt scaling</span>
       </div>
-      <div class="eq-sep"></div>
       <div class="eq-row">
-        <span class="eq-label">Accept:</span>
-        <span class="eq-main">$S(\boldsymbol{p}+\Delta\boldsymbol{p}) < S(\boldsymbol{p}) \;\Rightarrow\; \lambda \leftarrow \lambda/3,\;\boldsymbol{p} \leftarrow \boldsymbol{p}+\Delta\boldsymbol{p}$</span>
-        <span class="eq-comment">decrease damping</span>
+        <span class="eq-label">Update $\lambda$:</span>
+        <span class="eq-main">$S_\text{new} < S \;\Rightarrow\; \lambda/3, \;\; \text{else} \;\; 10\lambda$</span>
+        <span class="eq-comment">adaptive damping</span>
       </div>
-      <div class="eq-row">
-        <span class="eq-label">Reject:</span>
-        <span class="eq-main">$S(\boldsymbol{p}+\Delta\boldsymbol{p}) \geq S(\boldsymbol{p}) \;\Rightarrow\; \lambda \leftarrow 10\lambda$</span>
-        <span class="eq-comment">increase damping</span>
-      </div>
-      <div class="eq-note">When $\lambda\to 0$: Gauss-Newton step (rapid convergence near minimum). When $\lambda\to\infty$: small gradient-descent step (robust far from minimum). Marquardt scaling by $\mathrm{diag}(\mathbf{J}^\top\mathbf{J})$ improves scale-invariance across parameters of different magnitudes. Convergence is declared when $|\Delta\boldsymbol{p}| < \tau$ and $|\Delta S| < \tau$ simultaneously, or when the maximum iteration count is reached.</div>
+      <div class="eq-note">Jacobian $\mathbf{J}$ is computed by forward finite differences ($\varepsilon = 10^{-7}$). Best for well-posed problems with good initial guesses. Recommended default.</div>
     </div>
 
-    <p>For <strong>linear and polynomial models</strong>, the analytic least-squares solution is computed directly by solving the Vandermonde normal equations — exact, single-pass, with no iteration. For <strong>custom user equations</strong>, Math.js parses and compiles the expression; all symbols except $x$ are automatically detected as free parameters and passed to the LM solver with initial values of 1.</p>
+    <p><strong>Gauss-Newton (GN)</strong> — LM with $\lambda = 0$, plus a backtracking Armijo line search to guarantee descent. Faster convergence than LM when already near the minimum, but can diverge on poorly conditioned problems:</p>
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">GN step:</span>
+        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-comment">no damping</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Line search:</span>
+        <span class="eq-main">$\alpha \leftarrow \alpha/2$ until $S(\boldsymbol{p}+\alpha\Delta\boldsymbol{p}) < S(\boldsymbol{p})$</span>
+        <span class="eq-comment">Armijo backtracking</span>
+      </div>
+      <div class="eq-note">Use GN as a faster alternative to LM when you already have good initial guesses. Falls back gracefully via line search.</div>
+    </div>
+
+    <p><strong>Nelder-Mead Simplex (NM)</strong> — derivative-free direct-search method. Maintains a simplex of $m+1$ vertices in parameter space and iteratively reflects, expands, or contracts it toward the minimum. Requires no Jacobian:</p>
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">Reflect:</span>
+        <span class="eq-main">$\boldsymbol{x}_r = \bar{\boldsymbol{x}} + \alpha(\bar{\boldsymbol{x}} - \boldsymbol{x}_\text{worst})$</span>
+        <span class="eq-comment">$\alpha=1$</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Expand:</span>
+        <span class="eq-main">$\boldsymbol{x}_e = \bar{\boldsymbol{x}} + \gamma(\boldsymbol{x}_r - \bar{\boldsymbol{x}})$</span>
+        <span class="eq-comment">$\gamma=2$, if $f_r < f_\text{best}$</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Contract:</span>
+        <span class="eq-main">$\boldsymbol{x}_c = \bar{\boldsymbol{x}} + \rho(\boldsymbol{x} - \bar{\boldsymbol{x}})$</span>
+        <span class="eq-comment">$\rho=0.5$</span>
+      </div>
+      <div class="eq-note">Robust on noisy or non-smooth objectives where gradients are unreliable. Slower than gradient methods but does not require derivatives. Good when LM or GN give unexpected results.</div>
+    </div>
+
+    <p><strong>BFGS (Quasi-Newton)</strong> — builds a low-rank approximation $\mathbf{H}_k$ to the inverse Hessian of $S$ from successive gradient evaluations, using the Broyden-Fletcher-Goldfarb-Shanno rank-2 update:</p>
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">Direction:</span>
+        <span class="eq-main">$\boldsymbol{d}_k = -\mathbf{H}_k\,\nabla S(\boldsymbol{p}_k)$</span>
+        <span class="eq-comment">inverse-Hessian form</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Update:</span>
+        <span class="eq-main">$\mathbf{H}_{k+1} = \bigl(\mathbf{I} - \rho_k\boldsymbol{s}_k\boldsymbol{y}_k^\top\bigr)\mathbf{H}_k\bigl(\mathbf{I} - \rho_k\boldsymbol{y}_k\boldsymbol{s}_k^\top\bigr) + \rho_k\boldsymbol{s}_k\boldsymbol{s}_k^\top$</span>
+        <span class="eq-comment">$\rho_k = 1/(\boldsymbol{y}_k^\top\boldsymbol{s}_k)$</span>
+      </div>
+      <div class="eq-note">where $\boldsymbol{s}_k = \boldsymbol{p}_{k+1}-\boldsymbol{p}_k$ and $\boldsymbol{y}_k = \nabla S_{k+1}-\nabla S_k$. Gradients computed via finite differences of SSE. Curvature violations trigger a Hessian reset to identity. Typically superlinear convergence on smooth problems.</div>
+    </div>
+
+    <p>For <strong>polynomial models</strong>, the analytic least-squares solution is computed directly via the Vandermonde normal equations — exact, single-pass, no iteration required regardless of solver setting.</p>
   </div>
   <div class="callout callout-amber">
-    <div class="callout-title">Initial Guesses Matter</div>
-    Nonlinear optimisation can converge to local minima if initial parameter values are poor. Each built-in model includes automatic heuristics (e.g., estimating amplitude from max($y$), frequency from data range). Press <strong>Auto Init</strong> to apply these, or tune initial values manually if the fit fails to converge or gives unexpected results.
+    <div class="callout-title">Solver Selection Guide</div>
+    <strong>LM</strong> is the recommended default — robust, well-tested, and handles poor initial guesses. <strong>GN</strong> converges faster when already close to the solution. <strong>Nelder-Mead</strong> is useful when derivatives are unreliable or the surface is very flat. <strong>BFGS</strong> is effective on smooth problems with moderate numbers of parameters. All solvers benefit from good initial guesses — use <strong>Auto Init</strong> or tune manually.
   </div>
 </div>
 
@@ -352,6 +397,15 @@
         <div class="ctrl-section">
           <label class="ctrl-label">Algorithm Options</label>
           <div class="ctrl-row">
+            <label class="ctrl-label" style="margin:0;min-width:72px">Solver</label>
+            <select class="ctrl-input" id="opt-algo" title="Polynomial models always use analytic fitting regardless of this setting">
+              <option value="lm" selected>Levenberg-Marquardt</option>
+              <option value="gn">Gauss-Newton</option>
+              <option value="nm">Nelder-Mead Simplex</option>
+              <option value="bfgs">BFGS (Quasi-Newton)</option>
+            </select>
+          </div>
+          <div class="ctrl-row" style="margin-top:5px">
             <label class="ctrl-label" style="margin:0;min-width:72px">Max Iter.</label>
             <input class="ctrl-input" id="opt-max-iter" type="number" value="1000" min="10" max="50000">
           </div>
@@ -456,7 +510,7 @@
   <div class="section-num">§ 5</div>
   <h2 class="section-title">Built-in Model Reference</h2>
   <div class="section-body">
-    <p>All built-in models and their equations, parameters, and typical use cases. Polynomial models use analytic least-squares (single-pass, no iteration). All other models use the Levenberg-Marquardt algorithm with automatic initial-guess heuristics. Custom equations are parsed by Math.js — any symbol other than $x$ is treated as a free parameter.</p>
+    <p>All built-in models and their equations, parameters, and typical use cases. Polynomial models use analytic least-squares (single-pass, no iteration). All other models support four iterative solvers selectable in the Algorithm Options panel: Levenberg-Marquardt (default), Gauss-Newton, Nelder-Mead Simplex, and BFGS. Custom equations are parsed by Math.js — any symbol other than $x$ is treated as a free parameter.</p>
   </div>
   <table class="param-table" style="margin-top:8px;font-size:.8em">
     <thead><tr><th>Model</th><th>Equation</th><th>Parameters</th><th>Use Case</th></tr></thead>

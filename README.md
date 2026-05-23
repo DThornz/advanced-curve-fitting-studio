@@ -12,7 +12,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | Capability | Detail |
 |---|---|
 | **16+ built-in models** | Linear, Polynomial (2-6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Custom |
-| **Fitting algorithms** | Levenberg-Marquardt (nonlinear); analytic normal equations (polynomial) |
+| **Fitting algorithms** | Levenberg-Marquardt · Gauss-Newton · Nelder-Mead Simplex · BFGS (selectable per fit); analytic normal equations (polynomial) |
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected |
 | **Auto initial guesses** | Heuristics per model (amplitude, frequency, decay rate, etc.) |
 | **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors |
@@ -102,7 +102,7 @@ x,y
 advanced-curve-fitting-studio/
 ├── index.html     — Nav, hero, theory sections 1-3, interactive app section 4, model reference section 5
 ├── style.css      — Design system + app-specific layout (DM fonts, teal theme, dark mode)
-├── script.js      — Fitting engine (LM algorithm), plot engine, UI, events, export
+├── script.js      — Fitting engines (LM, GN, Nelder-Mead, BFGS), plot engine, UI, events, export
 └── README.md      — This file
 ```
 
@@ -114,11 +114,16 @@ The nonlinear least-squares objective:
 
 $$S(\boldsymbol{p}) = \sum_{i=1}^{n} [y_i - f(x_i;\boldsymbol{p})]^2$$
 
-Minimised using **Levenberg-Marquardt**:
+Four iterative solvers are available (selectable per fit in the Algorithm Options panel):
 
-$$\bigl(\mathbf{J}^\top\mathbf{J} + \lambda\,\mathrm{diag}(\mathbf{J}^\top\mathbf{J})\bigr)\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$$
+| Solver | Step equation | Notes |
+|---|---|---|
+| **Levenberg-Marquardt** | $(\mathbf{J}^\top\mathbf{J} + \lambda\,\mathrm{diag}(\mathbf{J}^\top\mathbf{J}))\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$ | Adaptive damping; robust default |
+| **Gauss-Newton** | $\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$ | LM with λ=0 + Armijo line search; faster near solution |
+| **Nelder-Mead Simplex** | reflect / expand / contract / shrink simplex | Derivative-free; robust on noisy/flat surfaces |
+| **BFGS** | $\boldsymbol{d}_k = -\mathbf{H}_k\nabla S$; rank-2 inverse-Hessian update | Quasi-Newton; superlinear convergence on smooth problems |
 
-where **J** is the numerical Jacobian of the residual vector (forward finite differences, step epsilon = 1e-7), lambda is the Marquardt damping factor, and **r** = **y** - **f** is the residual vector. Polynomial models bypass iteration entirely via the Vandermonde normal equations.
+**J** is the numerical Jacobian (forward finite differences, ε = 1e-7). BFGS gradients use finite differences of SSE directly. Polynomial models bypass iteration entirely via the Vandermonde normal equations.
 
 ---
 

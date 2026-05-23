@@ -169,29 +169,7 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     }
   }
 
-  const r = evalResiduals(p);
-  const sseVal = sse(r);
-  const yMean = mean(yArr);
-  const sst = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
-  const rSq = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
-  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m - 1, 1);
-  const rmse = Math.sqrt(sseVal / Math.max(n - m, 1));
-  const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
-  const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
-
-  // Parameter standard errors
-  let paramErrors = p.map(() => NaN);
-  try {
-    const J = jacobian(p, r);
-    const JtJ = Array.from({ length: m }, (_, a) =>
-      Array.from({ length: m }, (_, b) => J[a].reduce((s, _, i) => s + J[a][i] * J[b][i], 0))
-    );
-    const sig2 = sseVal / Math.max(n - m, 1);
-    const inv = invertMatrix(JtJ);
-    if (inv) paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
-  } catch (_) {}
-
-  return { params: p, paramErrors, rSq, adjRSq, rmse, sse: sseVal, aic, bic, converged, iter, n, residuals: r };
+  return finaliseFit(fn, xArr, yArr, p, { converged, iter });
 }
 
 /* ── Analytic polynomial ─────────────────────────────────── */
@@ -221,6 +199,237 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
     rSq, adjRSq, rmse, sse: sseVal, aic, bic,
     converged: true, iter: 0, n, residuals
   };
+}
+
+/* ── Gauss-Newton with backtracking line search ──────────── */
+function gaussNewton(fn, xArr, yArr, p0, opts) {
+  opts = opts || {};
+  const maxIter = opts.maxIter || 1000;
+  const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
+  const EPS = 1e-7;
+  const n = xArr.length, m = p0.length;
+  let p = p0.map(Number);
+  let converged = false, iter = 0;
+
+  function evalR(params) {
+    return xArr.map((x, i) => { const v = fn(x, params); return isFinite(v) ? yArr[i] - v : 0; });
+  }
+  function sse(r) { return r.reduce((s, v) => s + v * v, 0); }
+  function jacobian(params, r0) {
+    const cols = [];
+    for (let j = 0; j < m; j++) {
+      const pp = params.slice();
+      const h = Math.max(Math.abs(params[j]) * EPS, EPS);
+      pp[j] += h;
+      const r1 = evalR(pp);
+      cols.push(r1.map((v, i) => (v - r0[i]) / h));
+    }
+    return cols;
+  }
+
+  for (iter = 0; iter < maxIter; iter++) {
+    const r = evalR(p);
+    const curSSE = sse(r);
+    if (!isFinite(curSSE)) break;
+    const J = jacobian(p, r);
+    const JtJ = Array.from({ length: m }, (_, a) =>
+      Array.from({ length: m }, (_, b) => J[a].reduce((s, _, i) => s + J[a][i] * J[b][i], 0)));
+    const beta = J.map(col => col.reduce((s, v, i) => s - v * r[i], 0));
+    const A = JtJ.map((row, a) => row.map((v, b) => a === b ? v + 1e-10 : v));
+    let delta;
+    try { delta = solveLinear(A, beta); } catch (_) { break; }
+    if (!delta.every(isFinite)) break;
+    // Backtracking line search
+    let alpha = 1;
+    let pNew = p.map((v, i) => v + alpha * delta[i]);
+    let newSSE = sse(evalR(pNew));
+    for (let ls = 0; ls < 12 && newSSE >= curSSE; ls++) {
+      alpha *= 0.5;
+      pNew = p.map((v, i) => v + alpha * delta[i]);
+      newSSE = sse(evalR(pNew));
+    }
+    if (newSSE >= curSSE) break;
+    p = pNew;
+    const stepNorm = alpha * Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
+    if (stepNorm < tol && Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
+  }
+  return finaliseFit(fn, xArr, yArr, p, { converged, iter });
+}
+
+/* ── Nelder-Mead Simplex ─────────────────────────────────── */
+function nelderMead(fn, xArr, yArr, p0, opts) {
+  opts = opts || {};
+  const maxIter = opts.maxIter || 2000;
+  const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
+  const n = xArr.length, m = p0.length;
+
+  function obj(params) {
+    let s = 0;
+    for (let i = 0; i < n; i++) { const v = fn(xArr[i], params); if (isFinite(v)) s += (yArr[i] - v) ** 2; }
+    return isFinite(s) ? s : 1e30;
+  }
+
+  // Initial simplex: perturb each parameter by 5 % (or 0.05 if zero)
+  let simplex = [p0.slice()];
+  for (let j = 0; j < m; j++) {
+    const v = p0.slice();
+    v[j] += Math.abs(v[j]) > 1e-8 ? 0.05 * Math.abs(v[j]) : 0.05;
+    simplex.push(v);
+  }
+  let fval = simplex.map(obj);
+  let converged = false, iter = 0;
+
+  for (iter = 0; iter < maxIter; iter++) {
+    // Sort vertices best → worst
+    const ord = Array.from({ length: m + 1 }, (_, i) => i).sort((a, b) => fval[a] - fval[b]);
+    simplex = ord.map(i => simplex[i]);
+    fval    = ord.map(i => fval[i]);
+
+    // Convergence: RMS spread of vertices < tol
+    const spread = Math.sqrt(simplex.slice(1).reduce((s, v) =>
+      s + v.reduce((ss, vi, j) => ss + (vi - simplex[0][j]) ** 2, 0), 0) / m);
+    if (spread < tol) { converged = true; break; }
+
+    // Centroid of all but worst
+    const c = Array(m).fill(0);
+    for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) c[j] += simplex[i][j] / m;
+
+    // Reflection
+    const xr = c.map((ci, j) => ci + (ci - simplex[m][j]));
+    const fr = obj(xr);
+
+    if (fr < fval[0]) {
+      // Expansion
+      const xe = c.map((ci, j) => ci + 2 * (xr[j] - ci));
+      const fe = obj(xe);
+      simplex[m] = fe < fr ? xe : xr;
+      fval[m]    = fe < fr ? fe : fr;
+    } else if (fr < fval[m - 1]) {
+      simplex[m] = xr; fval[m] = fr;
+    } else {
+      // Contraction
+      const inside = fr >= fval[m];
+      const xc = c.map((ci, j) => ci + 0.5 * ((inside ? simplex[m][j] : xr[j]) - ci));
+      const fc = obj(xc);
+      if (fc < (inside ? fval[m] : fr)) { simplex[m] = xc; fval[m] = fc; }
+      else {
+        // Shrink toward best
+        for (let i = 1; i <= m; i++) {
+          simplex[i] = simplex[0].map((s0, j) => s0 + 0.5 * (simplex[i][j] - s0));
+          fval[i]    = obj(simplex[i]);
+        }
+      }
+    }
+  }
+  return finaliseFit(fn, xArr, yArr, simplex[0], { converged, iter });
+}
+
+/* ── BFGS (quasi-Newton, inverse-Hessian form) ───────────── */
+function bfgs(fn, xArr, yArr, p0, opts) {
+  opts = opts || {};
+  const maxIter = opts.maxIter || 1000;
+  const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
+  const EPS = 1e-6;
+  const n = xArr.length, m = p0.length;
+
+  function obj(params) {
+    let s = 0;
+    for (let i = 0; i < n; i++) { const v = fn(xArr[i], params); if (isFinite(v)) s += (yArr[i] - v) ** 2; }
+    return isFinite(s) ? s : 1e30;
+  }
+  function grad(params) {
+    const f0 = obj(params);
+    return params.map((_, j) => {
+      const pp = params.slice();
+      const h = Math.max(Math.abs(params[j]) * EPS, EPS);
+      pp[j] += h;
+      return (obj(pp) - f0) / h;
+    });
+  }
+
+  // Inverse-Hessian approximation (starts as identity)
+  let H = Array.from({ length: m }, (_, i) => Array.from({ length: m }, (_, j) => i === j ? 1 : 0));
+  let p = p0.map(Number);
+  let g = grad(p);
+  let converged = false, iter = 0;
+
+  for (iter = 0; iter < maxIter; iter++) {
+    const gNorm = Math.sqrt(g.reduce((s, v) => s + v * v, 0));
+    if (gNorm < tol) { converged = true; break; }
+
+    // Search direction d = -H g
+    const d = Array(m).fill(0).map((_, i) => -H[i].reduce((s, hij, j) => s + hij * g[j], 0));
+    const dg = d.reduce((s, di, i) => s + di * g[i], 0);
+    if (dg >= 0) {
+      // Curvature condition violated — restart with identity
+      H = Array.from({ length: m }, (_, i) => Array.from({ length: m }, (_, j) => i === j ? 1 : 0));
+      continue;
+    }
+
+    // Backtracking Armijo line search
+    const f0 = obj(p);
+    let alpha = 1;
+    let pNew = p.map((v, i) => v + alpha * d[i]);
+    let fNew = obj(pNew);
+    for (let ls = 0; ls < 20 && fNew > f0 + 1e-4 * alpha * dg; ls++) {
+      alpha *= 0.5;
+      pNew = p.map((v, i) => v + alpha * d[i]);
+      fNew = obj(pNew);
+    }
+    if (!isFinite(fNew) || fNew >= f0) break;
+
+    const s = pNew.map((v, i) => v - p[i]);
+    const gNew = grad(pNew);
+    const y = gNew.map((v, i) => v - g[i]);
+    const sy = s.reduce((acc, si, i) => acc + si * y[i], 0);
+
+    if (sy > 1e-14) {
+      const rho = 1 / sy;
+      const Hy  = Array(m).fill(0).map((_, i) => H[i].reduce((acc, hij, j) => acc + hij * y[j], 0));
+      const yHy = y.reduce((acc, yi, i) => acc + yi * Hy[i], 0);
+      H = H.map((row, i) => row.map((hij, j) =>
+        hij - rho * (Hy[i] * s[j] + s[i] * Hy[j]) + rho * (rho * yHy + 1) * s[i] * s[j]
+      ));
+    }
+
+    p = pNew; g = gNew;
+    const stepNorm = Math.sqrt(s.reduce((acc, v) => acc + v * v, 0));
+    if (stepNorm < tol) { converged = true; break; }
+  }
+  return finaliseFit(fn, xArr, yArr, p, { converged, iter });
+}
+
+/* ── Shared finalisation (stats + param errors) ─────────── */
+function finaliseFit(fn, xArr, yArr, p, meta) {
+  const EPS = 1e-7;
+  const n = xArr.length, m = p.length;
+  const r = xArr.map((x, i) => { const v = fn(x, p); return isFinite(v) ? yArr[i] - v : 0; });
+  const sseVal = r.reduce((s, v) => s + v * v, 0);
+  const yMean  = mean(yArr);
+  const sst    = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
+  const rSq    = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
+  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m - 1, 1);
+  const rmse   = Math.sqrt(sseVal / Math.max(n - m, 1));
+  const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
+  const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
+  let paramErrors = p.map(() => NaN);
+  try {
+    const J_cols = [];
+    for (let j = 0; j < m; j++) {
+      const pp = p.slice();
+      const h = Math.max(Math.abs(p[j]) * EPS, EPS);
+      pp[j] += h;
+      const r1 = xArr.map((x, i) => { const v = fn(x, pp); return isFinite(v) ? yArr[i] - v : 0; });
+      J_cols.push(r1.map((v, i) => (v - r[i]) / h));
+    }
+    const JtJ = Array.from({ length: m }, (_, a) =>
+      Array.from({ length: m }, (_, b) => J_cols[a].reduce((s, _, i) => s + J_cols[a][i] * J_cols[b][i], 0)));
+    const sig2 = sseVal / Math.max(n - m, 1);
+    const inv = invertMatrix(JtJ);
+    if (inv) paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
+  } catch (_) {}
+  return { params: p, paramErrors, rSq, adjRSq, rmse, sse: sseVal, aic, bic,
+           converged: meta.converged, iter: meta.iter, n, residuals: r };
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1000,9 +1209,13 @@ function runFit() {
   if (!ds) { setConsole('No dataset selected. Load data first.', 'error'); return; }
   if (ds.x.length < 2) { setConsole('Need at least 2 data points.', 'error'); return; }
 
-  const maxIter = parseInt(document.getElementById('opt-max-iter').value) || 1000;
-  const tol     = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
+  const maxIter  = parseInt(document.getElementById('opt-max-iter').value) || 1000;
+  const tol      = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
   const curvePts = parseInt(document.getElementById('opt-curve-pts').value) || 300;
+  const algoKey  = document.getElementById('opt-algo').value;
+
+  const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
+  const solve = SOLVERS[algoKey] || levenbergMarquardt;
 
   setConsole('Fitting…', '');
 
@@ -1028,25 +1241,26 @@ function runFit() {
     const p0 = state.paramRows.length === paramNames.length
       ? state.paramRows.map(r => r.init)
       : paramNames.map(() => 1);
-    result = levenbergMarquardt(modelFn, ds.x, ds.y, p0, { maxIter, tol });
+    result = solve(modelFn, ds.x, ds.y, p0, { maxIter, tol });
   } else if (m && m.fn) {
     paramNames = m.params;
     modelFn = m.fn;
     const p0 = state.paramRows.length === paramNames.length
       ? state.paramRows.map(r => r.init)
       : m.autoInit(ds.x, ds.y);
-    result = levenbergMarquardt(modelFn, ds.x, ds.y, p0, { maxIter, tol });
+    result = solve(modelFn, ds.x, ds.y, p0, { maxIter, tol });
   } else {
     setConsole('Unknown model.', 'error');
     return;
   }
 
   const fitColor = nextColor();
-  const rSqStr   = isFinite(result.rSq) ? ` (R²=${result.rSq.toFixed(4)})` : '';
-  const fitLabel = `${model}${rSqStr}`;
+  const algoNames = { lm: 'LM', gn: 'GN', nm: 'NM', bfgs: 'BFGS' };
+  const rSqStr    = isFinite(result.rSq) ? ` (R²=${result.rSq.toFixed(4)})` : '';
+  const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}]${rSqStr}`;
 
   const fitRecord = {
-    id: nextId(), dsId, model,
+    id: nextId(), dsId, model, algo: algoKey,
     label: fitLabel, color: fitColor,
     result, fn: modelFn, visible: true,
     paramNames, curvePoints: curvePts,
@@ -1521,6 +1735,7 @@ function buildSessionPayload() {
       maxIter:  parseInt(document.getElementById('opt-max-iter').value)  || 1000,
       tol:      parseFloat(document.getElementById('opt-tol').value)     || 1e-8,
       curvePts: parseInt(document.getElementById('opt-curve-pts').value) || 300,
+      algo:     document.getElementById('opt-algo').value || 'lm',
     },
     activeDatasetId: state.activeDatasetId,
     activeFitId: state.activeFitId,
@@ -1582,6 +1797,7 @@ function restoreSessionPayload(payload) {
     if (o.maxIter  != null) document.getElementById('opt-max-iter').value  = o.maxIter;
     if (o.tol      != null) document.getElementById('opt-tol').value       = o.tol;
     if (o.curvePts != null) document.getElementById('opt-curve-pts').value = o.curvePts;
+    if (o.algo     != null) document.getElementById('opt-algo').value      = o.algo;
   }
 
   syncFitDatasetSelect();
