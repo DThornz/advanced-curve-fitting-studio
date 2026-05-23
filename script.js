@@ -1326,19 +1326,22 @@ function buildResidualVsXPanel(xlabel, tc) {
     if (!fit.visible || !fit.result) continue;
     const ds = state.datasets.find(d => d.id === fit.dsId);
     if (!ds) continue;
+    const dimmed = ds.enabled === false;
     const scale = normalize && fit.result.rmse > 0 ? 1 / fit.result.rmse : 1;
     const residuals = fit.result.residuals.map(v => v * scale);
     traces.push({
       x: ds.x, y: residuals,
       mode: 'markers', type: 'scatter',
       name: fit.label || fit.model,
-      marker: { color: fit.color || ds.color, size: 5, opacity: 0.8 },
+      marker: { color: fit.color || ds.color, size: 5, opacity: dimmed ? 0.2 : 0.8 },
+      opacity: dimmed ? 0.3 : 1,
       showlegend: false,
     });
     traces.push({
       x: [Math.min(...ds.x), Math.max(...ds.x)], y: [0, 0],
       mode: 'lines', type: 'scatter',
       line: { color: tc.gridCol, width: 1, dash: 'dot' },
+      opacity: dimmed ? 0.15 : 1,
       showlegend: false, hoverinfo: 'skip',
     });
   }
@@ -1517,6 +1520,16 @@ function updatePlots() {
 
   checkLogSuggest();
   syncResidualDimState();
+
+  // After every react() the browser layout may still be settling (e.g. stats bar
+  // just grew). Schedule one resize pass so Plotly re-measures the real container
+  // dimensions instead of stale pre-reflow values — this prevents the tab bar from
+  // being obscured by an oversized SVG.
+  requestAnimationFrame(() => {
+    void mainEl.offsetWidth;
+    Plotly.Plots.resize(mainEl);
+    if (!residEl.classList.contains('hidden')) Plotly.Plots.resize(residEl);
+  });
 }
 
 function checkLogSuggest() {
