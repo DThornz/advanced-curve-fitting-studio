@@ -2148,6 +2148,7 @@ function buildSessionPayload() {
   const leftPanel  = document.getElementById('panel-left');
   const rightPanel = document.getElementById('panel-right');
   const residualEl = document.getElementById('residual-plot');
+  const statsBar   = document.querySelector('.app-statsbar');
 
   return {
     version: 2,
@@ -2171,6 +2172,7 @@ function buildSessionPayload() {
       left:     leftPanel  ? leftPanel.offsetWidth   : null,
       right:    rightPanel ? rightPanel.offsetWidth  : null,
       residual: residualEl ? residualEl.offsetHeight : null,
+      stats:    statsBar   ? statsBar.offsetHeight   : null,
     },
     optimizerOptions: {
       maxIter:  parseInt(document.getElementById('opt-max-iter').value)  || 1000,
@@ -2259,9 +2261,11 @@ function restoreSessionPayload(payload) {
     const leftPanel  = document.getElementById('panel-left');
     const rightPanel = document.getElementById('panel-right');
     const residualEl = document.getElementById('residual-plot');
+    const statsBarEl = document.querySelector('.app-statsbar');
     if (payload.panelSizes.left     && leftPanel)  leftPanel.style.width   = payload.panelSizes.left     + 'px';
     if (payload.panelSizes.right    && rightPanel) rightPanel.style.width  = payload.panelSizes.right    + 'px';
     if (payload.panelSizes.residual && residualEl) residualEl.style.height = payload.panelSizes.residual + 'px';
+    if (payload.panelSizes.stats    && statsBarEl) statsBarEl.style.height = payload.panelSizes.stats    + 'px';
     requestAnimationFrame(() => {
       Plotly.Plots.resize('main-plot');
       const resEl = document.getElementById('residual-plot');
@@ -2385,9 +2389,11 @@ function initResizablePanels() {
   const leftPanel  = document.getElementById('panel-left');
   const rightPanel = document.getElementById('panel-right');
   const residualEl = document.getElementById('residual-plot');
+  const statsBar   = document.querySelector('.app-statsbar');
   const rhLeft     = document.getElementById('rh-left');
   const rhRight    = document.getElementById('rh-right');
   const rhResidual = document.getElementById('rh-residual');
+  const rhStats    = document.getElementById('rh-stats');
 
   let drag = null;
 
@@ -2419,6 +2425,8 @@ function initResizablePanels() {
       rightPanel.style.width = Math.max(180, Math.min(460, drag.size - (x - drag.x))) + 'px';
     } else if (drag.type === 'residual') {
       residualEl.style.height = Math.max(60, Math.min(360, drag.size - (y - drag.y))) + 'px';
+    } else if (drag.type === 'stats') {
+      statsBar.style.height = Math.max(28, Math.min(480, drag.size - (y - drag.y))) + 'px';
     }
     schedulePlotResize();
     if (e.cancelable) e.preventDefault();
@@ -2437,20 +2445,23 @@ function initResizablePanels() {
     const { x, y } = getClient(e);
     const size = type === 'left'     ? leftPanel.offsetWidth
                : type === 'right'    ? rightPanel.offsetWidth
+               : type === 'stats'    ? statsBar.offsetHeight
                :                       residualEl.offsetHeight;
     drag = { type, x, y, size };
     handle.classList.add('dragging');
     document.body.style.userSelect = 'none';
-    document.body.style.cursor = type === 'residual' ? 'row-resize' : 'col-resize';
+    document.body.style.cursor = (type === 'residual' || type === 'stats') ? 'row-resize' : 'col-resize';
     e.preventDefault();
   }
 
   rhLeft.addEventListener('mousedown',     e => startDrag('left',     rhLeft,     e));
   rhRight.addEventListener('mousedown',    e => startDrag('right',    rhRight,    e));
   rhResidual.addEventListener('mousedown', e => startDrag('residual', rhResidual, e));
+  rhStats.addEventListener('mousedown',    e => startDrag('stats',    rhStats,    e));
   rhLeft.addEventListener('touchstart',     e => startDrag('left',     rhLeft,     e), { passive: false });
   rhRight.addEventListener('touchstart',    e => startDrag('right',    rhRight,    e), { passive: false });
   rhResidual.addEventListener('touchstart', e => startDrag('residual', rhResidual, e), { passive: false });
+  rhStats.addEventListener('touchstart',    e => startDrag('stats',    rhStats,    e), { passive: false });
 
   document.addEventListener('mousemove', onMove);
   document.addEventListener('mouseup',   onUp);
