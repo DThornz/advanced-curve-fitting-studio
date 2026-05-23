@@ -929,7 +929,7 @@ function applyParsedMeta({ xlabel, ylabel, title }) {
 
 function importDataset(name, x, y, color) {
   if (!x.length || !y.length) return null;
-  const ds = { id: nextId(), name: name || `Dataset ${state.datasets.length + 1}`, x, y, originalY: y.slice(), color: color || nextColor(), visible: true };
+  const ds = { id: nextId(), name: name || `Dataset ${state.datasets.length + 1}`, x, y, originalY: y.slice(), color: color || nextColor(), visible: true, enabled: true };
   state.datasets.push(ds);
   if (!state.activeDatasetId) {
     state.activeDatasetId = ds.id;
@@ -958,6 +958,29 @@ function themeColors() {
   };
 }
 
+function computeAutoLegendPos() {
+  if (state.plotConfig.legendPos && state.plotConfig.legendPos.x != null) return state.plotConfig.legendPos;
+  const xs = [], ys = [];
+  for (const ds of state.datasets) {
+    if (!ds.visible || ds.enabled === false) continue;
+    xs.push(...ds.x); ys.push(...ds.y);
+  }
+  if (!xs.length) return { x: 0.99, y: 0.02 };
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  const xRange = xMax - xMin || 1, yRange = yMax - yMin || 1;
+  let brCount = 0, trCount = 0;
+  for (let i = 0; i < xs.length; i++) {
+    const nx = (xs[i] - xMin) / xRange;
+    const ny = (ys[i] - yMin) / yRange;
+    if (nx > 0.65) {
+      if (ny < 0.35) brCount++;
+      else if (ny > 0.65) trCount++;
+    }
+  }
+  return brCount <= trCount ? { x: 0.99, y: 0.02 } : { x: 0.99, y: 0.98 };
+}
+
 function baseLayout(extra) {
   const tc = themeColors();
   const base = {
@@ -975,14 +998,17 @@ function baseLayout(extra) {
       tickfont: { size: 10, color: tc.tickCol }, linecolor: tc.gridCol,
       type: state.plotConfig.logY ? 'log' : 'linear',
     },
-    legend: {
-      font: { size: 10, color: tc.textCol },
-      bgcolor: isDark() ? 'rgba(10,22,40,0.82)' : 'rgba(255,255,255,0.82)',
-      bordercolor: tc.gridCol, borderwidth: 1,
-      x: (state.plotConfig.legendPos && state.plotConfig.legendPos.x != null) ? state.plotConfig.legendPos.x : 0.99,
-      y: (state.plotConfig.legendPos && state.plotConfig.legendPos.y != null) ? state.plotConfig.legendPos.y : 0.99,
-      xanchor: 'right', yanchor: 'top',
-    },
+    legend: (() => {
+      const lp = computeAutoLegendPos();
+      return {
+        font: { size: 10, color: tc.textCol },
+        bgcolor: isDark() ? 'rgba(10,22,40,0.82)' : 'rgba(255,255,255,0.82)',
+        bordercolor: tc.gridCol, borderwidth: 1,
+        x: lp.x, y: lp.y,
+        xanchor: lp.x > 0.5 ? 'right' : 'left',
+        yanchor: lp.y > 0.5 ? 'top' : 'bottom',
+      };
+    })(),
     hovermode: 'closest',
     showlegend: true,
     dragmode: state.editMode ? false : 'zoom',
@@ -994,12 +1020,14 @@ function buildMainTraces() {
   const traces = [];
   for (const ds of state.datasets) {
     if (!ds.visible) continue;
+    const dimmed = ds.enabled === false;
     traces.push({
       x: ds.x, y: ds.y,
       mode: 'markers',
       type: 'scatter',
       name: ds.name,
-      marker: { color: ds.color, size: 6, opacity: 0.85 },
+      marker: { color: ds.color, size: 6, opacity: dimmed ? 0.25 : 0.85 },
+      opacity: dimmed ? 0.3 : 1,
       showlegend: true,
     });
   }
@@ -1115,19 +1143,35 @@ function renderDatasetList() {
     el.innerHTML = '<div class="panel-empty-hint">Load an example<br>or import a CSV to begin.</div>';
     return;
   }
-  el.innerHTML = state.datasets.map(ds => `
-    <div class="ds-item${ds.id === state.activeDatasetId ? ' active' : ''}" data-dsid="${ds.id}">
+  el.innerHTML = state.datasets.map(ds => {
+    const off = ds.enabled === false;
+    return `
+    <div class="ds-item${ds.id === state.activeDatasetId ? ' active' : ''}${off ? ' ds-item-off' : ''}" data-dsid="${ds.id}">
       <span class="ds-swatch" style="background:${ds.color}"></span>
       <span class="ds-label" title="${ds.name}">${ds.name}</span>
       <span class="ds-count">${ds.x.length}pt</span>
+      <button class="ds-toggle${off ? ' ds-off' : ''}" data-toggleid="${ds.id}" title="${off ? 'Enable dataset' : 'Disable dataset'}">${off ? '○' : '●'}</button>
       <button class="ds-delete" data-delid="${ds.id}" title="Remove dataset">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   el.querySelectorAll('.ds-item').forEach(item => {
     item.addEventListener('click', () => {
       state.activeDatasetId = parseInt(item.dataset.dsid);
       syncFitDatasetSelect();
       renderDatasetList();
       renderFitList();
+    });
+  });
+  el.querySelectorAll('.ds-toggle').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.toggleid);
+      const ds = state.datasets.find(d => d.id === id);
+      if (!ds) return;
+      ds.enabled = ds.enabled === false ? true : false;
+      syncFitDatasetSelect();
+      renderDatasetList();
+      updatePlots();
     });
   });
   el.querySelectorAll('.ds-delete').forEach(btn => {
@@ -1341,10 +1385,12 @@ function renderStatsTable() {
 function syncFitDatasetSelect() {
   const sel = document.getElementById('fit-dataset-select');
   const cur = sel.value;
-  sel.innerHTML = state.datasets.length
-    ? state.datasets.map(ds => `<option value="${ds.id}">${ds.name}</option>`).join('')
-    : '<option value="">— no dataset loaded —</option>';
-  if (state.activeDatasetId) sel.value = state.activeDatasetId;
+  const fittable = state.datasets.filter(d => d.enabled !== false);
+  sel.innerHTML = fittable.length
+    ? fittable.map(ds => `<option value="${ds.id}">${ds.name}</option>`).join('')
+    : '<option value="">— no enabled dataset —</option>';
+  const activeEnabled = fittable.find(d => d.id === state.activeDatasetId);
+  if (activeEnabled) sel.value = state.activeDatasetId;
   else if (cur) sel.value = cur;
 }
 
@@ -2141,6 +2187,7 @@ function buildSessionPayload() {
 function restoreSessionPayload(payload) {
   state.datasets = (payload.datasets || []).map(d => {
     if (!d.originalY) d.originalY = d.y.slice();  // backfill for older saves
+    if (d.enabled == null) d.enabled = true;       // backfill for older saves
     return d;
   });
   state.fits = [];

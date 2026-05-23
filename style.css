@@ -227,7 +227,7 @@ body.size-lg .app-shell{font-size:16px!important}
 .app-toolbar-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
 
 /* ── Workspace ────────────────────────────────────────────── */
-.app-workspace{display:flex;height:560px;min-height:320px;flex-shrink:0;overflow:hidden}
+.app-workspace{display:flex;height:680px;min-height:320px;flex-shrink:0;overflow:hidden}
 
 /* ── Left panel ──────────────────────────────────────────── */
 .app-left{
@@ -276,6 +276,18 @@ body.size-lg .app-shell{font-size:16px!important}
 .ds-item:hover .ds-delete,.fit-item:hover .ds-delete{opacity:1}
 .ds-delete:hover{color:var(--red)!important}
 body.dark-mode .ds-delete:hover{color:#ef4444!important}
+.ds-toggle{
+  flex-shrink:0;
+  background:none;border:none;cursor:pointer;
+  color:var(--teal);font-size:.75em;line-height:1;
+  padding:0 2px;border-radius:3px;
+  opacity:0;transition:opacity .12s,color .12s
+}
+.ds-toggle.ds-off{color:var(--dimmer)}
+.ds-item:hover .ds-toggle{opacity:1}
+.ds-item.ds-item-off .ds-label{opacity:0.4}
+.ds-item.ds-item-off .ds-swatch{opacity:0.3}
+.ds-item.ds-item-off .ds-count{opacity:0.35}
 .fit-item-eq{font-size:.65em;color:var(--dimmer);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:1px}
 
 /* ── Center plot area ────────────────────────────────────── */
@@ -501,12 +513,10 @@ body.dark-mode .panel-resize::after{background:#2dd4bf}
 @media(max-width:900px){
   .app-left{width:160px}
   .app-right{width:230px}
-  .app-shell{height:640px}
 }
 @media(max-width:680px){
   .app-left{display:none}
   .app-right{width:200px}
-  .app-shell{height:580px}
   .app-topbar{height:auto;padding:6px 10px}
 }
 
