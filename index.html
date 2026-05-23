@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- TODO: update title -->
+<title>Page Title — Asad Mirza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
+<!-- Remove the two KaTeX lines below if this page has no math -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+</head>
+<body class="light-mode">
+
+<!-- ── Site Nav ─────────────────────────────────────────── -->
+<div class="site-nav">
+  <a class="site-nav-logo" href="https://dthornz.github.io/website-cv-tools/">A.Mirza <span>/</span> site</a>
+  <a class="site-nav-link" href="https://dthornz.github.io/website-cv-tools/">Home</a>
+  <a class="site-nav-link" href="https://dthornz.github.io/website-cv-tools/AsadMirza_CV.html">CV</a>
+  <div class="nav-dropdown">
+    <a class="site-nav-link curr" href="https://dthornz.github.io/website-cv-tools/projects.html">Projects ▾</a>
+    <div class="nav-dropdown-menu">
+      <a class="nav-dropdown-item" href="https://dthornz.github.io/hodgkin-huxley/">🧠 HH Neuron Model</a>
+      <a class="nav-dropdown-item" href="https://dthornz.github.io/maxwell-boltzmann/">⚛ MB Gas Simulator</a>
+      <a class="nav-dropdown-item" href="https://dthornz.github.io/lbm-cfd/">🌊 LBM CFD Simulator</a>
+      <a class="nav-dropdown-item" href="https://dthornz.github.io/eng-fea-cfd-calc/">⚙ Eng / FEA / CFD Calc</a>
+      <a class="nav-dropdown-item" href="https://dthornz.github.io/1d-thermal-diffusion/">🔥 1D Thermal Diffusion</a>
+      <a class="nav-dropdown-item" href="https://dthornz.github.io/website-cv-tools/dissertation.html">📋 PhD Dissertation</a>
+      <a class="nav-dropdown-item" href="https://dthornz.github.io/academic-ref-validator/">📑 Reference Validator</a>
+      <!-- TODO: replace the item below with this page's entry; add it to every other page's dropdown too -->
+      <a class="nav-dropdown-item" style="color:var(--teal);font-weight:600" href="#">🆕 This Page</a>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+<!-- ══════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <!-- Small all-caps label above the title — describe the category or domain -->
+  <div class="hero-kicker">TODO: Category / Domain</div>
+
+  <!-- Main title — use <br> for a two-line break if needed -->
+  <h1 class="hero-title">Page Title<br>Second Line</h1>
+
+  <!-- One or two sentences summarising the project -->
+  <p class="hero-sub">TODO: one or two sentences describing what this page covers. Keep it concise — under ~180 characters reads best.</p>
+
+  <!-- Tags / keywords shown as pills -->
+  <div class="hero-pills">
+    <span class="pill">Keyword One</span>
+    <span class="pill">Keyword Two</span>
+    <span class="pill">Method / Tool</span>
+    <span class="pill">Another Tag</span>
+  </div>
+
+  <!-- 3–4 headline numbers shown below the pills -->
+  <div class="hero-meta">
+    <div><div class="hero-stat-num">2024</div><div class="hero-stat-label">Year</div></div>
+    <div><div class="hero-stat-num">42</div><div class="hero-stat-label">Key stat</div></div>
+    <div><div class="hero-stat-num">2nd</div><div class="hero-stat-label">Order accuracy</div></div>
+    <div><div class="hero-stat-num">O(n)</div><div class="hero-stat-label">Complexity</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     §1  BACKGROUND
+══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-num">§ 1</div>
+  <h2 class="section-title">Background</h2>
+  <div class="section-body">
+    <p>TODO: opening paragraph. Use <strong>bold</strong> for key terms on first use and <em>italics</em> for titles or emphasis. Inline superscript for citations: like this.<sup>[1]</sup></p>
+    <p>Second paragraph. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.</p>
+    <p>Third paragraph if needed. Vivamus lacinia odio vitae vestibulum habitant morbi tristique senectus et netus malesuada.</p>
+  </div>
+
+  <!-- Teal left-border callout — use for informational notes / historical context -->
+  <div class="callout">
+    <div class="callout-title">Note</div>
+    TODO: callout body text. Teal callouts suit background notes, fun facts, or supplementary context that does not block the main narrative.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     §2  MATHEMATICAL FORMULATION
+══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-num">§ 2</div>
+  <h2 class="section-title">Mathematical Formulation</h2>
+  <div class="section-body">
+    <p>TODO: describe the governing equations. KaTeX renders inline math like $E = mc^2$ and display blocks inside <code>.eq-block</code> elements below.</p>
+
+    <!-- eq-block: labelled equation rows separated by eq-sep dividers -->
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">General form:</span>
+        <span class="eq-main">$\dfrac{\partial u}{\partial t} = \alpha\,\nabla^2 u + f(\mathbf{x},t)$</span>
+        <span class="eq-comment">governing PDE</span>
+      </div>
+      <div class="eq-sep"></div>
+      <div class="eq-row">
+        <span class="eq-label">Discretised:</span>
+        <span class="eq-main">$u_i^{n+1} = u_i^n + r\!\left(u_{i+1}^n - 2u_i^n + u_{i-1}^n\right)$</span>
+        <span class="eq-comment">$r = \alpha\Delta t/\Delta x^2$</span>
+      </div>
+      <div class="eq-note">TODO: annotation — explain symbols, units, and any key constraints or assumptions here.</div>
+    </div>
+
+    <p>TODO: follow-up paragraph expanding on the equations above, discussing assumptions, limitations, or derivation steps.</p>
+
+    <!-- Parameter table — Symbol | Value | Unit | Description -->
+    <table class="param-table" style="margin-top:24px">
+      <thead><tr><th>Symbol</th><th>Value (default)</th><th>Unit</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>$\alpha$</td><td>$1.17\times10^{-2}$</td><td>mm² s⁻¹</td><td>Diffusivity (ratio of conduction to storage)</td></tr>
+        <tr><td>$k$</td><td>$0.237$</td><td>W mm⁻¹ °C⁻¹</td><td>Conductivity</td></tr>
+        <tr><td>$L$</td><td>$100$</td><td>mm</td><td>Domain length</td></tr>
+        <tr><td>$N$</td><td>$51$</td><td>—</td><td>Number of grid nodes</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     §3  NUMERICAL METHOD
+══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-num">§ 3</div>
+  <h2 class="section-title">Numerical Method</h2>
+  <div class="section-body">
+    <p>TODO: describe the algorithm or method in plain language before giving equations. Explain why this approach was chosen.</p>
+
+    <!-- Another equation block — multiple rows without a sep show as a tight group -->
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">Stability:</span>
+        <span class="eq-main">$\Delta t \leq \dfrac{\Delta x^2}{2\alpha}$</span>
+        <span class="eq-comment">$r \leq 0.5$</span>
+      </div>
+      <div class="eq-note">TODO: note explaining the stability criterion, its origin, and how it is enforced in practice.</div>
+    </div>
+
+    <!-- Bulleted list inside section-body -->
+    <ul style="margin:8px 0 14px 20px;line-height:1.7">
+      <li><strong>Step one:</strong> description of algorithm step.</li>
+      <li><strong>Step two:</strong> description of algorithm step.</li>
+      <li><strong>Step three:</strong> description of algorithm step.</li>
+    </ul>
+  </div>
+
+  <!-- Amber left-border callout — use for warnings, caveats, or stability notes -->
+  <div class="callout callout-amber">
+    <div class="callout-title">Stability Note</div>
+    TODO: amber callout text. Use for warnings about numerical stability, known limitations, or important caveats the reader must know before using the tool.
+  </div>
+</div>
+
+<!-- section-divider: full-width horizontal rule, typically placed before the interactive section -->
+<div class="section-divider"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     §4  INTERACTIVE DEMO  (replace with your simulator/canvas)
+══════════════════════════════════════════════════════════ -->
+<div class="section" id="demo">
+  <div class="section-num">§ 4</div>
+  <h2 class="section-title">Interactive Demo</h2>
+</div>
+
+<!-- TODO: place your simulator panel, canvas, or interactive widget here.
+     Copy the .sim-section / .sim-header / .sim-body structure from the
+     1D Thermal Diffusion page if you need the full controls + canvas layout. -->
+<div style="background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;padding:48px;text-align:center;margin-bottom:40px;color:var(--dim);font-family:var(--mono);font-size:.85em">
+  Interactive widget placeholder — replace with your content
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     REFERENCES
+══════════════════════════════════════════════════════════ -->
+<div class="section" style="margin-top:56px">
+  <div class="section-num">References</div>
+  <h2 class="section-title">References</h2>
+  <ol class="ref-list">
+    <li class="ref-item">
+      <span class="ref-num">[1]</span>
+      <span>Author, A.B. (Year). <em>Title of Book or Report</em>. Publisher.</span>
+    </li>
+    <li class="ref-item">
+      <span class="ref-num">[2]</span>
+      <span>Author, C.D. &amp; Author, E.F. (Year). Article title. <em>Journal Name</em>, <em>vol</em>(issue), pages. <a href="#">doi:10.xxxx/xxxxx</a></span>
+    </li>
+    <li class="ref-item">
+      <span class="ref-num">[3]</span>
+      <span>Author, G.H. (Year). <em>Another Book</em> (2nd ed.). Publisher.</span>
+    </li>
+  </ol>
+</div>
+
+</div><!-- end page-wrap -->
+
+<!-- ── Accessibility panel ──────────────────────────────── -->
+<button class="acc-btn" id="accBtn" title="Display settings">⚙</button>
+<div class="acc-panel" id="accPanel">
+  <div class="acc-panel-title">Display Settings</div>
+  <div class="acc-row">
+    <div class="acc-row-label">Theme</div>
+    <div class="acc-toggle-row">
+      <span class="acc-toggle-label">Dark mode</span>
+      <label class="acc-switch"><input type="checkbox" id="darkToggle"><span class="acc-slider"></span></label>
+    </div>
+  </div>
+  <div class="acc-row">
+    <div class="acc-row-label">Font size</div>
+    <div class="acc-btn-group">
+      <button class="acc-opt" data-size="sm">S</button>
+      <button class="acc-opt active" data-size="md">M</button>
+      <button class="acc-opt" data-size="lg">L</button>
+    </div>
+  </div>
+  <div class="acc-row">
+    <div class="acc-row-label">Font style</div>
+    <div class="acc-btn-group">
+      <button class="acc-opt active" data-font="default">Sans</button>
+      <button class="acc-opt" data-font="serif">Serif</button>
+      <button class="acc-opt" data-font="mono">Mono</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
