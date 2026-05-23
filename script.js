@@ -1442,14 +1442,32 @@ function initEditMode() {
     syncUndoRedoButtons();
   });
 
-  // Arrow-key nudge + Ctrl+Z/Y
+  // Arrow-key nudge (↑↓) + point navigation (←→) + Ctrl+Z/Y
   document.addEventListener('keydown', e => {
     if (e.ctrlKey && e.key === 'z' && state.editMode) { e.preventDefault(); undoEdit(); return; }
     if (e.ctrlKey && (e.key === 'y' || e.key === 'Z') && state.editMode) { e.preventDefault(); redoEdit(); return; }
     if (!state.editMode || !state.selection.indices.size) return;
-    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    // ← → : snap selection to adjacent point (only when exactly 1 point selected)
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && state.selection.indices.size === 1) {
+      e.preventDefault();
+      const ds = state.datasets.find(d => d.id === state.selection.dsId);
+      if (!ds || !ds.x.length) return;
+      const cur = [...state.selection.indices][0];
+      const next = e.key === 'ArrowRight'
+        ? Math.min(cur + 1, ds.x.length - 1)
+        : Math.max(cur - 1, 0);
+      if (next !== cur) {
+        state.selection = { dsId: ds.id, indices: new Set([next]) };
+        updatePlots();
+        syncUndoRedoButtons();
+      }
+      return;
+    }
+
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     e.preventDefault();
     if (!arrowKeyActive) { pushEditHistory(); arrowKeyActive = true; }
     const step = parseFloat(document.getElementById('edit-nudge-step').value) || 0.1;
