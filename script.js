@@ -1741,7 +1741,6 @@ function initEvents() {
   document.getElementById('btn-toggle-residuals').classList.add('active');
   syncModelCustomSection();
   initResizablePanels();
-  initEditMode();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1749,7 +1748,8 @@ function initEvents() {
 ═══════════════════════════════════════════════════════════ */
 function init() {
   initEvents();
-  updatePlots(); // Render empty plots
+  updatePlots(); // Render empty plots — must run before initEditMode so Plotly element exists
+  initEditMode();
   // Auto-load example on first visit
   if (!localStorage.getItem('cfs_session')) {
     const ex = generateExample('exponential-decay');
