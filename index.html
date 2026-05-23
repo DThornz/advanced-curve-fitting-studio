@@ -206,9 +206,15 @@
         <button class="btn btn-toggle" id="btn-log-y" title="Toggle logarithmic Y axis">Log Y</button>
         <button class="btn btn-toggle" id="btn-edit-mode" title="Edit point positions — click to select, drag or arrow keys to move up/down">✏ Edit</button>
       </div>
-      <div id="edit-mode-controls" style="display:none;align-items:center;gap:4px;flex-shrink:0">
+      <div id="edit-mode-controls" style="display:none;align-items:center;gap:5px;flex-shrink:0">
+        <button class="btn" id="btn-edit-undo" title="Undo (Ctrl+Z)" disabled>↩ Undo</button>
+        <button class="btn" id="btn-edit-redo" title="Redo (Ctrl+Y)" disabled>↪ Redo</button>
+        <span class="app-toolbar-sep" style="margin:0 1px"></span>
         <span style="font-size:.72em;color:var(--dim);white-space:nowrap">Step:</span>
         <input class="ctrl-input" id="edit-nudge-step" type="number" value="0.1" step="any" title="Arrow-key nudge amount" style="width:54px;padding:2px 5px">
+        <span style="font-size:.72em;color:var(--dim);white-space:nowrap">Radius:</span>
+        <span id="edit-radius-display" style="font-size:.76em;font-family:var(--mono);color:var(--text);min-width:34px">0 px</span>
+        <span style="font-size:.65em;color:var(--muted)">(scroll)</span>
       </div>
       <div class="app-toolbar-sep"></div>
       <div class="app-toolbar-group">
@@ -253,7 +259,10 @@
 
       <!-- CENTER: PLOTS -->
       <div class="app-center" id="panel-center">
-        <div id="main-plot" class="plot-div"></div>
+        <div class="plot-div-wrap">
+          <div id="main-plot" class="plot-div"></div>
+          <canvas id="edit-radius-canvas" style="display:none"></canvas>
+        </div>
         <div class="panel-resize row" id="rh-residual" title="Drag to resize residual panel"></div>
         <div id="residual-plot" class="plot-div-residual"></div>
       </div>

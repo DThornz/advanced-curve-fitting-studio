@@ -493,6 +493,8 @@ const state = {
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   editMode: false,
   selection: { dsId: null, indices: new Set() },
+  editHistory: { undo: [], redo: [] },
+  editSelectRadius: 0,
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -1183,13 +1185,8 @@ function computeYDataDelta(pixelDY, mainEl) {
   const fl = mainEl._fullLayout;
   if (fl && fl.yaxis && fl.yaxis._length) {
     const ya = fl.yaxis;
-    if (state.plotConfig.logY) {
-      // range is in log10 units; convert pixel delta to log10 delta
-      return -pixelDY * (ya.range[1] - ya.range[0]) / ya._length;
-    }
     return -pixelDY * (ya.range[1] - ya.range[0]) / ya._length;
   }
-  // Fallback via public layout + margins
   const layout = mainEl.layout;
   if (!layout || !layout.yaxis || !layout.yaxis.range) return 0;
   const m = layout.margin || { t: 28, b: 44 };
@@ -1199,6 +1196,53 @@ function computeYDataDelta(pixelDY, mainEl) {
   return -pixelDY * (y1 - y0) / h;
 }
 
+// Convert a data-space point to pixel coords within the plot div
+function dataToPx(dataX, dataY, xa, ya) {
+  if (!xa || !ya || !xa._length || !ya._length) return { px: -9999, py: -9999 };
+  const xr = xa.range, yr = ya.range;
+  let px, py;
+  if (xa.type === 'log') {
+    const lx = dataX > 0 ? Math.log10(dataX) : xr[0];
+    px = xa._offset + (lx - xr[0]) / (xr[1] - xr[0]) * xa._length;
+  } else {
+    px = xa._offset + (dataX - xr[0]) / (xr[1] - xr[0]) * xa._length;
+  }
+  if (ya.type === 'log') {
+    const ly = dataY > 0 ? Math.log10(dataY) : yr[0];
+    py = ya._offset + (1 - (ly - yr[0]) / (yr[1] - yr[0])) * ya._length;
+  } else {
+    py = ya._offset + (1 - (dataY - yr[0]) / (yr[1] - yr[0])) * ya._length;
+  }
+  return { px, py };
+}
+
+// Find the nearest-dataset and all its points within radiusPx pixels of (clickPx, clickPy)
+function findPointsInRadius(clickPx, clickPy, radiusPx) {
+  const mainEl = document.getElementById('main-plot');
+  const fl = mainEl._fullLayout;
+  if (!fl) return null;
+  const xa = fl.xaxis, ya = fl.yaxis;
+  if (!xa || !ya) return null;
+  const r2 = radiusPx * radiusPx;
+  let bestDs = null, bestDist2 = Infinity;
+  for (const ds of state.datasets) {
+    if (ds.visible === false) continue;
+    for (let i = 0; i < ds.x.length; i++) {
+      const { px, py } = dataToPx(ds.x[i], ds.y[i], xa, ya);
+      const d2 = (px - clickPx) ** 2 + (py - clickPy) ** 2;
+      if (d2 < bestDist2) { bestDist2 = d2; bestDs = ds; }
+    }
+  }
+  if (!bestDs || bestDist2 > r2) return null;
+  const indices = new Set();
+  for (let i = 0; i < bestDs.x.length; i++) {
+    const { px, py } = dataToPx(bestDs.x[i], bestDs.y[i], xa, ya);
+    const d2 = (px - clickPx) ** 2 + (py - clickPy) ** 2;
+    if (d2 <= r2) indices.add(i);
+  }
+  return { ds: bestDs, indices };
+}
+
 function nudgeSelection(delta) {
   const ds = state.datasets.find(d => d.id === state.selection.dsId);
   if (!ds) return;
@@ -1206,7 +1250,6 @@ function nudgeSelection(delta) {
   state.selection.indices.forEach(i => {
     if (i < 0 || i >= ds.y.length) return;
     if (logY) {
-      // delta is a log10 delta; shift y multiplicatively
       ds.y[i] = ds.y[i] > 0 ? Math.pow(10, Math.log10(ds.y[i]) + delta) : ds.y[i];
     } else {
       ds.y[i] += delta;
@@ -1215,16 +1258,119 @@ function nudgeSelection(delta) {
   updatePlots();
 }
 
+/* ── Edit history (undo/redo) ────────────────────────── */
+function pushEditHistory() {
+  const ds = state.datasets.find(d => d.id === state.selection.dsId);
+  if (!ds) return;
+  const h = state.editHistory;
+  h.undo.push({ dsId: ds.id, y: ds.y.slice() });
+  if (h.undo.length > 100) h.undo.shift();
+  h.redo = [];
+  syncUndoRedoButtons();
+}
+
+function undoEdit() {
+  const h = state.editHistory;
+  if (!h.undo.length) return;
+  const entry = h.undo.pop();
+  const ds = state.datasets.find(d => d.id === entry.dsId);
+  if (ds) {
+    h.redo.push({ dsId: ds.id, y: ds.y.slice() });
+    if (h.redo.length > 100) h.redo.shift();
+    ds.y = entry.y;
+    updatePlots();
+  }
+  syncUndoRedoButtons();
+}
+
+function redoEdit() {
+  const h = state.editHistory;
+  if (!h.redo.length) return;
+  const entry = h.redo.pop();
+  const ds = state.datasets.find(d => d.id === entry.dsId);
+  if (ds) {
+    h.undo.push({ dsId: ds.id, y: ds.y.slice() });
+    if (h.undo.length > 100) h.undo.shift();
+    ds.y = entry.y;
+    updatePlots();
+  }
+  syncUndoRedoButtons();
+}
+
+function syncUndoRedoButtons() {
+  const bu = document.getElementById('btn-edit-undo');
+  const br = document.getElementById('btn-edit-redo');
+  if (bu) bu.disabled = !state.editHistory.undo.length;
+  if (br) br.disabled = !state.editHistory.redo.length;
+}
+
+/* ── Radius canvas overlay ───────────────────────────── */
+function syncRadiusCanvas() {
+  const canvas = document.getElementById('edit-radius-canvas');
+  const mainEl = document.getElementById('main-plot');
+  if (!canvas || !mainEl) return;
+  const w = mainEl.offsetWidth, h = mainEl.offsetHeight;
+  if (canvas.width !== w) canvas.width = w;
+  if (canvas.height !== h) canvas.height = h;
+}
+
+function drawRadiusOverlay(mx, my) {
+  const canvas = document.getElementById('edit-radius-canvas');
+  if (!canvas) return;
+  syncRadiusCanvas();
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const r = state.editSelectRadius;
+  if (r <= 0 || mx == null) return;
+  ctx.beginPath();
+  ctx.arc(mx, my, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(245,158,11,0.8)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 3]);
+  ctx.stroke();
+}
+
+function clearRadiusOverlay() {
+  const canvas = document.getElementById('edit-radius-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 function initEditMode() {
   const mainEl = document.getElementById('main-plot');
   let editDragActive = false;
   let editJustDragged = false;
+  let editDragHistPushed = false;
+  let arrowKeyActive = false;
+  let lastMouseX = null, lastMouseY = null;
 
-  // Start drag only when mousedown on the plot with an active selection
+  // Track mouse position for the radius circle preview
+  mainEl.addEventListener('mousemove', e => {
+    const rect = mainEl.getBoundingClientRect();
+    lastMouseX = e.clientX - rect.left;
+    lastMouseY = e.clientY - rect.top;
+    if (state.editMode && state.editSelectRadius > 0) drawRadiusOverlay(lastMouseX, lastMouseY);
+  });
+  mainEl.addEventListener('mouseleave', () => { if (state.editMode) clearRadiusOverlay(); });
+
+  // Scroll wheel changes capture radius
+  mainEl.addEventListener('wheel', e => {
+    if (!state.editMode) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 5 : -5;
+    state.editSelectRadius = Math.max(0, Math.min(300, state.editSelectRadius + delta));
+    document.getElementById('edit-radius-display').textContent = state.editSelectRadius + ' px';
+    syncRadiusCanvas();
+    drawRadiusOverlay(lastMouseX, lastMouseY);
+  }, { passive: false });
+
+  // Start drag when mousedown with an active selection
   mainEl.addEventListener('mousedown', () => {
     if (!state.editMode || !state.selection.indices.size) return;
     editDragActive = true;
     editJustDragged = false;
+    editDragHistPushed = false;
   });
 
   document.addEventListener('mousemove', e => {
@@ -1232,47 +1378,72 @@ function initEditMode() {
     if (e.buttons !== 1) { editDragActive = false; return; }
     const dy = e.movementY;
     if (!dy) return;
+    if (!editDragHistPushed) { pushEditHistory(); editDragHistPushed = true; }
     editJustDragged = true;
     nudgeSelection(computeYDataDelta(dy, mainEl));
   });
 
   document.addEventListener('mouseup', () => {
     if (editDragActive) editDragActive = false;
-    // Keep editJustDragged set briefly so plotly_click suppression fires
     setTimeout(() => { editJustDragged = false; }, 80);
   });
 
-  // Click-to-select via Plotly's event
+  // Click-to-select (and deselect) via Plotly's event
   mainEl.on('plotly_click', function(data) {
     if (!state.editMode) return;
     if (editJustDragged) { editJustDragged = false; return; }
-    const pt = data.points[0];
-    if (!pt || pt.data.mode !== 'markers' || pt.data.name === '_sel') return;
-
-    const ds = state.datasets.find(d => d.name === pt.data.name);
-    if (!ds) return;
-    const idx = pt.pointIndex;
     const shift = data.event && data.event.shiftKey;
+    const rect = mainEl.getBoundingClientRect();
+    const clickX = data.event.clientX - rect.left;
+    const clickY = data.event.clientY - rect.top;
 
-    if (shift && state.selection.dsId === ds.id) {
-      state.selection.indices.has(idx)
-        ? state.selection.indices.delete(idx)
-        : state.selection.indices.add(idx);
+    if (state.editSelectRadius > 0) {
+      // Radius-based multi-select
+      const result = findPointsInRadius(clickX, clickY, state.editSelectRadius);
+      if (!result || !result.indices.size) return;
+      const { ds, indices } = result;
+      if (shift && state.selection.dsId === ds.id) {
+        indices.forEach(i => {
+          state.selection.indices.has(i) ? state.selection.indices.delete(i) : state.selection.indices.add(i);
+        });
+      } else {
+        state.selection = { dsId: ds.id, indices };
+      }
     } else {
-      state.selection = { dsId: ds.id, indices: new Set([idx]) };
+      // Exact click
+      const pt = data.points[0];
+      if (!pt || pt.data.mode !== 'markers' || pt.data.name === '_sel') return;
+      const ds = state.datasets.find(d => d.name === pt.data.name);
+      if (!ds) return;
+      const idx = pt.pointIndex;
+      if (shift && state.selection.dsId === ds.id) {
+        // Shift+click: toggle this point
+        state.selection.indices.has(idx) ? state.selection.indices.delete(idx) : state.selection.indices.add(idx);
+      } else if (state.selection.dsId === ds.id && state.selection.indices.has(idx)) {
+        // Click on already-selected point: deselect it
+        state.selection.indices.delete(idx);
+      } else {
+        state.selection = { dsId: ds.id, indices: new Set([idx]) };
+      }
     }
     updatePlots();
   });
 
-  // Arrow-key nudge
+  // Arrow-key nudge + Ctrl+Z/Y
   document.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'z' && state.editMode) { e.preventDefault(); undoEdit(); return; }
+    if (e.ctrlKey && (e.key === 'y' || e.key === 'Z') && state.editMode) { e.preventDefault(); redoEdit(); return; }
     if (!state.editMode || !state.selection.indices.size) return;
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     e.preventDefault();
+    if (!arrowKeyActive) { pushEditHistory(); arrowKeyActive = true; }
     const step = parseFloat(document.getElementById('edit-nudge-step').value) || 0.1;
     nudgeSelection(e.key === 'ArrowUp' ? step : -step);
+  });
+  document.addEventListener('keyup', e => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') arrowKeyActive = false;
   });
 }
 
@@ -1732,10 +1903,23 @@ function initEvents() {
     document.querySelector('.app-shell').classList.toggle('edit-mode', state.editMode);
     const ctrl = document.getElementById('edit-mode-controls');
     ctrl.style.display = state.editMode ? 'flex' : 'none';
-    if (!state.editMode) state.selection = { dsId: null, indices: new Set() };
+    const canvas = document.getElementById('edit-radius-canvas');
+    if (state.editMode) {
+      canvas.style.display = 'block';
+      syncRadiusCanvas();
+      syncUndoRedoButtons();
+      setConsole('Edit mode ON — click to select, scroll to set radius, drag or ↑↓ to move. Ctrl+Z / Ctrl+Y to undo/redo.', '');
+    } else {
+      state.selection = { dsId: null, indices: new Set() };
+      clearRadiusOverlay();
+      canvas.style.display = 'none';
+    }
     updatePlots();
-    if (state.editMode) setConsole('Edit mode ON — click a data point to select it. Shift+click for multi-select. Drag or use ↑↓ arrow keys to move.', '');
   });
+
+  /* ── Undo / Redo buttons ──────────────────────────────── */
+  document.getElementById('btn-edit-undo').addEventListener('click', undoEdit);
+  document.getElementById('btn-edit-redo').addEventListener('click', redoEdit);
 
   /* ── Initial state ────────────────────────────────────── */
   document.getElementById('btn-toggle-residuals').classList.add('active');
