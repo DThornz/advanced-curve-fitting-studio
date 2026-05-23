@@ -951,7 +951,6 @@ const state = {
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [] },
   plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
-  editMode: false,
   selection: { dsId: null, indices: new Set() },
   editHistory: { undo: [], redo: [] },
   editSelectRadius: 0,
@@ -1162,7 +1161,7 @@ function baseLayout(extra) {
     })(),
     hovermode: 'closest',
     showlegend: true,
-    dragmode: state.editMode ? false : 'zoom',
+    dragmode: 'pan',
   };
   return Object.assign(base, extra || {});
 }
@@ -1279,7 +1278,7 @@ function buildMainTraces() {
     }
   }
   // Selection overlay in edit mode
-  if (state.editMode && state.selection.dsId && state.selection.indices.size) {
+  if (state.selection.dsId && state.selection.indices.size) {
     const sds = state.datasets.find(d => d.id === state.selection.dsId);
     if (sds) {
       const sx = [], sy = [];
@@ -1337,7 +1336,7 @@ function updatePlots() {
   const residEl = document.getElementById('residual-plot');
 
   if (!plotsInitialised) {
-    const plotCfg = { responsive: true, displaylogo: false, edits: { legendPosition: true }, modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'] };
+    const plotCfg = { responsive: true, displaylogo: false, scrollZoom: true, edits: { legendPosition: true }, modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'] };
     Plotly.newPlot(mainEl, mainTraces, mainLayout, plotCfg);
     const resTraces = buildResidualTraces();
     const resLayout = baseLayout({
@@ -2192,24 +2191,29 @@ function clearRadiusOverlay() {
 
 function initEditMode() {
   const mainEl = document.getElementById('main-plot');
-  let editDragActive = false;
-  let editJustDragged = false;
-  let editDragHistPushed = false;
-  let arrowKeyActive = false;
+  let nearPoint = null;       // { ds, clickIdx } captured on mousedown near a point
+  let dragStartClientY = 0;
+  let isDragging = false;
+  let histPushed = false;
   let lastMouseX = null, lastMouseY = null;
+  let arrowKeyActive = false;
 
-  // Track mouse position for the radius circle preview
+  // Always show the canvas so the radius circle can render
+  const canvas = document.getElementById('edit-radius-canvas');
+  if (canvas) { canvas.style.display = 'block'; canvas.style.pointerEvents = 'none'; syncRadiusCanvas(); }
+
+  // Radius circle preview follows mouse
   mainEl.addEventListener('mousemove', e => {
     const rect = mainEl.getBoundingClientRect();
     lastMouseX = e.clientX - rect.left;
     lastMouseY = e.clientY - rect.top;
-    if (state.editMode && state.editSelectRadius > 0) drawRadiusOverlay(lastMouseX, lastMouseY);
+    if (state.editSelectRadius > 0) drawRadiusOverlay(lastMouseX, lastMouseY);
   });
-  mainEl.addEventListener('mouseleave', () => { if (state.editMode) clearRadiusOverlay(); });
+  mainEl.addEventListener('mouseleave', () => clearRadiusOverlay());
 
-  // Scroll wheel changes capture radius
+  // Shift+scroll: adjust capture radius.  Plain scroll → Plotly zoom (scrollZoom:true).
   mainEl.addEventListener('wheel', e => {
-    if (!state.editMode) return;
+    if (!e.shiftKey) return;
     e.preventDefault();
     const delta = e.deltaY < 0 ? 5 : -5;
     state.editSelectRadius = Math.max(0, Math.min(300, state.editSelectRadius + delta));
@@ -2218,98 +2222,129 @@ function initEditMode() {
     drawRadiusOverlay(lastMouseX, lastMouseY);
   }, { passive: false });
 
-  // Start drag when mousedown with an active selection
-  mainEl.addEventListener('mousedown', () => {
-    if (!state.editMode || !state.selection.indices.size) return;
-    editDragActive = true;
-    editJustDragged = false;
-    editDragHistPushed = false;
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (!editDragActive || !state.editMode) return;
-    if (e.buttons !== 1) { editDragActive = false; return; }
-    const dy = e.movementY;
-    if (!dy) return;
-    if (!editDragHistPushed) { pushEditHistory(); editDragHistPushed = true; }
-    editJustDragged = true;
-    nudgeSelection(computeYDataDelta(dy, mainEl));
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (editDragActive) editDragActive = false;
-    setTimeout(() => { editJustDragged = false; }, 80);
-  });
-
-  // Click-to-select using native DOM events (avoids plotly_click being suppressed by dragmode:false)
-  mainEl.addEventListener('click', function(e) {
-    if (!state.editMode) return;
-    if (editJustDragged) { editJustDragged = false; return; }
-    const shift = e.shiftKey;
+  // Capture-phase mousedown — intercepts near-point clicks before Plotly starts a pan
+  mainEl.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
     const rect = mainEl.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const hitR = state.editSelectRadius > 0 ? state.editSelectRadius : 10;
+    const result = findPointsInRadius(mx, my, hitR);
+
+    if (!result || !result.indices.size) {
+      nearPoint = null;
+      return; // not near any point — fall through to Plotly (pan)
+    }
+
+    e.stopPropagation(); // prevent Plotly from seeing this mousedown
+
+    const { ds, indices } = result;
 
     if (state.editSelectRadius > 0) {
-      // Radius-based multi-select
-      const result = findPointsInRadius(clickX, clickY, state.editSelectRadius);
-      if (!result || !result.indices.size) return;
-      const { ds, indices } = result;
-      if (shift && state.selection.dsId === ds.id) {
-        indices.forEach(i => {
-          state.selection.indices.has(i) ? state.selection.indices.delete(i) : state.selection.indices.add(i);
-        });
+      // Radius mode: commit selection immediately so drag moves all captured points
+      if (e.shiftKey && state.selection.dsId === ds.id) {
+        indices.forEach(i => state.selection.indices.has(i) ? state.selection.indices.delete(i) : state.selection.indices.add(i));
       } else {
-        state.selection = { dsId: ds.id, indices };
+        state.selection = { dsId: ds.id, indices: new Set(indices) };
       }
+      nearPoint = { ds, clickIdx: -1 };
     } else {
-      // Exact click — find nearest point within 10 px
-      const result = findPointsInRadius(clickX, clickY, 10);
-      if (!result || !result.indices.size) return;
-      const { ds } = result;
-      const fl = document.getElementById('main-plot')._fullLayout;
-      const xa = fl.xaxis, ya = fl.yaxis;
-      let nearestIdx = -1, nearestDist = Infinity;
-      result.indices.forEach(i => {
+      // Exact mode: find nearest point; defer selection to mouseup to avoid flicker on drag
+      const fl = mainEl._fullLayout;
+      const xa = fl && fl.xaxis, ya = fl && fl.yaxis;
+      let clickIdx = -1, bestD2 = Infinity;
+      indices.forEach(i => {
         const { px, py } = dataToPx(ds.x[i], ds.y[i], xa, ya);
-        const d2 = (px - clickX) ** 2 + (py - clickY) ** 2;
-        if (d2 < nearestDist) { nearestDist = d2; nearestIdx = i; }
+        const d2 = (mx - px) ** 2 + (my - py) ** 2;
+        if (d2 < bestD2) { bestD2 = d2; clickIdx = i; }
       });
-      if (nearestIdx < 0) return;
-      if (shift && state.selection.dsId === ds.id) {
-        state.selection.indices.has(nearestIdx) ? state.selection.indices.delete(nearestIdx) : state.selection.indices.add(nearestIdx);
-      } else if (state.selection.dsId === ds.id && state.selection.indices.has(nearestIdx)) {
-        state.selection.indices.delete(nearestIdx);
-      } else {
-        state.selection = { dsId: ds.id, indices: new Set([nearestIdx]) };
+      nearPoint = { ds, clickIdx };
+    }
+
+    dragStartClientY = e.clientY;
+    isDragging = false;
+    histPushed = false;
+
+    // Auto-reveal edit controls on first interaction
+    const ctrl = document.getElementById('edit-mode-controls');
+    if (ctrl && ctrl.style.display !== 'flex') ctrl.style.display = 'flex';
+    document.getElementById('btn-edit-mode').classList.add('active');
+
+    updatePlots();
+    syncUndoRedoButtons();
+  }, { capture: true });
+
+  // Drag: move selected point(s) vertically
+  document.addEventListener('mousemove', e => {
+    if (!nearPoint || e.buttons !== 1) return;
+    if (!isDragging && Math.abs(e.clientY - dragStartClientY) > 3) {
+      isDragging = true;
+      // Exact mode: commit selection now that we know it's a drag
+      if (state.editSelectRadius <= 0 && nearPoint.clickIdx >= 0) {
+        const idx = nearPoint.clickIdx;
+        if (!(state.selection.dsId === nearPoint.ds.id && state.selection.indices.has(idx))) {
+          state.selection = { dsId: nearPoint.ds.id, indices: new Set([idx]) };
+          updatePlots();
+        }
       }
     }
+    if (!isDragging || !state.selection.indices.size) return;
+    if (!histPushed) { pushEditHistory(); histPushed = true; }
+    nudgeSelection(computeYDataDelta(e.movementY, mainEl));
+  });
+
+  // Mouseup: commit click-selection, or end drag
+  document.addEventListener('mouseup', e => {
+    if (!nearPoint) return;
+    if (!isDragging) {
+      const { ds, clickIdx: idx } = nearPoint;
+      if (idx >= 0) {
+        if (e.shiftKey && state.selection.dsId === ds.id) {
+          state.selection.indices.has(idx) ? state.selection.indices.delete(idx) : state.selection.indices.add(idx);
+        } else if (state.selection.dsId === ds.id && state.selection.indices.has(idx)) {
+          state.selection.indices.delete(idx);
+        } else {
+          state.selection = { dsId: ds.id, indices: new Set([idx]) };
+        }
+        updatePlots();
+      }
+    }
+    nearPoint = null;
+    isDragging = false;
+    histPushed = false;
+    syncUndoRedoButtons();
+  });
+
+  // Click on empty space → clear selection
+  mainEl.addEventListener('click', e => {
+    const rect = mainEl.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const result = findPointsInRadius(mx, my, Math.max(state.editSelectRadius, 10));
+    if (result && result.indices.size) return; // near a point, already handled by mouseup
+    if (!state.selection.indices.size) return;
+    state.selection = { dsId: null, indices: new Set() };
     updatePlots();
     syncUndoRedoButtons();
   });
 
-  // Arrow-key nudge (↑↓) + point navigation (←→) + Ctrl+Z/Y
+  // Escape: clear selection
   document.addEventListener('keydown', e => {
-    if (e.ctrlKey && e.key === 'z' && state.editMode) { e.preventDefault(); undoEdit(); return; }
-    if (e.ctrlKey && (e.key === 'y' || e.key === 'Z') && state.editMode) { e.preventDefault(); redoEdit(); return; }
-    if (!state.editMode || !state.selection.indices.size) return;
+    if (e.key === 'Escape') {
+      if (state.selection.indices.size) { state.selection = { dsId: null, indices: new Set() }; updatePlots(); syncUndoRedoButtons(); }
+      return;
+    }
+    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoEdit(); return; }
+    if (e.ctrlKey && (e.key === 'y' || e.key === 'Z')) { e.preventDefault(); redoEdit(); return; }
+    if (!state.selection.indices.size) return;
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-    // ← → : snap selection to adjacent point (only when exactly 1 point selected)
     if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && state.selection.indices.size === 1) {
       e.preventDefault();
       const ds = state.datasets.find(d => d.id === state.selection.dsId);
-      if (!ds || !ds.x.length) return;
+      if (!ds) return;
       const cur = [...state.selection.indices][0];
-      const next = e.key === 'ArrowRight'
-        ? Math.min(cur + 1, ds.x.length - 1)
-        : Math.max(cur - 1, 0);
-      if (next !== cur) {
-        state.selection = { dsId: ds.id, indices: new Set([next]) };
-        updatePlots();
-        syncUndoRedoButtons();
-      }
+      const next = e.key === 'ArrowRight' ? Math.min(cur + 1, ds.x.length - 1) : Math.max(cur - 1, 0);
+      if (next !== cur) { state.selection = { dsId: ds.id, indices: new Set([next]) }; updatePlots(); syncUndoRedoButtons(); }
       return;
     }
 
@@ -3107,25 +3142,13 @@ function initEvents() {
     if (plotsInitialised) { Plotly.Plots.resize('main-plot'); Plotly.Plots.resize('residual-plot'); }
   });
 
-  /* ── Edit mode toggle ─────────────────────────────────── */
+  /* ── Edit controls panel toggle ───────────────────────── */
   document.getElementById('btn-edit-mode').addEventListener('click', function () {
-    state.editMode = !state.editMode;
-    this.classList.toggle('active', state.editMode);
-    document.querySelector('.app-shell').classList.toggle('edit-mode', state.editMode);
     const ctrl = document.getElementById('edit-mode-controls');
-    ctrl.style.display = state.editMode ? 'flex' : 'none';
-    const canvas = document.getElementById('edit-radius-canvas');
-    if (state.editMode) {
-      canvas.style.display = 'block';
-      syncRadiusCanvas();
-      syncUndoRedoButtons();
-      setConsole('Edit mode ON — click to select, scroll to set radius, drag or ↑↓ to move. Ctrl+Z / Ctrl+Y to undo/redo.', '');
-    } else {
-      state.selection = { dsId: null, indices: new Set() };
-      clearRadiusOverlay();
-      canvas.style.display = 'none';
-    }
-    updatePlots();
+    const showing = ctrl.style.display === 'flex';
+    ctrl.style.display = showing ? 'none' : 'flex';
+    this.classList.toggle('active', !showing);
+    if (!showing) syncUndoRedoButtons();
   });
 
   /* ── Undo / Redo / Reset buttons ─────────────────────── */
