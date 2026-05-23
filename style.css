@@ -186,6 +186,57 @@ body.dark-mode .app-section-label{color:#e2e8f0!important}
 body.dark-mode .app-section-title{color:#2dd4bf!important}
 
 /* ═══════════════════════════════════════════════════════════
+   APP LAUNCH CARD
+═══════════════════════════════════════════════════════════ */
+.app-launch-section{border-bottom:1px solid var(--border)}
+.app-launch-card{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:64px 24px;gap:20px;
+  background:var(--bg)
+}
+.app-launch-icon{font-size:2.8em;line-height:1}
+.app-launch-title{
+  font-family:var(--serif);font-size:2em;font-weight:400;
+  color:var(--text);margin:0;letter-spacing:-.01em
+}
+.app-launch-desc{
+  max-width:560px;font-size:.95em;color:var(--muted);line-height:1.7;margin:0
+}
+.app-launch-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.app-launch-pill{
+  font-family:var(--mono);font-size:.72em;
+  padding:4px 12px;border-radius:99px;
+  background:var(--bg3);border:1px solid var(--border);color:var(--dim)
+}
+.app-launch-btn{
+  margin-top:8px;padding:12px 32px!important;
+  font-size:1em!important;letter-spacing:.02em
+}
+body.dark-mode .app-launch-card{background:#060e1c!important}
+body.dark-mode .app-launch-title{color:#e2e8f0!important}
+body.dark-mode .app-launch-pill{background:#0a1628!important;border-color:#1c3050!important;color:#3d5470!important}
+
+/* ═══════════════════════════════════════════════════════════
+   FULL-SCREEN OVERLAY
+═══════════════════════════════════════════════════════════ */
+.app-fullscreen-overlay{
+  display:none;
+  position:fixed;top:0;left:0;width:100vw;height:100vh;
+  z-index:600;
+  flex-direction:column;
+  background:var(--bg);
+}
+.app-fullscreen-overlay.open{display:flex}
+.app-fullscreen-overlay .app-shell{
+  flex:1;min-height:0;
+  display:flex;flex-direction:column;
+  font-size:15px
+}
+.app-fullscreen-overlay .app-workspace{
+  flex:1;height:auto;min-height:0
+}
+
+/* ═══════════════════════════════════════════════════════════
    APP SHELL — outer container
 ═══════════════════════════════════════════════════════════ */
 .app-section{background:var(--bg);border-bottom:1px solid var(--border)}

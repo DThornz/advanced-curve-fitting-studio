@@ -2654,6 +2654,36 @@ function initEvents() {
   /* ── Session ──────────────────────────────────────────── */
   document.getElementById('btn-save').addEventListener('click', saveSession);
   document.getElementById('btn-load').addEventListener('click', loadSession);
+
+  /* ── Full-screen overlay open / close ─────────────────── */
+  const appOverlay = document.getElementById('app-overlay');
+  let appEverOpened = false;
+  function openApp() {
+    appOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      if (!appEverOpened) {
+        // First open: plots were init'd in a hidden zero-size div — do a full re-render
+        plotsInitialised = false;
+        updatePlots();
+        appEverOpened = true;
+      } else {
+        Plotly.Plots.resize('main-plot');
+        const resEl = document.getElementById('residual-plot');
+        if (resEl && !resEl.classList.contains('hidden')) Plotly.Plots.resize(resEl);
+      }
+    });
+  }
+  function closeApp() {
+    appOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  const btnLaunch = document.getElementById('btn-launch-app');
+  if (btnLaunch) btnLaunch.addEventListener('click', openApp);
+  document.getElementById('btn-close-app').addEventListener('click', closeApp);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && appOverlay.classList.contains('open')) closeApp();
+  });
   document.getElementById('btn-auto-restore').addEventListener('click', () => {
     const isOn = localStorage.getItem('cfs_autorestore') !== '0';
     const next = !isOn;

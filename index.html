@@ -72,9 +72,28 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
-     THE APPLICATION
+     LAUNCH CARD
 ══════════════════════════════════════════════════════════ -->
-<div class="app-section" id="app">
+<div class="app-section app-launch-section" id="app">
+  <div class="app-launch-card">
+    <div class="app-launch-icon">📈</div>
+    <h2 class="app-launch-title">Advanced Curve Fitting Studio</h2>
+    <p class="app-launch-desc">Browser-native nonlinear regression — 16+ built-in models, four algorithms, interactive Plotly plots, custom equations. All computation runs locally; no server, no install.</p>
+    <div class="app-launch-pills">
+      <span class="app-launch-pill">LM · Gauss-Newton · Nelder-Mead · BFGS</span>
+      <span class="app-launch-pill">Custom Equations</span>
+      <span class="app-launch-pill">Session Save / Restore</span>
+      <span class="app-launch-pill">Export PNG · SVG · CSV · TXT</span>
+      <span class="app-launch-pill">Offline-First</span>
+    </div>
+    <button class="btn btn-primary app-launch-btn" id="btn-launch-app">▶&nbsp; Start Advanced Curve Fitting Studio</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     FULL-SCREEN APP OVERLAY
+══════════════════════════════════════════════════════════ -->
+<div class="app-fullscreen-overlay" id="app-overlay">
   <div class="app-shell">
 
     <!-- TAB BAR -->
@@ -140,6 +159,8 @@
         <button class="btn" id="btn-save" title="Save session to browser local storage">Save Session</button>
         <button class="btn" id="btn-load" title="Load last saved session">Load Session</button>
         <button class="btn btn-toggle" id="btn-auto-restore" title="When ON, last saved session is automatically restored on page reload. Turn OFF to always start fresh.">Auto-restore</button>
+        <div class="app-toolbar-sep"></div>
+        <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
 
@@ -317,7 +338,7 @@
     </div>
 
   </div><!-- end app-shell -->
-</div><!-- end app-section -->
+</div><!-- end app-fullscreen-overlay -->
 
 <div class="page-wrap" id="theory-wrap" style="margin-top:48px">
 
