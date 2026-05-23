@@ -711,8 +711,9 @@ function gauss() {
   return u * Math.sqrt(-2 * Math.log(u * u + v * v) / (u * u + v * v));
 }
 function noisyGauss(arr, sigma) { return arr.map(v => v + gauss() * sigma); }
-function injectOutliers(arr, count) {
+function injectOutliers(arr, count, scale) {
   if (!count || count <= 0) return arr;
+  if (!scale || scale <= 0) scale = 4;
   const result = arr.slice();
   const n = result.length;
   const finite = arr.filter(v => isFinite(v));
@@ -723,7 +724,7 @@ function injectOutliers(arr, count) {
   for (let k = 0; k < Math.min(count, n); k++) {
     const j = Math.floor(Math.random() * pool.length);
     const i = pool.splice(j, 1)[0];
-    result[i] += (Math.random() < 0.5 ? 1 : -1) * range * (3 + Math.random() * 3);
+    result[i] += (Math.random() < 0.5 ? 1 : -1) * range * scale * (0.8 + Math.random() * 0.4);
   }
   return result;
 }
@@ -1968,7 +1969,12 @@ function openExampleEditor(key) {
       <input class="ctrl-input ex-param-input" type="number"
         data-key="${p.key}" value="${p.value}"
         min="${p.min}" max="${p.max}" step="${p.step}">
-    </div>`).join('');
+    </div>`).join('') + `
+    <div class="ex-param-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px">
+      <label class="ex-param-label">Outlier scale</label>
+      <input class="ctrl-input ex-param-input" type="number"
+        data-key="outlierScale" value="4" min="0.5" max="20" step="0.5">
+    </div>`;
   document.getElementById('example-modal').style.display = 'flex';
 }
 
@@ -1990,7 +1996,7 @@ function loadExampleFromModal() {
   ex.params.forEach(d => { if (d.step === 1) p[d.key] = Math.max(d.min, Math.round(p[d.key])); });
 
   const data = ex.generate(p);
-  if (p.outliers > 0) data.y = injectOutliers(data.y, Math.round(p.outliers));
+  if (p.outliers > 0) data.y = injectOutliers(data.y, Math.round(p.outliers), p.outlierScale || 4);
   closeExampleModal();
   const ds = importDataset(data.name, data.x, data.y);
   if (!ds) return;
@@ -2228,14 +2234,14 @@ function initEditMode() {
     setTimeout(() => { editJustDragged = false; }, 80);
   });
 
-  // Click-to-select (and deselect) via Plotly's event
-  mainEl.on('plotly_click', function(data) {
+  // Click-to-select using native DOM events (avoids plotly_click being suppressed by dragmode:false)
+  mainEl.addEventListener('click', function(e) {
     if (!state.editMode) return;
     if (editJustDragged) { editJustDragged = false; return; }
-    const shift = data.event && data.event.shiftKey;
+    const shift = e.shiftKey;
     const rect = mainEl.getBoundingClientRect();
-    const clickX = data.event.clientX - rect.left;
-    const clickY = data.event.clientY - rect.top;
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
 
     if (state.editSelectRadius > 0) {
       // Radius-based multi-select
@@ -2250,20 +2256,25 @@ function initEditMode() {
         state.selection = { dsId: ds.id, indices };
       }
     } else {
-      // Exact click
-      const pt = data.points[0];
-      if (!pt || pt.data.mode !== 'markers' || (pt.data.name || '').startsWith('_')) return;
-      const ds = state.datasets.find(d => d.name === pt.data.name);
-      if (!ds) return;
-      const idx = (pt.customdata != null && pt.customdata >= 0) ? pt.customdata : pt.pointIndex;
+      // Exact click — find nearest point within 10 px
+      const result = findPointsInRadius(clickX, clickY, 10);
+      if (!result || !result.indices.size) return;
+      const { ds } = result;
+      const fl = document.getElementById('main-plot')._fullLayout;
+      const xa = fl.xaxis, ya = fl.yaxis;
+      let nearestIdx = -1, nearestDist = Infinity;
+      result.indices.forEach(i => {
+        const { px, py } = dataToPx(ds.x[i], ds.y[i], xa, ya);
+        const d2 = (px - clickX) ** 2 + (py - clickY) ** 2;
+        if (d2 < nearestDist) { nearestDist = d2; nearestIdx = i; }
+      });
+      if (nearestIdx < 0) return;
       if (shift && state.selection.dsId === ds.id) {
-        // Shift+click: toggle this point
-        state.selection.indices.has(idx) ? state.selection.indices.delete(idx) : state.selection.indices.add(idx);
-      } else if (state.selection.dsId === ds.id && state.selection.indices.has(idx)) {
-        // Click on already-selected point: deselect it
-        state.selection.indices.delete(idx);
+        state.selection.indices.has(nearestIdx) ? state.selection.indices.delete(nearestIdx) : state.selection.indices.add(nearestIdx);
+      } else if (state.selection.dsId === ds.id && state.selection.indices.has(nearestIdx)) {
+        state.selection.indices.delete(nearestIdx);
       } else {
-        state.selection = { dsId: ds.id, indices: new Set([idx]) };
+        state.selection = { dsId: ds.id, indices: new Set([nearestIdx]) };
       }
     }
     updatePlots();
