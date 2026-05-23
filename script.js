@@ -1516,6 +1516,7 @@ function updatePlots() {
   }
 
   checkLogSuggest();
+  syncResidualDimState();
 }
 
 function checkLogSuggest() {
@@ -2003,11 +2004,24 @@ function validateFitInput(xArr, yArr, model, p0) {
 /* ═══════════════════════════════════════════════════════════
    FIT ENGINE — DISPATCH
 ═══════════════════════════════════════════════════════════ */
+function setResidualDim(dim) {
+  document.getElementById('residual-tab-bar')?.classList.toggle('resid-dim', dim);
+  document.getElementById('residual-plot')?.classList.toggle('resid-dim', dim);
+}
+
+function syncResidualDimState() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  const ds  = fit ? state.datasets.find(d => d.id === fit.dsId) : null;
+  setResidualDim(ds ? ds.enabled === false : false);
+}
+
 function setFitting(active) {
   const btnFit    = document.getElementById('btn-fit');
   const btnCancel = document.getElementById('btn-cancel-fit');
   if (btnFit)    btnFit.disabled = active;
   if (btnCancel) btnCancel.style.display = active ? '' : 'none';
+  if (active) setResidualDim(true);
+  else syncResidualDimState();
 }
 
 function runFit() {

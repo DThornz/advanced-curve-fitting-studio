@@ -369,6 +369,8 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
   flex-shrink:0;padding:0 8px;height:26px
 }
 #residual-tab-bar.hidden{display:none}
+#residual-tab-bar,#residual-plot{transition:opacity .18s}
+#residual-tab-bar.resid-dim,#residual-plot.resid-dim{opacity:.28}
 .resid-tab{
   font-size:.67em;font-family:var(--sans);font-weight:500;
   padding:3px 11px 2px;margin-bottom:-1px;
