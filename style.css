@@ -508,6 +508,9 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 .btn-danger:hover{border-color:var(--red);color:var(--red);background:rgba(220,38,38,.06)}
 .btn-toggle{border-color:var(--border);color:var(--dim)}
 .btn-toggle.active{border-color:var(--teal);color:var(--teal);background:var(--teal-glow);font-weight:600}
+.btn:disabled,.btn[disabled]{opacity:.45;pointer-events:none;cursor:not-allowed}
+#btn-cancel-fit{border-color:var(--red);color:var(--red)}
+#btn-cancel-fit:hover{background:rgba(220,38,38,.08)}
 
 /* ── Dropdown menus ──────────────────────────────────────── */
 .app-dropdown-wrap{position:relative}

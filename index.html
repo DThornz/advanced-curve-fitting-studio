@@ -110,6 +110,7 @@
       </div>
       <div class="app-toolbar-sep"></div>
       <button class="btn btn-primary" id="btn-fit">▶  Fit</button>
+      <button class="btn btn-danger" id="btn-cancel-fit" style="display:none" title="Cancel the current fit">✕ Cancel</button>
       <button class="btn" id="btn-try-all" title="Fit every built-in model and rank by R²">Try All</button>
       <button class="btn btn-danger" id="btn-clear-fit" title="Remove the selected fit">✕  Remove Fit</button>
       <div class="app-toolbar-sep"></div>
@@ -192,6 +193,7 @@
           <button class="resid-tab active" data-tab="residuals">Residuals</button>
           <button class="resid-tab" data-tab="qq">Q-Q Plot</button>
           <button class="resid-tab" data-tab="hist">Histogram</button>
+          <button class="resid-tab" data-tab="convergence">Convergence</button>
         </div>
         <div id="residual-plot" class="plot-div-residual"></div>
       </div>

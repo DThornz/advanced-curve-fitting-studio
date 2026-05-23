@@ -977,6 +977,7 @@ const state = {
   selection: { dsId: null, indices: new Set() },
   editHistory: { undo: [], redo: [] },
   editSelectRadius: 0,
+  currentWorker: null,
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -1423,10 +1424,49 @@ function buildHistPanel(tc) {
   };
 }
 
+function buildConvergencePanel(tc) {
+  const noLayout = baseLayout({
+    annotations: [{ text: 'No active fit', x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', showarrow: false, font: { color: tc.tickCol, size: 11 } }],
+    margin: { l: 56, r: 20, t: 10, b: 36 }, showlegend: false,
+  });
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.sseHistory || fit.sseHistory.length < 2) {
+    const msg = fit && !fit.sseHistory ? 'Convergence data not available for this fit' : 'No active fit';
+    return { traces: [], layout: baseLayout({ annotations: [{ text: msg, x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', showarrow: false, font: { color: tc.tickCol, size: 11 } }], margin: { l: 56, r: 20, t: 10, b: 36 }, showlegend: false }) };
+  }
+  const history = fit.sseHistory;
+  const iters = history.map(p => p[0]);
+  const sses  = history.map(p => p[1]);
+  const convergedText = fit.result?.converged ? '✓ Converged' : '⚠ Not converged';
+  const iterText = fit.result?.iter != null ? `${fit.result.iter} iter` : '';
+  const lambdaText = fit.result?.finalLambda != null ? ` · λ=${fit.result.finalLambda.toExponential(2)}` : '';
+  const gradText = fit.result?.gradNorm != null ? ` · |∇|=${fit.result.gradNorm.toExponential(2)}` : '';
+  const subtitle = [convergedText, iterText + lambdaText + gradText].filter(Boolean).join(' · ');
+  return {
+    traces: [{
+      x: iters, y: sses, type: 'scatter', mode: 'lines+markers',
+      line: { color: fit.color || '#0b7a6e', width: 1.5 },
+      marker: { color: fit.color || '#0b7a6e', size: 3 },
+      showlegend: false, hovertemplate: 'iter %{x}<br>SSE %{y:.4g}<extra></extra>',
+    }],
+    layout: baseLayout({
+      margin: { l: 64, r: 20, t: subtitle ? 22 : 10, b: 36 },
+      title: subtitle ? { text: subtitle, font: { size: 9.5, color: tc.tickCol }, x: 0.5 } : undefined,
+      xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Iteration', font: { size: 10, color: tc.tickCol } } }),
+      yaxis: Object.assign(baseLayout().yaxis, {
+        title: { text: 'SSE', font: { size: 10, color: tc.tickCol } },
+        type: sses.every(v => v > 0) ? 'log' : 'linear', zeroline: false,
+      }),
+      showlegend: false,
+    }),
+  };
+}
+
 function buildResidualPanel(xlabel, tc) {
   const tab = state.plotConfig.residualTab || 'residuals';
-  if (tab === 'qq')   return buildQQPanel(tc);
-  if (tab === 'hist') return buildHistPanel(tc);
+  if (tab === 'qq')          return buildQQPanel(tc);
+  if (tab === 'hist')        return buildHistPanel(tc);
+  if (tab === 'convergence') return buildConvergencePanel(tc);
   return buildResidualVsXPanel(xlabel, tc);
 }
 
@@ -1768,6 +1808,9 @@ function renderStatsTable() {
     const isActive = fit.id === state.activeFitId;
     const ds = state.datasets.find(d => d.id === fit.dsId);
     const dsName = ds ? ds.name : '—';
+    const lambdaTip  = r?.finalLambda != null ? ` λ=${r.finalLambda.toExponential(2)}` : '';
+    const gradTip    = r?.gradNorm    != null ? ` |∇|=${r.gradNorm.toExponential(2)}`   : '';
+    const diagTip    = lambdaTip + gradTip;
     const statusText = !r ? '—' : r.converged ? `✓ ${r.iter}` : `⚠ ${r.iter}`;
     const statusCls  = !r ? '' : r.converged ? 'stat-status-ok' : 'stat-status-warn';
     const label = (fit.label || fit.model).replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1782,7 +1825,7 @@ function renderStatsTable() {
       <td>${r ? fmt(r.aic) : '—'}</td>
       <td>${r ? fmt(r.bic) : '—'}</td>
       <td>${r ? r.n : '—'}</td>
-      <td class="${statusCls}">${statusText}</td>
+      <td class="${statusCls}" title="${diagTip.trim()}">${statusText}${diagTip ? ' ⓘ' : ''}</td>
     </tr>`;
   }).join('');
 
@@ -1937,14 +1980,41 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   FIT ENGINE — INPUT VALIDATION
+═══════════════════════════════════════════════════════════ */
+function validateFitInput(xArr, yArr, model, p0) {
+  if (xArr.length < 3) return 'Need at least 3 non-masked points to fit.';
+  if (xArr.some(v => !isFinite(v)) || yArr.some(v => !isFinite(v))) return 'Data contains non-finite values (NaN or Infinity).';
+  const yMean = yArr.reduce((s, v) => s + v, 0) / yArr.length;
+  const yVar  = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
+  if (yVar === 0) return 'Y values are all identical — no variation to fit.';
+  const m = MODELS[model];
+  if (m && m.fn && p0) {
+    let anyFinite = false;
+    for (let i = 0; i < Math.min(xArr.length, 5); i++) {
+      const v = m.fn(xArr[i], p0);
+      if (isFinite(v)) { anyFinite = true; break; }
+    }
+    if (!anyFinite) return 'Model returns non-finite values at initial parameters — try Auto Init or adjust manually.';
+  }
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════════
    FIT ENGINE — DISPATCH
 ═══════════════════════════════════════════════════════════ */
+function setFitting(active) {
+  const btnFit    = document.getElementById('btn-fit');
+  const btnCancel = document.getElementById('btn-cancel-fit');
+  if (btnFit)    btnFit.disabled = active;
+  if (btnCancel) btnCancel.style.display = active ? '' : 'none';
+}
+
 function runFit() {
   const model = state.fitConfig.model;
   const dsId  = parseInt(document.getElementById('fit-dataset-select').value);
   const ds    = state.datasets.find(d => d.id === dsId);
   if (!ds) { setConsole('No dataset selected. Load data first.', 'error'); return; }
-  if (ds.x.length < 2) { setConsole('Need at least 2 data points.', 'error'); return; }
 
   const maxIter    = parseInt(document.getElementById('opt-max-iter').value) || 1000;
   const tol        = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
@@ -1953,17 +2023,10 @@ function runFit() {
   const nStarts    = parseInt(document.getElementById('opt-n-starts').value)  || 1;
   const weightMode = document.getElementById('opt-weights').value;
 
-  const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
-  const solve = SOLVERS[algoKey] || levenbergMarquardt;
-
-  setConsole('Fitting…', '');
-
   // Filter excluded points
   const excluded = ds.excludedIndices || new Set();
-  const xFull = ds.x, yFull = ds.y;
-  const xArr = xFull.filter((_, i) => !excluded.has(i));
-  const yArr = yFull.filter((_, i) => !excluded.has(i));
-  if (xArr.length < 2) { setConsole('Need at least 2 non-masked points.', 'error'); return; }
+  const xArr = ds.x.filter((_, i) => !excluded.has(i));
+  const yArr = ds.y.filter((_, i) => !excluded.has(i));
 
   // Compute weights
   let weights = null;
@@ -1973,19 +2036,112 @@ function runFit() {
     weights = yArr.map(y => 1 / Math.max(Math.abs(y), 1e-10));
   }
 
-  let result, modelFn, paramNames;
   const m = MODELS[model];
-  const opts = { maxIter, tol, weights };
 
+  // Polynomials: analytic solve in main thread (instant, no worker needed)
   if (m && m.analytic) {
-    const degree = m.degree;
-    result = fitPolynomialAnalytic(degree, xArr, yArr);
-    paramNames = m.params;
-    modelFn = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, degree - j), 0);
-  } else if (model === 'Custom') {
+    const errMsg = validateFitInput(xArr, yArr, model, null);
+    if (errMsg) { setConsole(errMsg, 'error'); return; }
+    const degree   = m.degree;
+    const result   = fitPolynomialAnalytic(degree, xArr, yArr);
+    const modelFn  = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, degree - j), 0);
+    const paramNames = m.params;
+    _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory: null });
+    return;
+  }
+
+  // For custom equation, validate compiled state upfront
+  let customExpr = null, paramNames = null, p0 = null;
+  if (model === 'Custom') {
     if (!customCompiled) { setConsole('Parse the custom equation first.', 'error'); return; }
     paramNames = state.fitConfig.customParams;
     if (!paramNames.length) { setConsole('No free parameters in custom equation.', 'error'); return; }
+    customExpr = state.fitConfig.customExpr;
+    p0 = state.paramRows.length === paramNames.length ? state.paramRows.map(r => r.init) : paramNames.map(() => 1);
+  } else if (m && m.fn) {
+    paramNames = m.params;
+    p0 = state.paramRows.length === paramNames.length ? state.paramRows.map(r => r.init) : m.autoInit(xArr, yArr);
+  } else {
+    setConsole('Unknown model.', 'error'); return;
+  }
+
+  const errMsg = validateFitInput(xArr, yArr, model, p0);
+  if (errMsg) { setConsole(errMsg, 'error'); return; }
+
+  // Cancel any running worker
+  if (state.currentWorker) { state.currentWorker.terminate(); state.currentWorker = null; }
+
+  const jobId = nextId();
+  let worker;
+  try {
+    worker = new Worker('fitting-worker.js');
+  } catch (e) {
+    // Web Workers may be blocked (e.g. file:// protocol) — fall back to synchronous fit
+    _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0 });
+    return;
+  }
+
+  state.currentWorker = worker;
+  setFitting(true);
+  setConsole('Fitting… (0 iter)', '');
+
+  worker.onmessage = (e) => {
+    const msg = e.data;
+    if (msg.jobId !== jobId) return;
+
+    if (msg.type === 'progress') {
+      setConsole(`Fitting… (${msg.iter} iter, SSE=${msg.sse.toExponential(3)})`, '');
+      return;
+    }
+
+    if (msg.type === 'error') {
+      state.currentWorker = null;
+      setFitting(false);
+      setConsole('Fit error: ' + msg.message, 'error');
+      return;
+    }
+
+    if (msg.type === 'result') {
+      state.currentWorker = null;
+      setFitting(false);
+      worker.terminate();
+
+      const result   = msg.result;
+      const sseHistory = msg.sseHistory || null;
+      const modelFn  = model === 'Custom'
+        ? ((compiled => (x, params) => {
+            const scope = { x };
+            paramNames.forEach((name, i) => { scope[name] = params[i]; });
+            const v = compiled.evaluate(scope);
+            return isFinite(v) ? v : NaN;
+          })(customCompiled))
+        : m.fn;
+
+      _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory });
+    }
+  };
+
+  worker.onerror = (e) => {
+    state.currentWorker = null;
+    setFitting(false);
+    setConsole('Worker error: ' + (e.message || 'unknown'), 'error');
+  };
+
+  const paramRows = state.paramRows.map(r => ({ init: r.init, min: r.min, max: r.max }));
+  worker.postMessage({
+    jobId, modelKey: model, customExpr, paramNames, p0, x: xArr, y: yArr,
+    opts: { algo: algoKey, maxIter, tol, weights, nStarts, paramRows },
+  });
+}
+
+function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0 }) {
+  const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
+  const solve = SOLVERS[algoKey] || levenbergMarquardt;
+  const opts  = { maxIter, tol, weights };
+  const m = MODELS[model];
+  setConsole('Fitting (sync)…', '');
+  let result, modelFn;
+  if (model === 'Custom') {
     const compiled = customCompiled;
     modelFn = (x, params) => {
       const scope = { x };
@@ -1993,26 +2149,17 @@ function runFit() {
       const v = compiled.evaluate(scope);
       return isFinite(v) ? v : NaN;
     };
-    const p0 = state.paramRows.length === paramNames.length
-      ? state.paramRows.map(r => r.init)
-      : paramNames.map(() => 1);
-    result = nStarts > 1
-      ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
-      : solve(modelFn, xArr, yArr, p0, opts);
-  } else if (m && m.fn) {
-    paramNames = m.params;
-    modelFn = m.fn;
-    const p0 = state.paramRows.length === paramNames.length
-      ? state.paramRows.map(r => r.init)
-      : m.autoInit(xArr, yArr);
-    result = nStarts > 1
-      ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
-      : solve(modelFn, xArr, yArr, p0, opts);
   } else {
-    setConsole('Unknown model.', 'error');
-    return;
+    modelFn = m.fn;
   }
+  result = nStarts > 1
+    ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
+    : solve(modelFn, xArr, yArr, p0, opts);
+  _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory: null });
+}
 
+function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory }) {
+  const m = MODELS[model];
   const fitColor = state.fits.some(f => f.dsId === dsId) ? nextColor() : ds.color;
   const algoNames = { lm: 'LM', gn: 'GN', nm: 'NM', bfgs: 'BFGS' };
   const rSqStr    = isFinite(result.rSq) ? ` (R²=${result.rSq.toFixed(4)})` : '';
@@ -2025,7 +2172,7 @@ function runFit() {
     id: nextId(), dsId, model, algo: algoKey,
     label: fitLabel, color: fitColor,
     result, fn: modelFn, visible: true,
-    paramNames, curvePoints: curvePts,
+    paramNames, curvePoints: curvePts, sseHistory,
   };
   state.fits.push(fitRecord);
   state.activeFitId = fitRecord.id;
@@ -2114,7 +2261,7 @@ function showModelCompareModal(rows, dsId, ds) {
         id: nextId(), dsId, model: r.key, algo: 'lm',
         label: `${r.key} [LM] (R²=${r.rSq.toFixed(4)})`,
         color: fitColor, result: r.result, fn: r.modelFn,
-        visible: true, paramNames: r.paramNames, curvePoints: 300,
+        visible: true, paramNames: r.paramNames, curvePoints: 300, sseHistory: null,
       };
       state.fits.push(fitRecord);
       state.activeFitId = fitRecord.id;
@@ -2740,7 +2887,7 @@ function buildSessionPayload() {
       id: f.id, dsId: f.dsId, model: f.model, label: f.label,
       color: f.color, visible: f.visible, paramNames: f.paramNames,
       curvePoints: f.curvePoints, result: f.result,
-      customExpr: f.customExpr || null,
+      customExpr: f.customExpr || null, sseHistory: f.sseHistory || null,
     })),
     fitConfig: state.fitConfig,
     plotConfig: Object.assign({}, state.plotConfig, { legendPos }),
@@ -3190,6 +3337,16 @@ function initEvents() {
   /* ── Fit button ───────────────────────────────────────── */
   document.getElementById('btn-fit').addEventListener('click', runFit);
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runFit(); });
+
+  /* ── Cancel fit button ────────────────────────────────── */
+  document.getElementById('btn-cancel-fit').addEventListener('click', () => {
+    if (state.currentWorker) {
+      state.currentWorker.terminate();
+      state.currentWorker = null;
+    }
+    setFitting(false);
+    setConsole('Fit cancelled.', 'warn');
+  });
 
   /* ── Remove fit ───────────────────────────────────────── */
   document.getElementById('btn-clear-fit').addEventListener('click', () => {
