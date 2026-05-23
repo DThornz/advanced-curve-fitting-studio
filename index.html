@@ -64,158 +64,9 @@
 </div><!-- end hero -->
 </div><!-- end page-wrap (hero) -->
 
-<div class="page-wrap" id="theory-wrap" style="margin-top:48px">
-
-<!-- ══════════════════════════════════════════════════════════
-     §1  BACKGROUND
-══════════════════════════════════════════════════════════ -->
-<div class="section">
-  <div class="section-num">§ 1</div>
-  <h2 class="section-title">Background</h2>
-  <div class="section-body">
-    <p><strong>Curve fitting</strong> — also called regression analysis or parameter estimation — is the process of constructing a mathematical model that best describes a set of measured data. It is one of the most fundamental quantitative techniques across scientific and engineering disciplines: from pharmacokinetics and enzyme kinetics in biology, to signal processing and materials characterisation in engineering, to cosmological parameter fitting in physics.</p>
-    <p>The core problem: given $n$ data pairs $\{(x_i, y_i)\}_{i=1}^n$ and a parameterised model $f(x;\,\boldsymbol{p})$, find the parameter vector $\boldsymbol{p} \in \mathbb{R}^m$ that makes $f$ agree with the data as closely as possible in a well-defined sense. The standard criterion is <strong>ordinary least squares (OLS)</strong> — minimise the sum of squared residuals. For Gaussian measurement noise this coincides with maximum-likelihood estimation.</p>
-    <p>Linear models — where $f$ is linear in $\boldsymbol{p}$ — admit a closed-form analytic solution. Most physically motivated models (exponential decays, Gaussian peaks, Michaelis-Menten kinetics, logistic growth) are <strong>nonlinear</strong> in their parameters and require iterative numerical optimisation. This application implements four nonlinear solvers — Levenberg-Marquardt, Gauss-Newton, Nelder-Mead Simplex, and BFGS — selectable per fit, and analytic normal-equation solving for polynomials.</p>
-  </div>
-  <div class="callout">
-    <div class="callout-title">Fully Local &amp; Offline</div>
-    All computation runs entirely in your browser. No data ever leaves your machine — no server, no cloud storage, no telemetry. The application continues to function without an internet connection once the page has loaded, making it safe for use with sensitive experimental datasets.
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════
-     §2  MATHEMATICAL FORMULATION
-══════════════════════════════════════════════════════════ -->
-<div class="section">
-  <div class="section-num">§ 2</div>
-  <h2 class="section-title">Mathematical Formulation</h2>
-  <div class="section-body">
-    <p>The nonlinear least-squares objective to minimise over $\boldsymbol{p}$ is the <strong>sum of squared errors (SSE)</strong>:</p>
-
-    <div class="eq-block">
-      <div class="eq-row">
-        <span class="eq-label">Objective:</span>
-        <span class="eq-main">$S(\boldsymbol{p}) = \displaystyle\sum_{i=1}^{n} r_i^2(\boldsymbol{p}),\quad r_i = y_i - f(x_i;\,\boldsymbol{p})$</span>
-        <span class="eq-comment">minimise over $\boldsymbol{p}$</span>
-      </div>
-      <div class="eq-sep"></div>
-      <div class="eq-row">
-        <span class="eq-label">Jacobian:</span>
-        <span class="eq-main">$J_{ij} = \dfrac{\partial r_i}{\partial p_j} \approx \dfrac{r_i(\boldsymbol{p}+h\,\mathbf{e}_j)-r_i(\boldsymbol{p})}{h}$</span>
-        <span class="eq-comment">forward differences, $h = \max(\varepsilon|p_j|,\,\varepsilon)$</span>
-      </div>
-      <div class="eq-sep"></div>
-      <div class="eq-row">
-        <span class="eq-label">Normal eqs.:</span>
-        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
-        <span class="eq-comment">linearised (Gauss-Newton) step</span>
-      </div>
-      <div class="eq-note">$r_i = y_i - f(x_i;\boldsymbol{p})$ is the $i$-th residual; $\mathbf{J}$ is the $n\times m$ Jacobian of the residual vector ($J_{ij} = \partial r_i/\partial p_j \approx [r_i(\boldsymbol{p}+h\mathbf{e}_j)-r_i(\boldsymbol{p})]/h$); $\varepsilon = 10^{-7}$. The negative sign arises because $r = y - f$, so $\partial r_i/\partial p_j = -\partial f_i/\partial p_j$; equivalently, using the Jacobian of $f$ gives $\mathbf{J}_f^\top\mathbf{J}_f\,\Delta\boldsymbol{p} = \mathbf{J}_f^\top\mathbf{r}$ (positive sign, since $\mathbf{J}_f = -\mathbf{J}$).</div>
-    </div>
-
-    <p>The goodness-of-fit is characterised by several complementary statistics computed after convergence:</p>
-    <table class="param-table" style="margin-top:16px">
-      <thead><tr><th>Statistic</th><th>Formula</th><th>Interpretation</th></tr></thead>
-      <tbody>
-        <tr><td>$R^2$</td><td>$1 - \mathrm{SSE}\,/\,\mathrm{SST}$</td><td>Fraction of variance explained (1 = perfect)</td></tr>
-        <tr><td>Adj. $R^2$</td><td>$1-(1-R^2)\tfrac{n-1}{n-m-1}$</td><td>$R^2$ penalised for model complexity</td></tr>
-        <tr><td>RMSE</td><td>$\sqrt{\mathrm{SSE}/(n-m)}$</td><td>Root-mean-square residual; same units as $y$</td></tr>
-        <tr><td>AIC</td><td>$n\ln(\mathrm{SSE}/n)+2m$</td><td>Information criterion — lower is better</td></tr>
-        <tr><td>BIC</td><td>$n\ln(\mathrm{SSE}/n)+m\ln n$</td><td>Stronger complexity penalty than AIC</td></tr>
-        <tr><td>SSE</td><td>$\displaystyle\sum r_i^2$</td><td>Absolute residual energy (scale-dependent)</td></tr>
-      </tbody>
-    </table>
-    <p style="margin-top:14px">where $\mathrm{SST} = \sum(y_i-\bar{y})^2$ is the total sum of squares and $m$ is the number of free parameters. Parameter standard errors are estimated from the covariance matrix $\mathbf{C} = \hat{\sigma}^2(\mathbf{J}^\top\mathbf{J})^{-1}$, where $\hat{\sigma}^2 = \mathrm{SSE}/(n-m)$.</p>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════
-     §3  FITTING ALGORITHMS
-══════════════════════════════════════════════════════════ -->
-<div class="section">
-  <div class="section-num">§ 3</div>
-  <h2 class="section-title">Fitting Algorithms</h2>
-  <div class="section-body">
-    <p>Four solvers are available for nonlinear models. Polynomial models always use the analytic normal-equation path regardless of solver selection. The solver is chosen per-fit in the Algorithm Options panel.</p>
-
-    <p><strong>Levenberg-Marquardt (LM)</strong> — the industry-standard gradient-based method. Interpolates between Gauss-Newton (fast near the minimum) and gradient descent (robust far from it) via a damping factor $\lambda$:</p>
-    <div class="eq-block">
-      <div class="eq-row">
-        <span class="eq-label">LM step:</span>
-        <span class="eq-main">$\bigl(\mathbf{J}^\top\mathbf{J} + \lambda\,\mathrm{diag}(\mathbf{J}^\top\mathbf{J})\bigr)\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
-        <span class="eq-comment">Marquardt scaling; $\mathbf{J}$ is Jacobian of residuals $r_i = y_i - f_i$</span>
-      </div>
-      <div class="eq-row">
-        <span class="eq-label">Update $\lambda$:</span>
-        <span class="eq-main">$S_\text{new} < S \;\Rightarrow\; \lambda/3, \;\; \text{else} \;\; 10\lambda$</span>
-        <span class="eq-comment">adaptive damping</span>
-      </div>
-      <div class="eq-note">Jacobian $\mathbf{J}$ is computed by forward finite differences ($\varepsilon = 10^{-7}$). Best for well-posed problems with good initial guesses. Recommended default.</div>
-    </div>
-
-    <p><strong>Gauss-Newton (GN)</strong> — LM with $\lambda = 0$, plus a backtracking Armijo line search to guarantee descent. Faster convergence than LM when already near the minimum, but can diverge on poorly conditioned problems:</p>
-    <div class="eq-block">
-      <div class="eq-row">
-        <span class="eq-label">GN step:</span>
-        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
-        <span class="eq-comment">no damping ($\mathbf{J}$ = residual Jacobian)</span>
-      </div>
-      <div class="eq-row">
-        <span class="eq-label">Line search:</span>
-        <span class="eq-main">$\alpha \leftarrow \alpha/2$ until $S(\boldsymbol{p}+\alpha\Delta\boldsymbol{p}) < S(\boldsymbol{p})$</span>
-        <span class="eq-comment">Armijo backtracking</span>
-      </div>
-      <div class="eq-note">Use GN as a faster alternative to LM when you already have good initial guesses. Falls back gracefully via line search.</div>
-    </div>
-
-    <p><strong>Nelder-Mead Simplex (NM)</strong> — derivative-free direct-search method. Maintains a simplex of $m+1$ vertices in parameter space and iteratively reflects, expands, or contracts it toward the minimum. Requires no Jacobian:</p>
-    <div class="eq-block">
-      <div class="eq-row">
-        <span class="eq-label">Reflect:</span>
-        <span class="eq-main">$\boldsymbol{x}_r = \bar{\boldsymbol{x}} + \alpha(\bar{\boldsymbol{x}} - \boldsymbol{x}_\text{worst})$</span>
-        <span class="eq-comment">$\alpha=1$</span>
-      </div>
-      <div class="eq-row">
-        <span class="eq-label">Expand:</span>
-        <span class="eq-main">$\boldsymbol{x}_e = \bar{\boldsymbol{x}} + \gamma(\boldsymbol{x}_r - \bar{\boldsymbol{x}})$</span>
-        <span class="eq-comment">$\gamma=2$, if $f_r < f_\text{best}$</span>
-      </div>
-      <div class="eq-row">
-        <span class="eq-label">Contract:</span>
-        <span class="eq-main">$\boldsymbol{x}_c = \bar{\boldsymbol{x}} + \rho(\boldsymbol{x} - \bar{\boldsymbol{x}})$</span>
-        <span class="eq-comment">$\rho=0.5$</span>
-      </div>
-      <div class="eq-note">Robust on noisy or non-smooth objectives where gradients are unreliable. Slower than gradient methods but does not require derivatives. Good when LM or GN give unexpected results.</div>
-    </div>
-
-    <p><strong>BFGS (Quasi-Newton)</strong> — builds a low-rank approximation $\mathbf{H}_k$ to the inverse Hessian of $S$ from successive gradient evaluations, using the Broyden-Fletcher-Goldfarb-Shanno rank-2 update:</p>
-    <div class="eq-block">
-      <div class="eq-row">
-        <span class="eq-label">Direction:</span>
-        <span class="eq-main">$\boldsymbol{d}_k = -\mathbf{H}_k\,\nabla S(\boldsymbol{p}_k)$</span>
-        <span class="eq-comment">inverse-Hessian form</span>
-      </div>
-      <div class="eq-row">
-        <span class="eq-label">Update:</span>
-        <span class="eq-main">$\mathbf{H}_{k+1} = \bigl(\mathbf{I} - \rho_k\boldsymbol{s}_k\boldsymbol{y}_k^\top\bigr)\mathbf{H}_k\bigl(\mathbf{I} - \rho_k\boldsymbol{y}_k\boldsymbol{s}_k^\top\bigr) + \rho_k\boldsymbol{s}_k\boldsymbol{s}_k^\top$</span>
-        <span class="eq-comment">$\rho_k = 1/(\boldsymbol{y}_k^\top\boldsymbol{s}_k)$</span>
-      </div>
-      <div class="eq-note">where $\boldsymbol{s}_k = \boldsymbol{p}_{k+1}-\boldsymbol{p}_k$ and $\boldsymbol{y}_k = \nabla S_{k+1}-\nabla S_k$. Gradients computed via finite differences of SSE. Curvature violations trigger a Hessian reset to identity. Typically superlinear convergence on smooth problems.</div>
-    </div>
-
-    <p>For <strong>polynomial models</strong>, the analytic least-squares solution is computed directly via the Vandermonde normal equations — exact, single-pass, no iteration required regardless of solver setting.</p>
-  </div>
-  <div class="callout callout-amber">
-    <div class="callout-title">Solver Selection Guide</div>
-    <strong>LM</strong> is the recommended default — robust, well-tested, and handles poor initial guesses. <strong>GN</strong> converges faster when already close to the solution. <strong>Nelder-Mead</strong> is useful when derivatives are unreliable or the surface is very flat. <strong>BFGS</strong> is effective on smooth problems with moderate numbers of parameters. All solvers benefit from good initial guesses — use <strong>Auto Init</strong> or tune manually.
-  </div>
-</div>
-
-</div><!-- end theory-wrap §1-3 -->
-
 <!-- ── App section label ──────────────────────────────────── -->
 <div class="app-section-header">
-  <span class="app-section-num">§ 4</span>
+  <span class="app-section-num">§ 1</span>
   <span class="app-section-label">Interactive Application</span>
   <span class="app-section-title">Advanced Curve Fitting Studio</span>
 </div>
@@ -456,6 +307,155 @@
 
   </div><!-- end app-shell -->
 </div><!-- end app-section -->
+
+<div class="page-wrap" id="theory-wrap" style="margin-top:48px">
+
+<!-- ══════════════════════════════════════════════════════════
+     §2  BACKGROUND
+══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-num">§ 2</div>
+  <h2 class="section-title">Background</h2>
+  <div class="section-body">
+    <p><strong>Curve fitting</strong> — also called regression analysis or parameter estimation — is the process of constructing a mathematical model that best describes a set of measured data. It is one of the most fundamental quantitative techniques across scientific and engineering disciplines: from pharmacokinetics and enzyme kinetics in biology, to signal processing and materials characterisation in engineering, to cosmological parameter fitting in physics.</p>
+    <p>The core problem: given $n$ data pairs $\{(x_i, y_i)\}_{i=1}^n$ and a parameterised model $f(x;\,\boldsymbol{p})$, find the parameter vector $\boldsymbol{p} \in \mathbb{R}^m$ that makes $f$ agree with the data as closely as possible in a well-defined sense. The standard criterion is <strong>ordinary least squares (OLS)</strong> — minimise the sum of squared residuals. For Gaussian measurement noise this coincides with maximum-likelihood estimation.</p>
+    <p>Linear models — where $f$ is linear in $\boldsymbol{p}$ — admit a closed-form analytic solution. Most physically motivated models (exponential decays, Gaussian peaks, Michaelis-Menten kinetics, logistic growth) are <strong>nonlinear</strong> in their parameters and require iterative numerical optimisation. This application implements four nonlinear solvers — Levenberg-Marquardt, Gauss-Newton, Nelder-Mead Simplex, and BFGS — selectable per fit, and analytic normal-equation solving for polynomials.</p>
+  </div>
+  <div class="callout">
+    <div class="callout-title">Fully Local &amp; Offline</div>
+    All computation runs entirely in your browser. No data ever leaves your machine — no server, no cloud storage, no telemetry. The application continues to function without an internet connection once the page has loaded, making it safe for use with sensitive experimental datasets.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     §3  MATHEMATICAL FORMULATION
+══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-num">§ 3</div>
+  <h2 class="section-title">Mathematical Formulation</h2>
+  <div class="section-body">
+    <p>The nonlinear least-squares objective to minimise over $\boldsymbol{p}$ is the <strong>sum of squared errors (SSE)</strong>:</p>
+
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">Objective:</span>
+        <span class="eq-main">$S(\boldsymbol{p}) = \displaystyle\sum_{i=1}^{n} r_i^2(\boldsymbol{p}),\quad r_i = y_i - f(x_i;\,\boldsymbol{p})$</span>
+        <span class="eq-comment">minimise over $\boldsymbol{p}$</span>
+      </div>
+      <div class="eq-sep"></div>
+      <div class="eq-row">
+        <span class="eq-label">Jacobian:</span>
+        <span class="eq-main">$J_{ij} = \dfrac{\partial r_i}{\partial p_j} \approx \dfrac{r_i(\boldsymbol{p}+h\,\mathbf{e}_j)-r_i(\boldsymbol{p})}{h}$</span>
+        <span class="eq-comment">forward differences, $h = \max(\varepsilon|p_j|,\,\varepsilon)$</span>
+      </div>
+      <div class="eq-sep"></div>
+      <div class="eq-row">
+        <span class="eq-label">Normal eqs.:</span>
+        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-comment">linearised (Gauss-Newton) step</span>
+      </div>
+      <div class="eq-note">$r_i = y_i - f(x_i;\boldsymbol{p})$ is the $i$-th residual; $\mathbf{J}$ is the $n\times m$ Jacobian of the residual vector ($J_{ij} = \partial r_i/\partial p_j \approx [r_i(\boldsymbol{p}+h\mathbf{e}_j)-r_i(\boldsymbol{p})]/h$); $\varepsilon = 10^{-7}$. The negative sign arises because $r = y - f$, so $\partial r_i/\partial p_j = -\partial f_i/\partial p_j$; equivalently, using the Jacobian of $f$ gives $\mathbf{J}_f^\top\mathbf{J}_f\,\Delta\boldsymbol{p} = \mathbf{J}_f^\top\mathbf{r}$ (positive sign, since $\mathbf{J}_f = -\mathbf{J}$).</div>
+    </div>
+
+    <p>The goodness-of-fit is characterised by several complementary statistics computed after convergence:</p>
+    <table class="param-table" style="margin-top:16px">
+      <thead><tr><th>Statistic</th><th>Formula</th><th>Interpretation</th></tr></thead>
+      <tbody>
+        <tr><td>$R^2$</td><td>$1 - \mathrm{SSE}\,/\,\mathrm{SST}$</td><td>Fraction of variance explained (1 = perfect)</td></tr>
+        <tr><td>Adj. $R^2$</td><td>$1-(1-R^2)\tfrac{n-1}{n-m-1}$</td><td>$R^2$ penalised for model complexity</td></tr>
+        <tr><td>RMSE</td><td>$\sqrt{\mathrm{SSE}/(n-m)}$</td><td>Root-mean-square residual; same units as $y$</td></tr>
+        <tr><td>AIC</td><td>$n\ln(\mathrm{SSE}/n)+2m$</td><td>Information criterion — lower is better</td></tr>
+        <tr><td>BIC</td><td>$n\ln(\mathrm{SSE}/n)+m\ln n$</td><td>Stronger complexity penalty than AIC</td></tr>
+        <tr><td>SSE</td><td>$\displaystyle\sum r_i^2$</td><td>Absolute residual energy (scale-dependent)</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px">where $\mathrm{SST} = \sum(y_i-\bar{y})^2$ is the total sum of squares and $m$ is the number of free parameters. Parameter standard errors are estimated from the covariance matrix $\mathbf{C} = \hat{\sigma}^2(\mathbf{J}^\top\mathbf{J})^{-1}$, where $\hat{\sigma}^2 = \mathrm{SSE}/(n-m)$.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     §4  FITTING ALGORITHMS
+══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-num">§ 4</div>
+  <h2 class="section-title">Fitting Algorithms</h2>
+  <div class="section-body">
+    <p>Four solvers are available for nonlinear models. Polynomial models always use the analytic normal-equation path regardless of solver selection. The solver is chosen per-fit in the Algorithm Options panel.</p>
+
+    <p><strong>Levenberg-Marquardt (LM)</strong> — the industry-standard gradient-based method. Interpolates between Gauss-Newton (fast near the minimum) and gradient descent (robust far from it) via a damping factor $\lambda$:</p>
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">LM step:</span>
+        <span class="eq-main">$\bigl(\mathbf{J}^\top\mathbf{J} + \lambda\,\mathrm{diag}(\mathbf{J}^\top\mathbf{J})\bigr)\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-comment">Marquardt scaling; $\mathbf{J}$ is Jacobian of residuals $r_i = y_i - f_i$</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Update $\lambda$:</span>
+        <span class="eq-main">$S_\text{new} < S \;\Rightarrow\; \lambda/3, \;\; \text{else} \;\; 10\lambda$</span>
+        <span class="eq-comment">adaptive damping</span>
+      </div>
+      <div class="eq-note">Jacobian $\mathbf{J}$ is computed by forward finite differences ($\varepsilon = 10^{-7}$). Best for well-posed problems with good initial guesses. Recommended default.</div>
+    </div>
+
+    <p><strong>Gauss-Newton (GN)</strong> — LM with $\lambda = 0$, plus a backtracking Armijo line search to guarantee descent. Faster convergence than LM when already near the minimum, but can diverge on poorly conditioned problems:</p>
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">GN step:</span>
+        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = -\mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-comment">no damping ($\mathbf{J}$ = residual Jacobian)</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Line search:</span>
+        <span class="eq-main">$\alpha \leftarrow \alpha/2$ until $S(\boldsymbol{p}+\alpha\Delta\boldsymbol{p}) < S(\boldsymbol{p})$</span>
+        <span class="eq-comment">Armijo backtracking</span>
+      </div>
+      <div class="eq-note">Use GN as a faster alternative to LM when you already have good initial guesses. Falls back gracefully via line search.</div>
+    </div>
+
+    <p><strong>Nelder-Mead Simplex (NM)</strong> — derivative-free direct-search method. Maintains a simplex of $m+1$ vertices in parameter space and iteratively reflects, expands, or contracts it toward the minimum. Requires no Jacobian:</p>
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">Reflect:</span>
+        <span class="eq-main">$\boldsymbol{x}_r = \bar{\boldsymbol{x}} + \alpha(\bar{\boldsymbol{x}} - \boldsymbol{x}_\text{worst})$</span>
+        <span class="eq-comment">$\alpha=1$</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Expand:</span>
+        <span class="eq-main">$\boldsymbol{x}_e = \bar{\boldsymbol{x}} + \gamma(\boldsymbol{x}_r - \bar{\boldsymbol{x}})$</span>
+        <span class="eq-comment">$\gamma=2$, if $f_r < f_\text{best}$</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Contract:</span>
+        <span class="eq-main">$\boldsymbol{x}_c = \bar{\boldsymbol{x}} + \rho(\boldsymbol{x} - \bar{\boldsymbol{x}})$</span>
+        <span class="eq-comment">$\rho=0.5$</span>
+      </div>
+      <div class="eq-note">Robust on noisy or non-smooth objectives where gradients are unreliable. Slower than gradient methods but does not require derivatives. Good when LM or GN give unexpected results.</div>
+    </div>
+
+    <p><strong>BFGS (Quasi-Newton)</strong> — builds a low-rank approximation $\mathbf{H}_k$ to the inverse Hessian of $S$ from successive gradient evaluations, using the Broyden-Fletcher-Goldfarb-Shanno rank-2 update:</p>
+    <div class="eq-block">
+      <div class="eq-row">
+        <span class="eq-label">Direction:</span>
+        <span class="eq-main">$\boldsymbol{d}_k = -\mathbf{H}_k\,\nabla S(\boldsymbol{p}_k)$</span>
+        <span class="eq-comment">inverse-Hessian form</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Update:</span>
+        <span class="eq-main">$\mathbf{H}_{k+1} = \bigl(\mathbf{I} - \rho_k\boldsymbol{s}_k\boldsymbol{y}_k^\top\bigr)\mathbf{H}_k\bigl(\mathbf{I} - \rho_k\boldsymbol{y}_k\boldsymbol{s}_k^\top\bigr) + \rho_k\boldsymbol{s}_k\boldsymbol{s}_k^\top$</span>
+        <span class="eq-comment">$\rho_k = 1/(\boldsymbol{y}_k^\top\boldsymbol{s}_k)$</span>
+      </div>
+      <div class="eq-note">where $\boldsymbol{s}_k = \boldsymbol{p}_{k+1}-\boldsymbol{p}_k$ and $\boldsymbol{y}_k = \nabla S_{k+1}-\nabla S_k$. Gradients computed via finite differences of SSE. Curvature violations trigger a Hessian reset to identity. Typically superlinear convergence on smooth problems.</div>
+    </div>
+
+    <p>For <strong>polynomial models</strong>, the analytic least-squares solution is computed directly via the Vandermonde normal equations — exact, single-pass, no iteration required regardless of solver setting.</p>
+  </div>
+  <div class="callout callout-amber">
+    <div class="callout-title">Solver Selection Guide</div>
+    <strong>LM</strong> is the recommended default — robust, well-tested, and handles poor initial guesses. <strong>GN</strong> converges faster when already close to the solution. <strong>Nelder-Mead</strong> is useful when derivatives are unreliable or the surface is very flat. <strong>BFGS</strong> is effective on smooth problems with moderate numbers of parameters. All solvers benefit from good initial guesses — use <strong>Auto Init</strong> or tune manually.
+  </div>
+</div>
+
+</div><!-- end theory-wrap §1-3 -->
 
 <!-- Example Generator Modal -->
 <div class="modal-backdrop" id="example-modal" style="display:none;align-items:center;justify-content:center">

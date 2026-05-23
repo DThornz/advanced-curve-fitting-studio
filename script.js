@@ -2384,12 +2384,6 @@ function loadDefaultExample() {
 }
 
 function init() {
-  // Move app section visually before the theory sections
-  const heroWrap  = document.querySelector('.page-wrap');
-  const appHeader = document.querySelector('.app-section-header');
-  const appEl     = document.getElementById('app');
-  if (heroWrap && appHeader && appEl) heroWrap.after(appHeader, appEl);
-
   // Initialise tab system with one default tab
   tabList = [{ id: nextTabId(), name: 'Tab 1', payload: null }];
   activeTabId = tabList[0].id;
