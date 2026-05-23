@@ -1941,7 +1941,7 @@ function showModelCompareModal(rows, dsId, ds) {
   body.innerHTML = `
     <table style="width:100%;border-collapse:collapse;font-size:.8em">
       <thead>
-        <tr style="position:sticky;top:0;background:var(--panel-bg);border-bottom:2px solid var(--border)">
+        <tr style="border-bottom:2px solid var(--border)">
           <th style="text-align:left;padding:6px 10px">Model</th>
           <th style="text-align:right;padding:6px 8px">R²</th>
           <th style="text-align:right;padding:6px 8px">RMSE</th>
