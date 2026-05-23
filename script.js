@@ -442,9 +442,24 @@ function parseDelimited(text, delim) {
 
 function rowsToXY(rows) {
   let startRow = 0;
+  let xlabel = null, ylabel = null, title = null;
+
+  if (rows.length === 0) return { x: [], y: [], xlabel, ylabel, title };
+
   const firstRow = rows[0];
-  const isHeader = firstRow.some(v => isNaN(parseFloat(v.replace(',', '.'))));
-  if (isHeader) startRow = 1;
+  const isNum = v => v.trim() !== '' && isFinite(parseFloat(v.replace(',', '.')));
+
+  if (firstRow.length === 1 && !isNum(firstRow[0])) {
+    // Single non-numeric cell → plot title
+    title = firstRow[0].trim();
+    startRow = 1;
+  } else if (firstRow.length >= 2 && (!isNum(firstRow[0]) || !isNum(firstRow[1]))) {
+    // Two columns with at least one non-numeric → X / Y axis labels
+    xlabel = firstRow[0].trim();
+    ylabel = firstRow[1].trim();
+    startRow = 1;
+  }
+
   const xs = [], ys = [];
   for (let i = startRow; i < rows.length; i++) {
     const row = rows[i];
@@ -453,7 +468,13 @@ function rowsToXY(rows) {
     const y = parseFloat(row[1].replace(',', '.'));
     if (isFinite(x) && isFinite(y)) { xs.push(x); ys.push(y); }
   }
-  return { x: xs, y: ys };
+  return { x: xs, y: ys, xlabel, ylabel, title };
+}
+
+function applyParsedMeta({ xlabel, ylabel, title }) {
+  if (xlabel != null) document.getElementById('plot-xlabel').value = xlabel;
+  if (ylabel != null) document.getElementById('plot-ylabel').value = ylabel;
+  if (title  != null) document.getElementById('plot-title').value  = title;
 }
 
 function importDataset(name, x, y, color) {
@@ -1152,7 +1173,7 @@ function saveSession() {
     const blob = new Blob([json], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `curve-fit-session-${new Date().toISOString().slice(0,10)}.cfs.json`;
+    a.download = `curve-fit-session-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
     setConsole('Session saved — .cfs.json file downloaded.', '');
@@ -1165,7 +1186,7 @@ function loadSession() {
   // Prefer file picker; fall back to localStorage
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
-  fileInput.accept = '.json,.cfs.json';
+  fileInput.accept = '.json';
   fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
     if (!file) return;
@@ -1306,8 +1327,10 @@ function initEvents() {
     reader.onload = ev => {
       try {
         const rows = parseDelimited(ev.target.result, 'auto');
-        const { x, y } = rowsToXY(rows);
+        const parsed = rowsToXY(rows);
+        const { x, y } = parsed;
         if (!x.length) { setConsole('Could not parse any X,Y pairs from file.', 'error'); return; }
+        applyParsedMeta(parsed);
         const ds = importDataset(file.name.replace(/\.[^.]+$/, ''), x, y);
         syncFitDatasetSelect();
         renderDatasetList();
@@ -1330,8 +1353,10 @@ function initEvents() {
     reader.onload = ev => {
       try {
         const rows = parseDelimited(ev.target.result, 'auto');
-        const { x, y } = rowsToXY(rows);
+        const parsed = rowsToXY(rows);
+        const { x, y } = parsed;
         if (!x.length) { setConsole('Could not parse file.', 'error'); return; }
+        applyParsedMeta(parsed);
         const ds = importDataset(file.name.replace(/\.[^.]+$/, ''), x, y);
         syncFitDatasetSelect(); renderDatasetList(); updatePlots();
         setConsole(`Imported: ${ds.name} (${x.length} points).`, '');
@@ -1365,8 +1390,10 @@ function initEvents() {
     const name  = document.getElementById('paste-ds-name').value.trim() || `Dataset ${state.datasets.length + 1}`;
     try {
       const rows = parseDelimited(text, delim);
-      const { x, y } = rowsToXY(rows);
+      const parsed = rowsToXY(rows);
+      const { x, y } = parsed;
       if (!x.length) { setConsole('No valid data found in pasted text.', 'error'); return; }
+      applyParsedMeta(parsed);
       importDataset(name, x, y);
       syncFitDatasetSelect(); renderDatasetList(); updatePlots();
       closePasteModal();
