@@ -1005,7 +1005,7 @@ function renderFitList() {
       state.activeFitId = parseInt(item.dataset.fitid);
       renderFitList();
       const fit = state.fits.find(f => f.id === state.activeFitId);
-      if (fit && fit.result) renderStats(fit);
+      if (fit) { renderParamResults(fit); renderStatsTable(); }
     });
   });
   el.querySelectorAll('.ds-delete').forEach(btn => {
@@ -1087,32 +1087,85 @@ function renderParamResults(fit) {
   });
 }
 
-function renderStats(fit) {
-  const el = document.getElementById('app-console');
-  if (!fit || !fit.result) {
-    el.innerHTML = '<span class="console-hint">No fit selected.</span>';
-    return;
-  }
-  const r = fit.result;
-  const statusClass = r.converged ? 'console-status-ok' : 'console-status-warn';
-  const statusText  = r.converged ? `✓ Converged (${r.iter} iter)` : `⚠ Not converged (${r.iter} iter)`;
-  el.innerHTML = `
-    <div class="console-stat-grid">
-      <div class="console-stat"><span class="console-stat-label">R²</span><span class="console-stat-value">${fmt(r.rSq, 6)}</span></div>
-      <div class="console-stat"><span class="console-stat-label">Adj-R²</span><span class="console-stat-value">${fmt(r.adjRSq, 6)}</span></div>
-      <div class="console-stat"><span class="console-stat-label">RMSE</span><span class="console-stat-value">${fmt(r.rmse)}</span></div>
-      <div class="console-stat"><span class="console-stat-label">SSE</span><span class="console-stat-value">${fmt(r.sse)}</span></div>
-      <div class="console-stat"><span class="console-stat-label">AIC</span><span class="console-stat-value">${fmt(r.aic)}</span></div>
-      <div class="console-stat"><span class="console-stat-label">BIC</span><span class="console-stat-value">${fmt(r.bic)}</span></div>
-      <div class="console-stat"><span class="console-stat-label">N pts</span><span class="console-stat-value">${r.n}</span></div>
-      <div class="console-stat"><span class="console-stat-label">Status</span><span class="${statusClass}">${statusText}</span></div>
-    </div>`;
-}
+let _consoleMsg = { text: '', type: '', timer: null };
 
 function setConsole(msg, type) {
+  if (_consoleMsg.timer) clearTimeout(_consoleMsg.timer);
+  _consoleMsg.text = msg;
+  _consoleMsg.type = type;
+  if (type !== 'error') {
+    _consoleMsg.timer = setTimeout(() => {
+      _consoleMsg.text = '';
+      _consoleMsg.timer = null;
+      renderStatsTable();
+    }, 5000);
+  } else {
+    _consoleMsg.timer = null;
+  }
+  renderStatsTable();
+}
+
+function renderStats(fit) {
+  renderStatsTable();
+}
+
+function renderStatsTable() {
   const el = document.getElementById('app-console');
-  const cls = type === 'error' ? 'console-status-err' : type === 'warn' ? 'console-status-warn' : 'console-hint';
-  el.innerHTML = `<span class="${cls}">${msg}</span>`;
+  if (!el) return;
+
+  let msgHtml = '';
+  if (_consoleMsg.text) {
+    const cls = _consoleMsg.type === 'error' ? 'console-status-err' : _consoleMsg.type === 'warn' ? 'console-status-warn' : 'console-hint';
+    msgHtml = `<div class="stats-msg-row"><span class="${cls}">${_consoleMsg.text}</span></div>`;
+  }
+
+  if (!state.fits.length) {
+    el.innerHTML = msgHtml || '<span class="console-hint">Load a dataset and press <strong>▶ Fit</strong> to begin.</span>';
+    return;
+  }
+
+  const rows = state.fits.map(fit => {
+    const r = fit.result;
+    const isActive = fit.id === state.activeFitId;
+    const ds = state.datasets.find(d => d.id === fit.dsId);
+    const dsName = ds ? ds.name : '—';
+    const statusText = !r ? '—' : r.converged ? `✓ ${r.iter}` : `⚠ ${r.iter}`;
+    const statusCls  = !r ? '' : r.converged ? 'stat-status-ok' : 'stat-status-warn';
+    const label = (fit.label || fit.model).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return `<tr class="stats-row${isActive ? ' active' : ''}" data-fit-id="${fit.id}">
+      <td><span class="stats-color-dot" style="background:${fit.color}"></span></td>
+      <td title="${label}">${label}</td>
+      <td title="${dsName}">${dsName}</td>
+      <td>${r ? fmt(r.rSq, 5) : '—'}</td>
+      <td>${r ? fmt(r.adjRSq, 5) : '—'}</td>
+      <td>${r ? fmt(r.rmse) : '—'}</td>
+      <td>${r ? fmt(r.sse) : '—'}</td>
+      <td>${r ? fmt(r.aic) : '—'}</td>
+      <td>${r ? fmt(r.bic) : '—'}</td>
+      <td>${r ? r.n : '—'}</td>
+      <td class="${statusCls}">${statusText}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = msgHtml + `<div class="stats-table-wrap"><table class="stats-table">
+    <thead><tr>
+      <th></th><th>Fit</th><th>Dataset</th>
+      <th>R²</th><th>Adj-R²</th><th>RMSE</th><th>SSE</th><th>AIC</th><th>BIC</th><th>N</th><th>Status</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+
+  el.querySelectorAll('.stats-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const id = parseInt(tr.dataset.fitId);
+      const fit = state.fits.find(f => f.id === id);
+      if (!fit) return;
+      state.activeFitId = id;
+      renderParamResults(fit);
+      renderFitList();
+      renderStatsTable();
+    });
+  });
 }
 
 function syncFitDatasetSelect() {
@@ -1693,6 +1746,117 @@ function initEditMode() {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   TAB SYSTEM
+═══════════════════════════════════════════════════════════ */
+let tabList = [];
+let activeTabId = null;
+
+function nextTabId() { return 'tab_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
+
+function clearWorkspace() {
+  state.datasets = [];
+  state.fits = [];
+  state.activeDatasetId = null;
+  state.activeFitId = null;
+  state.paramRows = [];
+  state.editHistory = { undo: [], redo: [] };
+  state.selection = { dsId: null, indices: new Set() };
+  syncFitDatasetSelect();
+  renderDatasetList();
+  renderFitList();
+  updatePlots();
+  renderStatsTable();
+  syncUndoRedoButtons();
+}
+
+function saveCurrentTab() {
+  if (!activeTabId) return;
+  const tab = tabList.find(t => t.id === activeTabId);
+  if (tab) tab.payload = buildSessionPayload();
+}
+
+function activateTab(id) {
+  saveCurrentTab();
+  activeTabId = id;
+  const tab = tabList.find(t => t.id === id);
+  if (tab && tab.payload) {
+    restoreSessionPayload(tab.payload);
+  } else {
+    clearWorkspace();
+  }
+  renderTabBar();
+}
+
+function addNewTab(name) {
+  const id = nextTabId();
+  tabList.push({ id, name: name || `Tab ${tabList.length + 1}`, payload: null });
+  activateTab(id);
+}
+
+function closeTab(id) {
+  const idx = tabList.findIndex(t => t.id === id);
+  if (idx < 0) return;
+  tabList.splice(idx, 1);
+  if (!tabList.length) tabList.push({ id: nextTabId(), name: 'Tab 1', payload: null });
+  if (activeTabId === id) {
+    activateTab(tabList[Math.min(idx, tabList.length - 1)].id);
+  } else {
+    renderTabBar();
+  }
+}
+
+function renderTabBar() {
+  const bar = document.getElementById('app-tabbar');
+  if (!bar) return;
+  const tabsHtml = tabList.map(t => `
+    <div class="app-tab${t.id === activeTabId ? ' active' : ''}" data-tab-id="${t.id}">
+      <span class="app-tab-label">${t.name.replace(/</g,'&lt;')}</span>
+      <span class="app-tab-close" data-close-id="${t.id}" title="Close tab">×</span>
+    </div>`).join('');
+  bar.innerHTML = tabsHtml + `<button class="app-tab-add" id="btn-add-tab" title="New tab">+</button>`;
+
+  bar.querySelectorAll('.app-tab').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.dataset.closeId) return;
+      const tid = el.dataset.tabId;
+      if (tid !== activeTabId) activateTab(tid);
+    });
+    el.addEventListener('dblclick', e => {
+      if (e.target.dataset.closeId) return;
+      const tab = tabList.find(t => t.id === el.dataset.tabId);
+      if (!tab) return;
+      const label = el.querySelector('.app-tab-label');
+      const old = tab.name;
+      label.contentEditable = 'true';
+      label.focus();
+      const sel = window.getSelection(), range = document.createRange();
+      range.selectNodeContents(label);
+      sel.removeAllRanges(); sel.addRange(range);
+      const finish = () => {
+        label.contentEditable = 'false';
+        tab.name = label.textContent.trim() || old;
+        label.textContent = tab.name;
+        label.removeEventListener('blur', finish);
+        label.removeEventListener('keydown', onKey);
+      };
+      const onKey = e => {
+        if (e.key === 'Enter') { e.preventDefault(); label.blur(); }
+        if (e.key === 'Escape') { label.textContent = old; label.blur(); }
+      };
+      label.addEventListener('blur', finish);
+      label.addEventListener('keydown', onKey);
+    });
+  });
+
+  bar.querySelectorAll('[data-close-id]').forEach(el => {
+    el.addEventListener('click', e => { e.stopPropagation(); closeTab(el.dataset.closeId); });
+  });
+
+  const addBtn = bar.querySelector('#btn-add-tab');
+  if (addBtn) addBtn.addEventListener('click', () => addNewTab());
+}
+
+/* ═══════════════════════════════════════════════════════════
    SESSION PERSISTENCE
 ═══════════════════════════════════════════════════════════ */
 function buildSessionPayload() {
@@ -1821,16 +1985,43 @@ function restoreSessionPayload(payload) {
   }
 
   const active = state.fits.find(f => f.id === state.activeFitId);
-  if (active) { renderStats(active); renderParamResults(active); }
+  if (active) renderParamResults(active);
+  renderStatsTable();
+}
+
+function buildMultiTabPayload() {
+  saveCurrentTab();
+  return {
+    version: 3,
+    savedAt: new Date().toISOString(),
+    tabs: tabList.map(t => ({ id: t.id, name: t.name, payload: t.payload })),
+    activeTabId,
+  };
+}
+
+function restoreMultiTabPayload(data) {
+  if (data.version === 3 && Array.isArray(data.tabs) && data.tabs.length) {
+    tabList = data.tabs.map(t => ({ id: t.id, name: t.name, payload: t.payload }));
+    activeTabId = data.activeTabId || tabList[0].id;
+    if (!tabList.find(t => t.id === activeTabId)) activeTabId = tabList[0].id;
+    renderTabBar();
+    const active = tabList.find(t => t.id === activeTabId);
+    if (active && active.payload) restoreSessionPayload(active.payload);
+    else clearWorkspace();
+  } else {
+    // Legacy v1/v2 — wrap as single tab
+    tabList = [{ id: nextTabId(), name: 'Session', payload: data }];
+    activeTabId = tabList[0].id;
+    renderTabBar();
+    restoreSessionPayload(data);
+  }
 }
 
 function saveSession() {
   try {
-    const payload = buildSessionPayload();
+    const payload = buildMultiTabPayload();
     const json = JSON.stringify(payload, null, 2);
-    // Always write to localStorage as a quick backup
     localStorage.setItem('cfs_session', json);
-    // Download as a .cfs.json file so it survives cache clears
     const blob = new Blob([json], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1844,7 +2035,6 @@ function saveSession() {
 }
 
 function loadSession() {
-  // Prefer file picker; fall back to localStorage
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.accept = '.json';
@@ -1854,9 +2044,9 @@ function loadSession() {
     const reader = new FileReader();
     reader.onload = ev => {
       try {
-        const payload = JSON.parse(ev.target.result);
-        restoreSessionPayload(payload);
-        setConsole(`Session loaded from file: ${file.name}`, '');
+        const data = JSON.parse(ev.target.result);
+        restoreMultiTabPayload(data);
+        setConsole(`Session loaded: ${file.name}`, '');
       } catch (e) { setConsole('Load failed: ' + e.message, 'error'); }
     };
     reader.readAsText(file);
@@ -2181,22 +2371,40 @@ function initEvents() {
 /* ═══════════════════════════════════════════════════════════
    INITIALISE
 ═══════════════════════════════════════════════════════════ */
+function loadDefaultExample() {
+  const ex = generateExample('exponential-decay');
+  importDataset(ex.name, ex.x, ex.y);
+  applyParsedMeta({ xlabel: ex.xlabel, ylabel: ex.ylabel, title: null });
+  document.getElementById('model-select').value = ex.suggestModel;
+  syncModelCustomSection();
+  syncFitDatasetSelect();
+  renderDatasetList();
+  updatePlots();
+  setConsole(`Example loaded: ${ex.name}. Press ▶ Fit to begin.`, '');
+}
+
 function init() {
+  // Move app section visually before the theory sections
+  const heroWrap  = document.querySelector('.page-wrap');
+  const appHeader = document.querySelector('.app-section-header');
+  const appEl     = document.getElementById('app');
+  if (heroWrap && appHeader && appEl) heroWrap.after(appHeader, appEl);
+
+  // Initialise tab system with one default tab
+  tabList = [{ id: nextTabId(), name: 'Tab 1', payload: null }];
+  activeTabId = tabList[0].id;
+
   initEvents();
-  updatePlots(); // Render empty plots — must run before initEditMode so Plotly element exists
+  renderTabBar();
+  updatePlots(); // Must run before initEditMode so Plotly element exists
   initEditMode();
-  // Auto-load example on first visit
-  if (!localStorage.getItem('cfs_session')) {
-    const ex = generateExample('exponential-decay');
-    importDataset(ex.name, ex.x, ex.y);
-    applyParsedMeta({ xlabel: ex.xlabel, ylabel: ex.ylabel, title: null });
-    document.getElementById('model-select').value = ex.suggestModel;
-    syncModelCustomSection();
-    syncFitDatasetSelect();
-    renderDatasetList();
-    updatePlots();
-    setConsole(`Example loaded: ${ex.name}. Press ▶ Fit to begin.`, '');
+
+  // Auto-restore saved session or load example on first visit
+  const saved = localStorage.getItem('cfs_session');
+  if (saved) {
+    try { restoreMultiTabPayload(JSON.parse(saved)); return; } catch (_) {}
   }
+  loadDefaultExample();
 }
 
 init();
