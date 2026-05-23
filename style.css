@@ -215,7 +215,6 @@ body.size-lg .app-shell{font-size:16px!important}
 /* ── Left panel ──────────────────────────────────────────── */
 .app-left{
   width:192px;flex-shrink:0;
-  border-right:1px solid var(--border);
   display:flex;flex-direction:column;overflow:hidden
 }
 .panel-header{
@@ -266,15 +265,13 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 .app-center{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;background:var(--bg)}
 .plot-div{flex:1;min-height:0;width:100%}
 .plot-div-residual{
-  height:150px;flex-shrink:0;width:100%;
-  border-top:1px solid var(--border)
+  height:150px;flex-shrink:0;width:100%
 }
 .plot-div-residual.hidden{display:none}
 
 /* ── Right panel ─────────────────────────────────────────── */
 .app-right{
   width:268px;flex-shrink:0;
-  border-left:1px solid var(--border);
   overflow-y:auto;display:flex;flex-direction:column
 }
 .ctrl-section{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
@@ -415,6 +412,32 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
   line-height:1.6;outline:none;transition:border-color .15s
 }
 .paste-area:focus{border-color:var(--teal)}
+
+/* ── Panel resize handles ────────────────────────────────── */
+.panel-resize{
+  flex-shrink:0;background:var(--border);
+  position:relative;z-index:20;
+  transition:background .15s
+}
+.panel-resize.col{
+  width:5px;cursor:col-resize;align-self:stretch
+}
+.panel-resize.row{
+  height:5px;cursor:row-resize;width:100%
+}
+.panel-resize::after{
+  content:'';position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  border-radius:3px;opacity:0;transition:opacity .15s;
+  background:var(--teal)
+}
+.panel-resize.col::after{width:2px;height:32px;margin-top:-16px}
+.panel-resize.row::after{height:2px;width:32px;margin-left:-16px}
+.panel-resize:hover::after,.panel-resize.dragging::after{opacity:1}
+.panel-resize:hover,.panel-resize.dragging{background:var(--teal-light)}
+body.dark-mode .panel-resize{background:#1c3050!important}
+body.dark-mode .panel-resize:hover,body.dark-mode .panel-resize.dragging{background:rgba(45,212,191,.15)!important}
+body.dark-mode .panel-resize::after{background:#2dd4bf}
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media(max-width:900px){

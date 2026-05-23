@@ -226,7 +226,7 @@
     <div class="app-workspace">
 
       <!-- LEFT PANEL -->
-      <div class="app-left">
+      <div class="app-left" id="panel-left">
         <div class="panel-header">
           <span>Datasets</span>
           <button class="btn panel-action-btn" id="btn-clear-all" title="Remove all datasets and fits">✕ All</button>
@@ -243,14 +243,19 @@
         </div>
       </div>
 
+      <div class="panel-resize col" id="rh-left" title="Drag to resize"></div>
+
       <!-- CENTER: PLOTS -->
-      <div class="app-center">
+      <div class="app-center" id="panel-center">
         <div id="main-plot" class="plot-div"></div>
+        <div class="panel-resize row" id="rh-residual" title="Drag to resize residual panel"></div>
         <div id="residual-plot" class="plot-div-residual"></div>
       </div>
 
+      <div class="panel-resize col" id="rh-right" title="Drag to resize"></div>
+
       <!-- RIGHT PANEL: FIT CONTROLS -->
-      <div class="app-right">
+      <div class="app-right" id="panel-right">
 
         <div class="ctrl-section">
           <label class="ctrl-label">Target Dataset</label>
@@ -467,15 +472,15 @@
     </li>
     <li class="ref-item">
       <span class="ref-num">[5]</span>
-      <span>MathWorks, Inc. (2024). <em>Curve Fitting Toolbox User's Guide</em>. The MathWorks, Inc. (Inspirational reference for UI/UX design.)</span>
+      <span>MathWorks. (2024). <em>Curve Fitting Toolbox User's Guide</em>. Retrieved from <a href="https://www.mathworks.com/help/curvefit/">https://www.mathworks.com/help/curvefit/</a></span>
     </li>
     <li class="ref-item">
       <span class="ref-num">[6]</span>
-      <span>de Jong, J. et al. (2024). <em>Math.js: An extensive math library for JavaScript and Node.js</em>. <a href="https://mathjs.org">mathjs.org</a></span>
+      <span>Math.js. (2024). <em>Math.js: An extensive math library for JavaScript and Node.js</em>. Retrieved from <a href="https://mathjs.org">https://mathjs.org</a></span>
     </li>
     <li class="ref-item">
       <span class="ref-num">[7]</span>
-      <span>Plotly Technologies Inc. (2024). <em>Plotly JavaScript Open Source Graphing Library</em>. <a href="https://plotly.com/javascript/">plotly.com/javascript</a></span>
+      <span>Plotly JavaScript Graphing Library. (2024). <em>Plotly JavaScript Open Source Graphing Library</em>. Retrieved from <a href="https://plotly.com/javascript/">https://plotly.com/javascript/</a></span>
     </li>
   </ol>
 </div>

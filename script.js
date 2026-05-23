@@ -587,7 +587,8 @@ function updatePlots() {
   const residEl = document.getElementById('residual-plot');
 
   if (!plotsInitialised) {
-    Plotly.newPlot(mainEl, mainTraces, mainLayout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'] });
+    const plotCfg = { responsive: true, displaylogo: false, edits: { legendPosition: true }, modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'] };
+    Plotly.newPlot(mainEl, mainTraces, mainLayout, plotCfg);
     const resTraces = buildResidualTraces();
     const resLayout = baseLayout({
       margin: { l: 56, r: 20, t: 10, b: 36 },
@@ -595,7 +596,7 @@ function updatePlots() {
       xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 10, color: tc.tickCol } } }),
       showlegend: false,
     });
-    Plotly.newPlot(residEl, resTraces, resLayout, { responsive: true, displaylogo: false, staticPlot: false, modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'] });
+    Plotly.newPlot(residEl, resTraces, resLayout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'] });
     plotsInitialised = true;
   } else {
     Plotly.react(mainEl, mainTraces, mainLayout);
@@ -1000,81 +1001,182 @@ function exportReport() {
 /* ═══════════════════════════════════════════════════════════
    SESSION PERSISTENCE
 ═══════════════════════════════════════════════════════════ */
+function buildSessionPayload() {
+  return {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    datasets: state.datasets,
+    fits: state.fits.map(f => ({
+      id: f.id, dsId: f.dsId, model: f.model, label: f.label,
+      color: f.color, visible: f.visible, paramNames: f.paramNames,
+      curvePoints: f.curvePoints, result: f.result,
+      customExpr: f.customExpr || null,
+    })),
+    fitConfig: state.fitConfig,
+    plotConfig: state.plotConfig,
+    activeDatasetId: state.activeDatasetId,
+    activeFitId: state.activeFitId,
+  };
+}
+
+function restoreSessionPayload(payload) {
+  state.datasets = payload.datasets || [];
+  state.fits = [];
+  for (const f of (payload.fits || [])) {
+    const m = MODELS[f.model];
+    let fn = m ? m.fn : null;
+    if (f.model === 'Custom' && f.customExpr) {
+      try {
+        const compiled = math.compile(f.customExpr);
+        const names = f.paramNames;
+        fn = (x, params) => {
+          const scope = { x };
+          names.forEach((n, i) => { scope[n] = params[i]; });
+          return compiled.evaluate(scope);
+        };
+      } catch (_) { fn = null; }
+    } else if (m && m.analytic && f.result && m.degree != null) {
+      const deg = m.degree;
+      fn = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, deg - j), 0);
+    }
+    state.fits.push(Object.assign(f, { fn }));
+  }
+  state.fitConfig = payload.fitConfig || state.fitConfig;
+  state.plotConfig = payload.plotConfig || state.plotConfig;
+  state.activeDatasetId = payload.activeDatasetId;
+  state.activeFitId = payload.activeFitId;
+
+  const modelSel = document.getElementById('model-select');
+  if (modelSel) { modelSel.value = state.fitConfig.model; syncModelCustomSection(); }
+  const eqInput = document.getElementById('custom-eq-input');
+  if (eqInput && state.fitConfig.customExpr) { eqInput.value = state.fitConfig.customExpr; parseCustomEquation(state.fitConfig.customExpr); }
+  ['logX','logY'].forEach(k => {
+    const btn = document.getElementById('btn-' + k.replace(/[A-Z]/g, ch => '-' + ch.toLowerCase()));
+    if (btn && state.plotConfig[k]) btn.classList.add('active');
+  });
+  syncFitDatasetSelect();
+  renderDatasetList();
+  renderFitList();
+  updatePlots();
+  const active = state.fits.find(f => f.id === state.activeFitId);
+  if (active) { renderStats(active); renderParamResults(active); }
+}
+
 function saveSession() {
   try {
-    const payload = {
-      datasets: state.datasets,
-      fits: state.fits.map(f => ({
-        id: f.id, dsId: f.dsId, model: f.model, label: f.label,
-        color: f.color, visible: f.visible, paramNames: f.paramNames,
-        curvePoints: f.curvePoints, result: f.result,
-        customExpr: f.customExpr || null,
-      })),
-      fitConfig: state.fitConfig,
-      plotConfig: state.plotConfig,
-      activeDatasetId: state.activeDatasetId,
-      activeFitId: state.activeFitId,
-    };
-    localStorage.setItem('cfs_session', JSON.stringify(payload));
-    setConsole('Session saved to browser storage.', '');
+    const payload = buildSessionPayload();
+    const json = JSON.stringify(payload, null, 2);
+    // Always write to localStorage as a quick backup
+    localStorage.setItem('cfs_session', json);
+    // Download as a .cfs.json file so it survives cache clears
+    const blob = new Blob([json], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `curve-fit-session-${new Date().toISOString().slice(0,10)}.cfs.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setConsole('Session saved — .cfs.json file downloaded.', '');
   } catch (e) {
     setConsole('Save failed: ' + e.message, 'error');
   }
 }
 
 function loadSession() {
-  try {
-    const raw = localStorage.getItem('cfs_session');
-    if (!raw) { setConsole('No saved session found.', 'warn'); return; }
-    const payload = JSON.parse(raw);
-    state.datasets = payload.datasets || [];
-    state.fits = []; // Rebuild fits with functions
-    for (const f of (payload.fits || [])) {
-      const m = MODELS[f.model];
-      let fn = m ? m.fn : null;
-      if (f.model === 'Custom' && f.customExpr) {
-        try {
-          const compiled = math.compile(f.customExpr);
-          const names = f.paramNames;
-          fn = (x, params) => {
-            const scope = { x };
-            names.forEach((n, i) => { scope[n] = params[i]; });
-            return compiled.evaluate(scope);
-          };
-        } catch (_) { fn = null; }
-      } else if (m && m.analytic && f.result && m.degree != null) {
-        const deg = m.degree;
-        fn = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, deg - j), 0);
-      }
-      state.fits.push(Object.assign(f, { fn }));
-    }
-    state.fitConfig = payload.fitConfig || state.fitConfig;
-    state.plotConfig = payload.plotConfig || state.plotConfig;
-    state.activeDatasetId = payload.activeDatasetId;
-    state.activeFitId = payload.activeFitId;
+  // Prefer file picker; fall back to localStorage
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.json,.cfs.json';
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const payload = JSON.parse(ev.target.result);
+        restoreSessionPayload(payload);
+        setConsole(`Session loaded from file: ${file.name}`, '');
+      } catch (e) { setConsole('Load failed: ' + e.message, 'error'); }
+    };
+    reader.readAsText(file);
+  });
+  fileInput.click();
+}
 
-    // Restore UI state
-    const modelSel = document.getElementById('model-select');
-    if (modelSel) { modelSel.value = state.fitConfig.model; syncModelCustomSection(); }
-    const eqInput = document.getElementById('custom-eq-input');
-    if (eqInput && state.fitConfig.customExpr) { eqInput.value = state.fitConfig.customExpr; parseCustomEquation(state.fitConfig.customExpr); }
+/* ═══════════════════════════════════════════════════════════
+   RESIZABLE PANELS
+═══════════════════════════════════════════════════════════ */
+function initResizablePanels() {
+  const leftPanel  = document.getElementById('panel-left');
+  const rightPanel = document.getElementById('panel-right');
+  const residualEl = document.getElementById('residual-plot');
+  const rhLeft     = document.getElementById('rh-left');
+  const rhRight    = document.getElementById('rh-right');
+  const rhResidual = document.getElementById('rh-residual');
 
-    ['logX','logY'].forEach(k => {
-      const btn = document.getElementById('btn-' + k.replace(/[A-Z]/g, m => '-' + m.toLowerCase()));
-      if (btn && state.plotConfig[k]) btn.classList.toggle('active', true);
+  let drag = null;
+
+  let rafPending = false;
+  function schedulePlotResize() {
+    if (rafPending || !plotsInitialised) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      Plotly.Plots.resize('main-plot');
+      if (!residualEl.classList.contains('hidden')) Plotly.Plots.resize('residual-plot');
     });
-
-    syncFitDatasetSelect();
-    renderDatasetList();
-    renderFitList();
-    updatePlots();
-
-    const active = state.fits.find(f => f.id === state.activeFitId);
-    if (active) { renderStats(active); renderParamResults(active); }
-    setConsole('Session loaded.', '');
-  } catch (e) {
-    setConsole('Load failed: ' + e.message, 'error');
   }
+
+  function getClient(e) {
+    return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                     : { x: e.clientX,             y: e.clientY };
+  }
+
+  function onMove(e) {
+    if (!drag) return;
+    const { x, y } = getClient(e);
+    if (drag.type === 'left') {
+      leftPanel.style.width = Math.max(120, Math.min(400, drag.size + (x - drag.x))) + 'px';
+    } else if (drag.type === 'right') {
+      rightPanel.style.width = Math.max(180, Math.min(460, drag.size - (x - drag.x))) + 'px';
+    } else if (drag.type === 'residual') {
+      residualEl.style.height = Math.max(60, Math.min(360, drag.size - (y - drag.y))) + 'px';
+    }
+    schedulePlotResize();
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onUp() {
+    if (!drag) return;
+    document.querySelectorAll('.panel-resize.dragging').forEach(h => h.classList.remove('dragging'));
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    drag = null;
+    schedulePlotResize();
+  }
+
+  function startDrag(type, handle, e) {
+    const { x, y } = getClient(e);
+    const size = type === 'left'     ? leftPanel.offsetWidth
+               : type === 'right'    ? rightPanel.offsetWidth
+               :                       residualEl.offsetHeight;
+    drag = { type, x, y, size };
+    handle.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = type === 'residual' ? 'row-resize' : 'col-resize';
+    e.preventDefault();
+  }
+
+  rhLeft.addEventListener('mousedown',     e => startDrag('left',     rhLeft,     e));
+  rhRight.addEventListener('mousedown',    e => startDrag('right',    rhRight,    e));
+  rhResidual.addEventListener('mousedown', e => startDrag('residual', rhResidual, e));
+  rhLeft.addEventListener('touchstart',     e => startDrag('left',     rhLeft,     e), { passive: false });
+  rhRight.addEventListener('touchstart',    e => startDrag('right',    rhRight,    e), { passive: false });
+  rhResidual.addEventListener('touchstart', e => startDrag('residual', rhResidual, e), { passive: false });
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup',   onUp);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend',  onUp);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1271,6 +1373,7 @@ function initEvents() {
   /* ── Initial state ────────────────────────────────────── */
   document.getElementById('btn-toggle-residuals').classList.add('active');
   syncModelCustomSection();
+  initResizablePanels();
 }
 
 /* ═══════════════════════════════════════════════════════════
