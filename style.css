@@ -20,7 +20,8 @@ a{color:var(--teal);text-decoration:none}
 a:hover{text-decoration:underline}
 
 /* ─── Site Nav ───────────────────────────────────────────── */
-.site-nav{position:sticky;top:0;z-index:200;background:rgba(245,246,248,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;padding:0 24px;height:44px}
+.site-nav{position:sticky;top:0;z-index:200;background:rgba(245,246,248,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;padding:0 24px;height:44px;transition:transform .28s ease}
+.site-nav.nav-hidden{transform:translateY(-100%)}
 body.dark-mode .site-nav{background:rgba(6,14,28,.96)!important;border-color:#1c3050!important}
 .site-nav-logo{font-family:var(--mono);font-size:.8em;color:var(--teal);font-weight:500;letter-spacing:.04em;margin-right:auto;white-space:nowrap;text-decoration:none}
 .site-nav-logo span{color:var(--dim)}

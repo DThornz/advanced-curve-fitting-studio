@@ -2746,6 +2746,15 @@ function init() {
   updatePlots(); // Must run before initEditMode so Plotly element exists
   initEditMode();
 
+  // Hide nav when app section scrolls into view
+  const siteNav = document.querySelector('.site-nav');
+  const appSection = document.getElementById('app');
+  if (siteNav && appSection) {
+    window.addEventListener('scroll', () => {
+      siteNav.classList.toggle('nav-hidden', appSection.getBoundingClientRect().top <= 44);
+    }, { passive: true });
+  }
+
   // Auto-restore saved session or load example on first visit
   const autoRestore = localStorage.getItem('cfs_autorestore') !== '0';
   document.getElementById('btn-auto-restore').classList.toggle('active', autoRestore);
