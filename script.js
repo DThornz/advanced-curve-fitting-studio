@@ -1428,23 +1428,38 @@ function buildHistPanel(tc) {
 }
 
 function buildConvergencePanel(tc) {
-  const noLayout = baseLayout({
-    annotations: [{ text: 'No active fit', x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', showarrow: false, font: { color: tc.tickCol, size: 11 } }],
+  const makeEmpty = msg => ({ traces: [], layout: baseLayout({
+    annotations: [{ text: msg, x: 0.5, y: 0.5, xref: 'paper', yref: 'paper',
+      showarrow: false, font: { color: tc.tickCol, size: 11 } }],
     margin: { l: 56, r: 20, t: 10, b: 36 }, showlegend: false,
-  });
+  })});
   const fit = state.fits.find(f => f.id === state.activeFitId);
-  if (!fit || !fit.sseHistory || fit.sseHistory.length < 2) {
-    const msg = fit && !fit.sseHistory ? 'Convergence data not available for this fit' : 'No active fit';
-    return { traces: [], layout: baseLayout({ annotations: [{ text: msg, x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', showarrow: false, font: { color: tc.tickCol, size: 11 } }], margin: { l: 56, r: 20, t: 10, b: 36 }, showlegend: false }) };
-  }
+  if (!fit) return makeEmpty('No active fit');
+  if (!fit.sseHistory || fit.sseHistory.length < 2)
+    return makeEmpty(fit.sseHistory ? 'Not enough history — run the fit again' : 'Convergence data not available for this fit');
+
   const history = fit.sseHistory;
   const iters = history.map(p => p[0]);
   const sses  = history.map(p => p[1]);
+
+  const allPos = sses.every(v => v > 0);
+  // Compute explicit log range so Plotly never leaves the axis blank
+  let yaxisExtra = {};
+  if (allPos) {
+    const logMin = Math.log10(Math.min(...sses));
+    const logMax = Math.log10(Math.max(...sses));
+    const pad    = Math.max((logMax - logMin) * 0.12, 0.3);
+    yaxisExtra = { type: 'log', range: [logMin - pad, logMax + pad], zeroline: false, autorange: false };
+  } else {
+    yaxisExtra = { type: 'linear', zeroline: false };
+  }
+
   const convergedText = fit.result?.converged ? '✓ Converged' : '⚠ Not converged';
-  const iterText = fit.result?.iter != null ? `${fit.result.iter} iter` : '';
-  const lambdaText = fit.result?.finalLambda != null ? ` · λ=${fit.result.finalLambda.toExponential(2)}` : '';
-  const gradText = fit.result?.gradNorm != null ? ` · |∇|=${fit.result.gradNorm.toExponential(2)}` : '';
-  const subtitle = [convergedText, iterText + lambdaText + gradText].filter(Boolean).join(' · ');
+  const iterText  = fit.result?.iter       != null ? `${fit.result.iter} iter`                         : '';
+  const lambdaText= fit.result?.finalLambda!= null ? ` · λ=${fit.result.finalLambda.toExponential(2)}` : '';
+  const gradText  = fit.result?.gradNorm   != null ? ` · |∇|=${fit.result.gradNorm.toExponential(2)}`  : '';
+  const subtitle  = [convergedText, iterText + lambdaText + gradText].filter(Boolean).join(' · ');
+
   return {
     traces: [{
       x: iters, y: sses, type: 'scatter', mode: 'lines+markers',
@@ -1457,8 +1472,8 @@ function buildConvergencePanel(tc) {
       title: subtitle ? { text: subtitle, font: { size: 9.5, color: tc.tickCol }, x: 0.5 } : undefined,
       xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Iteration', font: { size: 10, color: tc.tickCol } } }),
       yaxis: Object.assign(baseLayout().yaxis, {
-        title: { text: 'SSE', font: { size: 10, color: tc.tickCol } },
-        type: sses.every(v => v > 0) ? 'log' : 'linear', zeroline: false,
+        title: { text: 'SSE (log)', font: { size: 10, color: tc.tickCol } },
+        ...yaxisExtra,
       }),
       showlegend: false,
     }),

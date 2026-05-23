@@ -366,7 +366,8 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
 
 /* ── Multi-start wrapper ─────────────────────────────────── */
 function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
-  const pilotOpts = { ...opts, maxIter: Math.max(150, Math.ceil(opts.maxIter / 4)), onProgress: null };
+  const pilotMax = Math.max(150, Math.ceil(opts.maxIter / 4));
+  const pilotOpts = { ...opts, maxIter: pilotMax, onProgress: null };
   function quickSSE(params) {
     let s = 0;
     for (let i = 0; i < xArr.length; i++) {
@@ -391,9 +392,15 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
     });
     const r = solve(modelFn, xArr, yArr, pPerturb, pilotOpts);
     if (r.sse < best.sse) best = r;
-    if (opts.onProgress) opts.onProgress(s * Math.ceil(opts.maxIter / 4), best.sse);
+    if (opts.onProgress) opts.onProgress(s * pilotMax, best.sse);
   }
-  const polished = solve(modelFn, xArr, yArr, best.params, { ...opts, onProgress: opts.onProgress });
+  // Offset polish iteration numbers so they follow the pilot summaries on the
+  // x-axis rather than restarting at 1 — keeps the convergence chart monotonic.
+  const polishOffset = (nStarts - 1) * pilotMax;
+  const polishProgress = opts.onProgress
+    ? (iter, sse) => opts.onProgress(polishOffset + iter, sse)
+    : null;
+  const polished = solve(modelFn, xArr, yArr, best.params, { ...opts, onProgress: polishProgress });
   return polished.sse <= best.sse ? polished : best;
 }
 
