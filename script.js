@@ -1450,23 +1450,36 @@ function buildConvergencePanel(tc) {
   const gradText  = fit.result?.gradNorm    != null ? ` · |∇|=${fit.result.gradNorm.toExponential(2)}`   : '';
   const subtitle  = [convergedText, iterText + lambdaText + gradText].filter(Boolean).join(' · ');
 
-  // Log/Linear toggle buttons rendered natively inside the chart layout
   const btnStyle = {
     bgcolor: tc.paperBg, bordercolor: tc.gridCol,
     font: { size: 8, color: tc.tickCol },
   };
-  const updatemenus = [{
-    type: 'buttons', direction: 'left', showactive: true, active: 0,
-    x: 1, xanchor: 'right', y: 1, yanchor: 'bottom',
-    pad: { r: 0, t: 2 },
-    ...btnStyle,
-    buttons: [
-      { label: 'Log Y',    method: 'relayout',
-        args: [{ 'yaxis.type': 'log',    'yaxis.autorange': true, 'yaxis.title.text': 'SSE (log)' }] },
-      { label: 'Linear Y', method: 'relayout',
-        args: [{ 'yaxis.type': 'linear', 'yaxis.autorange': true, 'yaxis.title.text': 'SSE' }] },
-    ],
-  }];
+  const updatemenus = [
+    {
+      type: 'buttons', direction: 'left', showactive: true, active: 1,
+      x: 0, xanchor: 'left', y: 1, yanchor: 'bottom',
+      pad: { r: 0, t: 2 },
+      ...btnStyle,
+      buttons: [
+        { label: 'Log X',    method: 'relayout',
+          args: [{ 'xaxis.type': 'log',    'xaxis.autorange': true, 'xaxis.title.text': 'Iteration (log)' }] },
+        { label: 'Linear X', method: 'relayout',
+          args: [{ 'xaxis.type': 'linear', 'xaxis.autorange': true, 'xaxis.title.text': 'Iteration' }] },
+      ],
+    },
+    {
+      type: 'buttons', direction: 'left', showactive: true, active: 0,
+      x: 1, xanchor: 'right', y: 1, yanchor: 'bottom',
+      pad: { r: 0, t: 2 },
+      ...btnStyle,
+      buttons: [
+        { label: 'Log Y',    method: 'relayout',
+          args: [{ 'yaxis.type': 'log',    'yaxis.autorange': true, 'yaxis.title.text': 'SSE (log)' }] },
+        { label: 'Linear Y', method: 'relayout',
+          args: [{ 'yaxis.type': 'linear', 'yaxis.autorange': true, 'yaxis.title.text': 'SSE' }] },
+      ],
+    },
+  ];
 
   return {
     traces: [{
@@ -1478,7 +1491,7 @@ function buildConvergencePanel(tc) {
     layout: baseLayout({
       margin: { l: 64, r: 20, t: subtitle ? 30 : 24, b: 36 },
       title: subtitle ? { text: subtitle, font: { size: 9.5, color: tc.tickCol }, x: 0.5, xref: 'paper', y: 1, yref: 'paper', yanchor: 'bottom', pad: { t: 2 } } : undefined,
-      xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Iteration', font: { size: 10, color: tc.tickCol } } }),
+      xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Iteration', font: { size: 10, color: tc.tickCol } }, type: 'linear', autorange: true }),
       yaxis: Object.assign(baseLayout().yaxis, {
         title: { text: 'SSE (log)', font: { size: 10, color: tc.tickCol } },
         type: 'log', autorange: true, zeroline: false,
