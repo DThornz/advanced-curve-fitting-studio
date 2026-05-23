@@ -1253,21 +1253,28 @@ function buildMainTraces() {
       line: { color: fit.color || ds.color, width: 2, dash: 'solid' },
       showlegend: true,
     });
-    // Outlier rings for active fit when showOutliers is on
-    if (state.plotConfig.showOutliers && fit.id === state.activeFitId && fit.result.rmse > 0) {
-      const threshold = 2.5 * fit.result.rmse;
-      const ols = [], olx = [], oly = [];
-      fit.result.residuals.forEach((r, i) => {
-        if (Math.abs(r) > threshold) {
-          ols.push(i); olx.push(ds.x[i]); oly.push(ds.y[i]);
-        }
+    // Outlier rings for active fit when showOutliers is on — computed live so edit-mode moves update instantly
+    if (state.plotConfig.showOutliers && fit.id === state.activeFitId && fit.fn) {
+      const excl = ds.excludedIndices || new Set();
+      const liveRes = [];
+      ds.x.forEach((x, i) => {
+        if (excl.has(i)) return;
+        const v = fitEval(fit, x);
+        liveRes.push({ i, r: isFinite(v) ? ds.y[i] - v : 0 });
+      });
+      if (!liveRes.length) return;
+      const liveRmse = Math.sqrt(liveRes.reduce((s, e) => s + e.r * e.r, 0) / liveRes.length);
+      if (liveRmse <= 0) return;
+      const threshold = 2.5 * liveRmse;
+      const ols = [], olx = [], oly = [], olr = [];
+      liveRes.forEach(({ i, r }) => {
+        if (Math.abs(r) > threshold) { ols.push(i); olx.push(ds.x[i]); oly.push(ds.y[i]); olr.push(r); }
       });
       if (olx.length) traces.push({
         x: olx, y: oly, mode: 'markers', type: 'scatter',
         name: '_outliers', showlegend: false,
-        hovertemplate: olx.map((_, k) => `Outlier #${ols[k]}<br>res=${fmt(fit.result.residuals[ols[k]])}<extra></extra>`),
-        marker: { color: 'rgba(0,0,0,0)', size: 14,
-                  line: { color: '#ef4444', width: 2 } },
+        hovertemplate: olx.map((_, k) => `Outlier #${ols[k]}<br>res=${fmt(olr[k])}<extra></extra>`),
+        marker: { color: 'rgba(0,0,0,0)', size: 14, line: { color: '#ef4444', width: 2 } },
       });
     }
   }
