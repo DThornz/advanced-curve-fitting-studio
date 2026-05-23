@@ -88,9 +88,15 @@
           <div class="app-dropdown" id="examples-menu">
             <div class="app-dropdown-item" data-example="exponential-decay">Exponential Decay  <span class="app-dropdown-sub">radioactive / RC circuit</span></div>
             <div class="app-dropdown-item" data-example="gaussian-peak">Gaussian Peak  <span class="app-dropdown-sub">spectroscopy</span></div>
+            <div class="app-dropdown-item" data-example="lorentzian-peak">Lorentzian Peak  <span class="app-dropdown-sub">NMR resonance</span></div>
             <div class="app-dropdown-item" data-example="logistic-growth">Logistic Growth  <span class="app-dropdown-sub">cell culture / population</span></div>
             <div class="app-dropdown-item" data-example="michaelis-menten">Michaelis-Menten  <span class="app-dropdown-sub">enzyme kinetics</span></div>
+            <div class="app-dropdown-item" data-example="hill-equation">Hill Equation  <span class="app-dropdown-sub">dose-response / binding</span></div>
             <div class="app-dropdown-item" data-example="damped-oscillation">Damped Oscillation  <span class="app-dropdown-sub">mechanical vibration</span></div>
+            <div class="app-dropdown-item" data-example="sinusoidal">Sinusoidal Signal  <span class="app-dropdown-sub">periodic / seasonal</span></div>
+            <div class="app-dropdown-item" data-example="power-law">Power Law  <span class="app-dropdown-sub">allometric scaling</span></div>
+            <div class="app-dropdown-item" data-example="weibull-survival">Weibull CDF  <span class="app-dropdown-sub">reliability / survival</span></div>
+            <div class="app-dropdown-item" data-example="polynomial-calibration">Polynomial Calibration  <span class="app-dropdown-sub">nonlinear instrument response</span></div>
             <div class="app-dropdown-item" data-example="linear-calibration">Linear Calibration  <span class="app-dropdown-sub">instrument response</span></div>
           </div>
         </div>
@@ -503,6 +509,29 @@
     <div class="modal-footer">
       <button class="btn" id="paste-cancel">Cancel</button>
       <button class="btn btn-primary" id="paste-import">Import Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save Session Modal -->
+<div class="modal-backdrop" id="save-modal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="width:380px;max-width:96vw">
+    <div class="modal-header">
+      <span class="modal-title">Save Session</span>
+      <button class="modal-close" id="save-modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.82em;color:var(--muted);margin-bottom:14px">Choose which tabs to include in the saved session file.</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label class="save-scope-row"><input type="radio" name="save-scope" value="all" checked> <span>All tabs</span></label>
+        <label class="save-scope-row"><input type="radio" name="save-scope" value="current"> <span>Current tab only</span></label>
+        <label class="save-scope-row"><input type="radio" name="save-scope" value="select"> <span>Select tabs…</span></label>
+      </div>
+      <div id="save-tab-list" style="display:none;margin-top:12px;flex-direction:column;gap:6px;padding-left:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="save-modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="save-modal-confirm">Save &amp; Download</button>
     </div>
   </div>
 </div>

@@ -19,9 +19,9 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Interactive plots** | Plotly.js scatter + fit curve overlay; residual subplot; zoom/pan/hover |
 | **Log axes** | Toggle log X / log Y independently |
 | **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard |
-| **Example datasets** | 6 built-in examples (radioactive decay, Gaussian peak, enzyme kinetics, etc.) |
+| **Example datasets** | 13 built-in examples (radioactive decay, Gaussian/Lorentzian peaks, enzyme kinetics, Hill dose-response, power law, Weibull CDF, sinusoidal, polynomial calibration, etc.) |
 | **Export** | Plot as PNG or SVG; fit results as CSV; full fit report as TXT |
-| **Session persistence** | Save and reload workspace via browser `localStorage` |
+| **Session persistence** | Save selected tabs (current / all / pick) to JSON; auto-restore on reload |
 | **100% local** | No server, no cloud, no telemetry — all computation in the browser |
 
 ---

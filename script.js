@@ -498,14 +498,19 @@ const MODELS = {
     fn: (x, [A, mu, sig, C]) => A * Math.exp(-0.5 * ((x - mu) / (sig || 1e-10)) ** 2) + C,
     analytic: false,
     autoInit(x, y) {
-      const C = mean(y);
+      // Robust baseline: mean of bottom 25% avoids peak bias
+      const sortedY = y.slice().sort((a, b) => a - b);
+      const nBase = Math.max(2, Math.ceil(y.length * 0.25));
+      const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
       const maxI = shifted.indexOf(Math.max(...shifted));
       const mu = x[maxI];
-      const A = shifted[maxI] || 1;
+      const A = Math.max(shifted[maxI], 1e-6);
       const halfAmp = A / 2;
-      const half = shifted.findIndex(v => v >= halfAmp);
-      const sig = Math.max(Math.abs((x[half] - mu) * 1.5), (Math.max(...x) - Math.min(...x)) / 8);
+      let half = -1;
+      for (let i = 0; i < maxI; i++) { if (shifted[i] >= halfAmp) { half = i; break; } }
+      const xRange = Math.max(...x) - Math.min(...x);
+      const sig = half >= 0 ? Math.max(Math.abs(x[half] - mu) / 1.177, xRange / 10) : xRange / 6;
       return [A, mu, sig, C];
     }
   },
@@ -668,6 +673,96 @@ const EXAMPLES = {
     generate(p) {
       const c = linspace(0, p.xmax, p.N);
       return { name: 'Linear Calibration', x: c, y: noisyGauss(c.map(x => p.m * x + p.b), p.noise), xlabel: 'Concentration (mM)', ylabel: 'Absorbance', suggestModel: 'Linear' };
+    }
+  },
+  'hill-equation': {
+    title: 'Hill Equation (Dose-Response)',
+    params: [
+      { key: 'Vmax', label: 'Vmax',            value: 300,  min: 1,    max: 5000, step: 10   },
+      { key: 'Kd',   label: 'Kd (EC50)',       value: 4,    min: 0.01, max: 200,  step: 0.1  },
+      { key: 'n',    label: 'Hill coeff. (n)', value: 2.5,  min: 0.1,  max: 10,   step: 0.1  },
+      { key: 'noise',label: 'Noise (σ)',        value: 6,    min: 0,    max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const S = [0.1,0.25,0.5,1,1.5,2,3,4,6,8,12,18,25,35,50,75,100];
+      return { name: 'Hill Equation (Dose-Response)', x: S, y: noisyGauss(S.map(x => p.Vmax * Math.pow(x, p.n) / (Math.pow(p.Kd, p.n) + Math.pow(x, p.n))), p.noise), xlabel: '[Ligand] (μM)', ylabel: 'Response (%)', suggestModel: 'Hill' };
+    }
+  },
+  'power-law': {
+    title: 'Power Law (Allometric Scaling)',
+    params: [
+      { key: 'a',    label: 'Scale (a)',   value: 0.014, min: 0.001, max: 100,  step: 0.001 },
+      { key: 'b',    label: 'Exponent (b)',value: 0.75,  min: 0.1,   max: 3,    step: 0.05  },
+      { key: 'noise',label: 'Noise (σ%)',  value: 8,     min: 0,     max: 50,   step: 1     },
+      { key: 'N',    label: 'Points (N)',  value: 24,    min: 4,     max: 100,  step: 1     },
+    ],
+    generate(p) {
+      const masses = [0.01,0.03,0.07,0.15,0.3,0.5,1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,30000,60000,100000,300000,700000];
+      const x = masses.slice(0, p.N);
+      const yClean = x.map(m => p.a * Math.pow(m, p.b));
+      const y = yClean.map(v => v * (1 + (p.noise / 100) * gauss()));
+      return { name: 'Allometric Scaling (Power Law)', x, y, xlabel: 'Body Mass (g)', ylabel: 'Metabolic Rate (W)', suggestModel: 'Power' };
+    }
+  },
+  'lorentzian-peak': {
+    title: 'Lorentzian Peak (NMR)',
+    params: [
+      { key: 'A',    label: 'Amplitude (A)', value: 200,  min: 1,    max: 2000, step: 5    },
+      { key: 'x0',   label: 'Center (x₀)',   value: 3.6,  min: -50,  max: 50,   step: 0.1  },
+      { key: 'g',    label: 'Half-width (γ)', value: 0.4,  min: 0.01, max: 10,   step: 0.05 },
+      { key: 'C',    label: 'Baseline (C)',   value: 4,    min: -50,  max: 200,  step: 1    },
+      { key: 'noise',label: 'Noise (σ)',      value: 4,    min: 0,    max: 50,   step: 0.5  },
+      { key: 'N',    label: 'Points (N)',     value: 50,   min: 5,    max: 200,  step: 1    },
+    ],
+    generate(p) {
+      const x = linspace(p.x0 - 6 * p.g, p.x0 + 6 * p.g, p.N);
+      return { name: 'Lorentzian Peak (NMR)', x, y: noisyGauss(x.map(xi => p.A * p.g * p.g / ((xi - p.x0) ** 2 + p.g * p.g) + p.C), p.noise), xlabel: 'Chemical Shift (ppm)', ylabel: 'Intensity (a.u.)', suggestModel: 'Lorentzian' };
+    }
+  },
+  'weibull-survival': {
+    title: 'Weibull CDF (Reliability)',
+    params: [
+      { key: 'lam',  label: 'Scale (λ)',      value: 500,  min: 10,   max: 10000, step: 10  },
+      { key: 'k',    label: 'Shape (k)',       value: 2.2,  min: 0.5,  max: 10,    step: 0.1 },
+      { key: 'noise',label: 'Noise (σ)',       value: 0.02, min: 0,    max: 0.2,   step: 0.005},
+      { key: 'N',    label: 'Points (N)',      value: 30,   min: 5,    max: 100,   step: 1   },
+    ],
+    generate(p) {
+      const t = linspace(10, p.lam * 2, p.N);
+      return { name: 'Weibull CDF (Reliability)', x: t, y: noisyGauss(t.map(x => 1 - Math.exp(-Math.pow(x / p.lam, p.k))), p.noise).map(v => Math.max(0, Math.min(1, v))), xlabel: 'Time to Failure (h)', ylabel: 'Failure Probability', suggestModel: 'Weibull' };
+    }
+  },
+  'polynomial-calibration': {
+    title: 'Polynomial Calibration Curve',
+    params: [
+      { key: 'a3',   label: 'a₃ (cubic)',     value: -0.008, min: -1,   max: 1,    step: 0.001 },
+      { key: 'a2',   label: 'a₂ (quadratic)', value: 0.22,   min: -5,   max: 5,    step: 0.01  },
+      { key: 'a1',   label: 'a₁ (linear)',    value: 1.85,   min: -20,  max: 20,   step: 0.05  },
+      { key: 'a0',   label: 'a₀ (offset)',    value: 0.05,   min: -10,  max: 10,   step: 0.01  },
+      { key: 'noise',label: 'Noise (σ)',       value: 0.4,    min: 0,    max: 5,    step: 0.05  },
+      { key: 'N',    label: 'Points (N)',      value: 22,     min: 5,    max: 100,  step: 1     },
+      { key: 'xmax', label: 'x max',           value: 20,     min: 1,    max: 100,  step: 1     },
+    ],
+    generate(p) {
+      const x = linspace(0, p.xmax, p.N);
+      return { name: 'Polynomial Calibration (Cubic)', x, y: noisyGauss(x.map(xi => p.a3*xi**3 + p.a2*xi**2 + p.a1*xi + p.a0), p.noise), xlabel: 'Concentration (mM)', ylabel: 'Signal (mV)', suggestModel: 'Polynomial-3' };
+    }
+  },
+  'sinusoidal': {
+    title: 'Sinusoidal Signal',
+    params: [
+      { key: 'A',    label: 'Amplitude (A)', value: 5,    min: 0.1,   max: 100,  step: 0.1  },
+      { key: 'omega',label: 'Frequency (ω)', value: 1.4,  min: 0.05,  max: 20,   step: 0.05 },
+      { key: 'phi',  label: 'Phase (φ)',      value: 0.8,  min: -3.14, max: 3.14, step: 0.05 },
+      { key: 'C',    label: 'Offset (C)',     value: 1.2,  min: -50,   max: 50,   step: 0.1  },
+      { key: 'noise',label: 'Noise (σ)',      value: 0.4,  min: 0,     max: 10,   step: 0.05 },
+      { key: 'N',    label: 'Points (N)',     value: 60,   min: 10,    max: 300,  step: 1    },
+      { key: 'xmax', label: 'x max (periods)',value: 8,    min: 1,     max: 50,   step: 0.5  },
+    ],
+    generate(p) {
+      const xmax = p.xmax * (2 * Math.PI / p.omega);
+      const t = linspace(0, xmax, p.N);
+      return { name: 'Sinusoidal Signal', x: t, y: noisyGauss(t.map(x => p.A * Math.sin(p.omega * x + p.phi) + p.C), p.noise), xlabel: 'Time (s)', ylabel: 'Amplitude', suggestModel: 'Sine' };
     }
   }
 };
@@ -1442,6 +1537,7 @@ function loadExampleFromModal() {
   syncFitDatasetSelect();
   renderDatasetList();
   updatePlots();
+  autoInitParams();
   setConsole(`Loaded: ${data.name} (${data.x.length} points).  Press ▶ Fit to fit.`, '');
 }
 
@@ -1943,10 +2039,15 @@ function restoreSessionPayload(payload) {
   if (modelSel) { modelSel.value = state.fitConfig.model; syncModelCustomSection(); }
   const eqInput = document.getElementById('custom-eq-input');
   if (eqInput && state.fitConfig.customExpr) { eqInput.value = state.fitConfig.customExpr; parseCustomEquation(state.fitConfig.customExpr); }
-  ['logX','logY'].forEach(k => {
-    const btn = document.getElementById('btn-' + k.replace(/[A-Z]/g, ch => '-' + ch.toLowerCase()));
-    if (btn && state.plotConfig[k]) btn.classList.add('active');
+  // Reset toggle button states before restoring to prevent state leak across tabs
+  ['btn-log-x', 'btn-log-y', 'btn-toggle-residuals'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.classList.remove('active');
   });
+  if (state.plotConfig.logX)          document.getElementById('btn-log-x').classList.add('active');
+  if (state.plotConfig.logY)          document.getElementById('btn-log-y').classList.add('active');
+  if (state.plotConfig.showResiduals !== false) document.getElementById('btn-toggle-residuals').classList.add('active');
+  document.getElementById('residual-plot').classList.toggle('hidden', state.plotConfig.showResiduals === false);
 
   // Restore axis labels before updatePlots() reads them
   if (payload.axisLabels) {
@@ -2018,8 +2119,47 @@ function restoreMultiTabPayload(data) {
 }
 
 function saveSession() {
+  // Show save modal with tab selection
+  const modal = document.getElementById('save-modal');
+  if (!modal) return;
+  saveCurrentTab();
+
+  // Populate tab checkboxes
+  const list = modal.querySelector('#save-tab-list');
+  list.innerHTML = tabList.map(t => `
+    <label class="save-tab-row">
+      <input type="checkbox" class="save-tab-cb" value="${t.id}" checked>
+      <span class="save-tab-name">${t.name.replace(/</g,'&lt;')}</span>
+      ${t.id === activeTabId ? '<span class="save-tab-badge">current</span>' : ''}
+    </label>`).join('');
+
+  // Sync radio → checkbox visibility
+  const radios = modal.querySelectorAll('input[name="save-scope"]');
+  function syncTabList() {
+    const scope = modal.querySelector('input[name="save-scope"]:checked').value;
+    list.style.display = scope === 'select' ? 'flex' : 'none';
+    if (scope === 'current') {
+      list.querySelectorAll('.save-tab-cb').forEach(cb => { cb.checked = (cb.value === activeTabId); });
+    } else if (scope === 'all') {
+      list.querySelectorAll('.save-tab-cb').forEach(cb => { cb.checked = true; });
+    }
+  }
+  radios.forEach(r => r.addEventListener('change', syncTabList));
+  syncTabList();
+
+  modal.style.display = 'flex';
+}
+
+function performSave(tabIds) {
   try {
-    const payload = buildMultiTabPayload();
+    const selectedTabs = tabList.filter(t => tabIds.includes(t.id));
+    if (!selectedTabs.length) { setConsole('No tabs selected.', 'warn'); return; }
+    const payload = {
+      version: 3,
+      savedAt: new Date().toISOString(),
+      tabs: selectedTabs.map(t => ({ id: t.id, name: t.name, payload: t.payload })),
+      activeTabId: tabIds.includes(activeTabId) ? activeTabId : selectedTabs[0].id,
+    };
     const json = JSON.stringify(payload, null, 2);
     localStorage.setItem('cfs_session', json);
     const blob = new Blob([json], { type: 'application/json' });
@@ -2028,7 +2168,7 @@ function saveSession() {
     a.download = `curve-fit-session-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
-    setConsole('Session saved — .cfs.json file downloaded.', '');
+    setConsole(`Session saved (${selectedTabs.length} tab${selectedTabs.length > 1 ? 's' : ''}) — file downloaded.`, '');
   } catch (e) {
     setConsole('Save failed: ' + e.message, 'error');
   }
@@ -2331,6 +2471,27 @@ function initEvents() {
   document.getElementById('btn-save').addEventListener('click', saveSession);
   document.getElementById('btn-load').addEventListener('click', loadSession);
 
+  /* ── Save modal ───────────────────────────────────────── */
+  const saveModal = document.getElementById('save-modal');
+  if (saveModal) {
+    document.getElementById('save-modal-close').addEventListener('click', () => { saveModal.style.display = 'none'; });
+    document.getElementById('save-modal-cancel').addEventListener('click', () => { saveModal.style.display = 'none'; });
+    document.getElementById('save-modal-confirm').addEventListener('click', () => {
+      const scope = saveModal.querySelector('input[name="save-scope"]:checked').value;
+      let ids;
+      if (scope === 'current') {
+        ids = [activeTabId];
+      } else if (scope === 'all') {
+        ids = tabList.map(t => t.id);
+      } else {
+        ids = [...saveModal.querySelectorAll('.save-tab-cb:checked')].map(cb => cb.value);
+      }
+      saveModal.style.display = 'none';
+      performSave(ids);
+    });
+    saveModal.addEventListener('click', e => { if (e.target === saveModal) saveModal.style.display = 'none'; });
+  }
+
   /* ── Resize plots when window resizes ─────────────────── */
   window.addEventListener('resize', () => {
     if (plotsInitialised) { Plotly.Plots.resize('main-plot'); Plotly.Plots.resize('residual-plot'); }
@@ -2380,6 +2541,7 @@ function loadDefaultExample() {
   syncFitDatasetSelect();
   renderDatasetList();
   updatePlots();
+  autoInitParams();
   setConsole(`Example loaded: ${ex.name}. Press ▶ Fit to begin.`, '');
 }
 
