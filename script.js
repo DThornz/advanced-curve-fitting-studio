@@ -2784,7 +2784,7 @@ function init() {
 
   // Hide nav when app section scrolls into view
   const siteNav = document.querySelector('.site-nav');
-  const appAnchor = document.querySelector('.app-section-header');
+  const appAnchor = document.getElementById('app');
   if (siteNav && appAnchor) {
     window.addEventListener('scroll', () => {
       siteNav.classList.toggle('nav-hidden', appAnchor.getBoundingClientRect().top <= 160);
