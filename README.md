@@ -16,12 +16,21 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^` |
-| **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, convergence status |
+| **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status |
+| **CI bands** | 95% confidence interval ribbon around each fit curve (toggle per session) |
+| **Weighted fitting** | Three schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate) |
+| **Try All Models** | One-click comparison table — fits all 16 non-Custom models and ranks by R²; apply any result to the active fit |
+| **Copy Parameters** | Copy active fit parameters (with ± std errors) to clipboard in one click |
+| **Extrapolation range** | Set custom X min / X max for fit curves, independent of data extent; Reset button to revert to data range |
+| **Outlier detection** | Highlights points where \|residual\| > 2.5σ for the active fit with red rings; updates live as points are moved |
+| **Point masking** | Mask 2.5σ outliers to exclude them from fitting; Unmask All to restore; masked count shown in panel |
+| **Smart point editing** | Always-on context-aware interaction: click near a point to select/drag, click and drag away from points to pan, scroll to zoom; no mode toggle required |
+| **Normalized residuals** | Toggle residual plot between raw units and σ (RMSE-normalized) units |
 | **Interactive plots** | Plotly.js scatter + fit curve overlay; residual subplot; zoom/pan/hover; draggable legend |
-| **Auto legend placement** | Legend placed at bottom-right or top-right based on data density; user-draggable |
+| **Legend toggle** | Show/hide plot legend via modebar button (same bar as zoom/pan/box-select) |
 | **Log axes** | Toggle log X / log Y independently |
-| **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers |
-| **12 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration |
+| **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker for files with more than two columns |
+| **12 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration — each with adjustable noise and optional outlier injection (count + scale) |
 | **Dataset enable/disable** | Toggle datasets on/off for fitting; disabled datasets dim on the plot and are excluded from the fit dropdown |
 | **Multi-tab workspace** | Independent tabs with auto-naming from first dataset; double-click to rename |
 | **Resizable panels** | Left/right panels resize by width; residual and stats bar resize by height — all drag handles |
@@ -77,6 +86,18 @@ Click **▶ Start Advanced Curve Fitting Studio** on the page. The app opens as 
 5. Press **▶ Fit** (or `Ctrl+Enter`).
 6. Statistics (R², RMSE, AIC, BIC, etc.) appear in the resizable stats bar; parameters update in the right panel.
 
+### Trying all models at once
+
+Click **Try All** in the toolbar to fit every built-in model to the active dataset and display a ranked comparison table (sorted by R²). Click **Apply** on any row to load that model and its parameters into the right panel for further tuning.
+
+### Point editing
+
+Point editing is always active — no mode toggle is needed. Click near a data point to select it (a circle shows the selection radius). Drag a selected point to move it. Click and drag away from any point to pan the plot. Scroll to zoom. Shift+scroll adjusts the multi-select radius. Selected points can be nudged with arrow keys using the step value shown in the Edit controls panel (open via **✏ Edit**).
+
+### Outlier tools
+
+Enable **Outliers** in the toolbar to highlight points where |residual| > 2.5σ for the active fit. Click **Mask 2.5σ** in the right panel to exclude those points from subsequent fits. **Unmask All** restores all masked points. The masked count is shown next to the section header.
+
 ### Multi-start fitting
 
 Set **Multi-start** (default: 8) in Algorithm Options. The solver launches N pilot runs from log-scale-perturbed starting points, picks the best result, and polishes it. Substantially reduces the chance of converging to a local minimum at ~4× the compute cost of a single run.
@@ -115,10 +136,10 @@ x,y
 | Shortcut | Action |
 |---|---|
 | `Ctrl + Enter` | Run fit |
-| `Ctrl + Z / Y` | Undo / redo (Edit mode) |
-| `↑ ↓ ← →` | Nudge selected points (Edit mode) |
-| `Scroll` | Adjust edit radius (Edit mode) |
-| `Escape` | Close full-screen app |
+| `Ctrl + Z / Y` | Undo / redo point edits (when selection exists) |
+| `↑ ↓ ← →` | Nudge selected points by the step value |
+| `Shift + Scroll` | Adjust multi-select radius |
+| `Escape` | Deselect points / close full-screen app |
 
 ---
 

@@ -50,6 +50,8 @@
     <span class="pill">Nonlinear Regression</span>
     <span class="pill">LM · Gauss-Newton · Nelder-Mead · BFGS</span>
     <span class="pill">Custom Equations</span>
+    <span class="pill">CI Bands · Weighted Fitting</span>
+    <span class="pill">Outlier Detection &amp; Masking</span>
     <span class="pill">Plotly.js</span>
     <span class="pill">Math.js</span>
     <span class="pill">Offline-First</span>
@@ -58,7 +60,7 @@
   <div class="hero-meta">
     <div><div class="hero-stat-num">16+</div><div class="hero-stat-label">Built-in Models</div></div>
     <div><div class="hero-stat-num">4</div><div class="hero-stat-label">Fit Algorithms</div></div>
-    <div><div class="hero-stat-num">6</div><div class="hero-stat-label">Fit Diagnostics</div></div>
+    <div><div class="hero-stat-num">8+</div><div class="hero-stat-label">Fit Diagnostics</div></div>
     <div><div class="hero-stat-num">100%</div><div class="hero-stat-label">Client-Side</div></div>
   </div>
 </div><!-- end hero -->
@@ -176,10 +178,21 @@
       <!-- CENTER: PLOTS -->
       <div class="app-center" id="panel-center">
         <div class="plot-div-wrap">
+          <div id="log-suggest-banner" style="display:none">
+            <span id="log-suggest-text"></span>
+            <button id="log-suggest-apply-x" class="btn" style="display:none;font-size:.7em;padding:2px 8px">Log X</button>
+            <button id="log-suggest-apply-y" class="btn" style="display:none;font-size:.7em;padding:2px 8px">Log Y</button>
+            <button id="log-suggest-dismiss" class="btn" title="Dismiss" style="font-size:.7em;padding:2px 6px">✕</button>
+          </div>
           <div id="main-plot" class="plot-div"></div>
           <canvas id="edit-radius-canvas" style="display:none"></canvas>
         </div>
         <div class="panel-resize row" id="rh-residual" title="Drag to resize residual panel"></div>
+        <div id="residual-tab-bar">
+          <button class="resid-tab active" data-tab="residuals">Residuals</button>
+          <button class="resid-tab" data-tab="qq">Q-Q Plot</button>
+          <button class="resid-tab" data-tab="hist">Histogram</button>
+        </div>
         <div id="residual-plot" class="plot-div-residual"></div>
       </div>
 
@@ -643,8 +656,8 @@
 
     <p><strong>Loading data.</strong> Three routes are available:</p>
     <ul style="margin:8px 0 8px 20px;line-height:1.8">
-      <li><strong>Examples</strong> — 12 built-in synthetic datasets with adjustable noise, covering every major model family. Each example pre-selects the matching model and sensible initial parameters.</li>
-      <li><strong>Import CSV / TSV / TXT</strong> — drag a file onto the plot area or use the Import button. Headers are optional; the first two numeric columns are used as X and Y. Comma, semicolon, tab, and space delimiters are all detected automatically.</li>
+      <li><strong>Examples</strong> — 12 built-in synthetic datasets with adjustable noise, covering every major model family. Each example pre-selects the matching model and sensible initial parameters. An <em>Outliers</em> slider and <em>Outlier scale</em> control let you inject random outliers into the generated data to test robustness.</li>
+      <li><strong>Import CSV / TSV / TXT</strong> — drag a file onto the plot area or use the Import button. Headers are optional; the first two numeric columns are used as X and Y. Comma, semicolon, tab, and space delimiters are all detected automatically. Files with more than two columns open a <em>Column Picker</em> so you can choose which columns to use as X and Y.</li>
       <li><strong>Paste Data</strong> — paste directly from Excel, a terminal, or any text editor. The delimiter auto-detection handles mixed formats.</li>
     </ul>
     <p>Multiple datasets can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled for fitting using the toggle button (●) that appears on hover.</p>
@@ -680,7 +693,21 @@
         <tr><td>Status</td><td>✓ = converged within tolerance; ⚠ = hit iteration limit without converging</td><td>Always aim for ✓</td></tr>
       </tbody>
     </table>
-    <p>Toggle the <strong>Residuals</strong> panel to inspect $y_i - \hat{y}_i$ vs. $x_i$. A good fit shows randomly scattered residuals around zero with no systematic trend. Curved residuals indicate the wrong model family. Fanning residuals (variance growing with $x$) suggest heteroscedasticity — consider log-transforming $y$.</p>
+    <p>Toggle the <strong>Residuals</strong> panel to inspect $y_i - \hat{y}_i$ vs. $x_i$. A good fit shows randomly scattered residuals around zero with no systematic trend. Curved residuals indicate the wrong model family. Fanning residuals (variance growing with $x$) suggest heteroscedasticity — consider log-transforming $y$ or switching to <strong>weighted fitting</strong> (1/y² or 1/|y|, selectable under Algorithm Options). Enable <strong>Norm. Res.</strong> in the toolbar to plot residuals in σ units (RMSE-normalised) instead of raw units — helpful for comparing residuals across fits with different scales.</p>
+
+    <p><strong>CI Bands.</strong> Click <strong>CI Bands</strong> in the toolbar to overlay 95% confidence interval ribbons around each fit curve. The ribbon width at each point reflects parameter uncertainty propagated through the model — narrow ribbons indicate a well-constrained fit; wide ribbons suggest under-determined parameters or sparse data.</p>
+
+    <p><strong>Outlier detection and masking.</strong> Enable <strong>Outliers</strong> in the toolbar after fitting. Points where |residual| exceeds 2.5 × RMSE for the active fit are circled in red. The rings update live as you edit or move points. To exclude outliers from the fit entirely, click <strong>Mask 2.5σ</strong> in the Point Masking section of the right panel and refit — masked points remain visible on the plot but are excluded from the optimisation. Click <strong>Unmask All</strong> to restore them.</p>
+
+    <p><strong>Try All Models.</strong> Click <strong>Try All</strong> in the toolbar to automatically fit every built-in model to the active dataset. A comparison table opens, ranked by R², showing R², RMSE, AIC, and BIC for each model. Click <strong>Apply</strong> on any row to load that model and its initial parameter estimates into the right panel for further tuning. Use AIC or BIC — rather than R² alone — to identify the best model without overfitting.</p>
+
+    <p><strong>Copy Parameters.</strong> After fitting, click <strong>Copy</strong> (next to Auto Init in the Parameters section) to copy the current fit parameters with their ± standard errors to the clipboard in plain text, ready to paste into a report or spreadsheet.</p>
+
+    <p><strong>Extrapolation.</strong> By default fit curves are drawn only over the data X range. Set <strong>X min</strong> and <strong>X max</strong> in the Extrapolation Range section at the bottom of the right panel to extend (or restrict) the curve beyond the data. Click <strong>Reset</strong> to revert to the data range.</p>
+
+    <p><strong>Point editing.</strong> Point editing is always active — no mode button is needed. Click near any data point to select it; a translucent circle shows the current selection radius. Drag a selected point up or down to move it. Clicking and dragging away from all points pans the plot normally. Scroll to zoom. Hold <kbd>Shift</kbd> and scroll to adjust the multi-select radius. Press <kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> to undo or redo edits, and arrow keys to nudge by the step amount. Click <strong>✏ Edit</strong> in the toolbar to reveal the undo/redo buttons, step input, and radius display. A reset (⟳) button restores selected points to their original imported values.</p>
+
+    <p><strong>Legend.</strong> Use the legend-icon button in the Plotly modebar (the toolbar that contains zoom, pan, and box-select) to toggle the legend on or off. The legend is draggable — click and drag it anywhere on the plot.</p>
 
     <p><strong>Custom equations.</strong> Select <em>Custom Equation</em> from the model dropdown. Type any expression in the variable <code>x</code> using Math.js syntax. Parameters are any symbols other than <code>x</code> and standard math functions. Examples:</p>
     <div class="eq-block" style="margin:10px 0">
@@ -711,10 +738,10 @@
       <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
       <tbody>
         <tr><td><kbd>Ctrl + Enter</kbd></td><td>Run fit</td></tr>
-        <tr><td><kbd>Ctrl + Z / Y</kbd></td><td>Undo / redo (in Edit mode)</td></tr>
-        <tr><td><kbd>← → ↑ ↓</kbd></td><td>Nudge selected points (in Edit mode)</td></tr>
-        <tr><td><kbd>Scroll wheel</kbd></td><td>Adjust edit radius (in Edit mode)</td></tr>
-        <tr><td><kbd>Escape</kbd></td><td>Close full-screen app</td></tr>
+        <tr><td><kbd>Ctrl + Z / Y</kbd></td><td>Undo / redo point edits (when selection exists)</td></tr>
+        <tr><td><kbd>← → ↑ ↓</kbd></td><td>Nudge selected points by the step value</td></tr>
+        <tr><td><kbd>Shift + Scroll</kbd></td><td>Adjust multi-select radius</td></tr>
+        <tr><td><kbd>Escape</kbd></td><td>Deselect points / close full-screen app</td></tr>
       </tbody>
     </table>
   </div>

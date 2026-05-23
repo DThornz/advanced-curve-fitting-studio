@@ -40,6 +40,29 @@ function linspace(a, b, n) {
   return Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
 }
 
+function probitApprox(p) {
+  if (p <= 0) return -6; if (p >= 1) return 6;
+  const q = p < 0.5 ? p : 1 - p;
+  const t = Math.sqrt(-2 * Math.log(q));
+  const x = t - (2.515517 + t*(0.802853 + t*0.010328)) / (1 + t*(1.432788 + t*(0.189269 + t*0.001308)));
+  return p < 0.5 ? -x : x;
+}
+
+function getLiveResiduals() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.fn) return null;
+  const ds = state.datasets.find(d => d.id === fit.dsId);
+  if (!ds) return null;
+  const excl = ds.excludedIndices || new Set();
+  const residuals = [];
+  ds.x.forEach((x, i) => {
+    if (excl.has(i)) return;
+    const yhat = fitEval(fit, x);
+    if (isFinite(yhat)) residuals.push(ds.y[i] - yhat);
+  });
+  return residuals.length >= 3 ? { residuals, fit, ds } : null;
+}
+
 function solveLinear(A, b) {
   const n = b.length;
   const M = A.map((row, i) => [...row, b[i]]);
@@ -949,7 +972,7 @@ const state = {
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
-  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false, showLegend: true },
+  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false } },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   selection: { dsId: null, indices: new Set() },
   editHistory: { undo: [], redo: [] },
@@ -1295,9 +1318,9 @@ function buildMainTraces() {
   return traces;
 }
 
-function buildResidualTraces() {
-  const traces = [];
+function buildResidualVsXPanel(xlabel, tc) {
   const normalize = state.plotConfig.normalizeResiduals;
+  const traces = [];
   for (const fit of state.fits) {
     if (!fit.visible || !fit.result) continue;
     const ds = state.datasets.find(d => d.id === fit.dsId);
@@ -1314,11 +1337,97 @@ function buildResidualTraces() {
     traces.push({
       x: [Math.min(...ds.x), Math.max(...ds.x)], y: [0, 0],
       mode: 'lines', type: 'scatter',
-      line: { color: themeColors().gridCol, width: 1, dash: 'dot' },
+      line: { color: tc.gridCol, width: 1, dash: 'dot' },
       showlegend: false, hoverinfo: 'skip',
     });
   }
-  return traces;
+  const layout = baseLayout({
+    margin: { l: 56, r: 20, t: 10, b: 36 },
+    yaxis: Object.assign(baseLayout().yaxis, { title: { text: normalize ? 'Norm. Residuals (σ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, zeroline: true }),
+    xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 10, color: tc.tickCol } } }),
+    showlegend: false,
+  });
+  return { traces, layout };
+}
+
+function buildQQPanel(tc) {
+  const noLayout = baseLayout({
+    annotations: [{ text: 'No active fit', x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', showarrow: false, font: { color: tc.tickCol, size: 11 } }],
+    margin: { l: 56, r: 20, t: 10, b: 36 }, showlegend: false,
+  });
+  const data = getLiveResiduals();
+  if (!data) return { traces: [], layout: noLayout };
+  const { residuals, fit, ds } = data;
+  const n = residuals.length;
+  const sorted = residuals.slice().sort((a, b) => a - b);
+  const mu = sorted.reduce((s, r) => s + r, 0) / n;
+  const sigma = Math.sqrt(sorted.reduce((s, r) => s + (r - mu) ** 2, 0) / Math.max(n - 1, 1));
+  const stdRes = sorted.map(r => (r - mu) / (sigma || 1));
+  const theoQ  = sorted.map((_, i) => probitApprox((i + 1 - 0.375) / (n + 0.25)));
+  const lo = Math.min(theoQ[0], stdRes[0]) - 0.3;
+  const hi = Math.max(theoQ[n - 1], stdRes[n - 1]) + 0.3;
+  return {
+    traces: [
+      { x: theoQ, y: stdRes, mode: 'markers', type: 'scatter',
+        marker: { color: fit.color || ds.color, size: 5, opacity: 0.85 },
+        showlegend: false, hovertemplate: 'Theoretical: %{x:.2f}<br>Sample: %{y:.2f}<extra></extra>' },
+      { x: [lo, hi], y: [lo, hi], mode: 'lines', type: 'scatter',
+        line: { color: '#ef4444', dash: 'dash', width: 1.5 },
+        showlegend: false, hoverinfo: 'skip' },
+    ],
+    layout: baseLayout({
+      margin: { l: 56, r: 20, t: 10, b: 36 },
+      xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Theoretical Quantiles', font: { size: 10, color: tc.tickCol } } }),
+      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Sample Quantiles (σ)', font: { size: 10, color: tc.tickCol } }, zeroline: false }),
+      showlegend: false,
+    }),
+  };
+}
+
+function buildHistPanel(tc) {
+  const noLayout = baseLayout({
+    annotations: [{ text: 'No active fit', x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', showarrow: false, font: { color: tc.tickCol, size: 11 } }],
+    margin: { l: 56, r: 20, t: 10, b: 36 }, showlegend: false,
+  });
+  const data = getLiveResiduals();
+  if (!data) return { traces: [], layout: noLayout };
+  const { residuals, fit, ds } = data;
+  const n = residuals.length;
+  const nBins = Math.max(5, Math.ceil(Math.log2(n)) + 1);
+  const mu = residuals.reduce((s, r) => s + r, 0) / n;
+  const sigma = Math.sqrt(residuals.reduce((s, r) => s + (r - mu) ** 2, 0) / Math.max(n - 1, 1));
+  const rMin = Math.min(...residuals), rMax = Math.max(...residuals);
+  const pad = sigma || Math.abs(rMax - rMin) * 0.1 || 1;
+  const xs = linspace(rMin - pad, rMax + pad, 200);
+  const binWidth = (rMax - rMin) / Math.max(nBins, 1);
+  const normScale = n * (binWidth || 1);
+  const normalY = sigma > 0
+    ? xs.map(x => normScale * Math.exp(-0.5 * ((x - mu) / sigma) ** 2) / (sigma * Math.sqrt(2 * Math.PI)))
+    : xs.map(() => 0);
+  const col = fit.color || ds.color;
+  return {
+    traces: [
+      { x: residuals, type: 'histogram', nbinsx: nBins,
+        marker: { color: hexToRgba(col, 0.6), line: { color: col, width: 1 } },
+        showlegend: false, hovertemplate: '%{y} points<extra></extra>' },
+      { x: xs, y: normalY, type: 'scatter', mode: 'lines',
+        line: { color: '#ef4444', width: 1.5 },
+        showlegend: false, hoverinfo: 'skip' },
+    ],
+    layout: baseLayout({
+      margin: { l: 56, r: 20, t: 10, b: 36 },
+      xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Residual', font: { size: 10, color: tc.tickCol } } }),
+      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Count', font: { size: 10, color: tc.tickCol } }, zeroline: false }),
+      barmode: 'overlay', showlegend: false,
+    }),
+  };
+}
+
+function buildResidualPanel(xlabel, tc) {
+  const tab = state.plotConfig.residualTab || 'residuals';
+  if (tab === 'qq')   return buildQQPanel(tc);
+  if (tab === 'hist') return buildHistPanel(tc);
+  return buildResidualVsXPanel(xlabel, tc);
 }
 
 function updatePlots() {
@@ -1336,6 +1445,8 @@ function updatePlots() {
 
   const mainEl  = document.getElementById('main-plot');
   const residEl = document.getElementById('residual-plot');
+
+  const { traces: resTraces, layout: resLayout } = buildResidualPanel(xlabel, tc);
 
   if (!plotsInitialised) {
     const legendIcon = {
@@ -1357,26 +1468,39 @@ function updatePlots() {
       }],
     };
     Plotly.newPlot(mainEl, mainTraces, mainLayout, plotCfg);
-    const resTraces = buildResidualTraces();
-    const resLayout = baseLayout({
-      margin: { l: 56, r: 20, t: 10, b: 36 },
-      yaxis: Object.assign(baseLayout().yaxis, { title: { text: state.plotConfig.normalizeResiduals ? 'Norm. Residuals (σ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, zeroline: true }),
-      xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 10, color: tc.tickCol } } }),
-      showlegend: false,
-    });
     Plotly.newPlot(residEl, resTraces, resLayout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['sendDataToCloud','editInChartStudio'] });
     plotsInitialised = true;
   } else {
     Plotly.react(mainEl, mainTraces, mainLayout);
-    const resTraces = buildResidualTraces();
-    const resLayout = baseLayout({
-      margin: { l: 56, r: 20, t: 10, b: 36 },
-      yaxis: Object.assign(baseLayout().yaxis, { title: { text: state.plotConfig.normalizeResiduals ? 'Norm. Residuals (σ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, zeroline: true }),
-      xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 10, color: tc.tickCol } } }),
-      showlegend: false,
-    });
     Plotly.react(residEl, resTraces, resLayout);
   }
+
+  checkLogSuggest();
+}
+
+function checkLogSuggest() {
+  const banner = document.getElementById('log-suggest-banner');
+  if (!banner) return;
+  if (!state.datasets.length) { banner.style.display = 'none'; return; }
+  const dis = state.plotConfig.logSuggestDismissed || {};
+  const allX = [], allY = [];
+  for (const ds of state.datasets) {
+    if (ds.enabled === false || !ds.visible) continue;
+    for (const v of ds.x) if (isFinite(v) && v > 0) allX.push(v);
+    for (const v of ds.y) if (isFinite(v) && v > 0) allY.push(v);
+  }
+  const xSpan = allX.length > 1 ? Math.max(...allX) / Math.min(...allX) : 1;
+  const ySpan = allY.length > 1 ? Math.max(...allY) / Math.min(...allY) : 1;
+  const suggestX = xSpan > 100 && !state.plotConfig.logX && !dis.x;
+  const suggestY = ySpan > 100 && !state.plotConfig.logY && !dis.y;
+  if (!suggestX && !suggestY) { banner.style.display = 'none'; return; }
+  const parts = [];
+  if (suggestX) parts.push(`X spans ~${Math.round(Math.log10(xSpan))} decades`);
+  if (suggestY) parts.push(`Y spans ~${Math.round(Math.log10(ySpan))} decades`);
+  document.getElementById('log-suggest-text').textContent = parts.join(' · ') + ' — consider log scale:';
+  document.getElementById('log-suggest-apply-x').style.display = suggestX ? '' : 'none';
+  document.getElementById('log-suggest-apply-y').style.display = suggestY ? '' : 'none';
+  banner.style.display = 'flex';
 }
 
 function fitEval(fit, x) {
@@ -2673,7 +2797,11 @@ function restoreSessionPayload(payload) {
     state.fits.push(Object.assign(f, { fn }));
   }
   state.fitConfig = payload.fitConfig || state.fitConfig;
-  state.plotConfig = payload.plotConfig || state.plotConfig;
+  state.plotConfig = Object.assign(
+    { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false } },
+    payload.plotConfig || {}
+  );
+  state.plotConfig.logSuggestDismissed = { x: false, y: false };
   state.activeDatasetId = payload.activeDatasetId;
   state.activeFitId = payload.activeFitId;
 
@@ -2695,7 +2823,11 @@ function restoreSessionPayload(payload) {
   if (state.plotConfig.showCI)             document.getElementById('btn-ci-bands').classList.add('active');
   if (state.plotConfig.normalizeResiduals) document.getElementById('btn-norm-resid').classList.add('active');
   if (state.plotConfig.showOutliers)       document.getElementById('btn-show-outliers').classList.add('active');
-  document.getElementById('residual-plot').classList.toggle('hidden', state.plotConfig.showResiduals === false);
+  const tabOff = state.plotConfig.showResiduals === false;
+  document.getElementById('residual-tab-bar').classList.toggle('hidden', tabOff);
+  document.getElementById('residual-plot').classList.toggle('hidden', tabOff);
+  const activeTab = state.plotConfig.residualTab || 'residuals';
+  document.querySelectorAll('.resid-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
 
   // Restore axis labels before updatePlots() reads them
   if (payload.axisLabels) {
@@ -3145,6 +3277,7 @@ function initEvents() {
   document.getElementById('btn-toggle-residuals').addEventListener('click', function () {
     state.plotConfig.showResiduals = !state.plotConfig.showResiduals;
     this.classList.toggle('active', state.plotConfig.showResiduals);
+    document.getElementById('residual-tab-bar').classList.toggle('hidden', !state.plotConfig.showResiduals);
     document.getElementById('residual-plot').classList.toggle('hidden', !state.plotConfig.showResiduals);
     if (state.plotConfig.showResiduals) Plotly.Plots.resize('residual-plot');
   });
@@ -3212,6 +3345,33 @@ function initEvents() {
     state.plotConfig.logY = !state.plotConfig.logY;
     this.classList.toggle('active', state.plotConfig.logY);
     updatePlots();
+  });
+
+  /* ── Residual tabs ────────────────────────────────────── */
+  document.querySelectorAll('.resid-tab').forEach(btn => {
+    btn.addEventListener('click', function () {
+      state.plotConfig.residualTab = this.dataset.tab;
+      document.querySelectorAll('.resid-tab').forEach(b => b.classList.toggle('active', b === this));
+      updatePlots();
+    });
+  });
+
+  /* ── Log-scale suggest banner ─────────────────────────── */
+  document.getElementById('log-suggest-apply-x').addEventListener('click', () => {
+    state.plotConfig.logX = true;
+    document.getElementById('btn-log-x').classList.add('active');
+    updatePlots();
+  });
+  document.getElementById('log-suggest-apply-y').addEventListener('click', () => {
+    state.plotConfig.logY = true;
+    document.getElementById('btn-log-y').classList.add('active');
+    updatePlots();
+  });
+  document.getElementById('log-suggest-dismiss').addEventListener('click', () => {
+    if (!state.plotConfig.logSuggestDismissed) state.plotConfig.logSuggestDismissed = {};
+    state.plotConfig.logSuggestDismissed.x = true;
+    state.plotConfig.logSuggestDismissed.y = true;
+    document.getElementById('log-suggest-banner').style.display = 'none';
   });
 
   /* ── Plot label live update ───────────────────────────── */

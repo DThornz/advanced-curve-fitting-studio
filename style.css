@@ -362,6 +362,37 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 }
 .plot-div-residual.hidden{display:none}
 
+/* ── Residual tab bar ────────────────────────────────────── */
+#residual-tab-bar{
+  display:flex;align-items:flex-end;gap:0;
+  background:var(--bg);border-bottom:1px solid var(--border);
+  flex-shrink:0;padding:0 8px;height:26px
+}
+#residual-tab-bar.hidden{display:none}
+.resid-tab{
+  font-size:.67em;font-family:var(--sans);font-weight:500;
+  padding:3px 11px 2px;margin-bottom:-1px;
+  background:none;border:1px solid transparent;border-bottom:none;
+  border-radius:3px 3px 0 0;
+  color:var(--muted);cursor:pointer;line-height:1.4;
+  transition:color .13s
+}
+.resid-tab:hover{color:var(--teal)}
+.resid-tab.active{
+  color:var(--teal);border-color:var(--border) var(--border) var(--bg);
+  background:var(--bg);font-weight:600
+}
+
+/* ── Log-scale suggest banner ────────────────────────────── */
+#log-suggest-banner{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  z-index:15;display:flex;align-items:center;gap:6px;
+  background:rgba(245,158,11,.10);border:1px solid var(--amber);
+  border-radius:6px;padding:4px 10px;
+  font-size:.71em;color:var(--text);white-space:nowrap;
+  pointer-events:all
+}
+
 /* ── Right panel ─────────────────────────────────────────── */
 .app-right{
   width:268px;flex-shrink:0;
@@ -606,6 +637,11 @@ body.dark-mode .ctrl-section{border-color:#1c3050!important}
 body.dark-mode .ctrl-select,body.dark-mode .ctrl-input{background:#0a1628!important;border-color:#1c3050!important;color:#e2e8f0!important}
 body.dark-mode .param-input{background:#0a1628!important;border-color:#1c3050!important;color:#e2e8f0!important}
 body.dark-mode .plot-div-residual{border-color:#1c3050!important}
+body.dark-mode #residual-tab-bar{background:#060e1c!important;border-color:#1c3050!important}
+body.dark-mode .resid-tab{color:#3d5470!important}
+body.dark-mode .resid-tab:hover{color:#2dd4bf!important}
+body.dark-mode .resid-tab.active{color:#2dd4bf!important;border-color:#1c3050 #1c3050 #060e1c!important;background:#060e1c!important}
+body.dark-mode #log-suggest-banner{background:rgba(245,158,11,.07)!important;border-color:rgba(245,158,11,.4)!important;color:#e2e8f0!important}
 body.dark-mode .btn{background:#0a1628!important;border-color:#1c3050!important;color:#7a90ae!important}
 body.dark-mode .btn:hover{border-color:#2dd4bf!important;color:#2dd4bf!important;background:rgba(45,212,191,.08)!important}
 body.dark-mode .btn-primary{background:var(--teal)!important;border-color:var(--teal)!important;color:#fff!important}
