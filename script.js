@@ -1690,7 +1690,7 @@ function runFit() {
     return;
   }
 
-  const fitColor = nextColor();
+  const fitColor = state.fits.some(f => f.dsId === dsId) ? nextColor() : ds.color;
   const algoNames = { lm: 'LM', gn: 'GN', nm: 'NM', bfgs: 'BFGS' };
   const rSqStr    = isFinite(result.rSq) ? ` (R²=${result.rSq.toFixed(4)})` : '';
   const msTag     = (nStarts > 1 && !m?.analytic) ? `×${nStarts}` : '';
