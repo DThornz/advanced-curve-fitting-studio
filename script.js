@@ -501,7 +501,12 @@ function baseLayout(extra) {
       tickfont: { size: 10, color: tc.tickCol }, linecolor: tc.gridCol,
       type: state.plotConfig.logY ? 'log' : 'linear',
     },
-    legend: { font: { size: 10 }, bgcolor: 'rgba(0,0,0,0)', x: 1.01, y: 1, xanchor: 'left' },
+    legend: {
+      font: { size: 10, color: tc.textCol },
+      bgcolor: isDark() ? 'rgba(10,22,40,0.82)' : 'rgba(255,255,255,0.82)',
+      bordercolor: tc.gridCol, borderwidth: 1,
+      x: 0.99, y: 0.99, xanchor: 'right', yanchor: 'top',
+    },
     hovermode: 'closest',
     showlegend: true,
   };
@@ -766,7 +771,13 @@ function syncModelCustomSection() {
   const model = document.getElementById('model-select').value;
   state.fitConfig.model = model;
   document.getElementById('custom-eq-section').style.display = model === 'Custom' ? '' : 'none';
-  if (model !== 'Custom') renderParamTable();
+  if (model === 'Custom') {
+    // Auto-parse the current equation value immediately on model change
+    const eqInput = document.getElementById('custom-eq-input');
+    parseCustomEquation(eqInput.value);
+  } else {
+    renderParamTable();
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
