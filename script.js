@@ -1347,7 +1347,7 @@ function buildResidualVsXPanel(xlabel, tc) {
   }
   const layout = baseLayout({
     margin: { l: 56, r: 20, t: 10, b: 36 },
-    yaxis: Object.assign(baseLayout().yaxis, { title: { text: normalize ? 'Norm. Residuals (σ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, zeroline: true }),
+    yaxis: Object.assign(baseLayout().yaxis, { title: { text: normalize ? 'Norm. Residuals (σ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, type: 'linear', zeroline: true }),
     xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 10, color: tc.tickCol } } }),
     showlegend: false,
   });
@@ -1382,7 +1382,7 @@ function buildQQPanel(tc) {
     layout: baseLayout({
       margin: { l: 56, r: 20, t: 10, b: 36 },
       xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Theoretical Quantiles', font: { size: 10, color: tc.tickCol } } }),
-      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Sample Quantiles (σ)', font: { size: 10, color: tc.tickCol } }, zeroline: false }),
+      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Sample Quantiles (σ)', font: { size: 10, color: tc.tickCol } }, type: 'linear', zeroline: false }),
       showlegend: false,
     }),
   };
@@ -1421,7 +1421,7 @@ function buildHistPanel(tc) {
     layout: baseLayout({
       margin: { l: 56, r: 20, t: 10, b: 36 },
       xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Residual', font: { size: 10, color: tc.tickCol } } }),
-      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Count', font: { size: 10, color: tc.tickCol } }, zeroline: false }),
+      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Count', font: { size: 10, color: tc.tickCol } }, type: 'linear', zeroline: false }),
       barmode: 'overlay', showlegend: false,
     }),
   };
