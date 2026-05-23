@@ -16,7 +16,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^` |
-| **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status |
+| **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status, final λ (LM), gradient norm (BFGS) |
 | **CI bands** | 95% confidence interval ribbon around each fit curve (toggle per session) |
 | **Weighted fitting** | Three schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate) |
 | **Try All Models** | One-click comparison table — fits all 16 non-Custom models and ranks by R²; apply any result to the active fit |
@@ -25,7 +25,11 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Outlier detection** | Highlights points where \|residual\| > 2.5σ for the active fit with red rings; updates live as points are moved |
 | **Point masking** | Mask 2.5σ outliers to exclude them from fitting; Unmask All to restore; masked count shown in panel |
 | **Smart point editing** | Always-on context-aware interaction: click near a point to select/drag, click and drag away from points to pan, scroll to zoom; no mode toggle required |
+| **Residual analysis tabs** | Four sub-panels below the main plot: Residuals vs X · Q-Q Plot (Blom quantile approx vs normal) · Histogram (Sturges bins + normal overlay) · Convergence (SSE vs iteration, log scale) |
 | **Normalized residuals** | Toggle residual plot between raw units and σ (RMSE-normalized) units |
+| **Web Worker fitting** | All nonlinear solvers run in a background Web Worker — UI stays responsive; live SSE progress shown in the status bar; ✕ Cancel button terminates the fit instantly |
+| **Input validation** | Pre-flight checks before fitting: minimum point count, finite data, non-constant Y, model output sanity at initial parameters — with plain-language error messages |
+| **Log-scale auto-suggest** | Floating banner appears when data spans >100× on X or Y; one-click to apply log axis |
 | **Interactive plots** | Plotly.js scatter + fit curve overlay; residual subplot; zoom/pan/hover; draggable legend |
 | **Legend toggle** | Show/hide plot legend via modebar button (same bar as zoom/pan/box-select) |
 | **Log axes** | Toggle log X / log Y independently |
@@ -109,6 +113,19 @@ Set **Multi-start** (default: 8) in Algorithm Options. The solver launches N pil
 3. Parameters are detected automatically (any symbol other than `x` and math functions).
 4. Set initial values, then press **Fit**.
 
+### Residual analysis tabs
+
+Four tabs sit below the main plot:
+
+| Tab | What it shows |
+|---|---|
+| **Residuals** | Residuals $y_i - \hat{y}_i$ vs. $x_i$ for all visible fits; dots dim when the source dataset is disabled |
+| **Q-Q Plot** | Standardised sample residuals vs. theoretical normal quantiles (Blom approximation); points on the reference line indicate Gaussian residuals |
+| **Histogram** | Residual distribution with Sturges binning and a fitted normal density overlay |
+| **Convergence** | SSE vs. iteration on a log scale; for multi-start fits the pilot-selection phase appears left of the polish phase on the same monotonic x-axis |
+
+The whole panel dims while a fit is running and when the active fit's source dataset is disabled.
+
 ### Dataset enable / disable
 
 Click the **●** toggle button (visible on hover in the dataset list) to enable or disable a dataset. Disabled datasets are dimmed on the plot and excluded from the fit dropdown.
@@ -147,10 +164,11 @@ x,y
 
 ```
 advanced-curve-fitting-studio/
-├── index.html   — Hero, launch card, full-screen app overlay, theory §2–4, app guide §5, model reference §6
-├── style.css    — Design system + app layout (DM fonts, teal theme, dark mode, scroll-reveal)
-├── script.js    — Fitting engines (LM, GN, Nelder-Mead, BFGS), multi-start, plot engine, UI, events, export, session
-└── README.md    — This file
+├── index.html        — Hero, launch card, full-screen app overlay, theory §2–4, app guide §5, model reference §6
+├── style.css         — Design system + app layout (DM fonts, teal theme, dark mode, scroll-reveal)
+├── script.js         — Plot engine, UI, events, export, session; calls fitting-worker.js for nonlinear fits
+├── fitting-worker.js — Web Worker: LM, GN, Nelder-Mead, BFGS solvers; multi-start; posts live SSE progress
+└── README.md         — This file
 ```
 
 ---

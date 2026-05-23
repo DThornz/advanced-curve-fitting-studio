@@ -52,6 +52,7 @@
     <span class="pill">Custom Equations</span>
     <span class="pill">CI Bands · Weighted Fitting</span>
     <span class="pill">Outlier Detection &amp; Masking</span>
+    <span class="pill">Web Worker · Background Fitting</span>
     <span class="pill">Plotly.js</span>
     <span class="pill">Math.js</span>
     <span class="pill">Offline-First</span>
@@ -692,9 +693,15 @@
         <tr><td>Adj. $R^2$</td><td>$R^2$ penalised for extra parameters — use this to compare models of different complexity</td><td>Higher is better; should be close to $R^2$</td></tr>
         <tr><td>RMSE</td><td>Typical residual size in the same units as $y$</td><td>Should be comparable to your measurement noise</td></tr>
         <tr><td>AIC / BIC</td><td>Model quality penalised for complexity — allows fair comparison across models</td><td>Lower is better; difference &gt; 10 is decisive</td></tr>
-        <tr><td>Status</td><td>✓ = converged within tolerance; ⚠ = hit iteration limit without converging</td><td>Always aim for ✓</td></tr>
+        <tr><td>Status</td><td>✓ = converged; ⚠ = hit iteration limit. Hover the ⓘ marker for solver diagnostics: final λ damping (LM) or gradient norm |∇| (BFGS)</td><td>Always aim for ✓; λ → 0 or small |∇| confirms a tight minimum</td></tr>
       </tbody>
     </table>
+    <p><strong>Background fitting &amp; cancel.</strong> Nonlinear fits run in a background Web Worker — the UI remains fully responsive while the solver iterates. Live progress (iteration count and current SSE) appears in the status bar. A red <strong>✕ Cancel</strong> button is visible next to the Fit button while a fit is running; clicking it terminates the worker instantly. On browsers that block Workers (e.g. opening the file directly from disk), fitting falls back transparently to the main thread. The app validates your data before dispatching any fit: it checks for sufficient points, non-finite values, constant Y, and whether the model produces finite outputs at the initial parameters — plain-language errors are shown in the status bar so you know exactly what to fix.</p>
+
+    <p><strong>Residual analysis tabs.</strong> The panel below the main plot has four tabs. <strong>Residuals</strong> shows $y_i - \hat{y}_i$ vs. $x_i$ for all active fits; when a dataset is disabled its residual traces dim to match the main plot. <strong>Q-Q Plot</strong> plots standardised sample residuals against theoretical normal quantiles (Blom approximation) — points lying on the diagonal reference line indicate Gaussian-distributed residuals; systematic curvature reveals non-normality or outliers. <strong>Histogram</strong> shows the residual distribution with Sturges-rule binning and a fitted normal density overlay, providing a complementary view of the same information. <strong>Convergence</strong> plots SSE versus iteration on a logarithmic scale; for multi-start fits the pilot-selection phase and the final polish run share a monotonically increasing x-axis so you can see how much improvement the polishing step adds. The panel dims automatically while a fit is in progress and when the source dataset is disabled. Enable <strong>Norm. Res.</strong> in the toolbar to switch residuals to σ units across all relevant tabs.</p>
+
+    <p><strong>Log-scale auto-suggest.</strong> When the active data spans more than two decades (100×) on X or Y, a notification banner appears at the top of the main plot suggesting log axes with one-click apply buttons. Dismiss it with ✕ if not needed; it will not reappear until the session is reloaded.</p>
+
     <p>Toggle the <strong>Residuals</strong> panel to inspect $y_i - \hat{y}_i$ vs. $x_i$. A good fit shows randomly scattered residuals around zero with no systematic trend. Curved residuals indicate the wrong model family. Fanning residuals (variance growing with $x$) suggest heteroscedasticity — consider log-transforming $y$ or switching to <strong>weighted fitting</strong> (1/y² or 1/|y|, selectable under Algorithm Options). Enable <strong>Norm. Res.</strong> in the toolbar to plot residuals in σ units (RMSE-normalised) instead of raw units — helpful for comparing residuals across fits with different scales.</p>
 
     <p><strong>CI Bands.</strong> Click <strong>CI Bands</strong> in the toolbar to overlay 95% confidence interval ribbons around each fit curve. The ribbon width at each point reflects parameter uncertainty propagated through the model — narrow ribbons indicate a well-constrained fit; wide ribbons suggest under-determined parameters or sparse data.</p>
