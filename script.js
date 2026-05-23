@@ -126,10 +126,13 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
   let converged = false;
   let iter = 0;
 
+  const sqrtW = opts.weights ? opts.weights.map(w => Math.sqrt(Math.max(w, 0))) : null;
+
   function evalResiduals(params) {
     return xArr.map((x, i) => {
       const yp = fn(x, params);
-      return isFinite(yp) ? yArr[i] - yp : 0;
+      const r = isFinite(yp) ? yArr[i] - yp : 0;
+      return sqrtW ? r * sqrtW[i] : r;
     });
   }
 
@@ -187,7 +190,7 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     }
   }
 
-  return finaliseFit(fn, xArr, yArr, p, { converged, iter });
+  return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
 
 /* ── Analytic polynomial ─────────────────────────────────── */
@@ -240,8 +243,13 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
   let p = p0.map(Number);
   let converged = false, iter = 0;
 
+  const sqrtW_gn = opts.weights ? opts.weights.map(w => Math.sqrt(Math.max(w, 0))) : null;
   function evalR(params) {
-    return xArr.map((x, i) => { const v = fn(x, params); return isFinite(v) ? yArr[i] - v : 0; });
+    return xArr.map((x, i) => {
+      const v = fn(x, params);
+      const r = isFinite(v) ? yArr[i] - v : 0;
+      return sqrtW_gn ? r * sqrtW_gn[i] : r;
+    });
   }
   function sse(r) { return r.reduce((s, v) => s + v * v, 0); }
   function jacobian(params, r0) {
@@ -282,7 +290,7 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
     const stepNorm = alpha * Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
     if (stepNorm < tol && Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
   }
-  return finaliseFit(fn, xArr, yArr, p, { converged, iter });
+  return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
 
 /* ── Nelder-Mead Simplex ─────────────────────────────────── */
@@ -294,7 +302,10 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
 
   function obj(params) {
     let s = 0;
-    for (let i = 0; i < n; i++) { const v = fn(xArr[i], params); if (isFinite(v)) s += (yArr[i] - v) ** 2; }
+    for (let i = 0; i < n; i++) {
+      const v = fn(xArr[i], params);
+      if (isFinite(v)) s += (yArr[i] - v) ** 2 * (opts.weights ? Math.max(opts.weights[i], 0) : 1);
+    }
     return isFinite(s) ? s : 1e30;
   }
 
@@ -350,7 +361,7 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
       }
     }
   }
-  return finaliseFit(fn, xArr, yArr, simplex[0], { converged, iter });
+  return finaliseFit(fn, xArr, yArr, simplex[0], { converged, iter, weights: opts.weights });
 }
 
 /* ── BFGS (quasi-Newton, inverse-Hessian form) ───────────── */
@@ -363,7 +374,10 @@ function bfgs(fn, xArr, yArr, p0, opts) {
 
   function obj(params) {
     let s = 0;
-    for (let i = 0; i < n; i++) { const v = fn(xArr[i], params); if (isFinite(v)) s += (yArr[i] - v) ** 2; }
+    for (let i = 0; i < n; i++) {
+      const v = fn(xArr[i], params);
+      if (isFinite(v)) s += (yArr[i] - v) ** 2 * (opts.weights ? Math.max(opts.weights[i], 0) : 1);
+    }
     return isFinite(s) ? s : 1e30;
   }
   function grad(params) {
@@ -425,7 +439,7 @@ function bfgs(fn, xArr, yArr, p0, opts) {
     const stepNorm = Math.sqrt(s.reduce((acc, v) => acc + v * v, 0));
     if (stepNorm < tol) { converged = true; break; }
   }
-  return finaliseFit(fn, xArr, yArr, p, { converged, iter });
+  return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
 
 /* ── Shared finalisation (stats + param errors) ─────────── */
@@ -444,6 +458,7 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
   let paramErrors = p.map(() => NaN);
   let covMatrix = null;
   const dof = Math.max(n - m, 1);
+  const weights = meta.weights || null;
   try {
     const J_cols = [];
     for (let j = 0; j < m; j++) {
@@ -451,11 +466,17 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
       const h = Math.max(Math.abs(p[j]) * EPS, EPS);
       pp[j] += h;
       const r1 = xArr.map((x, i) => { const v = fn(x, pp); return isFinite(v) ? yArr[i] - v : 0; });
-      J_cols.push(r1.map((v, i) => (v - r[i]) / h));
+      // Scale Jacobian columns by sqrt(w) for weighted covariance
+      J_cols.push(r1.map((v, i) => {
+        const dri = (v - r[i]) / h;
+        return weights ? dri * Math.sqrt(Math.max(weights[i], 0)) : dri;
+      }));
     }
     const JtJ = Array.from({ length: m }, (_, a) =>
       Array.from({ length: m }, (_, b) => J_cols[a].reduce((s, _, i) => s + J_cols[a][i] * J_cols[b][i], 0)));
-    const sig2 = sseVal / dof;
+    // sig2 based on weighted SSE for correct covariance, but report unweighted stats
+    const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
+    const sig2 = wSSE / dof;
     const inv = invertMatrix(JtJ);
     if (inv) {
       paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
@@ -899,7 +920,7 @@ const state = {
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [] },
-  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false },
+  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   editMode: false,
   selection: { dsId: null, indices: new Set() },
@@ -955,6 +976,73 @@ function rowsToXY(rows) {
   return { x: xs, y: ys, xlabel, ylabel, title };
 }
 
+let _pendingImport = null; // { name, rows, headers, startRow }
+
+function rowsToXYCols(rows, headers, startRow, xCol, yCol) {
+  const xs = [], ys = [];
+  for (let i = startRow; i < rows.length; i++) {
+    const row = rows[i];
+    const xv = parseFloat((row[xCol] || '').replace(',', '.'));
+    const yv = parseFloat((row[yCol] || '').replace(',', '.'));
+    if (isFinite(xv) && isFinite(yv)) { xs.push(xv); ys.push(yv); }
+  }
+  return { x: xs, y: ys };
+}
+
+function needsColumnPicker(rows) {
+  const isNum = v => v.trim() !== '' && isFinite(parseFloat(v.replace(',', '.')));
+  const dataRow = rows.find(r => r.some(v => isNum(v)));
+  return dataRow && dataRow.length >= 3;
+}
+
+function openColumnPicker(name, rows) {
+  const isNum = v => v.trim() !== '' && isFinite(parseFloat(v.replace(',', '.')));
+  const hasHeader = rows.length > 0 && rows[0].some(v => !isNum(v));
+  const headers = hasHeader
+    ? rows[0].map((v, i) => v.trim() || `Col ${i + 1}`)
+    : rows[0].map((_, i) => `Col ${i + 1}`);
+  const startRow = hasHeader ? 1 : 0;
+  _pendingImport = { name, rows, headers, startRow };
+  const xSel = document.getElementById('col-picker-x');
+  const ySel = document.getElementById('col-picker-y');
+  xSel.innerHTML = headers.map((h, i) => `<option value="${i}">${h}</option>`).join('');
+  ySel.innerHTML = headers.map((h, i) => `<option value="${i}"${i === 1 ? ' selected' : ''}>${h}</option>`).join('');
+  updateColPickerPreview();
+  document.getElementById('col-picker-modal').style.display = 'flex';
+}
+
+function updateColPickerPreview() {
+  if (!_pendingImport) return;
+  const { rows, headers, startRow } = _pendingImport;
+  const xCol = parseInt(document.getElementById('col-picker-x').value);
+  const yCol = parseInt(document.getElementById('col-picker-y').value);
+  const previewRows = rows.slice(startRow, startRow + 5);
+  const lines = [`${headers[xCol]}  →  ${headers[yCol]}`];
+  for (const r of previewRows) {
+    const xv = r[xCol] != null ? r[xCol] : '—';
+    const yv = r[yCol] != null ? r[yCol] : '—';
+    lines.push(`  ${String(xv).padEnd(14)} ${yv}`);
+  }
+  const total = rows.length - startRow;
+  if (total > 5) lines.push(`  … (${total} rows total)`);
+  document.getElementById('col-picker-preview').textContent = lines.join('\n');
+}
+
+function importFromColumnPicker() {
+  if (!_pendingImport) return;
+  const { name, rows, headers, startRow } = _pendingImport;
+  const xCol = parseInt(document.getElementById('col-picker-x').value);
+  const yCol = parseInt(document.getElementById('col-picker-y').value);
+  const { x, y } = rowsToXYCols(rows, headers, startRow, xCol, yCol);
+  if (!x.length) { setConsole('No valid X,Y pairs in selected columns.', 'error'); return; }
+  const dsName = `${name} (${headers[xCol]} vs ${headers[yCol]})`;
+  importDataset(dsName, x, y);
+  syncFitDatasetSelect(); renderDatasetList(); updatePlots();
+  setConsole(`Imported: ${dsName} (${x.length} points).`, '');
+  document.getElementById('col-picker-modal').style.display = 'none';
+  _pendingImport = null;
+}
+
 function applyParsedMeta({ xlabel, ylabel, title }) {
   if (xlabel != null) document.getElementById('plot-xlabel').value = xlabel;
   if (ylabel != null) document.getElementById('plot-ylabel').value = ylabel;
@@ -963,7 +1051,7 @@ function applyParsedMeta({ xlabel, ylabel, title }) {
 
 function importDataset(name, x, y, color) {
   if (!x.length || !y.length) return null;
-  const ds = { id: nextId(), name: name || `Dataset ${state.datasets.length + 1}`, x, y, originalY: y.slice(), color: color || nextColor(), visible: true, enabled: true };
+  const ds = { id: nextId(), name: name || `Dataset ${state.datasets.length + 1}`, x, y, originalY: y.slice(), color: color || nextColor(), visible: true, enabled: true, excludedIndices: new Set() };
   state.datasets.push(ds);
   if (!state.activeDatasetId) {
     state.activeDatasetId = ds.id;
@@ -1083,15 +1171,27 @@ function buildMainTraces() {
   for (const ds of state.datasets) {
     if (!ds.visible) continue;
     const dimmed = ds.enabled === false;
+    const excluded = ds.excludedIndices || new Set();
+    // Active (non-excluded) points
+    const activeX = ds.x.filter((_, i) => !excluded.has(i));
+    const activeY = ds.y.filter((_, i) => !excluded.has(i));
     traces.push({
-      x: ds.x, y: ds.y,
-      mode: 'markers',
-      type: 'scatter',
-      name: ds.name,
+      x: activeX, y: activeY,
+      mode: 'markers', type: 'scatter', name: ds.name,
       marker: { color: ds.color, size: 6, opacity: dimmed ? 0.25 : 0.85 },
-      opacity: dimmed ? 0.3 : 1,
-      showlegend: true,
+      opacity: dimmed ? 0.3 : 1, showlegend: true,
     });
+    // Excluded (masked) points — shown as dim crosses
+    if (excluded.size > 0) {
+      const exX = ds.x.filter((_, i) => excluded.has(i));
+      const exY = ds.y.filter((_, i) => excluded.has(i));
+      traces.push({
+        x: exX, y: exY, mode: 'markers', type: 'scatter',
+        name: '_excluded', showlegend: false, hoverinfo: 'skip',
+        marker: { color: ds.color, size: 7, opacity: 0.25,
+                  symbol: 'x', line: { color: ds.color, width: 1.5 } },
+      });
+    }
   }
   for (const fit of state.fits) {
     if (!fit.visible || !fit.result) continue;
@@ -1122,6 +1222,23 @@ function buildMainTraces() {
       line: { color: fit.color || ds.color, width: 2, dash: 'solid' },
       showlegend: true,
     });
+    // Outlier rings for active fit when showOutliers is on
+    if (state.plotConfig.showOutliers && fit.id === state.activeFitId && fit.result.rmse > 0) {
+      const threshold = 2.5 * fit.result.rmse;
+      const ols = [], olx = [], oly = [];
+      fit.result.residuals.forEach((r, i) => {
+        if (Math.abs(r) > threshold) {
+          ols.push(i); olx.push(ds.x[i]); oly.push(ds.y[i]);
+        }
+      });
+      if (olx.length) traces.push({
+        x: olx, y: oly, mode: 'markers', type: 'scatter',
+        name: '_outliers', showlegend: false,
+        hovertemplate: olx.map((_, k) => `Outlier #${ols[k]}<br>res=${fmt(fit.result.residuals[ols[k]])}<extra></extra>`),
+        marker: { color: 'rgba(0,0,0,0)', size: 14,
+                  line: { color: '#ef4444', width: 2 } },
+      });
+    }
   }
   // Selection overlay in edit mode
   if (state.editMode && state.selection.dsId && state.selection.indices.size) {
@@ -1214,6 +1331,15 @@ function fitEval(fit, x) {
 /* ═══════════════════════════════════════════════════════════
    UI RENDERING
 ═══════════════════════════════════════════════════════════ */
+function renderMaskCount() {
+  const el = document.getElementById('mask-count');
+  if (!el) return;
+  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+  const n = ds && ds.excludedIndices ? ds.excludedIndices.size : 0;
+  el.textContent = n > 0 ? `${n} masked` : '0 masked';
+  el.style.color = n > 0 ? 'var(--amber)' : 'var(--dimmer)';
+}
+
 function renderDatasetList() {
   const el = document.getElementById('dataset-list');
   if (!state.datasets.length) {
@@ -1272,6 +1398,7 @@ function renderDatasetList() {
       if (active) renderStats(active); else setConsole('Dataset removed.', '');
     });
   });
+  renderMaskCount();
 }
 
 function renderFitList() {
@@ -1639,24 +1766,40 @@ function runFit() {
   if (!ds) { setConsole('No dataset selected. Load data first.', 'error'); return; }
   if (ds.x.length < 2) { setConsole('Need at least 2 data points.', 'error'); return; }
 
-  const maxIter  = parseInt(document.getElementById('opt-max-iter').value) || 1000;
-  const tol      = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
-  const curvePts = parseInt(document.getElementById('opt-curve-pts').value) || 300;
-  const algoKey  = document.getElementById('opt-algo').value;
-  const nStarts  = parseInt(document.getElementById('opt-n-starts').value)  || 1;
+  const maxIter    = parseInt(document.getElementById('opt-max-iter').value) || 1000;
+  const tol        = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
+  const curvePts   = parseInt(document.getElementById('opt-curve-pts').value) || 300;
+  const algoKey    = document.getElementById('opt-algo').value;
+  const nStarts    = parseInt(document.getElementById('opt-n-starts').value)  || 1;
+  const weightMode = document.getElementById('opt-weights').value;
 
   const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
   const solve = SOLVERS[algoKey] || levenbergMarquardt;
 
   setConsole('Fitting…', '');
 
+  // Filter excluded points
+  const excluded = ds.excludedIndices || new Set();
+  const xFull = ds.x, yFull = ds.y;
+  const xArr = xFull.filter((_, i) => !excluded.has(i));
+  const yArr = yFull.filter((_, i) => !excluded.has(i));
+  if (xArr.length < 2) { setConsole('Need at least 2 non-masked points.', 'error'); return; }
+
+  // Compute weights
+  let weights = null;
+  if (weightMode === '1/y2') {
+    weights = yArr.map(y => 1 / Math.max(y * y, 1e-20));
+  } else if (weightMode === '1/y') {
+    weights = yArr.map(y => 1 / Math.max(Math.abs(y), 1e-10));
+  }
+
   let result, modelFn, paramNames;
   const m = MODELS[model];
-  const opts = { maxIter, tol };
+  const opts = { maxIter, tol, weights };
 
   if (m && m.analytic) {
     const degree = m.degree;
-    result = fitPolynomialAnalytic(degree, ds.x, ds.y);
+    result = fitPolynomialAnalytic(degree, xArr, yArr);
     paramNames = m.params;
     modelFn = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, degree - j), 0);
   } else if (model === 'Custom') {
@@ -1674,17 +1817,17 @@ function runFit() {
       ? state.paramRows.map(r => r.init)
       : paramNames.map(() => 1);
     result = nStarts > 1
-      ? multiStartFit(solve, modelFn, ds.x, ds.y, p0, opts, nStarts)
-      : solve(modelFn, ds.x, ds.y, p0, opts);
+      ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
+      : solve(modelFn, xArr, yArr, p0, opts);
   } else if (m && m.fn) {
     paramNames = m.params;
     modelFn = m.fn;
     const p0 = state.paramRows.length === paramNames.length
       ? state.paramRows.map(r => r.init)
-      : m.autoInit(ds.x, ds.y);
+      : m.autoInit(xArr, yArr);
     result = nStarts > 1
-      ? multiStartFit(solve, modelFn, ds.x, ds.y, p0, opts, nStarts)
-      : solve(modelFn, ds.x, ds.y, p0, opts);
+      ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
+      : solve(modelFn, xArr, yArr, p0, opts);
   } else {
     setConsole('Unknown model.', 'error');
     return;
@@ -1694,7 +1837,9 @@ function runFit() {
   const algoNames = { lm: 'LM', gn: 'GN', nm: 'NM', bfgs: 'BFGS' };
   const rSqStr    = isFinite(result.rSq) ? ` (R²=${result.rSq.toFixed(4)})` : '';
   const msTag     = (nStarts > 1 && !m?.analytic) ? `×${nStarts}` : '';
-  const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}${msTag}]${rSqStr}`;
+  const wTag      = weightMode !== 'none' ? ` W:${weightMode}` : '';
+  const excTag    = excluded.size > 0 ? ` -${excluded.size}pt` : '';
+  const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}${msTag}${wTag}${excTag}]${rSqStr}`;
 
   const fitRecord = {
     id: nextId(), dsId, model, algo: algoKey,
@@ -2271,7 +2416,7 @@ function buildSessionPayload() {
   return {
     version: 2,
     savedAt: new Date().toISOString(),
-    datasets: state.datasets,
+    datasets: state.datasets.map(d => Object.assign({}, d, { excludedIndices: [...(d.excludedIndices || [])] })),
     fits: state.fits.map(f => ({
       id: f.id, dsId: f.dsId, model: f.model, label: f.label,
       color: f.color, visible: f.visible, paramNames: f.paramNames,
@@ -2298,6 +2443,7 @@ function buildSessionPayload() {
       curvePts: parseInt(document.getElementById('opt-curve-pts').value) || 300,
       algo:     document.getElementById('opt-algo').value || 'lm',
       nStarts:  parseInt(document.getElementById('opt-n-starts').value)  || 1,
+      weights:  document.getElementById('opt-weights').value || 'none',
     },
     activeDatasetId: state.activeDatasetId,
     activeFitId: state.activeFitId,
@@ -2308,6 +2454,7 @@ function restoreSessionPayload(payload) {
   state.datasets = (payload.datasets || []).map(d => {
     if (!d.originalY) d.originalY = d.y.slice();  // backfill for older saves
     if (d.enabled == null) d.enabled = true;       // backfill for older saves
+    d.excludedIndices = new Set(d.excludedIndices || []);
     return d;
   });
   state.fits = [];
@@ -2343,7 +2490,7 @@ function restoreSessionPayload(payload) {
   const eqInput = document.getElementById('custom-eq-input');
   if (eqInput && state.fitConfig.customExpr) { eqInput.value = state.fitConfig.customExpr; parseCustomEquation(state.fitConfig.customExpr); }
   // Reset toggle button states before restoring to prevent state leak across tabs
-  ['btn-log-x', 'btn-log-y', 'btn-toggle-residuals', 'btn-ci-bands', 'btn-norm-resid'].forEach(id => {
+  ['btn-log-x', 'btn-log-y', 'btn-toggle-residuals', 'btn-ci-bands', 'btn-norm-resid', 'btn-show-outliers'].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.classList.remove('active');
   });
@@ -2352,6 +2499,7 @@ function restoreSessionPayload(payload) {
   if (state.plotConfig.showResiduals !== false) document.getElementById('btn-toggle-residuals').classList.add('active');
   if (state.plotConfig.showCI)             document.getElementById('btn-ci-bands').classList.add('active');
   if (state.plotConfig.normalizeResiduals) document.getElementById('btn-norm-resid').classList.add('active');
+  if (state.plotConfig.showOutliers)       document.getElementById('btn-show-outliers').classList.add('active');
   document.getElementById('residual-plot').classList.toggle('hidden', state.plotConfig.showResiduals === false);
 
   // Restore axis labels before updatePlots() reads them
@@ -2369,6 +2517,7 @@ function restoreSessionPayload(payload) {
     if (o.curvePts != null) document.getElementById('opt-curve-pts').value = o.curvePts;
     if (o.algo     != null) document.getElementById('opt-algo').value      = o.algo;
     if (o.nStarts  != null) document.getElementById('opt-n-starts').value  = o.nStarts;
+    if (o.weights  != null) document.getElementById('opt-weights').value   = o.weights;
   }
 
   syncFitDatasetSelect();
@@ -2631,11 +2780,13 @@ function initEvents() {
     reader.onload = ev => {
       try {
         const rows = parseDelimited(ev.target.result, 'auto');
+        const name = file.name.replace(/\.[^.]+$/, '');
+        if (needsColumnPicker(rows)) { openColumnPicker(name, rows); return; }
         const parsed = rowsToXY(rows);
         const { x, y } = parsed;
         if (!x.length) { setConsole('Could not parse any X,Y pairs from file.', 'error'); return; }
         applyParsedMeta(parsed);
-        const ds = importDataset(file.name.replace(/\.[^.]+$/, ''), x, y);
+        const ds = importDataset(name, x, y);
         syncFitDatasetSelect();
         renderDatasetList();
         updatePlots();
@@ -2657,11 +2808,13 @@ function initEvents() {
     reader.onload = ev => {
       try {
         const rows = parseDelimited(ev.target.result, 'auto');
+        const name = file.name.replace(/\.[^.]+$/, '');
+        if (needsColumnPicker(rows)) { openColumnPicker(name, rows); return; }
         const parsed = rowsToXY(rows);
         const { x, y } = parsed;
         if (!x.length) { setConsole('Could not parse file.', 'error'); return; }
         applyParsedMeta(parsed);
-        const ds = importDataset(file.name.replace(/\.[^.]+$/, ''), x, y);
+        const ds = importDataset(name, x, y);
         syncFitDatasetSelect(); renderDatasetList(); updatePlots();
         setConsole(`Imported: ${ds.name} (${x.length} points).`, '');
       } catch (err) { setConsole('Drop import error: ' + err.message, 'error'); }
@@ -2694,6 +2847,7 @@ function initEvents() {
     const name  = document.getElementById('paste-ds-name').value.trim() || `Dataset ${state.datasets.length + 1}`;
     try {
       const rows = parseDelimited(text, delim);
+      if (needsColumnPicker(rows)) { closePasteModal(); openColumnPicker(name, rows); return; }
       const parsed = rowsToXY(rows);
       const { x, y } = parsed;
       if (!x.length) { setConsole('No valid data found in pasted text.', 'error'); return; }
@@ -2770,6 +2924,51 @@ function initEvents() {
     this.classList.toggle('active', state.plotConfig.normalizeResiduals);
     updatePlots();
   });
+  document.getElementById('btn-show-outliers').addEventListener('click', function () {
+    state.plotConfig.showOutliers = !state.plotConfig.showOutliers;
+    this.classList.toggle('active', state.plotConfig.showOutliers);
+    updatePlots();
+  });
+  document.getElementById('btn-mask-outliers').addEventListener('click', () => {
+    const fit = state.fits.find(f => f.id === state.activeFitId);
+    if (!fit || !fit.result || fit.result.rmse <= 0) { setConsole('Run a fit first.', 'warn'); return; }
+    const ds = state.datasets.find(d => d.id === fit.dsId);
+    if (!ds) return;
+    if (!ds.excludedIndices) ds.excludedIndices = new Set();
+    const threshold = 2.5 * fit.result.rmse;
+    let added = 0;
+    fit.result.residuals.forEach((r, i) => {
+      if (Math.abs(r) > threshold && !ds.excludedIndices.has(i)) {
+        ds.excludedIndices.add(i); added++;
+      }
+    });
+    renderDatasetList(); updatePlots();
+    setConsole(added > 0 ? `Masked ${added} outlier(s) — re-fit to update.` : 'No new outliers above 2.5σ.', '');
+  });
+  document.getElementById('btn-unmask-all').addEventListener('click', () => {
+    const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+    if (!ds) { setConsole('No active dataset.', 'warn'); return; }
+    const n = ds.excludedIndices ? ds.excludedIndices.size : 0;
+    ds.excludedIndices = new Set();
+    renderDatasetList(); updatePlots();
+    setConsole(n > 0 ? `Unmasked ${n} point(s).` : 'No masked points.', '');
+  });
+
+  /* ── Column picker modal ──────────────────────────────────── */
+  document.getElementById('col-picker-close').addEventListener('click', () => {
+    document.getElementById('col-picker-modal').style.display = 'none'; _pendingImport = null;
+  });
+  document.getElementById('col-picker-cancel').addEventListener('click', () => {
+    document.getElementById('col-picker-modal').style.display = 'none'; _pendingImport = null;
+  });
+  document.getElementById('col-picker-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('col-picker-modal')) {
+      document.getElementById('col-picker-modal').style.display = 'none'; _pendingImport = null;
+    }
+  });
+  document.getElementById('col-picker-x').addEventListener('change', updateColPickerPreview);
+  document.getElementById('col-picker-y').addEventListener('change', updateColPickerPreview);
+  document.getElementById('col-picker-import').addEventListener('click', importFromColumnPicker);
   document.getElementById('btn-log-x').addEventListener('click', function () {
     state.plotConfig.logX = !state.plotConfig.logX;
     this.classList.toggle('active', state.plotConfig.logX);

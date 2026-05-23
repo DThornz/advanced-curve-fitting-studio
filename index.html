@@ -114,6 +114,7 @@
         <button class="btn btn-toggle" id="btn-toggle-residuals" title="Show / hide residual plot">Residuals</button>
         <button class="btn btn-toggle" id="btn-ci-bands" title="Show 95% confidence bands around each fit curve">CI Bands</button>
         <button class="btn btn-toggle" id="btn-norm-resid" title="Normalize residuals by RMSE (show σ units)">Norm. Res.</button>
+        <button class="btn btn-toggle" id="btn-show-outliers" title="Highlight points where |residual| > 2.5σ for the active fit">Outliers</button>
         <button class="btn btn-toggle" id="btn-log-x" title="Toggle logarithmic X axis">Log X</button>
         <button class="btn btn-toggle" id="btn-log-y" title="Toggle logarithmic Y axis">Log Y</button>
         <button class="btn btn-toggle" id="btn-edit-mode" title="Edit point positions — click to select, drag or arrow keys to move up/down">✏ Edit</button>
@@ -193,6 +194,17 @@
           <select class="ctrl-select" id="fit-dataset-select">
             <option value="">— no dataset loaded —</option>
           </select>
+        </div>
+
+        <div class="ctrl-section" id="masking-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span class="ctrl-label" style="margin:0">Point Masking</span>
+            <span id="mask-count" style="font-size:.68em;color:var(--dimmer)">0 masked</span>
+          </div>
+          <div style="display:flex;gap:5px">
+            <button class="btn" style="flex:1;font-size:.68em;padding:3px 6px" id="btn-mask-outliers" title="Mask points where |residual / RMSE| > 2.5 for the active fit">Mask 2.5σ</button>
+            <button class="btn" style="font-size:.68em;padding:3px 10px" id="btn-unmask-all" title="Remove all masked points for the active dataset">Unmask All</button>
+          </div>
         </div>
 
         <div class="ctrl-section">
@@ -288,6 +300,14 @@
             <label class="ctrl-label" style="margin:0;min-width:72px" title="Random multi-start attempts to escape local minima. 1 = off.">Multi-start</label>
             <input class="ctrl-input" id="opt-n-starts" type="number" value="8" min="1" max="64" title="Number of random starting points (1 = single run, 8 = default)">
           </div>
+          <div class="ctrl-row" style="margin-top:5px">
+            <label class="ctrl-label" style="margin:0;min-width:72px" title="Weighting scheme applied to residuals during fitting">Weights</label>
+            <select class="ctrl-input" id="opt-weights" title="None = OLS; 1/y² = relative errors; 1/|y| = intermediate">
+              <option value="none">None (OLS)</option>
+              <option value="1/y2">1/y² (relative)</option>
+              <option value="1/y">1/|y|</option>
+            </select>
+          </div>
         </div>
 
         <!-- Plot labels -->
@@ -328,6 +348,32 @@
 
   </div><!-- end app-shell -->
 </div><!-- end app-fullscreen-overlay -->
+
+<!-- Column Picker Modal -->
+<div class="modal-backdrop" id="col-picker-modal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="width:460px;max-width:96vw">
+    <div class="modal-header">
+      <span class="modal-title">Select Columns</span>
+      <button class="modal-close" id="col-picker-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.82em;color:var(--muted);margin-bottom:14px">Your file has multiple columns. Choose which to use as X and Y.</p>
+      <div class="ctrl-row">
+        <label class="ctrl-label" style="margin:0;min-width:56px">X column</label>
+        <select class="ctrl-select" id="col-picker-x"></select>
+      </div>
+      <div class="ctrl-row" style="margin-top:8px">
+        <label class="ctrl-label" style="margin:0;min-width:56px">Y column</label>
+        <select class="ctrl-select" id="col-picker-y"></select>
+      </div>
+      <div id="col-picker-preview" style="margin-top:12px;font-size:.71em;font-family:var(--mono);color:var(--muted);line-height:1.5;white-space:pre;overflow-x:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="col-picker-cancel">Cancel</button>
+      <button class="btn btn-primary" id="col-picker-import">Import</button>
+    </div>
+  </div>
+</div>
 
 <div class="page-wrap" id="theory-wrap" style="margin-top:48px">
 
