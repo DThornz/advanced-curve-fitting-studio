@@ -119,16 +119,13 @@
         <button class="btn btn-toggle" id="btn-log-y" title="Toggle logarithmic Y axis">Log Y</button>
         <button class="btn btn-toggle" id="btn-edit-mode" title="Show/hide edit controls. Point editing is always active: click a point to select, drag to move, click empty space or Escape to deselect.">✏ Edit</button>
       </div>
-      <div id="edit-mode-controls" style="display:none;align-items:center;gap:5px;flex-shrink:0">
-        <button class="btn" id="btn-edit-undo" title="Undo (Ctrl+Z)" disabled>↩ Undo</button>
-        <button class="btn" id="btn-edit-redo" title="Redo (Ctrl+Y)" disabled>↪ Redo</button>
-        <button class="btn btn-danger" id="btn-edit-reset" title="Reset selected points to their original imported positions" disabled>⟳ Reset</button>
-        <span class="app-toolbar-sep" style="margin:0 1px"></span>
-        <span style="font-size:.72em;color:var(--dim);white-space:nowrap">Step:</span>
-        <input class="ctrl-input" id="edit-nudge-step" type="number" value="0.1" step="any" title="Arrow-key nudge amount" style="width:54px;padding:2px 5px">
-        <span style="font-size:.72em;color:var(--dim);white-space:nowrap">Radius:</span>
-        <span id="edit-radius-display" style="font-size:.76em;font-family:var(--mono);color:var(--text);min-width:34px">0 px</span>
-        <span style="font-size:.65em;color:var(--muted)">(Shift+scroll)</span>
+      <div id="edit-mode-controls" style="display:none;align-items:center;gap:3px;flex-shrink:0">
+        <button class="btn" id="btn-edit-undo" title="Undo (Ctrl+Z)" disabled style="padding:3px 7px">↩</button>
+        <button class="btn" id="btn-edit-redo" title="Redo (Ctrl+Y)" disabled style="padding:3px 7px">↪</button>
+        <button class="btn btn-danger" id="btn-edit-reset" title="Reset selected points to original values" disabled style="padding:3px 7px">⟳</button>
+        <span class="app-toolbar-sep" style="margin:0 2px"></span>
+        <input class="ctrl-input" id="edit-nudge-step" type="number" value="0.1" step="any" title="Arrow-key nudge step" style="width:46px;padding:2px 4px">
+        <span id="edit-radius-display" title="Multi-select radius (Shift+scroll to adjust)" style="font-size:.74em;font-family:var(--mono);color:var(--text);min-width:36px;cursor:default">0 px</span>
       </div>
       <div style="flex:1"></div>
       <div class="app-toolbar-sep"></div>
