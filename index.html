@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- TODO: update title -->
-<title>Page Title — Asad Mirza</title>
+<title>Advanced Curve Fitting Studio — Asad Mirza</title>
+<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 16+ built-in models, Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
-<!-- Remove the two KaTeX lines below if this page has no math -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <link rel="stylesheet" href="style.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
     onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 </head>
 <body class="light-mode">
 
@@ -22,7 +23,7 @@
   <a class="site-nav-link" href="https://dthornz.github.io/website-cv-tools/">Home</a>
   <a class="site-nav-link" href="https://dthornz.github.io/website-cv-tools/AsadMirza_CV.html">CV</a>
   <div class="nav-dropdown">
-    <a class="site-nav-link curr" href="https://dthornz.github.io/website-cv-tools/projects.html">Projects ▾</a>
+    <a class="site-nav-link curr" href="#">Projects ▾</a>
     <div class="nav-dropdown-menu">
       <a class="nav-dropdown-item" href="https://dthornz.github.io/hodgkin-huxley/">🧠 HH Neuron Model</a>
       <a class="nav-dropdown-item" href="https://dthornz.github.io/maxwell-boltzmann/">⚛ MB Gas Simulator</a>
@@ -31,8 +32,7 @@
       <a class="nav-dropdown-item" href="https://dthornz.github.io/1d-thermal-diffusion/">🔥 1D Thermal Diffusion</a>
       <a class="nav-dropdown-item" href="https://dthornz.github.io/website-cv-tools/dissertation.html">📋 PhD Dissertation</a>
       <a class="nav-dropdown-item" href="https://dthornz.github.io/academic-ref-validator/">📑 Reference Validator</a>
-      <!-- TODO: replace the item below with this page's entry; add it to every other page's dropdown too -->
-      <a class="nav-dropdown-item" style="color:var(--teal);font-weight:600" href="#">🆕 This Page</a>
+      <a class="nav-dropdown-item" style="color:var(--teal);font-weight:600" href="#">📈 Curve Fitting Studio</a>
     </div>
   </div>
 </div>
@@ -43,29 +43,23 @@
      HERO
 ══════════════════════════════════════════════════════════ -->
 <div class="hero">
-  <!-- Small all-caps label above the title — describe the category or domain -->
-  <div class="hero-kicker">TODO: Category / Domain</div>
-
-  <!-- Main title — use <br> for a two-line break if needed -->
-  <h1 class="hero-title">Page Title<br>Second Line</h1>
-
-  <!-- One or two sentences summarising the project -->
-  <p class="hero-sub">TODO: one or two sentences describing what this page covers. Keep it concise — under ~180 characters reads best.</p>
-
-  <!-- Tags / keywords shown as pills -->
+  <div class="hero-kicker">Interactive Scientific Software</div>
+  <h1 class="hero-title">Advanced Curve Fitting Studio</h1>
+  <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
-    <span class="pill">Keyword One</span>
-    <span class="pill">Keyword Two</span>
-    <span class="pill">Method / Tool</span>
-    <span class="pill">Another Tag</span>
+    <span class="pill">Nonlinear Regression</span>
+    <span class="pill">Levenberg-Marquardt</span>
+    <span class="pill">Custom Equations</span>
+    <span class="pill">Plotly.js</span>
+    <span class="pill">Math.js</span>
+    <span class="pill">Offline-First</span>
+    <span class="pill">Export-Ready</span>
   </div>
-
-  <!-- 3–4 headline numbers shown below the pills -->
   <div class="hero-meta">
-    <div><div class="hero-stat-num">2024</div><div class="hero-stat-label">Year</div></div>
-    <div><div class="hero-stat-num">42</div><div class="hero-stat-label">Key stat</div></div>
-    <div><div class="hero-stat-num">2nd</div><div class="hero-stat-label">Order accuracy</div></div>
-    <div><div class="hero-stat-num">O(n)</div><div class="hero-stat-label">Complexity</div></div>
+    <div><div class="hero-stat-num">16+</div><div class="hero-stat-label">Built-in Models</div></div>
+    <div><div class="hero-stat-num">LM</div><div class="hero-stat-label">Fitting Algorithm</div></div>
+    <div><div class="hero-stat-num">6</div><div class="hero-stat-label">Fit Diagnostics</div></div>
+    <div><div class="hero-stat-num">100%</div><div class="hero-stat-label">Client-Side</div></div>
   </div>
 </div>
 
@@ -76,15 +70,13 @@
   <div class="section-num">§ 1</div>
   <h2 class="section-title">Background</h2>
   <div class="section-body">
-    <p>TODO: opening paragraph. Use <strong>bold</strong> for key terms on first use and <em>italics</em> for titles or emphasis. Inline superscript for citations: like this.<sup>[1]</sup></p>
-    <p>Second paragraph. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.</p>
-    <p>Third paragraph if needed. Vivamus lacinia odio vitae vestibulum habitant morbi tristique senectus et netus malesuada.</p>
+    <p><strong>Curve fitting</strong> — also called regression analysis or parameter estimation — is the process of constructing a mathematical model that best describes a set of measured data. It is one of the most fundamental quantitative techniques across scientific and engineering disciplines: from pharmacokinetics and enzyme kinetics in biology, to signal processing and materials characterisation in engineering, to cosmological parameter fitting in physics.</p>
+    <p>The core problem: given $n$ data pairs $\{(x_i, y_i)\}_{i=1}^n$ and a parameterised model $f(x;\,\boldsymbol{p})$, find the parameter vector $\boldsymbol{p} \in \mathbb{R}^m$ that makes $f$ agree with the data as closely as possible in a well-defined sense. The standard criterion is <strong>ordinary least squares (OLS)</strong> — minimise the sum of squared residuals. For Gaussian measurement noise this coincides with maximum-likelihood estimation.</p>
+    <p>Linear models — where $f$ is linear in $\boldsymbol{p}$ — admit a closed-form analytic solution. Most physically motivated models (exponential decays, Gaussian peaks, Michaelis-Menten kinetics, logistic growth) are <strong>nonlinear</strong> in their parameters and require iterative numerical optimisation. This application implements the industry-standard Levenberg-Marquardt algorithm for all nonlinear models, and analytic normal-equation solving for polynomials.</p>
   </div>
-
-  <!-- Teal left-border callout — use for informational notes / historical context -->
   <div class="callout">
-    <div class="callout-title">Note</div>
-    TODO: callout body text. Teal callouts suit background notes, fun facts, or supplementary context that does not block the main narrative.
+    <div class="callout-title">Fully Local &amp; Offline</div>
+    All computation runs entirely in your browser. No data ever leaves your machine — no server, no cloud storage, no telemetry. The application continues to function without an internet connection once the page has loaded, making it safe for use with sensitive experimental datasets.
   </div>
 </div>
 
@@ -95,89 +87,359 @@
   <div class="section-num">§ 2</div>
   <h2 class="section-title">Mathematical Formulation</h2>
   <div class="section-body">
-    <p>TODO: describe the governing equations. KaTeX renders inline math like $E = mc^2$ and display blocks inside <code>.eq-block</code> elements below.</p>
+    <p>The nonlinear least-squares objective to minimise over $\boldsymbol{p}$ is the <strong>sum of squared errors (SSE)</strong>:</p>
 
-    <!-- eq-block: labelled equation rows separated by eq-sep dividers -->
     <div class="eq-block">
       <div class="eq-row">
-        <span class="eq-label">General form:</span>
-        <span class="eq-main">$\dfrac{\partial u}{\partial t} = \alpha\,\nabla^2 u + f(\mathbf{x},t)$</span>
-        <span class="eq-comment">governing PDE</span>
+        <span class="eq-label">Objective:</span>
+        <span class="eq-main">$S(\boldsymbol{p}) = \displaystyle\sum_{i=1}^{n} r_i^2(\boldsymbol{p}),\quad r_i = y_i - f(x_i;\,\boldsymbol{p})$</span>
+        <span class="eq-comment">minimise over $\boldsymbol{p}$</span>
       </div>
       <div class="eq-sep"></div>
       <div class="eq-row">
-        <span class="eq-label">Discretised:</span>
-        <span class="eq-main">$u_i^{n+1} = u_i^n + r\!\left(u_{i+1}^n - 2u_i^n + u_{i-1}^n\right)$</span>
-        <span class="eq-comment">$r = \alpha\Delta t/\Delta x^2$</span>
+        <span class="eq-label">Jacobian:</span>
+        <span class="eq-main">$J_{ij} = \dfrac{\partial r_i}{\partial p_j} \approx \dfrac{r_i(\boldsymbol{p}+h\,\mathbf{e}_j)-r_i(\boldsymbol{p})}{h}$</span>
+        <span class="eq-comment">forward differences, $h = \max(\varepsilon|p_j|,\,\varepsilon)$</span>
       </div>
-      <div class="eq-note">TODO: annotation — explain symbols, units, and any key constraints or assumptions here.</div>
+      <div class="eq-sep"></div>
+      <div class="eq-row">
+        <span class="eq-label">Normal eqs.:</span>
+        <span class="eq-main">$\mathbf{J}^\top\mathbf{J}\,\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-comment">linearised (Gauss-Newton) step</span>
+      </div>
+      <div class="eq-note">$r_i$ is the $i$-th residual, $\mathbf{J}$ is the $n\times m$ Jacobian of the residual vector, $\varepsilon = 10^{-7}$. The Jacobian is evaluated numerically at the current iterate.</div>
     </div>
 
-    <p>TODO: follow-up paragraph expanding on the equations above, discussing assumptions, limitations, or derivation steps.</p>
-
-    <!-- Parameter table — Symbol | Value | Unit | Description -->
-    <table class="param-table" style="margin-top:24px">
-      <thead><tr><th>Symbol</th><th>Value (default)</th><th>Unit</th><th>Description</th></tr></thead>
+    <p>The goodness-of-fit is characterised by several complementary statistics computed after convergence:</p>
+    <table class="param-table" style="margin-top:16px">
+      <thead><tr><th>Statistic</th><th>Formula</th><th>Interpretation</th></tr></thead>
       <tbody>
-        <tr><td>$\alpha$</td><td>$1.17\times10^{-2}$</td><td>mm² s⁻¹</td><td>Diffusivity (ratio of conduction to storage)</td></tr>
-        <tr><td>$k$</td><td>$0.237$</td><td>W mm⁻¹ °C⁻¹</td><td>Conductivity</td></tr>
-        <tr><td>$L$</td><td>$100$</td><td>mm</td><td>Domain length</td></tr>
-        <tr><td>$N$</td><td>$51$</td><td>—</td><td>Number of grid nodes</td></tr>
+        <tr><td>$R^2$</td><td>$1 - \mathrm{SSE}\,/\,\mathrm{SST}$</td><td>Fraction of variance explained (1 = perfect)</td></tr>
+        <tr><td>Adj. $R^2$</td><td>$1-(1-R^2)\tfrac{n-1}{n-m-1}$</td><td>$R^2$ penalised for model complexity</td></tr>
+        <tr><td>RMSE</td><td>$\sqrt{\mathrm{SSE}/(n-m)}$</td><td>Root-mean-square residual; same units as $y$</td></tr>
+        <tr><td>AIC</td><td>$n\ln(\mathrm{SSE}/n)+2m$</td><td>Information criterion — lower is better</td></tr>
+        <tr><td>BIC</td><td>$n\ln(\mathrm{SSE}/n)+m\ln n$</td><td>Stronger complexity penalty than AIC</td></tr>
+        <tr><td>SSE</td><td>$\displaystyle\sum r_i^2$</td><td>Absolute residual energy (scale-dependent)</td></tr>
       </tbody>
     </table>
+    <p style="margin-top:14px">where $\mathrm{SST} = \sum(y_i-\bar{y})^2$ is the total sum of squares and $m$ is the number of free parameters. Parameter standard errors are estimated from the covariance matrix $\mathbf{C} = \hat{\sigma}^2(\mathbf{J}^\top\mathbf{J})^{-1}$, where $\hat{\sigma}^2 = \mathrm{SSE}/(n-m)$.</p>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
-     §3  NUMERICAL METHOD
+     §3  FITTING ALGORITHMS
 ══════════════════════════════════════════════════════════ -->
 <div class="section">
   <div class="section-num">§ 3</div>
-  <h2 class="section-title">Numerical Method</h2>
+  <h2 class="section-title">Fitting Algorithms</h2>
   <div class="section-body">
-    <p>TODO: describe the algorithm or method in plain language before giving equations. Explain why this approach was chosen.</p>
+    <p>This application implements the <strong>Levenberg-Marquardt (LM)</strong> algorithm — the industry-standard method for nonlinear least-squares. LM interpolates between Gauss-Newton (fast near the minimum) and gradient descent (robust far from it) by augmenting the normal equations with a damping factor $\lambda$:</p>
 
-    <!-- Another equation block — multiple rows without a sep show as a tight group -->
     <div class="eq-block">
       <div class="eq-row">
-        <span class="eq-label">Stability:</span>
-        <span class="eq-main">$\Delta t \leq \dfrac{\Delta x^2}{2\alpha}$</span>
-        <span class="eq-comment">$r \leq 0.5$</span>
+        <span class="eq-label">LM Step:</span>
+        <span class="eq-main">$\bigl(\mathbf{J}^\top\mathbf{J} + \lambda\,\mathrm{diag}(\mathbf{J}^\top\mathbf{J})\bigr)\,\Delta\boldsymbol{p} = \mathbf{J}^\top\mathbf{r}$</span>
+        <span class="eq-comment">Marquardt scaling</span>
       </div>
-      <div class="eq-note">TODO: note explaining the stability criterion, its origin, and how it is enforced in practice.</div>
+      <div class="eq-sep"></div>
+      <div class="eq-row">
+        <span class="eq-label">Accept:</span>
+        <span class="eq-main">$S(\boldsymbol{p}+\Delta\boldsymbol{p}) < S(\boldsymbol{p}) \;\Rightarrow\; \lambda \leftarrow \lambda/3,\;\boldsymbol{p} \leftarrow \boldsymbol{p}+\Delta\boldsymbol{p}$</span>
+        <span class="eq-comment">decrease damping</span>
+      </div>
+      <div class="eq-row">
+        <span class="eq-label">Reject:</span>
+        <span class="eq-main">$S(\boldsymbol{p}+\Delta\boldsymbol{p}) \geq S(\boldsymbol{p}) \;\Rightarrow\; \lambda \leftarrow 10\lambda$</span>
+        <span class="eq-comment">increase damping</span>
+      </div>
+      <div class="eq-note">When $\lambda\to 0$: Gauss-Newton step (rapid convergence near minimum). When $\lambda\to\infty$: small gradient-descent step (robust far from minimum). Marquardt scaling by $\mathrm{diag}(\mathbf{J}^\top\mathbf{J})$ improves scale-invariance across parameters of different magnitudes. Convergence is declared when $|\Delta\boldsymbol{p}| < \tau$ and $|\Delta S| < \tau$ simultaneously, or when the maximum iteration count is reached.</div>
     </div>
 
-    <!-- Bulleted list inside section-body -->
-    <ul style="margin:8px 0 14px 20px;line-height:1.7">
-      <li><strong>Step one:</strong> description of algorithm step.</li>
-      <li><strong>Step two:</strong> description of algorithm step.</li>
-      <li><strong>Step three:</strong> description of algorithm step.</li>
-    </ul>
+    <p>For <strong>linear and polynomial models</strong>, the analytic least-squares solution is computed directly by solving the Vandermonde normal equations — exact, single-pass, with no iteration. For <strong>custom user equations</strong>, Math.js parses and compiles the expression; all symbols except $x$ are automatically detected as free parameters and passed to the LM solver with initial values of 1.</p>
   </div>
-
-  <!-- Amber left-border callout — use for warnings, caveats, or stability notes -->
   <div class="callout callout-amber">
-    <div class="callout-title">Stability Note</div>
-    TODO: amber callout text. Use for warnings about numerical stability, known limitations, or important caveats the reader must know before using the tool.
+    <div class="callout-title">Initial Guesses Matter</div>
+    Nonlinear optimisation can converge to local minima if initial parameter values are poor. Each built-in model includes automatic heuristics (e.g., estimating amplitude from max($y$), frequency from data range). Press <strong>Auto Init</strong> to apply these, or tune initial values manually if the fit fails to converge or gives unexpected results.
   </div>
 </div>
 
-<!-- section-divider: full-width horizontal rule, typically placed before the interactive section -->
-<div class="section-divider"></div>
+</div><!-- end page-wrap -->
+
+<!-- ── App section label ──────────────────────────────────── -->
+<div class="app-section-header">
+  <span class="app-section-num">§ 4</span>
+  <span class="app-section-label">Interactive Application</span>
+  <span class="app-section-title">Advanced Curve Fitting Studio</span>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════
-     §4  INTERACTIVE DEMO  (replace with your simulator/canvas)
+     THE APPLICATION
 ══════════════════════════════════════════════════════════ -->
-<div class="section" id="demo">
-  <div class="section-num">§ 4</div>
-  <h2 class="section-title">Interactive Demo</h2>
+<div class="app-section" id="app">
+  <div class="app-shell">
+
+    <!-- TOP BAR -->
+    <div class="app-topbar">
+      <div class="app-toolbar-group">
+        <div class="app-dropdown-wrap">
+          <button class="btn" id="btn-examples">Examples ▾</button>
+          <div class="app-dropdown" id="examples-menu">
+            <div class="app-dropdown-item" data-example="exponential-decay">Exponential Decay  <span class="app-dropdown-sub">radioactive / RC circuit</span></div>
+            <div class="app-dropdown-item" data-example="gaussian-peak">Gaussian Peak  <span class="app-dropdown-sub">spectroscopy</span></div>
+            <div class="app-dropdown-item" data-example="logistic-growth">Logistic Growth  <span class="app-dropdown-sub">cell culture / population</span></div>
+            <div class="app-dropdown-item" data-example="michaelis-menten">Michaelis-Menten  <span class="app-dropdown-sub">enzyme kinetics</span></div>
+            <div class="app-dropdown-item" data-example="damped-oscillation">Damped Oscillation  <span class="app-dropdown-sub">mechanical vibration</span></div>
+            <div class="app-dropdown-item" data-example="linear-calibration">Linear Calibration  <span class="app-dropdown-sub">instrument response</span></div>
+          </div>
+        </div>
+        <button class="btn" id="btn-import" title="Import a CSV / TSV / TXT file">Import CSV</button>
+        <button class="btn" id="btn-paste" title="Paste data from clipboard">Paste Data</button>
+        <input type="file" id="file-input" accept=".csv,.tsv,.txt" style="display:none">
+      </div>
+      <div class="app-toolbar-sep"></div>
+      <button class="btn btn-primary" id="btn-fit">▶  Fit</button>
+      <button class="btn btn-danger" id="btn-clear-fit" title="Remove the selected fit">✕  Remove Fit</button>
+      <div style="flex:1"></div>
+      <div class="app-toolbar-group">
+        <button class="btn btn-toggle" id="btn-toggle-residuals" title="Show / hide residual plot">Residuals</button>
+        <button class="btn btn-toggle" id="btn-log-x" title="Toggle logarithmic X axis">Log X</button>
+        <button class="btn btn-toggle" id="btn-log-y" title="Toggle logarithmic Y axis">Log Y</button>
+      </div>
+      <div class="app-toolbar-sep"></div>
+      <div class="app-toolbar-group">
+        <div class="app-dropdown-wrap">
+          <button class="btn" id="btn-export">Export ▾</button>
+          <div class="app-dropdown" id="export-menu">
+            <div class="app-dropdown-item" id="exp-png">📷  Plot as PNG</div>
+            <div class="app-dropdown-item" id="exp-svg">🖼  Plot as SVG</div>
+            <div class="app-dropdown-sep"></div>
+            <div class="app-dropdown-item" id="exp-csv">📊  Fit Results CSV</div>
+            <div class="app-dropdown-item" id="exp-report">📄  Full Report TXT</div>
+          </div>
+        </div>
+        <button class="btn" id="btn-save" title="Save session to browser local storage">Save Session</button>
+        <button class="btn" id="btn-load" title="Load last saved session">Load Session</button>
+      </div>
+    </div>
+
+    <!-- WORKSPACE -->
+    <div class="app-workspace">
+
+      <!-- LEFT PANEL -->
+      <div class="app-left">
+        <div class="panel-header">
+          <span>Datasets</span>
+          <button class="btn panel-action-btn" id="btn-clear-all" title="Remove all datasets and fits">✕ All</button>
+        </div>
+        <div class="panel-section" id="dataset-list">
+          <div class="panel-empty-hint">Load an example<br>or import a CSV to begin.</div>
+        </div>
+        <div class="panel-header" style="border-top:1px solid var(--border)">
+          <span>Active Fits</span>
+          <span class="panel-fit-count" id="fit-count">0</span>
+        </div>
+        <div class="panel-section panel-fits-section" id="fit-list">
+          <div class="panel-empty-hint">Press <strong>▶ Fit</strong><br>after loading data.</div>
+        </div>
+      </div>
+
+      <!-- CENTER: PLOTS -->
+      <div class="app-center">
+        <div id="main-plot" class="plot-div"></div>
+        <div id="residual-plot" class="plot-div-residual"></div>
+      </div>
+
+      <!-- RIGHT PANEL: FIT CONTROLS -->
+      <div class="app-right">
+
+        <div class="ctrl-section">
+          <label class="ctrl-label">Target Dataset</label>
+          <select class="ctrl-select" id="fit-dataset-select">
+            <option value="">— no dataset loaded —</option>
+          </select>
+        </div>
+
+        <div class="ctrl-section">
+          <label class="ctrl-label">Fit Model</label>
+          <select class="ctrl-select" id="model-select">
+            <optgroup label="Basic">
+              <option value="Linear">Linear  y = a·x + b</option>
+              <option value="Power">Power Law  y = a·xᵇ</option>
+            </optgroup>
+            <optgroup label="Polynomial">
+              <option value="Polynomial-2">Polynomial  degree 2</option>
+              <option value="Polynomial-3">Polynomial  degree 3</option>
+              <option value="Polynomial-4">Polynomial  degree 4</option>
+              <option value="Polynomial-5">Polynomial  degree 5</option>
+              <option value="Polynomial-6">Polynomial  degree 6</option>
+            </optgroup>
+            <optgroup label="Growth / Decay">
+              <option value="Exponential" selected>Exponential  y = a·eᵇˣ</option>
+              <option value="Exp-Decay-Offset">Exp Decay + Offset  a·e⁻ᵇˣ + c</option>
+              <option value="Logistic">Logistic / Sigmoid</option>
+            </optgroup>
+            <optgroup label="Peak / Spectral">
+              <option value="Gaussian">Gaussian Peak</option>
+              <option value="Lorentzian">Lorentzian Peak</option>
+            </optgroup>
+            <optgroup label="Biology / Pharmacology">
+              <option value="Michaelis-Menten">Michaelis-Menten</option>
+              <option value="Hill">Hill Equation</option>
+            </optgroup>
+            <optgroup label="Oscillation">
+              <option value="Sine">Sinusoidal</option>
+              <option value="Damped-Sine">Damped Sinusoid</option>
+            </optgroup>
+            <optgroup label="Distribution">
+              <option value="Weibull">Weibull CDF</option>
+            </optgroup>
+            <optgroup label="Custom">
+              <option value="Custom">Custom Equation…</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Custom equation editor (shown only when Custom is selected) -->
+        <div class="ctrl-section" id="custom-eq-section" style="display:none">
+          <label class="ctrl-label">
+            Equation &nbsp;<code style="color:var(--teal);font-size:.95em">x</code> is the independent variable
+          </label>
+          <input class="ctrl-input" id="custom-eq-input" type="text"
+                 placeholder="a * exp(-b * x) + c"
+                 value="a * exp(-b * x) + c"
+                 spellcheck="false" autocomplete="off">
+          <div style="margin-top:5px;min-height:16px">
+            <span id="custom-eq-status" style="font-family:var(--mono);font-size:.68em;letter-spacing:0"></span>
+          </div>
+        </div>
+
+        <!-- Parameters -->
+        <div class="ctrl-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+            <span class="ctrl-label" style="margin:0">Parameters</span>
+            <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-auto-init" title="Auto-estimate initial values from the loaded data">Auto Init</button>
+          </div>
+          <div class="param-table-header">
+            <span>Name</span><span>Initial</span><span>Min</span><span>Max</span>
+          </div>
+          <div id="param-table-container">
+            <div class="panel-empty-hint">Select a model.</div>
+          </div>
+        </div>
+
+        <!-- Algorithm options -->
+        <div class="ctrl-section">
+          <label class="ctrl-label">Algorithm Options</label>
+          <div class="ctrl-row">
+            <label class="ctrl-label" style="margin:0;min-width:72px">Max Iter.</label>
+            <input class="ctrl-input" id="opt-max-iter" type="number" value="1000" min="10" max="50000">
+          </div>
+          <div class="ctrl-row" style="margin-top:5px">
+            <label class="ctrl-label" style="margin:0;min-width:72px">Tolerance</label>
+            <input class="ctrl-input" id="opt-tol" type="text" value="1e-8">
+          </div>
+        </div>
+
+        <!-- Plot labels -->
+        <div class="ctrl-section">
+          <label class="ctrl-label">Plot Labels</label>
+          <div class="ctrl-row">
+            <label class="ctrl-label" style="margin:0;min-width:44px">X axis</label>
+            <input class="ctrl-input" id="plot-xlabel" type="text" placeholder="x">
+          </div>
+          <div class="ctrl-row" style="margin-top:5px">
+            <label class="ctrl-label" style="margin:0;min-width:44px">Y axis</label>
+            <input class="ctrl-input" id="plot-ylabel" type="text" placeholder="y">
+          </div>
+          <div class="ctrl-row" style="margin-top:5px">
+            <label class="ctrl-label" style="margin:0;min-width:44px">Title</label>
+            <input class="ctrl-input" id="plot-title" type="text" placeholder="Curve Fit">
+          </div>
+        </div>
+
+        <!-- Fit curve resolution -->
+        <div class="ctrl-section">
+          <label class="ctrl-label">Fit Curve Points</label>
+          <input class="ctrl-input" id="opt-curve-pts" type="number" value="300" min="50" max="5000">
+        </div>
+
+      </div><!-- end app-right -->
+    </div><!-- end app-workspace -->
+
+    <!-- STATS BAR -->
+    <div class="app-statsbar">
+      <div id="app-console">
+        <span class="console-hint">Load a dataset and press <strong>▶ Fit</strong> to begin.</span>
+      </div>
+    </div>
+
+  </div><!-- end app-shell -->
+</div><!-- end app-section -->
+
+<!-- Paste Modal -->
+<div class="modal-backdrop" id="paste-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Paste Data</span>
+      <button class="modal-close" id="paste-modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.82em;color:var(--muted);margin-bottom:10px">
+        Paste comma-, tab-, or space-separated values below. An optional first row is treated as a header. The first two numeric columns are used as X and Y.
+      </p>
+      <textarea id="paste-textarea" class="paste-area"
+        placeholder="x,y&#10;0,2.00&#10;1,1.21&#10;2,0.74&#10;3,0.45&#10;4,0.27&#10;5,0.16"></textarea>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <label class="ctrl-label" style="margin:0;white-space:nowrap">Name:</label>
+        <input class="ctrl-input" id="paste-ds-name" type="text" placeholder="Dataset" style="max-width:140px">
+        <label class="ctrl-label" style="margin:0;white-space:nowrap">Delimiter:</label>
+        <select class="ctrl-select" id="paste-delim" style="max-width:110px">
+          <option value="auto">Auto-detect</option>
+          <option value=",">Comma ( , )</option>
+          <option value="	">Tab</option>
+          <option value=" ">Space</option>
+          <option value=";">Semicolon ( ; )</option>
+        </select>
+      </div>
+      <div id="paste-preview" style="margin-top:10px;font-family:var(--mono);font-size:.72em;color:var(--dim);min-height:20px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="paste-cancel">Cancel</button>
+      <button class="btn btn-primary" id="paste-import">Import Data</button>
+    </div>
+  </div>
 </div>
 
-<!-- TODO: place your simulator panel, canvas, or interactive widget here.
-     Copy the .sim-section / .sim-header / .sim-body structure from the
-     1D Thermal Diffusion page if you need the full controls + canvas layout. -->
-<div style="background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;padding:48px;text-align:center;margin-bottom:40px;color:var(--dim);font-family:var(--mono);font-size:.85em">
-  Interactive widget placeholder — replace with your content
+<div class="page-wrap" style="margin-top:56px">
+
+<!-- ══════════════════════════════════════════════════════════
+     §5  MODEL REFERENCE
+══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-num">§ 5</div>
+  <h2 class="section-title">Built-in Model Reference</h2>
+  <div class="section-body">
+    <p>All built-in models and their equations, parameters, and typical use cases. Polynomial models use analytic least-squares (single-pass, no iteration). All other models use the Levenberg-Marquardt algorithm with automatic initial-guess heuristics. Custom equations are parsed by Math.js — any symbol other than $x$ is treated as a free parameter.</p>
+  </div>
+  <table class="param-table" style="margin-top:8px;font-size:.8em">
+    <thead><tr><th>Model</th><th>Equation</th><th>Parameters</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td>Linear</td><td>$y = a\,x + b$</td><td>a, b</td><td>Calibration curves, trend lines</td></tr>
+      <tr><td>Power Law</td><td>$y = a\,|x|^b$</td><td>a, b</td><td>Allometric scaling, fractal data</td></tr>
+      <tr><td>Polynomial (deg. $n$)</td><td>$y = \sum_{k=0}^{n} c_k\,x^k$</td><td>$n+1$ coefficients</td><td>General polynomial regression</td></tr>
+      <tr><td>Exponential</td><td>$y = a\,e^{bx}$</td><td>a, b</td><td>Unrestricted growth or decay</td></tr>
+      <tr><td>Exp Decay + Offset</td><td>$y = a\,e^{-bx} + c$</td><td>a, b, c</td><td>Radioactive decay, RC discharge</td></tr>
+      <tr><td>Logistic / Sigmoid</td><td>$y = L\,/\,(1+e^{-k(x-x_0)})$</td><td>L, k, x₀</td><td>Population growth, dose-response</td></tr>
+      <tr><td>Gaussian Peak</td><td>$y = A\,e^{-(x-\mu)^2/2\sigma^2}+C$</td><td>A, μ, σ, C</td><td>Spectroscopy, chromatography peaks</td></tr>
+      <tr><td>Lorentzian Peak</td><td>$y = A\,\gamma^2/[(x-x_0)^2+\gamma^2]+C$</td><td>A, x₀, γ, C</td><td>NMR, resonance linewidths</td></tr>
+      <tr><td>Michaelis-Menten</td><td>$y = V_{\max}\,x\,/\,(K_m+x)$</td><td>Vmax, Km</td><td>Enzyme kinetics, Langmuir adsorption</td></tr>
+      <tr><td>Hill Equation</td><td>$y = V_{\max}\,x^n\,/\,(K_d+x^n)$</td><td>Vmax, Kd, n</td><td>Cooperative binding, Hill coefficient</td></tr>
+      <tr><td>Sinusoidal</td><td>$y = A\sin(\omega x+\phi)+C$</td><td>A, ω, φ, C</td><td>Periodic oscillations, seasonal signals</td></tr>
+      <tr><td>Damped Sinusoid</td><td>$y = A\,e^{-\gamma x}\sin(\omega x+\phi)+C$</td><td>A, γ, ω, φ, C</td><td>Mechanical vibration, RLC circuits</td></tr>
+      <tr><td>Weibull CDF</td><td>$y = 1 - e^{-(x/\lambda)^k}$</td><td>λ, k</td><td>Reliability, survival analysis</td></tr>
+      <tr><td>Custom Equation</td><td>Any Math.js expression in $x$</td><td>Auto-detected</td><td>Any application</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
@@ -189,15 +451,31 @@
   <ol class="ref-list">
     <li class="ref-item">
       <span class="ref-num">[1]</span>
-      <span>Author, A.B. (Year). <em>Title of Book or Report</em>. Publisher.</span>
+      <span>Levenberg, K. (1944). A method for the solution of certain non-linear problems in least squares. <em>Quarterly of Applied Mathematics</em>, <em>2</em>(2), 164–168.</span>
     </li>
     <li class="ref-item">
       <span class="ref-num">[2]</span>
-      <span>Author, C.D. &amp; Author, E.F. (Year). Article title. <em>Journal Name</em>, <em>vol</em>(issue), pages. <a href="#">doi:10.xxxx/xxxxx</a></span>
+      <span>Marquardt, D.W. (1963). An algorithm for least-squares estimation of nonlinear parameters. <em>SIAM Journal on Applied Mathematics</em>, <em>11</em>(2), 431–441.</span>
     </li>
     <li class="ref-item">
       <span class="ref-num">[3]</span>
-      <span>Author, G.H. (Year). <em>Another Book</em> (2nd ed.). Publisher.</span>
+      <span>Press, W.H., Teukolsky, S.A., Vetterling, W.T., &amp; Flannery, B.P. (2007). <em>Numerical Recipes: The Art of Scientific Computing</em> (3rd ed.). Cambridge University Press.</span>
+    </li>
+    <li class="ref-item">
+      <span class="ref-num">[4]</span>
+      <span>Seber, G.A.F. &amp; Wild, C.J. (2003). <em>Nonlinear Regression</em>. Wiley-Interscience.</span>
+    </li>
+    <li class="ref-item">
+      <span class="ref-num">[5]</span>
+      <span>MathWorks, Inc. (2024). <em>Curve Fitting Toolbox User's Guide</em>. The MathWorks, Inc. (Inspirational reference for UI/UX design.)</span>
+    </li>
+    <li class="ref-item">
+      <span class="ref-num">[6]</span>
+      <span>de Jong, J. et al. (2024). <em>Math.js: An extensive math library for JavaScript and Node.js</em>. <a href="https://mathjs.org">mathjs.org</a></span>
+    </li>
+    <li class="ref-item">
+      <span class="ref-num">[7]</span>
+      <span>Plotly Technologies Inc. (2024). <em>Plotly JavaScript Open Source Graphing Library</em>. <a href="https://plotly.com/javascript/">plotly.com/javascript</a></span>
     </li>
   </ol>
 </div>
