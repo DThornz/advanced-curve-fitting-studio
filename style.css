@@ -272,7 +272,8 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 /* ── Right panel ─────────────────────────────────────────── */
 .app-right{
   width:268px;flex-shrink:0;
-  overflow-y:auto;display:flex;flex-direction:column
+  overflow-y:auto;display:flex;flex-direction:column;
+  scrollbar-gutter:stable
 }
 .ctrl-section{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
 .ctrl-label{

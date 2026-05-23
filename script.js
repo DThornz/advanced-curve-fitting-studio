@@ -1216,14 +1216,17 @@ function initResizablePanels() {
 
   let drag = null;
 
-  let rafPending = false;
+  let resizeRafId = null;
   function schedulePlotResize() {
-    if (rafPending || !plotsInitialised) return;
-    rafPending = true;
-    requestAnimationFrame(() => {
-      rafPending = false;
-      Plotly.Plots.resize('main-plot');
-      if (!residualEl.classList.contains('hidden')) Plotly.Plots.resize('residual-plot');
+    if (!plotsInitialised) return;
+    if (resizeRafId !== null) cancelAnimationFrame(resizeRafId);
+    resizeRafId = requestAnimationFrame(() => {
+      resizeRafId = null;
+      // Reading offsetWidth forces a synchronous layout flush so Plotly measures
+      // the post-resize container dimensions rather than stale pre-reflow values.
+      void document.getElementById('panel-center').offsetWidth;
+      Plotly.Plots.resize(document.getElementById('main-plot'));
+      if (!residualEl.classList.contains('hidden')) Plotly.Plots.resize(document.getElementById('residual-plot'));
     });
   }
 
