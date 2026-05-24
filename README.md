@@ -22,6 +22,9 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Weighted fitting** | Four schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate), 1/σ² (supplied uncertainties from a σ column in the imported data) |
 | **Error bars** | Datasets with a σ column display Plotly error bars on the scatter plot; σ-weighted fits report reduced chi-square χ²ᵣ in the stats table, copy output, and TXT report |
 | **Parameter sweep** | Range slider under each parameter updates the model preview curve live as you drag — no fitting, instant visual feedback for building intuition about parameter roles |
+| **Prediction lookup** | Type an X value → get Ŷ with 95% CI (Jacobian propagation); or type a Y value → solve for X numerically (grid scan + bisection) with CI via delta method — returns IC50, EC50, Km, half-life, etc. directly |
+| **F-test** | Nested model comparison: select two fits on the same dataset; computes F-statistic and exact p-value (regularized incomplete beta) and reports whether extra parameters are statistically justified at α = 0.05 |
+| **Plot annotations** | Add horizontal/vertical reference lines, text callouts, and auto-peak markers; per-annotation control over font family, size, bold/italic, color, label placement, background, border, line style/width/opacity, and arrowhead type/size/color |
 | **Try All Models** | One-click comparison table — fits all 17 non-Custom models and ranks by R²; apply any result to the active fit |
 | **Copy Parameters** | One-click copy of fit name, dataset, all parameters (with ± std errors), and full statistics (R², Adj-R², RMSE, SSE, AIC, BIC, N, status) to clipboard |
 | **Parameter table** | Init / Min / Max / Fit columns per parameter; Init preserves the starting guess; Fit column shows converged values; switching fits loads that fit's parameters into Init |
@@ -171,6 +174,53 @@ Four tabs sit below the main plot:
 | **Convergence** | SSE vs. iteration; default Log Y / Linear X; in-chart buttons toggle each axis independently (Log X · Linear X · Log Y · Linear Y); for multi-start fits the pilot-selection phase and polish share a monotonic x-axis |
 
 The whole panel dims while a fit is running and when the active fit's source dataset is disabled.
+
+### Prediction and calibration lookup
+
+The **Predict / Solve** panel at the bottom of the right panel serves two modes:
+
+**X → Y (predict):** type any X value and press **Go** to evaluate the active fit at that point. If the fit has a covariance matrix, the output includes the 95% confidence interval half-width computed by Jacobian gradient propagation — the same method used for the CI ribbon.
+
+**Y → X (calibrate):** type a target Y value to find all X solutions numerically. The solver does a 500-point grid scan across the current curve range followed by 52-step bisection for each sign change. The CI on each X solution is estimated via the delta method: δx ≈ CI_y / |df/dx|. Common uses:
+- IC50 / EC50 from a sigmoidal dose-response
+- Km from a Michaelis-Menten saturation curve
+- Half-life from an exponential decay (solve for Y = Y₀/2)
+- Calibration inversion from any polynomial or nonlinear standard curve
+
+The curve range used for the Y→X search is the same as the extrapolation range (set in the Options panel, or defaulting to the data extent).
+
+### F-test for nested model comparison
+
+Select two fits that were run on the **same dataset** in the **F-test** panel. The simpler model (fewer parameters) is automatically identified as the null hypothesis.
+
+The F-statistic is:
+
+$$F = \frac{(SSE_1 - SSE_2) / \Delta p}{SSE_2 / (n - p_2)}$$
+
+where SSE₁ and SSE₂ are the sums of squared errors for the simple and complex models, Δp is the difference in parameter counts, and (n − p₂) is the residual degrees of freedom of the complex model.
+
+The p-value is computed from the exact F-distribution CDF using a Lanczos lnGamma + Lentz continued-fraction regularized incomplete beta implementation. A p-value < 0.05 indicates the extra parameters are statistically justified at α = 0.05.
+
+### Plot annotations
+
+The **Annotations** panel (bottom of the right panel) lets you add publication-ready overlays to the main plot. Three types are available:
+
+| Type | Use for |
+|---|---|
+| **Horizontal line** | Threshold at a fixed Y value (e.g., detection limit, half-max) |
+| **Vertical line** | Marker at a fixed X value (e.g., time point, dose level, peak centre) |
+| **Text callout** | Free text at any (X, Y) coordinate, with optional arrow to the point |
+
+Click **+ Add** to open the annotation editor. Each annotation exposes full style controls:
+
+- **Font:** family (9 presets + custom), size, bold, italic, color
+- **Label placement:** horizontal anchor (left / center / right), vertical anchor (top / middle / bottom), background color + opacity, optional border
+- **Reference line:** dash style (solid / dash / dot / dash-dot / long-dash / long-dash-dot), line width, color, opacity
+- **Arrow (text/peak):** arrowhead type (8 styles), size, line width, color, and pixel offset of the text label from the arrow tail
+
+Click **Peaks** to automatically annotate the peak centre of any Gaussian or Lorentzian fit that is currently visible. The annotation is colored to match the fit curve and labelled with the fit name. Each fit can only receive one automatic peak annotation; re-clicking Peaks won't duplicate them.
+
+Annotations are saved to and restored from the session JSON file.
 
 ### Dataset enable / disable
 

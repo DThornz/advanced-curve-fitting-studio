@@ -397,6 +397,18 @@
           <div id="ftest-result" style="margin-top:6px;display:none"></div>
         </div>
 
+        <!-- Annotations -->
+        <div class="ctrl-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+            <label class="ctrl-label" style="margin:0" title="Add reference lines, text callouts, and peak markers to the plot">Annotations <span class="panel-fit-count" id="ann-count">0</span></label>
+            <div style="display:flex;gap:4px">
+              <button class="btn" id="btn-ann-peaks" title="Auto-annotate peak centres from Gaussian / Lorentzian fits" style="padding:1px 8px;font-size:.65em">Peaks</button>
+              <button class="btn" id="btn-ann-add" style="padding:1px 8px;font-size:.65em">+ Add</button>
+            </div>
+          </div>
+          <div id="ann-list"><div class="panel-empty-hint" style="font-size:.72em">No annotations. Use + Add or Peaks.</div></div>
+        </div>
+
       </div><!-- end app-right -->
     </div><!-- end app-workspace -->
 
@@ -679,6 +691,185 @@
   </div>
 </div>
 
+<!-- Annotation Editor Modal -->
+<div class="modal-backdrop" id="ann-modal" style="display:none;align-items:flex-start;justify-content:center;padding-top:40px">
+  <div class="modal" style="width:480px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <span class="modal-title" id="ann-modal-title">Add Annotation</span>
+      <button class="modal-close" id="ann-modal-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:12px 14px;overflow-y:auto;flex:1">
+
+      <!-- Type & Position -->
+      <div class="ann-section">
+        <div class="ann-section-title">Type &amp; Position</div>
+        <div class="ann-row">
+          <label>Type</label>
+          <select class="ctrl-select" id="ann-type" style="flex:1;font-size:.78em">
+            <option value="hline">Horizontal line  (Y = constant)</option>
+            <option value="vline">Vertical line  (X = constant)</option>
+            <option value="text">Text callout  (X, Y position)</option>
+          </select>
+        </div>
+        <div class="ann-row" id="ann-row-x">
+          <label>X</label>
+          <input class="ctrl-input" type="number" id="ann-x" step="any" placeholder="X value" style="flex:1">
+        </div>
+        <div class="ann-row" id="ann-row-y">
+          <label>Y</label>
+          <input class="ctrl-input" type="number" id="ann-y" step="any" placeholder="Y value" style="flex:1">
+        </div>
+      </div>
+
+      <!-- Label -->
+      <div class="ann-section">
+        <div class="ann-section-title">Label Text</div>
+        <div class="ann-row" style="gap:6px">
+          <label>Text</label>
+          <input class="ctrl-input" type="text" id="ann-label" placeholder="Label (leave blank to hide)" style="flex:1">
+        </div>
+      </div>
+
+      <!-- Font -->
+      <div class="ann-section">
+        <div class="ann-section-title">Font</div>
+        <div class="ann-row">
+          <label>Family</label>
+          <select class="ctrl-select" id="ann-font-family" style="flex:1;font-size:.78em">
+            <option value="DM Sans, sans-serif">DM Sans (app default)</option>
+            <option value="DM Mono, monospace">DM Mono</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Helvetica, sans-serif">Helvetica</option>
+            <option value="Times New Roman, serif">Times New Roman</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="Courier New, monospace">Courier New</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+            <option value="__custom__">Custom…</option>
+          </select>
+        </div>
+        <div class="ann-row" id="ann-row-font-custom" style="display:none">
+          <label>Custom</label>
+          <input class="ctrl-input" type="text" id="ann-font-custom" placeholder="e.g. Roboto, sans-serif" style="flex:1">
+        </div>
+        <div class="ann-row" style="flex-wrap:wrap;gap:8px">
+          <label>Size</label>
+          <input class="ctrl-input" type="number" id="ann-font-size" value="12" min="6" max="72" step="1" style="width:54px;flex:none">
+          <span style="font-size:.72em;color:var(--muted)">pt</span>
+          <label class="ann-check-label"><input type="checkbox" id="ann-font-bold"> Bold</label>
+          <label class="ann-check-label"><input type="checkbox" id="ann-font-italic"> Italic</label>
+        </div>
+        <div class="ann-row">
+          <label>Color</label>
+          <input type="color" id="ann-font-color" value="#374151" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="ann-font-color-hex" value="#374151" maxlength="9" placeholder="#rrggbb">
+        </div>
+      </div>
+
+      <!-- Label placement -->
+      <div class="ann-section">
+        <div class="ann-section-title">Label Placement</div>
+        <div class="ann-row" style="flex-wrap:wrap;gap:8px">
+          <label>H-anchor</label>
+          <select class="ctrl-select" id="ann-anchor" style="width:80px;font-size:.78em;flex:none">
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+          <label>V-anchor</label>
+          <select class="ctrl-select" id="ann-vanchor" style="width:80px;font-size:.78em;flex:none">
+            <option value="top">Top</option>
+            <option value="middle">Middle</option>
+            <option value="bottom">Bottom</option>
+          </select>
+        </div>
+        <div class="ann-row">
+          <label>Background</label>
+          <input type="color" id="ann-bg-color" value="#ffffff" class="ann-color-swatch">
+          <label style="font-size:.72em;color:var(--muted);margin-left:6px;flex-shrink:0">Opacity</label>
+          <input type="range" id="ann-bg-opacity" min="0" max="1" step="0.05" value="0.85" style="flex:1;min-width:50px;accent-color:var(--teal)">
+          <span id="ann-bg-opacity-val" style="font-size:.72em;font-family:var(--mono);width:30px;text-align:right;flex-shrink:0">0.85</span>
+        </div>
+        <div class="ann-row">
+          <label>Border</label>
+          <input type="color" id="ann-border-color" value="#d4d9e8" class="ann-color-swatch">
+          <label class="ann-check-label" style="margin-left:8px"><input type="checkbox" id="ann-border-show"> Show border</label>
+        </div>
+      </div>
+
+      <!-- Reference line section (hline / vline) -->
+      <div class="ann-section" id="ann-section-line">
+        <div class="ann-section-title">Reference Line</div>
+        <div class="ann-row" style="flex-wrap:wrap;gap:8px">
+          <label>Style</label>
+          <select class="ctrl-select" id="ann-line-style" style="width:110px;font-size:.78em;flex:none">
+            <option value="solid">Solid</option>
+            <option value="dash" selected>Dash</option>
+            <option value="dot">Dot</option>
+            <option value="dashdot">Dash-dot</option>
+            <option value="longdash">Long dash</option>
+            <option value="longdashdot">Long dash-dot</option>
+          </select>
+          <label>Width</label>
+          <input class="ctrl-input" type="number" id="ann-line-width" value="1.5" min="0.5" max="10" step="0.5" style="width:54px;flex:none">
+        </div>
+        <div class="ann-row">
+          <label>Color</label>
+          <input type="color" id="ann-line-color" value="#6b7280" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="ann-line-color-hex" value="#6b7280" maxlength="9" placeholder="#rrggbb">
+          <label style="font-size:.72em;color:var(--muted);margin-left:6px;flex-shrink:0">Opacity</label>
+          <input type="range" id="ann-line-opacity" min="0" max="1" step="0.05" value="0.7" style="flex:1;min-width:40px;accent-color:var(--teal)">
+          <span id="ann-line-opacity-val" style="font-size:.72em;font-family:var(--mono);width:30px;text-align:right;flex-shrink:0">0.70</span>
+        </div>
+      </div>
+
+      <!-- Arrow section (text / peak) -->
+      <div class="ann-section" id="ann-section-arrow">
+        <div class="ann-section-title">Arrow</div>
+        <div class="ann-row">
+          <label class="ann-check-label"><input type="checkbox" id="ann-arrow-show" checked> Show arrow from text to point</label>
+        </div>
+        <div id="ann-arrow-opts">
+          <div class="ann-row" style="flex-wrap:wrap;gap:8px">
+            <label>Head</label>
+            <select class="ctrl-select" id="ann-arrow-head" style="width:110px;font-size:.78em;flex:none">
+              <option value="0">None</option>
+              <option value="1">Simple /</option>
+              <option value="2" selected>Filled &#9658;</option>
+              <option value="3">Open &#9655;</option>
+              <option value="4">Diamond &#9670;</option>
+              <option value="5">Open circle &#9675;</option>
+              <option value="6">Filled circle &#9679;</option>
+              <option value="7">Open arrow</option>
+            </select>
+            <label>Size</label>
+            <input class="ctrl-input" type="number" id="ann-arrow-size" value="1" min="0.3" max="4" step="0.1" style="width:50px;flex:none">
+            <label>Width</label>
+            <input class="ctrl-input" type="number" id="ann-arrow-width" value="1" min="0.5" max="6" step="0.5" style="width:50px;flex:none">
+          </div>
+          <div class="ann-row">
+            <label>Color</label>
+            <input type="color" id="ann-arrow-color" value="#374151" class="ann-color-swatch">
+            <input class="ctrl-input ann-hex-input" type="text" id="ann-arrow-color-hex" value="#374151" maxlength="9">
+          </div>
+          <div class="ann-row" style="flex-wrap:wrap;gap:8px">
+            <label title="Pixel offset of text from the arrow tail (X right, Y up)">Text offset X</label>
+            <input class="ctrl-input" type="number" id="ann-ax" value="0" step="5" style="width:55px;flex:none">
+            <label>Y</label>
+            <input class="ctrl-input" type="number" id="ann-ay" value="-40" step="5" style="width:55px;flex:none">
+            <span style="font-size:.65em;color:var(--dimmer)">px (neg = up)</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- modal-body -->
+    <div class="modal-footer">
+      <button class="btn" id="ann-modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="ann-modal-save">Save Annotation</button>
+    </div>
+  </div>
+</div>
+
 <div class="page-wrap">
 
 <!-- ══════════════════════════════════════════════════════════
@@ -766,7 +957,20 @@
       <div class="eq-note">Supported functions include <code>exp</code>, <code>log</code>, <code>sin</code>, <code>cos</code>, <code>sqrt</code>, <code>abs</code>, <code>atan</code>, and all Math.js builtins. Use <code>^</code> or <code>**</code> for powers.</div>
     </div>
 
-    <p>Each tab maintains a completely independent workspace — datasets, fits, axis labels, plot config, and solver settings. Tabs are auto-named from the first dataset loaded into them; double-click a tab name to rename it. Use Save Session to export one, some, or all tabs to a JSON file that can be reloaded later with Load Session. Enable Auto-restore to automatically reload the last saved session on page refresh; disable it to always start fresh.</p>
+    <p>The <strong>Predict / Solve</strong> panel (bottom of the right panel) has two modes. <em>X → Y (predict)</em>: type any X value and press Go to evaluate the active fit at that point, reporting Ŷ with 95% CI half-width computed by Jacobian gradient propagation through the covariance matrix. <em>Y → X (calibrate)</em>: type a target Y and press Go to find all X solutions numerically — a 500-point grid scan followed by bisection identifies every sign change in f(x) − Y over the curve range, and the CI on each solution is estimated via the delta method (δx ≈ CI_y / |df/dx|). This gives IC50, EC50, K<sub>m</sub>, half-life, and instrument calibration inverses directly from the fit with no post-processing.</p>
+
+    <p>The <strong>F-test</strong> panel compares two nested fits on the same dataset. Select fit A and fit B from the dropdowns (which auto-populate from the fit list); the simpler model is identified automatically as the null hypothesis. The panel reports the F-statistic, degrees of freedom (Δp, n − p₂), exact p-value from the F-distribution CDF, both SSE values, and a plain-English verdict. p &lt; 0.05 means the extra parameters are statistically justified at α = 0.05.</p>
+
+    <p>The <strong>Annotations</strong> panel (bottom of the right panel) adds overlay graphics directly to the Plotly figure. Click <em>+ Add</em> to open the annotation editor and choose one of three types:</p>
+    <ul style="margin:6px 0 6px 20px;line-height:1.9">
+      <li><strong>Horizontal line</strong> — a reference line at a fixed Y value (e.g., a detection limit, a half-maximum threshold). Extend across the full plot width.</li>
+      <li><strong>Vertical line</strong> — a reference line at a fixed X value (e.g., a time point, a dose level, a phase boundary).</li>
+      <li><strong>Text callout</strong> — free text anchored to any data-coordinate (X, Y) position, with an optional arrow pointing to the exact location.</li>
+    </ul>
+    <p>Each annotation exposes full style controls: font family (9 presets including DM Sans, DM Mono, Arial, Helvetica, Times New Roman, Georgia, Courier New, Verdana, Trebuchet MS, or a custom string), size, bold, italic, and color; label horizontal anchor (left / center / right) and vertical anchor (top / middle / bottom); label background color + opacity and optional border; reference-line dash style (solid, dash, dot, dash-dot, long-dash, long-dash-dot), width, color, and opacity; and for text/peak callouts, arrowhead type (8 styles from filled triangle to open circle), size, line width, color, and pixel offset of the text from the arrow tail. Annotations are saved with the session and restore on tab switch or session load.</p>
+    <p>Click <em>Peaks</em> to automatically annotate the peak centre of every visible Gaussian or Lorentzian fit. Each auto-annotation is colored to match the fit curve, labelled with the fit name, and targeted to the peak centre parameter (μ or x₀). Re-clicking Peaks will not add duplicates.</p>
+
+    <p>Each tab maintains a completely independent workspace — datasets, fits, annotations, axis labels, plot config, and solver settings. Tabs are auto-named from the first dataset loaded into them; double-click a tab name to rename it. Use Save Session to export one, some, or all tabs to a JSON file that can be reloaded later with Load Session. Enable Auto-restore to automatically reload the last saved session on page refresh; disable it to always start fresh.</p>
 
     <p>Export options:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">

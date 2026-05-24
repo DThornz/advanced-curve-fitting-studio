@@ -1043,12 +1043,15 @@ function generateExample(key, overrides) {
 const DS_COLORS = ['#0b7a6e','#2563eb','#dc2626','#7c3aed','#f59e0b','#15803d','#c2410c','#db2777','#0891b2'];
 let colorIdx = 0;
 let idCounter = 0;
+let _annIdCounter = 0;
 function nextId() { return ++idCounter; }
+function nextAnnId() { return ++_annIdCounter; }
 function nextColor() { return DS_COLORS[colorIdx++ % DS_COLORS.length]; }
 
 const state = {
   datasets: [],    // {id, name, x, y, sigY?, color, visible}
   fits: [],        // {id, dsId, model, params, result, color, visible, label}
+  annotations: [], // [{id, type, visible, x, y, label, font*, line*, arrow*}]
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
@@ -1261,6 +1264,69 @@ function computeAutoLegendPos() {
     }
   }
   return brCount <= trCount ? { x: 0.99, y: 0.02 } : { x: 0.99, y: 0.98 };
+}
+
+function createDefaultAnnotation(type) {
+  const isPeak = type === 'peak';
+  const isText = type === 'text' || isPeak;
+  return {
+    id: nextAnnId(), type: type || 'hline', visible: true,
+    x: 0, y: 0, label: '',
+    fontFamily: 'DM Sans, sans-serif', fontSize: 12,
+    fontBold: false, fontItalic: false, fontColor: '#374151',
+    labelAnchor: isText ? 'center' : 'left',
+    labelVAnchor: isText ? 'bottom' : 'bottom',
+    bgColor: '#ffffff', bgOpacity: 0.85,
+    borderShow: false, borderColor: '#d4d9e8',
+    lineColor: '#6b7280', lineWidth: 1.5, lineDash: 'dash', lineOpacity: 0.7,
+    showArrow: isText, arrowHead: 2, arrowSize: 1, arrowWidth: 1,
+    arrowColor: '#374151', ax: 0, ay: -40,
+    fitId: null,
+  };
+}
+
+function buildPlotlyAnnotations() {
+  const shapes = [], annotations = [];
+  for (const ann of state.annotations) {
+    if (!ann.visible) continue;
+    let txt = ann.label || '';
+    if (ann.fontBold && txt)   txt = `<b>${txt}</b>`;
+    if (ann.fontItalic && txt) txt = `<i>${txt}</i>`;
+    const fontObj = { family: ann.fontFamily || 'DM Sans, sans-serif', size: ann.fontSize || 12, color: ann.fontColor || '#374151' };
+    const bgRgba   = hexToRgba(ann.bgColor || '#ffffff', ann.bgOpacity ?? 0.85);
+    const borderCol = ann.borderShow ? (ann.borderColor || '#d4d9e8') : 'rgba(0,0,0,0)';
+    const borderPad = ann.borderShow ? 3 : 0;
+    const lineOpacity = ann.lineOpacity ?? 0.7;
+
+    if (ann.type === 'hline') {
+      shapes.push({ type: 'line', x0: 0, x1: 1, y0: ann.y, y1: ann.y, xref: 'paper', yref: 'y',
+        line: { color: hexToRgba(ann.lineColor || '#6b7280', lineOpacity), width: ann.lineWidth ?? 1.5, dash: ann.lineDash || 'dash' } });
+      if (txt) {
+        const xPos = ann.labelAnchor === 'right' ? 0.99 : ann.labelAnchor === 'center' ? 0.5 : 0.01;
+        annotations.push({ text: txt, x: xPos, y: ann.y, xref: 'paper', yref: 'y',
+          xanchor: ann.labelAnchor || 'left', yanchor: ann.labelVAnchor || 'bottom',
+          showarrow: false, font: fontObj, bgcolor: bgRgba, bordercolor: borderCol, borderpad: borderPad, borderwidth: ann.borderShow ? 1 : 0 });
+      }
+    } else if (ann.type === 'vline') {
+      shapes.push({ type: 'line', x0: ann.x, x1: ann.x, y0: 0, y1: 1, xref: 'x', yref: 'paper',
+        line: { color: hexToRgba(ann.lineColor || '#6b7280', lineOpacity), width: ann.lineWidth ?? 1.5, dash: ann.lineDash || 'dash' } });
+      if (txt) {
+        const yPos = ann.labelVAnchor === 'top' ? 0.97 : ann.labelVAnchor === 'middle' ? 0.5 : 0.03;
+        annotations.push({ text: txt, x: ann.x, y: yPos, xref: 'x', yref: 'paper',
+          xanchor: ann.labelAnchor || 'center', yanchor: ann.labelVAnchor || 'bottom',
+          showarrow: false, font: fontObj, bgcolor: bgRgba, bordercolor: borderCol, borderpad: borderPad, borderwidth: ann.borderShow ? 1 : 0 });
+      }
+    } else {  // text or peak
+      annotations.push({ text: txt || ' ', x: ann.x, y: ann.y, xref: 'x', yref: 'y',
+        xanchor: ann.labelAnchor || 'center', yanchor: ann.labelVAnchor || 'bottom',
+        showarrow: ann.showArrow !== false,
+        ax: ann.ax ?? 0, ay: ann.ay ?? -40,
+        arrowhead: ann.arrowHead ?? 2, arrowsize: ann.arrowSize ?? 1,
+        arrowwidth: ann.arrowWidth ?? 1, arrowcolor: ann.arrowColor || '#374151',
+        font: fontObj, bgcolor: bgRgba, bordercolor: borderCol, borderpad: borderPad, borderwidth: ann.borderShow ? 1 : 0 });
+    }
+  }
+  return { shapes, annotations };
 }
 
 function baseLayout(extra) {
@@ -1734,6 +1800,9 @@ function updatePlots() {
     yaxis: Object.assign(baseLayout().yaxis, { title: { text: ylabel, font: { size: 11, color: tc.tickCol } } }),
     margin: { l: 56, r: 20, t: title ? 36 : 18, b: 44 },
   });
+  const _annData = buildPlotlyAnnotations();
+  if (_annData.shapes.length) mainLayout.shapes = _annData.shapes;
+  if (_annData.annotations.length) mainLayout.annotations = _annData.annotations;
 
   const mainEl  = document.getElementById('main-plot');
   const residEl = document.getElementById('residual-plot');
@@ -2000,6 +2069,183 @@ function renderFTestResult(result) {
   el.style.display = '';
 }
 
+/* ═══════════════════════════════════════════════════════════
+   ANNOTATION MANAGEMENT
+═══════════════════════════════════════════════════════════ */
+function renderAnnList() {
+  const el = document.getElementById('ann-list');
+  const cnt = document.getElementById('ann-count');
+  if (!el) return;
+  if (cnt) cnt.textContent = state.annotations.length;
+  if (!state.annotations.length) {
+    el.innerHTML = '<div class="panel-empty-hint" style="font-size:.72em">No annotations. Use + Add or Peaks.</div>';
+    return;
+  }
+  const typeLabel = { hline: 'H—', vline: '|V', text: 'T', peak: '⌃' };
+  el.innerHTML = state.annotations.map(ann => {
+    const disp = ann.label || (ann.type === 'hline' ? `y = ${fmt(ann.y)}` : ann.type === 'vline' ? `x = ${fmt(ann.x)}` : `(${fmt(ann.x)}, ${fmt(ann.y)})`);
+    return `<div class="ann-item${ann.visible ? '' : ' ann-disabled'}" data-annid="${ann.id}">
+      <span class="ann-item-type" title="${ann.type}">${typeLabel[ann.type] || '?'}</span>
+      <span class="ann-item-label" title="${disp}">${disp}</span>
+      <button class="ann-item-btn" data-ann-toggle="${ann.id}" title="${ann.visible ? 'Hide' : 'Show'}">${ann.visible ? '●' : '○'}</button>
+      <button class="ann-item-btn" data-ann-edit="${ann.id}" title="Edit">✎</button>
+      <button class="ann-item-btn" data-ann-del="${ann.id}" title="Remove">×</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-ann-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ann = state.annotations.find(a => a.id === parseInt(btn.dataset.annToggle));
+      if (ann) { ann.visible = !ann.visible; renderAnnList(); updatePlots(); }
+    });
+  });
+  el.querySelectorAll('[data-ann-edit]').forEach(btn => {
+    btn.addEventListener('click', () => openAnnEditor(parseInt(btn.dataset.annEdit)));
+  });
+  el.querySelectorAll('[data-ann-del]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.annotations = state.annotations.filter(a => a.id !== parseInt(btn.dataset.annDel));
+      renderAnnList(); updatePlots();
+    });
+  });
+}
+
+let _editingAnnId = null;
+
+function openAnnEditor(id) {
+  const ann = id != null ? state.annotations.find(a => a.id === id) : createDefaultAnnotation('hline');
+  if (!ann) return;
+  _editingAnnId = id ?? null;
+  document.getElementById('ann-modal-title').textContent = id != null ? 'Edit Annotation' : 'Add Annotation';
+
+  const knownFamilies = ['DM Sans, sans-serif','DM Mono, monospace','Arial, sans-serif',
+    'Helvetica, sans-serif','Times New Roman, serif','Georgia, serif',
+    'Courier New, monospace','Verdana, sans-serif','Trebuchet MS, sans-serif'];
+
+  document.getElementById('ann-type').value            = ann.type;
+  document.getElementById('ann-x').value               = ann.x ?? 0;
+  document.getElementById('ann-y').value               = ann.y ?? 0;
+  document.getElementById('ann-label').value            = ann.label || '';
+  const famSel = document.getElementById('ann-font-family');
+  if (knownFamilies.includes(ann.fontFamily)) {
+    famSel.value = ann.fontFamily;
+    document.getElementById('ann-row-font-custom').style.display = 'none';
+  } else {
+    famSel.value = '__custom__';
+    document.getElementById('ann-row-font-custom').style.display = '';
+    document.getElementById('ann-font-custom').value = ann.fontFamily || '';
+  }
+  document.getElementById('ann-font-size').value        = ann.fontSize  ?? 12;
+  document.getElementById('ann-font-bold').checked      = !!ann.fontBold;
+  document.getElementById('ann-font-italic').checked    = !!ann.fontItalic;
+  document.getElementById('ann-font-color').value       = ann.fontColor  || '#374151';
+  document.getElementById('ann-font-color-hex').value   = ann.fontColor  || '#374151';
+  document.getElementById('ann-anchor').value           = ann.labelAnchor  || 'left';
+  document.getElementById('ann-vanchor').value          = ann.labelVAnchor || 'bottom';
+  document.getElementById('ann-bg-color').value         = ann.bgColor  || '#ffffff';
+  const bgOp = ann.bgOpacity ?? 0.85;
+  document.getElementById('ann-bg-opacity').value       = bgOp;
+  document.getElementById('ann-bg-opacity-val').textContent = bgOp.toFixed(2);
+  document.getElementById('ann-border-color').value     = ann.borderColor || '#d4d9e8';
+  document.getElementById('ann-border-show').checked    = !!ann.borderShow;
+  document.getElementById('ann-line-style').value       = ann.lineDash   || 'dash';
+  document.getElementById('ann-line-width').value       = ann.lineWidth  ?? 1.5;
+  document.getElementById('ann-line-color').value       = ann.lineColor  || '#6b7280';
+  document.getElementById('ann-line-color-hex').value   = ann.lineColor  || '#6b7280';
+  const lineOp = ann.lineOpacity ?? 0.7;
+  document.getElementById('ann-line-opacity').value     = lineOp;
+  document.getElementById('ann-line-opacity-val').textContent = lineOp.toFixed(2);
+  document.getElementById('ann-arrow-show').checked     = ann.showArrow !== false;
+  document.getElementById('ann-arrow-opts').style.display = ann.showArrow !== false ? '' : 'none';
+  document.getElementById('ann-arrow-head').value       = ann.arrowHead  ?? 2;
+  document.getElementById('ann-arrow-size').value       = ann.arrowSize  ?? 1;
+  document.getElementById('ann-arrow-width').value      = ann.arrowWidth ?? 1;
+  document.getElementById('ann-arrow-color').value      = ann.arrowColor || '#374151';
+  document.getElementById('ann-arrow-color-hex').value  = ann.arrowColor || '#374151';
+  document.getElementById('ann-ax').value               = ann.ax ?? 0;
+  document.getElementById('ann-ay').value               = ann.ay ?? -40;
+
+  syncAnnModalSections();
+  document.getElementById('ann-modal').style.display = 'flex';
+}
+
+function syncAnnModalSections() {
+  const type = document.getElementById('ann-type').value;
+  const isLine = type === 'hline' || type === 'vline';
+  document.getElementById('ann-row-x').style.display = type === 'hline' ? 'none' : '';
+  document.getElementById('ann-row-y').style.display = type === 'vline' ? 'none' : '';
+  document.getElementById('ann-section-line').style.display = isLine ? '' : 'none';
+  document.getElementById('ann-section-arrow').style.display = isLine ? 'none' : '';
+}
+
+function saveAnn() {
+  const type = document.getElementById('ann-type').value;
+  const famSel = document.getElementById('ann-font-family');
+  const fontFamily = famSel.value === '__custom__'
+    ? (document.getElementById('ann-font-custom').value.trim() || 'DM Sans, sans-serif')
+    : famSel.value;
+  const annData = {
+    type,
+    x: parseFloat(document.getElementById('ann-x').value) || 0,
+    y: parseFloat(document.getElementById('ann-y').value) || 0,
+    label: document.getElementById('ann-label').value || '',
+    fontFamily,
+    fontSize:    parseFloat(document.getElementById('ann-font-size').value)  || 12,
+    fontBold:    document.getElementById('ann-font-bold').checked,
+    fontItalic:  document.getElementById('ann-font-italic').checked,
+    fontColor:   document.getElementById('ann-font-color').value,
+    labelAnchor: document.getElementById('ann-anchor').value,
+    labelVAnchor:document.getElementById('ann-vanchor').value,
+    bgColor:     document.getElementById('ann-bg-color').value,
+    bgOpacity:   parseFloat(document.getElementById('ann-bg-opacity').value),
+    borderShow:  document.getElementById('ann-border-show').checked,
+    borderColor: document.getElementById('ann-border-color').value,
+    lineColor:   document.getElementById('ann-line-color').value,
+    lineWidth:   parseFloat(document.getElementById('ann-line-width').value) || 1.5,
+    lineDash:    document.getElementById('ann-line-style').value,
+    lineOpacity: parseFloat(document.getElementById('ann-line-opacity').value),
+    showArrow:   document.getElementById('ann-arrow-show').checked,
+    arrowHead:   parseInt(document.getElementById('ann-arrow-head').value),
+    arrowSize:   parseFloat(document.getElementById('ann-arrow-size').value) || 1,
+    arrowWidth:  parseFloat(document.getElementById('ann-arrow-width').value) || 1,
+    arrowColor:  document.getElementById('ann-arrow-color').value,
+    ax: parseFloat(document.getElementById('ann-ax').value) || 0,
+    ay: parseFloat(document.getElementById('ann-ay').value) || -40,
+  };
+  if (_editingAnnId != null) {
+    const idx = state.annotations.findIndex(a => a.id === _editingAnnId);
+    if (idx !== -1) state.annotations[idx] = Object.assign({}, state.annotations[idx], annData);
+  } else {
+    state.annotations.push(Object.assign(createDefaultAnnotation(type), annData, { id: nextAnnId(), visible: true }));
+  }
+  document.getElementById('ann-modal').style.display = 'none';
+  renderAnnList();
+  updatePlots();
+}
+
+function autoAnnotatePeaks() {
+  const peakParams = new Set(['μ', 'mu', 'x₀', 'x0', 'xc', 'center', 'centre', 'peak']);
+  const visible = state.fits.filter(f => f.result && f.visible);
+  if (!visible.length) { setConsole('No active fits to annotate.', 'warn'); return; }
+  let added = 0;
+  for (const fit of visible) {
+    const idx = fit.paramNames.findIndex(n => peakParams.has(n.toLowerCase ? n.toLowerCase() : n));
+    if (idx === -1) continue;
+    if (state.annotations.some(a => a.fitId === fit.id)) continue;
+    const peakX = fit.result.params[idx];
+    const peakY = fitEval(fit, peakX);
+    if (!isFinite(peakX) || !isFinite(peakY)) continue;
+    const ann = createDefaultAnnotation('peak');
+    ann.x = peakX; ann.y = peakY;
+    ann.label = fit.label || fit.model;
+    ann.fontColor = fit.color; ann.arrowColor = fit.color;
+    ann.fitId = fit.id;
+    state.annotations.push(ann);
+    added++;
+  }
+  if (added) { renderAnnList(); updatePlots(); setConsole(`Added ${added} peak annotation${added > 1 ? 's' : ''}.`, ''); }
+  else setConsole('No new peak centres found — Gaussian / Lorentzian fits needed, or already annotated.', 'warn');
+}
+
 function sweepRange(row) {
   const lo = row.min > -1e9 ? row.min : -Infinity;
   const hi = row.max <  1e9 ? row.max :  Infinity;
@@ -2130,6 +2376,9 @@ function updateSweepPreview() {
     yaxis: Object.assign(baseLayout().yaxis, { title: { text: ylabel, font: { size: 11, color: tc.tickCol } } }),
     margin: { l: 56, r: 20, t: title ? 36 : 18, b: 44 },
   });
+  const _annData = buildPlotlyAnnotations();
+  if (_annData.shapes.length) mainLayout.shapes = _annData.shapes;
+  if (_annData.annotations.length) mainLayout.annotations = _annData.annotations;
   if (plotsInitialised) Plotly.react(document.getElementById('main-plot'), mainTraces, mainLayout);
 }
 
@@ -3273,6 +3522,7 @@ function autoNameTab(name) {
 function clearWorkspace() {
   state.datasets = [];
   state.fits = [];
+  state.annotations = [];
   state.activeDatasetId = null;
   state.activeFitId = null;
   state.paramRows = [];
@@ -3281,6 +3531,7 @@ function clearWorkspace() {
   syncFitDatasetSelect();
   renderDatasetList();
   renderFitList();
+  renderAnnList();
   updatePlots();
   renderStatsTable();
   syncUndoRedoButtons();
@@ -3424,6 +3675,7 @@ function buildSessionPayload() {
       nStarts:  parseInt(document.getElementById('opt-n-starts').value)  || 1,
       weights:  document.getElementById('opt-weights').value || 'none',
     },
+    annotations: state.annotations,
     activeDatasetId: state.activeDatasetId,
     activeFitId: state.activeFitId,
   };
@@ -3463,6 +3715,7 @@ function restoreSessionPayload(payload) {
     payload.plotConfig || {}
   );
   state.plotConfig.logSuggestDismissed = { x: false, y: false };
+  state.annotations = (payload.annotations || []).map(a => ({ ...createDefaultAnnotation(a.type || 'hline'), ...a }));
   state.activeDatasetId = payload.activeDatasetId;
   state.activeFitId = payload.activeFitId;
 
@@ -3511,6 +3764,7 @@ function restoreSessionPayload(payload) {
   syncFitDatasetSelect();
   renderDatasetList();
   renderFitList();
+  renderAnnList();
   updatePlots();
 
   // Restore panel sizes after plots are initialised, then trigger Plotly resize
@@ -4163,6 +4417,36 @@ function initEvents() {
   document.getElementById('btn-edit-undo').addEventListener('click', undoEdit);
   document.getElementById('btn-edit-redo').addEventListener('click', redoEdit);
   document.getElementById('btn-edit-reset').addEventListener('click', resetSelectionToOriginal);
+
+  /* ── Annotations ─────────────────────────────────────────── */
+  document.getElementById('btn-ann-add').addEventListener('click', () => openAnnEditor(null));
+  document.getElementById('btn-ann-peaks').addEventListener('click', autoAnnotatePeaks);
+  document.getElementById('ann-modal-close').addEventListener('click', () => { document.getElementById('ann-modal').style.display = 'none'; });
+  document.getElementById('ann-modal-cancel').addEventListener('click', () => { document.getElementById('ann-modal').style.display = 'none'; });
+  document.getElementById('ann-modal-save').addEventListener('click', saveAnn);
+  document.getElementById('ann-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.style.display = 'none'; });
+  document.getElementById('ann-type').addEventListener('change', syncAnnModalSections);
+  document.getElementById('ann-font-family').addEventListener('change', function () {
+    document.getElementById('ann-row-font-custom').style.display = this.value === '__custom__' ? '' : 'none';
+  });
+  // Sync color picker ↔ hex text fields
+  [['ann-font-color','ann-font-color-hex'],['ann-line-color','ann-line-color-hex'],['ann-arrow-color','ann-arrow-color-hex']].forEach(([pickId, hexId]) => {
+    document.getElementById(pickId).addEventListener('input', function () { document.getElementById(hexId).value = this.value; });
+    document.getElementById(hexId).addEventListener('input', function () {
+      if (/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById(pickId).value = this.value;
+    });
+  });
+  // Opacity sliders display value
+  document.getElementById('ann-bg-opacity').addEventListener('input', function () {
+    document.getElementById('ann-bg-opacity-val').textContent = parseFloat(this.value).toFixed(2);
+  });
+  document.getElementById('ann-line-opacity').addEventListener('input', function () {
+    document.getElementById('ann-line-opacity-val').textContent = parseFloat(this.value).toFixed(2);
+  });
+  // Arrow show toggle
+  document.getElementById('ann-arrow-show').addEventListener('change', function () {
+    document.getElementById('ann-arrow-opts').style.display = this.checked ? '' : 'none';
+  });
 
   /* ── Predict / Solve ────────────────────────────────────── */
   const predModeEl = document.getElementById('pred-mode');
