@@ -794,6 +794,118 @@ const MODELS = {
       return [lam, k];
     }
   },
+  'Boltzmann': {
+    params: ['A', 'Vh', 'k'],
+    fn: (x, [A, Vh, k]) => A / (1 + Math.exp(-(x - Vh) / (k || 1e-10))),
+    analytic: false,
+    autoInit(x, y) {
+      const yf = y.filter(isFinite);
+      const A = Math.max(...yf);
+      const Vh = x[Math.floor(x.length / 2)];
+      return [isFinite(A) ? A : 1, Vh, 10];
+    }
+  },
+  'Double-Boltzmann': {
+    params: ['A1', 'Vh1', 'k1', 'A2', 'Vh2', 'k2'],
+    fn: (x, [A1, Vh1, k1, A2, Vh2, k2]) =>
+      A1 / (1 + Math.exp(-(x - Vh1) / (k1 || 1e-10))) +
+      A2 / (1 + Math.exp(-(x - Vh2) / (k2 || 1e-10))),
+    analytic: false,
+    autoInit(x, y) {
+      const yf = y.filter(isFinite);
+      const A = Math.max(...yf);
+      const xlo = x[Math.floor(x.length * 0.25)];
+      const xhi = x[Math.floor(x.length * 0.75)];
+      return [isFinite(A) ? A * 0.6 : 1, xlo, 8, isFinite(A) ? A * 0.4 : 0.5, xhi, 8];
+    }
+  },
+  'HH-Activation': {
+    params: ['g', 'Vm', 'km', 'p', 'Erev'],
+    fn: (x, [g, Vm, km, p, Erev]) => {
+      const m = 1 / (1 + Math.exp(-(x - Vm) / (km || 1e-10)));
+      return g * Math.pow(Math.max(m, 1e-12), p) * (x - Erev);
+    },
+    analytic: false,
+    autoInit(x, y) {
+      let Erev = x[Math.floor(x.length / 2)];
+      for (let i = 0; i < x.length - 1; i++) {
+        if (y[i] * y[i + 1] <= 0) {
+          Erev = x[i] + (x[i + 1] - x[i]) * Math.abs(y[i]) / (Math.abs(y[i]) + Math.abs(y[i + 1]));
+          break;
+        }
+      }
+      const maxAbs = Math.max(...y.map(Math.abs).filter(isFinite));
+      const Vm = x[Math.floor(x.length * 0.3)];
+      return [isFinite(maxAbs) ? maxAbs / 50 : 1, Vm, 10, 2, Erev];
+    }
+  },
+  'HH-Na-IV': {
+    params: ['g', 'Vm', 'km', 'Vh', 'kh', 'Erev'],
+    fn: (x, [g, Vm, km, Vh, kh, Erev]) => {
+      const m = 1 / (1 + Math.exp(-(x - Vm) / (km || 1e-10)));
+      const h = 1 / (1 + Math.exp((x - Vh) / (kh || 1e-10)));
+      return g * m * m * m * h * (x - Erev);
+    },
+    analytic: false,
+    autoInit(x, y) {
+      let Erev = x[Math.floor(x.length * 0.75)];
+      for (let i = 0; i < x.length - 1; i++) {
+        if (y[i] * y[i + 1] <= 0) {
+          Erev = x[i] + (x[i + 1] - x[i]) * Math.abs(y[i]) / (Math.abs(y[i]) + Math.abs(y[i + 1]));
+          break;
+        }
+      }
+      const xRng = x[x.length - 1] - x[0];
+      const Vm = x[0] + xRng * 0.35;
+      const Vh = x[0] + xRng * 0.6;
+      const maxAbs = Math.max(...y.map(Math.abs).filter(isFinite));
+      return [isFinite(maxAbs) ? maxAbs / 80 : 0.5, Vm, 7, Vh, 7, Erev];
+    }
+  },
+  'Kir': {
+    params: ['g', 'EK', 'Vh', 'k'],
+    fn: (x, [g, EK, Vh, k]) => g * (x - EK) / (1 + Math.exp((x - Vh) / (k || 1e-10))),
+    analytic: false,
+    autoInit(x, y) {
+      let EK = x[Math.floor(x.length / 2)];
+      for (let i = 0; i < x.length - 1; i++) {
+        if (y[i] * y[i + 1] <= 0) {
+          EK = x[i] + (x[i + 1] - x[i]) * Math.abs(y[i]) / (Math.abs(y[i]) + Math.abs(y[i + 1]));
+          break;
+        }
+      }
+      const maxAbs = Math.max(...y.map(Math.abs).filter(isFinite));
+      return [isFinite(maxAbs) ? maxAbs / 50 : 0.5, EK, EK - 20, 10];
+    }
+  },
+  'GHK': {
+    params: ['A', 'r', 'Vt'],
+    fn: (x, [A, r, Vt]) => {
+      const vt = Vt || 25.7;
+      if (Math.abs(x) < 1e-6) return A * vt * (1 - r);
+      return A * x * (1 - r * Math.exp(-x / vt)) / (1 - Math.exp(-x / vt));
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const maxAbs = Math.max(...y.map(Math.abs).filter(isFinite));
+      return [isFinite(maxAbs) ? maxAbs / 80 : 0.5, 0.1, 25.7];
+    }
+  },
+  'Tau-Gaussian': {
+    params: ['tau_max', 'Vpeak', 'k', 'tau_min'],
+    fn: (x, [tau_max, Vpeak, k, tau_min]) =>
+      tau_max * Math.exp(-0.5 * ((x - Vpeak) / (k || 1e-10)) ** 2) + tau_min,
+    analytic: false,
+    autoInit(x, y) {
+      const yf = y.filter(isFinite);
+      const tau_min = Math.max(Math.min(...yf), 0);
+      const tau_max = Math.max(...yf) - tau_min;
+      const imax = y.indexOf(Math.max(...yf));
+      const Vpeak = x[imax >= 0 ? imax : Math.floor(x.length / 2)];
+      const xRng = (x[x.length - 1] - x[0]) / 4;
+      return [isFinite(tau_max) ? tau_max : 1, Vpeak, xRng, tau_min];
+    }
+  },
   'Custom': {
     params: [],
     fn: null,
@@ -1022,6 +1134,75 @@ const EXAMPLES = {
       const xmax = p.xmax * (2 * Math.PI / p.omega);
       const t = linspace(0, xmax, p.N);
       return { name: 'Sinusoidal Signal', x: t, y: noisyGauss(t.map(x => p.A * Math.sin(p.omega * x + p.phi) + p.C), p.noise), xlabel: 'Time (s)', ylabel: 'Amplitude', suggestModel: 'Sine' };
+    }
+  },
+  'gv-boltzmann': {
+    title: 'G-V Curve (Boltzmann)',
+    params: [
+      { key: 'A',    label: 'G max (nS)',            value: 1.0,  min: 0.01, max: 20,   step: 0.01  },
+      { key: 'Vh',   label: 'Half-activation (mV)',  value: -30,  min: -120, max: 60,   step: 1     },
+      { key: 'k',    label: 'Slope factor (mV)',     value: 8,    min: 1,    max: 30,   step: 0.5   },
+      { key: 'noise',label: 'Noise (σ)',              value: 0.02, min: 0,    max: 0.5,  step: 0.005 },
+      { key: 'N',    label: 'Points (N)',             value: 33,   min: 5,    max: 100,  step: 1     },
+    ],
+    generate(p) {
+      const V = linspace(-100, 60, p.N);
+      const G = V.map(v => p.A / (1 + Math.exp(-(v - p.Vh) / p.k)));
+      return { name: 'G-V Curve (Boltzmann)', x: V, y: noisyGauss(G, p.noise), xlabel: 'Voltage (mV)', ylabel: 'Conductance (nS)', suggestModel: 'Boltzmann' };
+    }
+  },
+  'kir-iv': {
+    title: 'Kir Channel I-V',
+    params: [
+      { key: 'g',    label: 'Conductance (nS)',   value: 2.0,  min: 0.1,  max: 20,   step: 0.1  },
+      { key: 'EK',   label: 'Reversal E_K (mV)',  value: -80,  min: -120, max: 0,    step: 1    },
+      { key: 'Vh',   label: 'Half-block V (mV)',  value: -60,  min: -120, max: 0,    step: 1    },
+      { key: 'k',    label: 'Slope factor (mV)',  value: 12,   min: 1,    max: 30,   step: 0.5  },
+      { key: 'noise',label: 'Noise (σ, pA)',      value: 2,    min: 0,    max: 30,   step: 0.5  },
+      { key: 'N',    label: 'Points (N)',          value: 29,   min: 5,    max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const V = linspace(-120, 20, p.N);
+      const I = V.map(v => p.g * (v - p.EK) / (1 + Math.exp((v - p.Vh) / p.k)));
+      return { name: 'Kir Channel I-V', x: V, y: noisyGauss(I, p.noise), xlabel: 'Voltage (mV)', ylabel: 'Current (pA)', suggestModel: 'Kir' };
+    }
+  },
+  'hhna-iv': {
+    title: 'HH Na Channel I-V',
+    params: [
+      { key: 'g',    label: 'Max conductance (nS)', value: 50,   min: 1,    max: 500,  step: 1    },
+      { key: 'Vm',   label: 'Act. V½ (mV)',         value: -30,  min: -80,  max: 0,    step: 1    },
+      { key: 'km',   label: 'Act. slope (mV)',      value: 7,    min: 1,    max: 20,   step: 0.5  },
+      { key: 'Vh',   label: 'Inact. V½ (mV)',       value: -55,  min: -100, max: 0,    step: 1    },
+      { key: 'kh',   label: 'Inact. slope (mV)',    value: 7,    min: 1,    max: 20,   step: 0.5  },
+      { key: 'Erev', label: 'Na reversal (mV)',      value: 50,   min: 0,    max: 120,  step: 1    },
+      { key: 'noise',label: 'Noise (σ, pA)',         value: 5,    min: 0,    max: 100,  step: 1    },
+      { key: 'N',    label: 'Points (N)',            value: 35,   min: 5,    max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const V = linspace(-80, 60, p.N);
+      const I = V.map(v => {
+        const m = 1 / (1 + Math.exp(-(v - p.Vm) / p.km));
+        const h = 1 / (1 + Math.exp((v - p.Vh) / p.kh));
+        return p.g * m * m * m * h * (v - p.Erev);
+      });
+      return { name: 'HH Na Channel I-V', x: V, y: noisyGauss(I, p.noise), xlabel: 'Voltage (mV)', ylabel: 'Current (pA)', suggestModel: 'HH-Na-IV' };
+    }
+  },
+  'tau-voltage': {
+    title: 'Voltage-Dependent τ',
+    params: [
+      { key: 'tau_max', label: 'τ max (ms)',        value: 5,    min: 0.1,  max: 50,   step: 0.1  },
+      { key: 'Vpeak',   label: 'Peak voltage (mV)', value: -40,  min: -100, max: 60,   step: 1    },
+      { key: 'k',       label: 'Width σ (mV)',       value: 15,   min: 2,    max: 60,   step: 0.5  },
+      { key: 'tau_min', label: 'τ min (ms)',         value: 0.5,  min: 0,    max: 10,   step: 0.1  },
+      { key: 'noise',   label: 'Noise (σ, ms)',      value: 0.1,  min: 0,    max: 2,    step: 0.05 },
+      { key: 'N',       label: 'Points (N)',          value: 33,   min: 5,    max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const V = linspace(-100, 60, p.N);
+      const tau = V.map(v => p.tau_max * Math.exp(-0.5 * ((v - p.Vpeak) / p.k) ** 2) + p.tau_min);
+      return { name: 'Voltage-Dependent τ', x: V, y: noisyGauss(tau, p.noise), xlabel: 'Voltage (mV)', ylabel: 'τ (ms)', suggestModel: 'Tau-Gaussian' };
     }
   }
 };

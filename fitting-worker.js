@@ -449,7 +449,28 @@ const MODEL_FNS = {
   'Hill':             (x, [Vm, Kd, n])       => Vm * Math.pow(x, n) / (Math.pow(Math.abs(Kd), n) + Math.pow(x, n)),
   'Sine':             (x, [A, w, phi, C])    => A * Math.sin(w * x + phi) + C,
   'Damped-Sine':      (x, [A, g, w, phi, C]) => A * Math.exp(-g * x) * Math.sin(w * x + phi) + C,
-  'Weibull':          (x, [lam, k])          => 1 - Math.exp(-Math.pow(Math.max(x, 1e-12) / (lam || 1e-10), k)),
+  'Weibull':           (x, [lam, k])              => 1 - Math.exp(-Math.pow(Math.max(x, 1e-12) / (lam || 1e-10), k)),
+  'Boltzmann':         (x, [A, Vh, k])            => A / (1 + Math.exp(-(x - Vh) / (k || 1e-10))),
+  'Double-Boltzmann':  (x, [A1, Vh1, k1, A2, Vh2, k2]) =>
+                         A1 / (1 + Math.exp(-(x - Vh1) / (k1 || 1e-10))) +
+                         A2 / (1 + Math.exp(-(x - Vh2) / (k2 || 1e-10))),
+  'HH-Activation':     (x, [g, Vm, km, p, Erev]) => {
+                         const m = 1 / (1 + Math.exp(-(x - Vm) / (km || 1e-10)));
+                         return g * Math.pow(Math.max(m, 1e-12), p) * (x - Erev);
+                       },
+  'HH-Na-IV':          (x, [g, Vm, km, Vh, kh, Erev]) => {
+                         const m = 1 / (1 + Math.exp(-(x - Vm) / (km || 1e-10)));
+                         const h = 1 / (1 + Math.exp((x - Vh) / (kh || 1e-10)));
+                         return g * m * m * m * h * (x - Erev);
+                       },
+  'Kir':               (x, [g, EK, Vh, k])        => g * (x - EK) / (1 + Math.exp((x - Vh) / (k || 1e-10))),
+  'GHK':               (x, [A, r, Vt])            => {
+                         const vt = Vt || 25.7;
+                         if (Math.abs(x) < 1e-6) return A * vt * (1 - r);
+                         return A * x * (1 - r * Math.exp(-x / vt)) / (1 - Math.exp(-x / vt));
+                       },
+  'Tau-Gaussian':      (x, [tau_max, Vpeak, k, tau_min]) =>
+                         tau_max * Math.exp(-0.5 * ((x - Vpeak) / (k || 1e-10)) ** 2) + tau_min,
 };
 
 const MODEL_DEGREES = {

@@ -103,6 +103,10 @@
             <div class="app-dropdown-item" data-example="weibull-survival">Weibull CDF  <span class="app-dropdown-sub">reliability / survival</span></div>
             <div class="app-dropdown-item" data-example="polynomial-calibration">Polynomial Calibration  <span class="app-dropdown-sub">nonlinear instrument response</span></div>
             <div class="app-dropdown-item" data-example="linear-calibration">Linear Calibration  <span class="app-dropdown-sub">instrument response</span></div>
+            <div class="app-dropdown-item" data-example="gv-boltzmann">G-V Curve (Boltzmann)  <span class="app-dropdown-sub">voltage-gated channel activation</span></div>
+            <div class="app-dropdown-item" data-example="kir-iv">Kir Channel I-V  <span class="app-dropdown-sub">inward rectifier K⁺</span></div>
+            <div class="app-dropdown-item" data-example="hhna-iv">HH Na Channel I-V  <span class="app-dropdown-sub">Hodgkin-Huxley m³h model</span></div>
+            <div class="app-dropdown-item" data-example="tau-voltage">Voltage-Dependent τ  <span class="app-dropdown-sub">gating time constant bell curve</span></div>
           </div>
         </div>
         <button class="btn" id="btn-import" title="Import a CSV, TSV, or TXT file (comma/semicolon delimited)">Import Data</button>
@@ -253,6 +257,15 @@
             </optgroup>
             <optgroup label="Distribution">
               <option value="Weibull">Weibull CDF</option>
+            </optgroup>
+            <optgroup label="Electrophysiology">
+              <option value="Boltzmann">Boltzmann G-V  A/(1+e^−(V−Vh)/k)</option>
+              <option value="Double-Boltzmann">Double Boltzmann  dual-component G-V</option>
+              <option value="HH-Activation">HH Activation I-V  g·m^p·(V−Erev)</option>
+              <option value="HH-Na-IV">HH Na Channel I-V  g·m³·h·(V−Erev)</option>
+              <option value="Kir">Kir Inward Rectifier  I-V</option>
+              <option value="GHK">GHK Current  ion permeability</option>
+              <option value="Tau-Gaussian">τ-V Gaussian  gating time constant</option>
             </optgroup>
             <optgroup label="Custom">
               <option value="Custom">Custom Equation…</option>

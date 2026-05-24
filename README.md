@@ -11,7 +11,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 
 | Capability | Detail |
 |---|---|
-| **17 built-in models** | Linear, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Custom |
+| **24 built-in models** | Linear, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF · **Electrophysiology:** Boltzmann G-V, Double Boltzmann, HH Activation I-V, HH Na Channel I-V, Kir Inward Rectifier, GHK Current, τ-V Gaussian · Custom |
 | **Fitting algorithms** | Levenberg-Marquardt · Gauss-Newton · Nelder-Mead Simplex · BFGS (selectable per fit); analytic Vandermonde normal equations for polynomials |
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
@@ -25,7 +25,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Prediction lookup** | Type an X value → get Ŷ with 95% CI (Jacobian propagation); or type a Y value → solve for X numerically (grid scan + bisection) with CI via delta method — returns IC50, EC50, Km, half-life, etc. directly |
 | **F-test** | Nested model comparison: select two fits on the same dataset; computes F-statistic and exact p-value (regularized incomplete beta) and reports whether extra parameters are statistically justified at α = 0.05 |
 | **Plot annotations** | Add horizontal/vertical reference lines, text callouts, and auto-peak markers; per-annotation control over font family, size, bold/italic, color, label placement, background, border, line style/width/opacity, and arrowhead type/size/color |
-| **Try All Models** | One-click comparison table — fits all 17 non-Custom models and ranks by R²; apply any result to the active fit |
+| **Try All Models** | One-click comparison table — fits all 24 non-Custom models and ranks by R²; apply any result to the active fit |
 | **Copy Parameters** | One-click copy of fit name, dataset, all parameters (with ± std errors), and full statistics (R², Adj-R², RMSE, SSE, AIC, BIC, N, status) to clipboard |
 | **Parameter table** | Init / Min / Max / Fit columns per parameter; Init preserves the starting guess; Fit column shows converged values; switching fits loads that fit's parameters into Init |
 | **Extrapolation range** | Set custom X min / X max for fit curves, independent of data extent; Reset button to revert to data range |
@@ -43,7 +43,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Axis range & tick control** | Set X/Y min, max, and tick spacing (Δ) from the ⚙ Style modal; blank = Plotly autorange |
 | **Graph style editor** | Full control over global font (family, size, color), plot/paper background, grid lines (color, width, dash per axis), zero lines, axis spines, tick labels, and legend appearance; ⚙ Style button in the Plot Labels section |
 | **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker with optional σ column for files with more than two columns |
-| **12 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration — each with adjustable noise and optional outlier injection (count + scale) |
+| **16 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration · **Electrophysiology:** G-V Boltzmann, Kir I-V, HH Na I-V, voltage-dependent τ — each with adjustable noise and optional outlier injection (count + scale) |
 | **Dataset enable/disable** | Toggle datasets on/off; disabled datasets and all their fits are fully hidden from the plot, residual panels, stats table, and F-test — re-enabling instantly restores them |
 | **Multi-tab workspace** | Fully independent tabs — each starts from a clean default state with no settings inherited from other tabs; auto-naming from first dataset; double-click to rename |
 | **Resizable panels** | Left/right panels resize by width; residual and stats bar resize by height — all drag handles |
@@ -163,6 +163,22 @@ All four solvers (LM, Gauss-Newton, Nelder-Mead, BFGS) enforce bounds by project
 2. Type any expression in `x`, e.g. `a * exp(-b * x) + c * x^d`.
 3. Parameters are detected automatically (any symbol other than `x` and math functions).
 4. Set initial values, then press **Fit**.
+
+### Electrophysiology models
+
+Seven models are provided under the **Electrophysiology** group for fitting ion channel and membrane current data. Voltages in mV, currents in pA (or whatever units your data use).
+
+| Model | Equation | Typical use |
+|---|---|---|
+| **Boltzmann G-V** | `G = A / (1 + exp(-(V − Vh) / k))` | Voltage-gated channel activation/inactivation conductance-voltage curve; Vh = half-activation, k = slope factor |
+| **Double Boltzmann** | `G = A1/(1+exp(-(V−Vh1)/k1)) + A2/(1+exp(-(V−Vh2)/k2))` | Two-component G-V (e.g. two populations or two gates); six parameters |
+| **HH Activation I-V** | `I = g · m_inf(V)^p · (V − Erev)` where `m_inf = 1/(1+exp(-(V−Vm)/km))` | Hodgkin-Huxley-type I-V for a single activation gate of order p (typically 2–4); fits L-type Ca²⁺ or delayed-rectifier K⁺ |
+| **HH Na Channel I-V** | `I = g · m_inf³ · h_inf · (V − Erev)` | Classic HH sodium channel with cubic activation and linear inactivation; six parameters |
+| **Kir Inward Rectifier** | `I = g · (V − EK) / (1 + exp((V − Vh) / k))` | Inward rectifier K⁺ (Kir2.x); strong rectification captured by the Boltzmann denominator |
+| **GHK Current** | `I = A · V · (1 − r·exp(−V/Vt)) / (1 − exp(−V/Vt))` | Goldman-Hodgkin-Katz constant-field current; r = [ion]_out/[ion]_in; Vt ≈ 25.7 mV at room temperature; L'Hôpital limit applied at V = 0 |
+| **τ-V Gaussian** | `τ = τ_max · exp(−½((V−Vpeak)/k)²) + τ_min` | Bell-shaped voltage dependence of a gating time constant; common for HH m and h gates |
+
+Example datasets for G-V (Boltzmann), Kir I-V, HH Na I-V, and voltage-dependent τ are available from the **Examples** menu with adjustable noise.
 
 ### Residual analysis tabs
 
