@@ -2405,11 +2405,15 @@ function showModelCompareModal(rows, dsId, ds) {
 /* ═══════════════════════════════════════════════════════════
    EXPORT
 ═══════════════════════════════════════════════════════════ */
+function exportFilename() {
+  const title = document.getElementById('plot-title').value.trim();
+  return (title || 'curve-fit').replace(/[^\w\s\-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'curve-fit';
+}
 function exportPNG() {
-  Plotly.downloadImage('main-plot', { format: 'png', width: 1200, height: 800, filename: 'curve-fit' });
+  Plotly.downloadImage('main-plot', { format: 'png', width: 1920, height: 1200, filename: exportFilename() });
 }
 function exportSVG() {
-  Plotly.downloadImage('main-plot', { format: 'svg', width: 1200, height: 800, filename: 'curve-fit' });
+  Plotly.downloadImage('main-plot', { format: 'svg', width: 1920, height: 1200, filename: exportFilename() });
 }
 
 function exportCSV() {
@@ -2433,7 +2437,7 @@ function exportCSV() {
     });
   }
   const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fit-results.csv'; a.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${exportFilename()}-results.csv`; a.click();
 }
 
 function exportReport() {
@@ -2441,11 +2445,17 @@ function exportReport() {
   if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
   const ds = state.datasets.find(d => d.id === fit.dsId);
   const r = fit.result;
+  const rptXlabel = document.getElementById('plot-xlabel').value.trim();
+  const rptYlabel = document.getElementById('plot-ylabel').value.trim();
+  const rptTitle  = document.getElementById('plot-title').value.trim();
   let txt = `=======================================================\n`;
   txt += `  Advanced Curve Fitting Studio — Fit Report\n`;
   txt += `  Generated: ${new Date().toISOString()}\n`;
   txt += `=======================================================\n\n`;
+  if (rptTitle)  txt += `Title    : ${rptTitle}\n`;
   txt += `Dataset  : ${ds ? ds.name : '—'}  (${r.n} points)\n`;
+  if (rptXlabel) txt += `X label  : ${rptXlabel}\n`;
+  if (rptYlabel) txt += `Y label  : ${rptYlabel}\n`;
   txt += `Model    : ${fit.model}\n\n`;
   txt += `─── Parameters ───────────────────────────────────────\n`;
   txt += `${'Name'.padEnd(12)}  ${'Value'.padEnd(16)}  ${'Std. Error'.padEnd(16)}\n`;
@@ -2467,7 +2477,7 @@ function exportReport() {
   txt += `Iterations: ${r.iter}\n`;
   txt += `=======================================================\n`;
   const blob = new Blob([txt], { type: 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fit-report.txt'; a.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${exportFilename()}-report.txt`; a.click();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3681,7 +3691,7 @@ function initEvents() {
 
   /* ── Plot label live update ───────────────────────────── */
   ['plot-xlabel','plot-ylabel','plot-title'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () => { if (state.datasets.length) updatePlots(); });
+    document.getElementById(id).addEventListener('input', () => { if (state.datasets.length) updatePlots(); });
   });
 
   /* ── Export ───────────────────────────────────────────── */
