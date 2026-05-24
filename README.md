@@ -44,8 +44,8 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Graph style editor** | Full control over global font (family, size, color), plot/paper background, grid lines (color, width, dash per axis), zero lines, axis spines, tick labels, and legend appearance; ⚙ Style button in the Plot Labels section |
 | **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker with optional σ column for files with more than two columns |
 | **12 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration — each with adjustable noise and optional outlier injection (count + scale) |
-| **Dataset enable/disable** | Toggle datasets on/off for fitting; disabled datasets dim on the plot and are excluded from the fit dropdown |
-| **Multi-tab workspace** | Independent tabs with auto-naming from first dataset; double-click to rename |
+| **Dataset enable/disable** | Toggle datasets on/off; disabled datasets and all their fits are fully hidden from the plot, residual panels, stats table, and F-test — re-enabling instantly restores them |
+| **Multi-tab workspace** | Fully independent tabs — each starts from a clean default state with no settings inherited from other tabs; auto-naming from first dataset; double-click to rename |
 | **Resizable panels** | Left/right panels resize by width; residual and stats bar resize by height — all drag handles |
 | **Export** | Plot as PNG or SVG; fit results as CSV; full fit report as TXT |
 | **Session persistence** | Save selected tabs (current / all / pick) to JSON file; load on demand; optional auto-restore on reload |
@@ -170,12 +170,12 @@ Four tabs sit below the main plot:
 
 | Tab | What it shows |
 |---|---|
-| **Residuals** | Residuals $y_i - \hat{y}_i$ vs. $x_i$ for all visible fits; dots dim when the source dataset is disabled |
+| **Residuals** | Residuals $y_i - \hat{y}_i$ vs. $x_i$ for all visible fits on enabled datasets |
 | **Q-Q Plot** | Standardised sample residuals vs. theoretical normal quantiles (Blom approximation); points on the reference line indicate Gaussian residuals |
 | **Histogram** | Residual distribution with Sturges binning and a fitted normal density overlay |
 | **Convergence** | SSE vs. iteration; default Log Y / Linear X; in-chart buttons toggle each axis independently (Log X · Linear X · Log Y · Linear Y); for multi-start fits the pilot-selection phase and polish share a monotonic x-axis |
 
-The whole panel dims while a fit is running and when the active fit's source dataset is disabled.
+The whole panel dims while a fit is running. Fits on disabled datasets are excluded from all residual sub-panels.
 
 ### Prediction and calibration lookup
 
@@ -244,7 +244,7 @@ Log scale and axis range settings are saved with the session and restored on tab
 
 ### Dataset enable / disable
 
-Click the toggle button (visible on hover in the dataset list) to enable or disable a dataset. Disabled datasets are dimmed on the plot and excluded from the fit dropdown.
+Click the toggle button (visible on hover in the dataset list) to enable or disable a dataset. Disabling a dataset fully hides it and all its associated fits from the main plot, residual panels, stats table, F-test dropdowns, and peak-annotation detection. The fits are shown greyed out with "(dataset off)" in the fit list and remain deletable. Re-enabling the dataset instantly restores everything.
 
 ### Multi-tab workflow
 

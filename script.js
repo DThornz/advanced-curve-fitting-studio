@@ -1991,8 +1991,12 @@ function renderDatasetList() {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = parseInt(btn.dataset.delid);
+      // Collect deleted fit IDs before removing them so annotations can be cleaned up
+      const deletedFitIds = new Set(state.fits.filter(f => f.dsId === id).map(f => f.id));
       state.datasets = state.datasets.filter(d => d.id !== id);
       state.fits = state.fits.filter(f => f.dsId !== id);
+      // Remove annotations that referenced any of the deleted fits
+      if (deletedFitIds.size) state.annotations = state.annotations.filter(a => !deletedFitIds.has(a.fitId));
       if (state.selection.dsId === id) state.selection = { dsId: null, indices: new Set() };
       if (state.activeDatasetId === id) {
         state.activeDatasetId = state.datasets.length ? state.datasets[state.datasets.length - 1].id : null;
@@ -2003,6 +2007,7 @@ function renderDatasetList() {
       syncFitDatasetSelect();
       renderDatasetList();
       renderFitList();
+      renderAnnList();
       updatePlots();
       const active = state.fits.find(f => f.id === state.activeFitId);
       if (active) renderStats(active); else setConsole('Dataset removed.', '');
@@ -2050,10 +2055,17 @@ function renderFitList() {
       e.stopPropagation();
       const id = parseInt(btn.dataset.delid);
       state.fits = state.fits.filter(f => f.id !== id);
+      // Remove annotations that referenced this fit (e.g. auto-peak annotations)
+      state.annotations = state.annotations.filter(a => a.fitId !== id);
       if (state.activeFitId === id) {
-        state.activeFitId = state.fits.length ? state.fits[state.fits.length - 1].id : null;
+        const enabledFit = state.fits.find(f => {
+          const fds = state.datasets.find(d => d.id === f.dsId);
+          return fds && fds.enabled !== false;
+        });
+        state.activeFitId = enabledFit ? enabledFit.id : (state.fits.length ? state.fits[state.fits.length - 1].id : null);
       }
       renderFitList();
+      renderAnnList();
       updatePlots();
       const active = state.fits.find(f => f.id === state.activeFitId);
       if (active) renderStats(active); else setConsole('Fit removed.', '');
@@ -2068,7 +2080,7 @@ function syncFTestSelects() {
   if (!selA || !selB) return;
   const fits = state.fits.filter(f => {
     const ds = state.datasets.find(d => d.id === f.dsId);
-    return !ds || ds.enabled !== false;
+    return ds && ds.enabled !== false;
   });
   const empty = '<option value="">— no fits —</option>';
   const opts = fits.map(f => `<option value="${f.id}">${f.label || f.model}</option>`).join('');
@@ -2704,10 +2716,16 @@ function renderStatsTable() {
     return;
   }
 
-  const rows = state.fits.filter(fit => {
+  const visibleFits = state.fits.filter(fit => {
     const ds = state.datasets.find(d => d.id === fit.dsId);
-    return !ds || ds.enabled !== false;
-  }).map(fit => {
+    return ds && ds.enabled !== false;
+  });
+  if (!visibleFits.length) {
+    el.innerHTML = msgHtml || '<span class="console-hint">All datasets are disabled — enable a dataset to see fit statistics.</span>';
+    return;
+  }
+
+  const rows = visibleFits.map(fit => {
     const r = fit.result;
     const isActive = fit.id === state.activeFitId;
     const ds = state.datasets.find(d => d.id === fit.dsId);
@@ -3788,6 +3806,7 @@ function clearWorkspace() {
 
   // Predict / Solve
   const predMode = document.getElementById('pred-mode'); if (predMode) predMode.value = 'x2y';
+  const predLbl = document.getElementById('pred-label'); if (predLbl) predLbl.textContent = 'X value';
   const predInput = document.getElementById('pred-input'); if (predInput) predInput.value = '';
   const predResult = document.getElementById('pred-result'); if (predResult) predResult.style.display = 'none';
 
@@ -3812,7 +3831,15 @@ function saveCurrentTab() {
   if (tab) tab.payload = buildSessionPayload();
 }
 
+function closeAllModals() {
+  ['gs-modal', 'ann-modal', 'col-picker-modal', 'save-modal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
 function activateTab(id) {
+  closeAllModals();
   saveCurrentTab();
   activeTabId = id;
   const tab = tabList.find(t => t.id === id);
