@@ -3709,15 +3709,66 @@ function autoNameTab(name) {
 }
 
 function clearWorkspace() {
-  state.datasets = [];
-  state.fits = [];
-  state.annotations = [];
-  state.graphStyle = Object.assign({}, DEFAULT_GRAPH_STYLE);
+  // Cancel any in-flight fit worker so its result doesn't land on the new workspace
+  if (state.currentWorker) { state.currentWorker.terminate(); state.currentWorker = null; setFitting(false); }
+
+  // Reset all state to factory defaults
+  state.datasets      = [];
+  state.fits          = [];
+  state.annotations   = [];
+  state.graphStyle    = Object.assign({}, DEFAULT_GRAPH_STYLE);
   state.activeDatasetId = null;
-  state.activeFitId = null;
-  state.paramRows = [];
-  state.editHistory = { undo: [], redo: [] };
-  state.selection = { dsId: null, indices: new Set() };
+  state.activeFitId   = null;
+  state.paramRows     = [];
+  state.sweepParams   = null;
+  state.editHistory   = { undo: [], redo: [] };
+  state.editSelectRadius = 0;
+  state.selection     = { dsId: null, indices: new Set() };
+  state.fitConfig     = { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null };
+  state.plotConfig    = { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false } };
+
+  // Model selector
+  const modelSel = document.getElementById('model-select');
+  if (modelSel) { modelSel.value = 'Exponential'; syncModelCustomSection(); }
+  const eqInput = document.getElementById('custom-eq-input');
+  if (eqInput) eqInput.value = 'a * exp(-b * x) + c';
+
+  // Toolbar toggle buttons
+  ['btn-toggle-residuals', 'btn-ci-bands', 'btn-norm-resid', 'btn-show-outliers'].forEach(id => {
+    const b = document.getElementById(id); if (b) b.classList.remove('active');
+  });
+  const bResid = document.getElementById('btn-toggle-residuals'); if (bResid) bResid.classList.add('active');
+
+  // Edit mode
+  const bEdit = document.getElementById('btn-edit-mode'); if (bEdit) bEdit.classList.remove('active');
+  const editControls = document.getElementById('edit-mode-controls'); if (editControls) editControls.style.display = 'none';
+
+  // Residual panel visibility and active tab
+  const rBar = document.getElementById('residual-tab-bar'); if (rBar) rBar.classList.remove('hidden');
+  const rPlot = document.getElementById('residual-plot');   if (rPlot) rPlot.classList.remove('hidden');
+  document.querySelectorAll('.resid-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'residuals'));
+
+  // Plot labels
+  ['plot-xlabel', 'plot-ylabel', 'plot-title'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+  // Solver / curve settings (match HTML default attribute values)
+  const solverDefaults = { 'opt-algo': 'lm', 'opt-max-iter': '20', 'opt-tol': '1e-8', 'opt-n-starts': '8', 'opt-weights': 'none', 'opt-curve-pts': '300' };
+  Object.entries(solverDefaults).forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v; });
+
+  // Extrapolation range
+  ['opt-extrap-xmin', 'opt-extrap-xmax'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+  // Predict / Solve
+  const predMode = document.getElementById('pred-mode'); if (predMode) predMode.value = 'x2y';
+  const predInput = document.getElementById('pred-input'); if (predInput) predInput.value = '';
+  const predResult = document.getElementById('pred-result'); if (predResult) predResult.style.display = 'none';
+
+  // F-test
+  const ftResult = document.getElementById('ftest-result'); if (ftResult) ftResult.style.display = 'none';
+
+  // Log-scale suggest banner
+  const logBanner = document.getElementById('log-suggest-banner'); if (logBanner) logBanner.style.display = 'none';
+
   syncFitDatasetSelect();
   renderDatasetList();
   renderFitList();
