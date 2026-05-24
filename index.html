@@ -317,10 +317,11 @@
           </div>
           <div class="ctrl-row" style="margin-top:5px">
             <label class="ctrl-label" style="margin:0;min-width:72px" title="Weighting scheme applied to residuals during fitting">Weights</label>
-            <select class="ctrl-input" id="opt-weights" title="None = OLS; 1/y² = relative errors; 1/|y| = intermediate">
+            <select class="ctrl-input" id="opt-weights" title="None = OLS; 1/y² = relative errors; 1/|y| = intermediate; 1/σ² = supplied uncertainties">
               <option value="none">None (OLS)</option>
               <option value="1/y2">1/y² (relative)</option>
               <option value="1/y">1/|y|</option>
+              <option value="sigma" disabled>1/σ² (no σ data)</option>
             </select>
           </div>
         </div>
@@ -388,7 +389,7 @@
       <button class="modal-close" id="col-picker-close">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:.82em;color:var(--muted);margin-bottom:14px">Your file has multiple columns. Choose which to use as X and Y.</p>
+      <p style="font-size:.82em;color:var(--muted);margin-bottom:14px">Your file has multiple columns. Choose which to use as X, Y, and optionally σ (measurement uncertainty).</p>
       <div class="ctrl-row">
         <label class="ctrl-label" style="margin:0;min-width:56px">X column</label>
         <select class="ctrl-select" id="col-picker-x"></select>
@@ -396,6 +397,10 @@
       <div class="ctrl-row" style="margin-top:8px">
         <label class="ctrl-label" style="margin:0;min-width:56px">Y column</label>
         <select class="ctrl-select" id="col-picker-y"></select>
+      </div>
+      <div class="ctrl-row" style="margin-top:8px">
+        <label class="ctrl-label" style="margin:0;min-width:56px">σ column</label>
+        <select class="ctrl-select" id="col-picker-sig"></select>
       </div>
       <div id="col-picker-preview" style="margin-top:12px;font-size:.71em;font-family:var(--mono);color:var(--muted);line-height:1.5;white-space:pre;overflow-x:auto"></div>
     </div>

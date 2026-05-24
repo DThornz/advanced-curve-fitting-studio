@@ -998,13 +998,14 @@ function nextId() { return ++idCounter; }
 function nextColor() { return DS_COLORS[colorIdx++ % DS_COLORS.length]; }
 
 const state = {
-  datasets: [],    // {id, name, x, y, color, visible}
+  datasets: [],    // {id, name, x, y, sigY?, color, visible}
   fits: [],        // {id, dsId, model, params, result, color, visible, label}
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
   plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false } },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
+  sweepParams: null,  // non-null while sweep slider is active
   selection: { dsId: null, indices: new Set() },
   editHistory: { undo: [], redo: [] },
   editSelectRadius: 0,
@@ -1061,15 +1062,22 @@ function rowsToXY(rows) {
 
 let _pendingImport = null; // { name, rows, headers, startRow }
 
-function rowsToXYCols(rows, headers, startRow, xCol, yCol) {
-  const xs = [], ys = [];
+function rowsToXYCols(rows, headers, startRow, xCol, yCol, sigCol) {
+  const xs = [], ys = [], sigs = [];
   for (let i = startRow; i < rows.length; i++) {
     const row = rows[i];
     const xv = parseFloat((row[xCol] || '').replace(',', '.'));
     const yv = parseFloat((row[yCol] || '').replace(',', '.'));
-    if (isFinite(xv) && isFinite(yv)) { xs.push(xv); ys.push(yv); }
+    if (isFinite(xv) && isFinite(yv)) {
+      xs.push(xv); ys.push(yv);
+      if (sigCol != null) {
+        const sv = parseFloat((row[sigCol] || '').replace(',', '.'));
+        sigs.push(isFinite(sv) && sv > 0 ? sv : NaN);
+      }
+    }
   }
-  return { x: xs, y: ys };
+  const sigY = (sigCol != null && sigs.some(v => isFinite(v))) ? sigs : null;
+  return { x: xs, y: ys, sigY };
 }
 
 function needsColumnPicker(rows) {
@@ -1086,10 +1094,16 @@ function openColumnPicker(name, rows) {
     : rows[0].map((_, i) => `Col ${i + 1}`);
   const startRow = hasHeader ? 1 : 0;
   _pendingImport = { name, rows, headers, startRow };
-  const xSel = document.getElementById('col-picker-x');
-  const ySel = document.getElementById('col-picker-y');
-  xSel.innerHTML = headers.map((h, i) => `<option value="${i}">${h}</option>`).join('');
-  ySel.innerHTML = headers.map((h, i) => `<option value="${i}"${i === 1 ? ' selected' : ''}>${h}</option>`).join('');
+  const xSel  = document.getElementById('col-picker-x');
+  const ySel  = document.getElementById('col-picker-y');
+  const sigSel = document.getElementById('col-picker-sig');
+  xSel.innerHTML  = headers.map((h, i) => `<option value="${i}">${h}</option>`).join('');
+  ySel.innerHTML  = headers.map((h, i) => `<option value="${i}"${i === 1 ? ' selected' : ''}>${h}</option>`).join('');
+  // Auto-select σ column when header looks like an uncertainty column
+  const sigKeywords = /^(sig|sigma|err|error|uncertainty|sd|std|stdev|s\.?e\.?)$/i;
+  const autoSigIdx = headers.findIndex(h => sigKeywords.test(h.trim()));
+  sigSel.innerHTML = `<option value="">— None (X, Y only) —</option>` +
+    headers.map((h, i) => `<option value="${i}"${i === autoSigIdx && autoSigIdx >= 0 ? ' selected' : ''}>${h}</option>`).join('');
   updateColPickerPreview();
   document.getElementById('col-picker-modal').style.display = 'flex';
 }
@@ -1097,14 +1111,24 @@ function openColumnPicker(name, rows) {
 function updateColPickerPreview() {
   if (!_pendingImport) return;
   const { rows, headers, startRow } = _pendingImport;
-  const xCol = parseInt(document.getElementById('col-picker-x').value);
-  const yCol = parseInt(document.getElementById('col-picker-y').value);
+  const xCol  = parseInt(document.getElementById('col-picker-x').value);
+  const yCol  = parseInt(document.getElementById('col-picker-y').value);
+  const sigVal = document.getElementById('col-picker-sig').value;
+  const sigCol = sigVal !== '' ? parseInt(sigVal) : null;
   const previewRows = rows.slice(startRow, startRow + 5);
-  const lines = [`${headers[xCol]}  →  ${headers[yCol]}`];
+  const hdr = sigCol != null
+    ? `${headers[xCol]}  →  ${headers[yCol]}  ±  ${headers[sigCol]}`
+    : `${headers[xCol]}  →  ${headers[yCol]}`;
+  const lines = [hdr];
   for (const r of previewRows) {
     const xv = r[xCol] != null ? r[xCol] : '—';
     const yv = r[yCol] != null ? r[yCol] : '—';
-    lines.push(`  ${String(xv).padEnd(14)} ${yv}`);
+    if (sigCol != null) {
+      const sv = r[sigCol] != null ? r[sigCol] : '—';
+      lines.push(`  ${String(xv).padEnd(12)} ${String(yv).padEnd(12)} ${sv}`);
+    } else {
+      lines.push(`  ${String(xv).padEnd(14)} ${yv}`);
+    }
   }
   const total = rows.length - startRow;
   if (total > 5) lines.push(`  … (${total} rows total)`);
@@ -1114,14 +1138,17 @@ function updateColPickerPreview() {
 function importFromColumnPicker() {
   if (!_pendingImport) return;
   const { name, rows, headers, startRow } = _pendingImport;
-  const xCol = parseInt(document.getElementById('col-picker-x').value);
-  const yCol = parseInt(document.getElementById('col-picker-y').value);
-  const { x, y } = rowsToXYCols(rows, headers, startRow, xCol, yCol);
+  const xCol  = parseInt(document.getElementById('col-picker-x').value);
+  const yCol  = parseInt(document.getElementById('col-picker-y').value);
+  const sigVal = document.getElementById('col-picker-sig').value;
+  const sigCol = sigVal !== '' ? parseInt(sigVal) : null;
+  const { x, y, sigY } = rowsToXYCols(rows, headers, startRow, xCol, yCol, sigCol);
   if (!x.length) { setConsole('No valid X,Y pairs in selected columns.', 'error'); return; }
-  const dsName = `${name} (${headers[xCol]} vs ${headers[yCol]})`;
-  importDataset(dsName, x, y);
+  const sigNote = sigY ? ` ± ${headers[sigCol]}` : '';
+  const dsName = `${name} (${headers[xCol]} vs ${headers[yCol]}${sigNote})`;
+  importDataset(dsName, x, y, sigY);
   syncFitDatasetSelect(); renderDatasetList(); updatePlots();
-  setConsole(`Imported: ${dsName} (${x.length} points).`, '');
+  setConsole(`Imported: ${dsName} (${x.length} points${sigY ? ', σ loaded' : ''}).`, '');
   document.getElementById('col-picker-modal').style.display = 'none';
   _pendingImport = null;
 }
@@ -1132,9 +1159,10 @@ function applyParsedMeta({ xlabel, ylabel, title }) {
   if (title  != null) document.getElementById('plot-title').value  = title;
 }
 
-function importDataset(name, x, y, color) {
+function importDataset(name, x, y, sigY, color) {
   if (!x.length || !y.length) return null;
   const ds = { id: nextId(), name: name || `Dataset ${state.datasets.length + 1}`, x, y, originalY: y.slice(), color: color || nextColor(), visible: true, enabled: true, excludedIndices: new Set() };
+  if (sigY && sigY.length === x.length) ds.sigY = sigY;
   state.datasets.push(ds);
   if (!state.activeDatasetId) {
     state.activeDatasetId = ds.id;
@@ -1259,10 +1287,13 @@ function buildMainTraces() {
     const activeX = ds.x.filter((_, i) => !excluded.has(i));
     const activeY = ds.y.filter((_, i) => !excluded.has(i));
     const activeOrigIdx = ds.x.map((_, i) => i).filter(i => !excluded.has(i));
+    const activeSig = ds.sigY ? ds.sigY.filter((_, i) => !excluded.has(i)) : null;
     traces.push({
       x: activeX, y: activeY,
       mode: 'markers', type: 'scatter', name: ds.name,
       marker: { color: ds.color, size: 6, opacity: dimmed ? 0.25 : 0.85 },
+      ...(activeSig ? { error_y: { type: 'data', array: activeSig, visible: true,
+        color: ds.color, thickness: 1.5, width: 4, opacity: dimmed ? 0.15 : 0.55 } } : {}),
       opacity: dimmed ? 0.3 : 1, showlegend: true,
       customdata: activeOrigIdx,
     });
@@ -1347,7 +1378,33 @@ function buildMainTraces() {
       });
     }
   }
+  // Parameter sweep preview
+  if (state.sweepParams) {
+    const fn = _getSweepFn();
+    const sweepDs = state.datasets.find(d => d.id === state.activeDatasetId);
+    if (fn && sweepDs && sweepDs.x.length) {
+      const xMin = state.fitConfig.xExtraMin ?? Math.min(...sweepDs.x);
+      const xMax = state.fitConfig.xExtraMax ?? Math.max(...sweepDs.x);
+      const xs = linspace(xMin, xMax, 200);
+      const ys = xs.map(x => { try { const v = fn(x, state.sweepParams); return isFinite(v) ? v : null; } catch (_) { return null; } });
+      traces.push({ x: xs, y: ys, mode: 'lines', type: 'scatter', name: '_sweep', showlegend: false, hoverinfo: 'skip', line: { color: '#f59e0b', width: 2, dash: 'dot' } });
+    }
+  }
   return traces;
+}
+
+function _getSweepFn() {
+  const model = state.fitConfig.model;
+  const m = MODELS[model];
+  if (model === 'Custom' && customCompiled) {
+    const paramNames = state.fitConfig.customParams;
+    return (x, params) => {
+      const scope = { x };
+      paramNames.forEach((name, i) => { scope[name] = params[i]; });
+      try { const v = customCompiled.evaluate(scope); return isFinite(v) ? v : null; } catch (_) { return null; }
+    };
+  }
+  return m?.fn || null;
 }
 
 function buildResidualVsXPanel(xlabel, tc) {
@@ -1748,10 +1805,29 @@ function renderFitList() {
   });
 }
 
+function sweepRange(row) {
+  const lo = row.min > -1e9 ? row.min : -Infinity;
+  const hi = row.max <  1e9 ? row.max :  Infinity;
+  const init = row.init;
+  let rMin, rMax;
+  if (isFinite(lo) && isFinite(hi)) {
+    rMin = lo; rMax = hi;
+  } else {
+    const span = Math.abs(init) > 1e-10 ? 4 * Math.abs(init) : 20;
+    rMin = init - span / 2;
+    rMax = init + span / 2;
+    if (isFinite(lo)) rMin = Math.max(rMin, lo);
+    if (isFinite(hi)) rMax = Math.min(rMax, hi);
+  }
+  if (rMin >= rMax) { rMin = init - 10; rMax = init + 10; }
+  return { rMin, rMax };
+}
+
 function renderParamTable() {
   const model = state.fitConfig.model;
   const m = MODELS[model];
   const container = document.getElementById('param-table-container');
+  state.sweepParams = null;
 
   // For Custom, params come from state.fitConfig.customParams
   const paramNames = model === 'Custom' ? state.fitConfig.customParams : (m ? m.params : []);
@@ -1789,19 +1865,77 @@ function renderParamTable() {
       <input class="param-input param-bound" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" placeholder="-∞" title="Lower bound (leave blank for -∞)">
       <input class="param-input param-bound" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" placeholder="+∞" title="Upper bound (leave blank for +∞)">
       <span class="param-fit-val" title="">—</span>
+    </div>
+    <div class="param-sweep-row" data-si="${i}">
+      <span style="font-size:.62em;color:var(--dimmer);font-family:var(--mono)">sweep</span>
+      <input type="range" class="param-sweep-range" data-si="${i}" step="any">
+      <span class="param-sweep-val">—</span>
     </div>`).join('');
 
-  container.querySelectorAll('.param-row').forEach(row => {
+  container.querySelectorAll('.param-row:not(.param-row-header)').forEach(row => {
     const i = parseInt(row.dataset.pi);
     row.querySelectorAll('.param-input').forEach(inp => {
       inp.addEventListener('change', () => {
         const v = parseFloat(inp.value);
-        if (isFinite(v)) state.paramRows[i][inp.dataset.field] = v;
-        else if (inp.dataset.field === 'min') state.paramRows[i].min = -1e10;
+        if (isFinite(v)) {
+          state.paramRows[i][inp.dataset.field] = v;
+          // Recalibrate sweep range if init changed
+          if (inp.dataset.field === 'init') {
+            const sld = container.querySelector(`.param-sweep-range[data-si="${i}"]`);
+            if (sld) { const { rMin, rMax } = sweepRange(state.paramRows[i]); sld.min = rMin; sld.max = rMax; sld.step = (rMax - rMin) / 200; sld.value = v; }
+          }
+        } else if (inp.dataset.field === 'min') state.paramRows[i].min = -1e10;
         else if (inp.dataset.field === 'max') state.paramRows[i].max = 1e10;
       });
     });
   });
+
+  // Set up sweep sliders
+  container.querySelectorAll('.param-sweep-row').forEach(sweepRow => {
+    const si = parseInt(sweepRow.dataset.si);
+    const row = state.paramRows[si];
+    if (!row) return;
+    const slider  = sweepRow.querySelector('.param-sweep-range');
+    const valSpan = sweepRow.querySelector('.param-sweep-val');
+    const { rMin, rMax } = sweepRange(row);
+    slider.min = rMin; slider.max = rMax;
+    slider.step = (rMax - rMin) / 200;
+    slider.value = row.init;
+    valSpan.textContent = fmt(row.init);
+
+    slider.addEventListener('input', () => {
+      const v = parseFloat(slider.value);
+      valSpan.textContent = fmt(v);
+      const initInp = container.querySelector(`.param-row[data-pi="${si}"] [data-field="init"]`);
+      if (initInp) initInp.value = fmt(v);
+      state.paramRows[si].init = v;
+      state.sweepParams = state.paramRows.map((r, j) => {
+        const sld = container.querySelector(`.param-sweep-range[data-si="${j}"]`);
+        return sld ? parseFloat(sld.value) : r.init;
+      });
+      updateSweepPreview();
+    });
+
+    slider.addEventListener('change', () => {
+      state.sweepParams = null;
+      updatePlots();
+    });
+  });
+}
+
+function updateSweepPreview() {
+  const tc      = themeColors();
+  const xlabel  = document.getElementById('plot-xlabel').value || 'x';
+  const ylabel  = document.getElementById('plot-ylabel').value || 'y';
+  const title   = document.getElementById('plot-title').value  || '';
+  const mainTraces = buildMainTraces();
+  const mainLayout = baseLayout({
+    title: title ? { text: title, font: { size: 13, color: tc.textCol }, x: 0.5 } : undefined,
+    xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 11, color: tc.tickCol } } }),
+    yaxis: Object.assign(baseLayout().yaxis, { title: { text: ylabel, font: { size: 11, color: tc.tickCol } } }),
+    margin: { l: 56, r: 20, t: title ? 36 : 18, b: 44 },
+  });
+  if (plotsInitialised) Plotly.react(document.getElementById('main-plot'), mainTraces, mainLayout);
 }
 
 function renderParamResults(fit) {
@@ -1822,6 +1956,16 @@ function renderParamResults(fit) {
     if (fitSpan) {
       fitSpan.textContent = fmt(val);
       fitSpan.title = err && isFinite(err) ? `${fit.paramNames[i]} = ${fmt(val)} ± ${fmt(err)}` : `${fit.paramNames[i]} = ${fmt(val)}`;
+    }
+    // Recalibrate sweep slider to new value
+    const slider = container.querySelector(`.param-sweep-range[data-si="${i}"]`);
+    const valSpan = container.querySelector(`.param-sweep-row[data-si="${i}"] .param-sweep-val`);
+    if (slider && i < state.paramRows.length) {
+      const { rMin, rMax } = sweepRange(state.paramRows[i]);
+      slider.min = rMin; slider.max = rMax;
+      slider.step = (rMax - rMin) / 200;
+      slider.value = val;
+      if (valSpan) valSpan.textContent = fmt(val);
     }
   });
   renderCorrMatrix(fit);
@@ -1921,6 +2065,7 @@ function renderStatsTable() {
       <td>${r ? fmt(r.adjRSq, 5) : '—'}</td>
       <td>${r ? fmt(r.rmse) : '—'}</td>
       <td>${r ? fmt(r.sse) : '—'}</td>
+      <td>${r?.chiSqRed != null ? fmt(r.chiSqRed) : '—'}</td>
       <td>${r ? fmt(r.aic) : '—'}</td>
       <td>${r ? fmt(r.bic) : '—'}</td>
       <td>${r ? r.n : '—'}</td>
@@ -1931,7 +2076,7 @@ function renderStatsTable() {
   el.innerHTML = msgHtml + `<div class="stats-table-wrap"><table class="stats-table">
     <thead><tr>
       <th></th><th>Fit</th><th>Dataset</th>
-      <th>R²</th><th>Adj-R²</th><th>RMSE</th><th>SSE</th><th>AIC</th><th>BIC</th><th>N</th><th>Status</th>
+      <th>R²</th><th>Adj-R²</th><th>RMSE</th><th>SSE</th><th title="Reduced chi-square (σ-weighted fits only)">χ²ᵣ</th><th>AIC</th><th>BIC</th><th>N</th><th>Status</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
@@ -1959,6 +2104,23 @@ function syncFitDatasetSelect() {
   const activeEnabled = fittable.find(d => d.id === state.activeDatasetId);
   if (activeEnabled) sel.value = state.activeDatasetId;
   else if (cur) sel.value = cur;
+  syncWeightOptions();
+}
+
+function syncWeightOptions() {
+  const dsId  = parseInt(document.getElementById('fit-dataset-select')?.value);
+  const ds    = state.datasets.find(d => d.id === dsId);
+  const wSel  = document.getElementById('opt-weights');
+  const sigOpt = wSel?.querySelector('option[value="sigma"]');
+  if (!sigOpt) return;
+  if (ds?.sigY) {
+    sigOpt.disabled = false;
+    sigOpt.textContent = '1/σ² (data σ)';
+  } else {
+    sigOpt.disabled = true;
+    sigOpt.textContent = '1/σ² (no σ data)';
+    if (wSel.value === 'sigma') wSel.value = 'none';
+  }
 }
 
 function syncModelCustomSection() {
@@ -2146,7 +2308,11 @@ function runFit() {
     weights = yArr.map(y => 1 / Math.max(y * y, 1e-20));
   } else if (weightMode === '1/y') {
     weights = yArr.map(y => 1 / Math.max(Math.abs(y), 1e-10));
+  } else if (weightMode === 'sigma' && ds.sigY) {
+    const sigArr = ds.sigY.filter((_, i) => !excluded.has(i));
+    weights = sigArr.map(s => (isFinite(s) && s > 0) ? 1 / (s * s) : 1e-40);
   }
+  state.sweepParams = null;
 
   const m = MODELS[model];
 
@@ -2286,9 +2452,20 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
   const algoNames = { lm: 'LM', gn: 'GN', nm: 'NM', bfgs: 'BFGS' };
   const rSqStr    = isFinite(result.rSq) ? ` (R²=${result.rSq.toFixed(4)})` : '';
   const msTag     = (nStarts > 1 && !m?.analytic) ? `×${nStarts}` : '';
-  const wTag      = weightMode !== 'none' ? ` W:${weightMode}` : '';
+  const wTag      = weightMode === 'sigma' ? ' W:σ' : weightMode !== 'none' ? ` W:${weightMode}` : '';
   const excTag    = excluded.size > 0 ? ` -${excluded.size}pt` : '';
   const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}${msTag}${wTag}${excTag}]${rSqStr}`;
+
+  // Compute reduced chi-square when σ weights were used
+  if (weightMode === 'sigma' && ds.sigY && result.residuals) {
+    const sigArr = ds.sigY.filter((_, i) => !excluded.has(i));
+    const dof = Math.max(result.n - result.params.length, 1);
+    const chiSq = result.residuals.reduce((s, r, i) => {
+      const sv = sigArr[i];
+      return s + (isFinite(sv) && sv > 0 ? (r / sv) ** 2 : 0);
+    }, 0);
+    result.chiSqRed = chiSq / dof;
+  }
 
   const fitRecord = {
     id: nextId(), dsId, model, algo: algoKey,
@@ -2471,7 +2648,9 @@ function exportReport() {
   txt += `RMSE      : ${r.rmse.toExponential(4)}\n`;
   txt += `SSE       : ${r.sse.toExponential(4)}\n`;
   txt += `AIC       : ${r.aic.toFixed(4)}\n`;
-  txt += `BIC       : ${r.bic.toFixed(4)}\n\n`;
+  txt += `BIC       : ${r.bic.toFixed(4)}\n`;
+  if (r.chiSqRed != null) txt += `χ²ᵣ       : ${r.chiSqRed.toExponential(4)}\n`;
+  txt += `\n`;
   txt += `─── Algorithm ────────────────────────────────────────\n`;
   txt += `Status    : ${r.converged ? 'Converged' : 'Max iterations reached'}\n`;
   txt += `Iterations: ${r.iter}\n`;
@@ -3560,6 +3739,7 @@ function initEvents() {
     lines.push(`  SSE      = ${isFinite(r.sse)     ? fmt(r.sse)           : 'N/A'}`);
     lines.push(`  AIC      = ${isFinite(r.aic)     ? r.aic.toFixed(3)     : 'N/A'}`);
     lines.push(`  BIC      = ${isFinite(r.bic)     ? r.bic.toFixed(3)     : 'N/A'}`);
+    if (r.chiSqRed != null) lines.push(`  χ²ᵣ      = ${fmt(r.chiSqRed)}`);
     lines.push(`  N        = ${r.n}`);
     lines.push(`  Status   = ${r.converged ? 'Converged' : 'Not converged'} (${r.iter} iter)`);
     navigator.clipboard.writeText(lines.join('\n'))
@@ -3650,6 +3830,7 @@ function initEvents() {
   });
   document.getElementById('col-picker-x').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-y').addEventListener('change', updateColPickerPreview);
+  document.getElementById('col-picker-sig').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-import').addEventListener('click', importFromColumnPicker);
   document.getElementById('btn-log-x').addEventListener('click', function () {
     state.plotConfig.logX = !state.plotConfig.logX;

@@ -458,6 +458,21 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 }
 .param-error{color:var(--dim)!important;font-size:.65em}
 
+/* ── Parameter sweep slider ──────────────────────────────── */
+.param-sweep-row{
+  display:grid;grid-template-columns:44px 1fr auto;
+  gap:3px;margin-bottom:7px;margin-top:-2px;align-items:center
+}
+.param-sweep-range{
+  width:100%;accent-color:var(--teal);
+  height:4px;cursor:pointer;padding:0
+}
+.param-sweep-val{
+  font-family:var(--mono);font-size:.70em;
+  color:var(--dimmer);min-width:66px;text-align:right;
+  white-space:nowrap
+}
+
 /* ── Stats bar ───────────────────────────────────────────── */
 .app-statsbar{
   border-top:1px solid var(--border);
@@ -677,6 +692,7 @@ body.dark-mode .param-result{color:#2dd4bf!important}
 body.dark-mode .panel-fit-count{background:#0b7a6e!important}
 body.dark-mode .param-col-hdr{color:#3d5470!important}
 body.dark-mode .param-fit-val{color:#2dd4bf!important}
+body.dark-mode .param-sweep-val{color:#3d5470!important}
 
 /* ── Correlation matrix ──────────────────────────────────── */
 #corr-matrix-container{margin-top:8px}
