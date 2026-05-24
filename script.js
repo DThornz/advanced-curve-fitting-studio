@@ -1781,12 +1781,14 @@ function renderParamTable() {
       <span class="param-col-hdr">Init</span>
       <span class="param-col-hdr">Min</span>
       <span class="param-col-hdr">Max</span>
+      <span class="param-col-hdr">Fit</span>
     </div>` + state.paramRows.map((row, i) => `
     <div class="param-row" data-pi="${i}">
       <span class="param-name">${row.name}</span>
       <input class="param-input" data-field="init" type="number" value="${fmt(row.init)}" step="any" title="Initial value">
       <input class="param-input param-bound" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" placeholder="-∞" title="Lower bound (leave blank for -∞)">
       <input class="param-input param-bound" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" placeholder="+∞" title="Upper bound (leave blank for +∞)">
+      <span class="param-fit-val" title="">—</span>
     </div>`).join('');
 
   container.querySelectorAll('.param-row').forEach(row => {
@@ -1805,15 +1807,15 @@ function renderParamTable() {
 function renderParamResults(fit) {
   if (!fit || !fit.result) return;
   const container = document.getElementById('param-table-container');
-  const rows = container.querySelectorAll('.param-row');
+  const rows = container.querySelectorAll('.param-row:not(.param-row-header)');
   const { params, paramErrors } = fit.result;
   rows.forEach((row, i) => {
-    const initInp = row.querySelector('[data-field="init"]');
-    if (initInp && params[i] != null) {
-      initInp.value = fmt(params[i]);
-      initInp.style.color = 'var(--teal)';
-      state.paramRows[i].init = params[i];
-    }
+    const fitSpan = row.querySelector('.param-fit-val');
+    if (!fitSpan || params[i] == null) return;
+    const val = params[i];
+    const err = paramErrors && paramErrors[i];
+    fitSpan.textContent = fmt(val);
+    fitSpan.title = err && isFinite(err) ? `${fit.paramNames[i]} = ${fmt(val)} ± ${fmt(err)}` : `${fit.paramNames[i]} = ${fmt(val)}`;
   });
   renderCorrMatrix(fit);
 }
@@ -3517,14 +3519,34 @@ function initEvents() {
   document.getElementById('btn-copy-params').addEventListener('click', () => {
     const fit = state.fits.find(f => f.id === state.activeFitId);
     if (!fit || !fit.result || !fit.paramNames.length) { setConsole('No active fit parameters to copy.', 'error'); return; }
-    const lines = [`Model: ${fit.label}`];
+    const ds = state.datasets.find(d => d.id === fit.dsId);
+    const r = fit.result;
+    const lines = [
+      `Fit:     ${fit.label || fit.model}`,
+      `Model:   ${fit.model}`,
+      `Dataset: ${ds ? ds.name : 'unknown'}`,
+      '',
+      'Parameters',
+    ];
     fit.paramNames.forEach((name, i) => {
-      const val = fit.result.params[i];
-      const err = fit.result.paramErrors && fit.result.paramErrors[i];
-      lines.push(err && isFinite(err) ? `${name} = ${fmt(val)} ± ${fmt(err)}` : `${name} = ${fmt(val)}`);
+      const val = r.params[i];
+      const err = r.paramErrors && r.paramErrors[i];
+      lines.push(err && isFinite(err)
+        ? `  ${name.padEnd(8)} = ${fmt(val)} ± ${fmt(err)}`
+        : `  ${name.padEnd(8)} = ${fmt(val)}`);
     });
+    lines.push('');
+    lines.push('Statistics');
+    lines.push(`  R²       = ${isFinite(r.rSq)     ? r.rSq.toFixed(6)     : 'N/A'}`);
+    lines.push(`  Adj-R²   = ${isFinite(r.adjRSq)  ? r.adjRSq.toFixed(6)  : 'N/A'}`);
+    lines.push(`  RMSE     = ${isFinite(r.rmse)    ? fmt(r.rmse)          : 'N/A'}`);
+    lines.push(`  SSE      = ${isFinite(r.sse)     ? fmt(r.sse)           : 'N/A'}`);
+    lines.push(`  AIC      = ${isFinite(r.aic)     ? r.aic.toFixed(3)     : 'N/A'}`);
+    lines.push(`  BIC      = ${isFinite(r.bic)     ? r.bic.toFixed(3)     : 'N/A'}`);
+    lines.push(`  N        = ${r.n}`);
+    lines.push(`  Status   = ${r.converged ? 'Converged' : 'Not converged'} (${r.iter} iter)`);
     navigator.clipboard.writeText(lines.join('\n'))
-      .then(() => setConsole('Parameters copied to clipboard.', ''))
+      .then(() => setConsole('Parameters and stats copied to clipboard.', ''))
       .catch(() => setConsole('Clipboard access denied.', 'error'));
   });
 

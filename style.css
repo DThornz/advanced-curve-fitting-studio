@@ -422,14 +422,8 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 .ctrl-row .ctrl-input{flex:1}
 
 /* Parameter table */
-.param-table-header{
-  display:grid;grid-template-columns:44px 1fr 1fr 1fr;
-  gap:3px;margin-bottom:4px;
-  font-family:var(--mono);font-size:.6em;
-  text-transform:uppercase;letter-spacing:.06em;color:var(--dimmer)
-}
 .param-row{
-  display:grid;grid-template-columns:44px 1fr 1fr 1fr;
+  display:grid;grid-template-columns:44px 1fr 1fr 1fr 1fr;
   gap:3px;margin-bottom:4px;align-items:center
 }
 .param-row-header{margin-bottom:2px}
@@ -438,6 +432,12 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
   text-transform:uppercase;letter-spacing:.05em
 }
 .param-bound::placeholder{color:var(--dimmer);opacity:.7}
+.param-fit-val{
+  font-family:var(--mono);font-size:.74em;
+  color:var(--teal);text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:2px 3px
+}
 .param-name{
   font-family:var(--mono);font-size:.78em;
   color:var(--teal);font-weight:600;
@@ -675,7 +675,8 @@ body.dark-mode .console-stat-label{color:#3d5470!important}
 body.dark-mode .param-name{color:#2dd4bf!important}
 body.dark-mode .param-result{color:#2dd4bf!important}
 body.dark-mode .panel-fit-count{background:#0b7a6e!important}
-body.dark-mode .param-table-header{color:#3d5470!important}
+body.dark-mode .param-col-hdr{color:#3d5470!important}
+body.dark-mode .param-fit-val{color:#2dd4bf!important}
 
 /* ── Correlation matrix ──────────────────────────────────── */
 #corr-matrix-container{margin-top:8px}
