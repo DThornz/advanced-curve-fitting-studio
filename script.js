@@ -52,7 +52,7 @@ function getLiveResiduals() {
   const fit = state.fits.find(f => f.id === state.activeFitId);
   if (!fit || !fit.fn) return null;
   const ds = state.datasets.find(d => d.id === fit.dsId);
-  if (!ds) return null;
+  if (!ds || ds.enabled === false) return null;
   const excl = ds.excludedIndices || new Set();
   const residuals = [];
   ds.x.forEach((x, i) => {
@@ -1511,8 +1511,7 @@ function runFTest(fitA, fitB) {
 function buildMainTraces() {
   const traces = [];
   for (const ds of state.datasets) {
-    if (!ds.visible) continue;
-    const dimmed = ds.enabled === false;
+    if (!ds.visible || ds.enabled === false) continue;
     const excluded = ds.excludedIndices || new Set();
     // Active (non-excluded) points
     const activeX = ds.x.filter((_, i) => !excluded.has(i));
@@ -1526,10 +1525,10 @@ function buildMainTraces() {
     traces.push({
       x: activeX, y: activeY,
       mode: 'markers', type: 'scatter', name: ds.name,
-      marker: { color: ds.color, size: 6, opacity: dimmed ? 0.25 : 0.85 },
+      marker: { color: ds.color, size: 6, opacity: 0.85 },
       ...(activeSig ? { error_y: { type: 'data', array: activeSig, visible: true,
-        color: ds.color, thickness: 1.5, width: 4, opacity: dimmed ? 0.15 : 0.55 } } : {}),
-      opacity: dimmed ? 0.3 : 1, showlegend: true,
+        color: ds.color, thickness: 1.5, width: 4, opacity: 0.55 } } : {}),
+      opacity: 1, showlegend: true,
       customdata: activeOrigIdx,
     });
     // Excluded (masked) points — shown as dim crosses
@@ -1547,7 +1546,7 @@ function buildMainTraces() {
   for (const fit of state.fits) {
     if (!fit.visible || !fit.result) continue;
     const ds = state.datasets.find(d => d.id === fit.dsId);
-    if (!ds) continue;
+    if (!ds || ds.enabled === false) continue;
     const xMin = state.fitConfig.xExtraMin ?? Math.min(...ds.x);
     const xMax = state.fitConfig.xExtraMax ?? Math.max(...ds.x);
     const xs = linspace(xMin, xMax, fit.curvePoints || 300);
@@ -1648,8 +1647,7 @@ function buildResidualVsXPanel(xlabel, tc) {
   for (const fit of state.fits) {
     if (!fit.visible || !fit.result) continue;
     const ds = state.datasets.find(d => d.id === fit.dsId);
-    if (!ds) continue;
-    const dimmed = ds.enabled === false;
+    if (!ds || ds.enabled === false) continue;
     const excl = ds.excludedIndices || new Set();
     const xRes = ds.x.filter((_, i) => !excl.has(i));
     const scale = normalize && fit.result.rmse > 0 ? 1 / fit.result.rmse : 1;
@@ -1658,15 +1656,15 @@ function buildResidualVsXPanel(xlabel, tc) {
       x: xRes, y: residuals,
       mode: 'markers', type: 'scatter',
       name: fit.label || fit.model,
-      marker: { color: fit.color || ds.color, size: 5, opacity: dimmed ? 0.2 : 0.8 },
-      opacity: dimmed ? 0.3 : 1,
+      marker: { color: fit.color || ds.color, size: 5, opacity: 0.8 },
+      opacity: 1,
       showlegend: false,
     });
     traces.push({
       x: [Math.min(...ds.x), Math.max(...ds.x)], y: [0, 0],
       mode: 'lines', type: 'scatter',
       line: { color: tc.gridCol, width: 1, dash: 'dot' },
-      opacity: dimmed ? 0.15 : 1,
+      opacity: 1,
       showlegend: false, hoverinfo: 'skip',
     });
   }
@@ -1971,8 +1969,21 @@ function renderDatasetList() {
       const ds = state.datasets.find(d => d.id === id);
       if (!ds) return;
       ds.enabled = ds.enabled === false ? true : false;
+      // If the active fit belongs to a dataset that just got disabled, deselect it
+      if (ds.enabled === false) {
+        const activeFit = state.fits.find(f => f.id === state.activeFitId);
+        if (activeFit && activeFit.dsId === ds.id) {
+          const fallback = state.fits.find(f => {
+            const fds = state.datasets.find(d => d.id === f.dsId);
+            return f.id !== state.activeFitId && fds && fds.enabled !== false;
+          });
+          state.activeFitId = fallback ? fallback.id : null;
+        }
+      }
       syncFitDatasetSelect();
       renderDatasetList();
+      renderFitList();
+      renderStatsTable();
       updatePlots();
     });
   });
@@ -2010,20 +2021,27 @@ function renderFitList() {
     if (corrEl) corrEl.innerHTML = '';
     return;
   }
-  el.innerHTML = state.fits.map(fit => `
-    <div class="fit-item${fit.id === state.activeFitId ? ' active' : ''}" data-fitid="${fit.id}">
-      <span class="ds-swatch" style="background:${fit.color}"></span>
+  el.innerHTML = state.fits.map(fit => {
+    const ds = state.datasets.find(d => d.id === fit.dsId);
+    const dsOff = ds && ds.enabled === false;
+    return `
+    <div class="fit-item${fit.id === state.activeFitId ? ' active' : ''}${dsOff ? ' fit-item-off' : ''}" data-fitid="${fit.id}">
+      <span class="ds-swatch" style="background:${fit.color};opacity:${dsOff ? 0.3 : 1}"></span>
       <span class="ds-label">
         <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fit.label}</span>
-        <span class="fit-item-eq">${fit.model}</span>
+        <span class="fit-item-eq">${fit.model}${dsOff ? ' (dataset off)' : ''}</span>
       </span>
       <button class="ds-delete" data-delid="${fit.id}" title="Remove fit">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   el.querySelectorAll('.fit-item').forEach(item => {
     item.addEventListener('click', () => {
-      state.activeFitId = parseInt(item.dataset.fitid);
+      const fitId = parseInt(item.dataset.fitid);
+      const fit = state.fits.find(f => f.id === fitId);
+      const ds = fit && state.datasets.find(d => d.id === fit.dsId);
+      if (ds && ds.enabled === false) return; // block interaction with disabled-dataset fits
+      state.activeFitId = fitId;
       renderFitList();
-      const fit = state.fits.find(f => f.id === state.activeFitId);
       if (fit) { renderParamResults(fit); renderStatsTable(); }
     });
   });
@@ -2048,7 +2066,10 @@ function syncFTestSelects() {
   const selA = document.getElementById('ftest-fit-a');
   const selB = document.getElementById('ftest-fit-b');
   if (!selA || !selB) return;
-  const fits = state.fits;
+  const fits = state.fits.filter(f => {
+    const ds = state.datasets.find(d => d.id === f.dsId);
+    return !ds || ds.enabled !== false;
+  });
   const empty = '<option value="">— no fits —</option>';
   const opts = fits.map(f => `<option value="${f.id}">${f.label || f.model}</option>`).join('');
   selA.innerHTML = opts || empty;
@@ -2271,7 +2292,11 @@ function saveAnn() {
 
 function autoAnnotatePeaks() {
   const peakParams = new Set(['μ', 'mu', 'x₀', 'x0', 'xc', 'center', 'centre', 'peak']);
-  const visible = state.fits.filter(f => f.result && f.visible);
+  const visible = state.fits.filter(f => {
+    if (!f.result || !f.visible) return false;
+    const ds = state.datasets.find(d => d.id === f.dsId);
+    return !ds || ds.enabled !== false;
+  });
   if (!visible.length) { setConsole('No active fits to annotate.', 'warn'); return; }
   let added = 0;
   for (const fit of visible) {
@@ -2679,7 +2704,10 @@ function renderStatsTable() {
     return;
   }
 
-  const rows = state.fits.map(fit => {
+  const rows = state.fits.filter(fit => {
+    const ds = state.datasets.find(d => d.id === fit.dsId);
+    return !ds || ds.enabled !== false;
+  }).map(fit => {
     const r = fit.result;
     const isActive = fit.id === state.activeFitId;
     const ds = state.datasets.find(d => d.id === fit.dsId);

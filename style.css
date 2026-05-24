@@ -350,6 +350,7 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 .ds-item.ds-item-off .ds-swatch{opacity:0.3}
 .ds-item.ds-item-off .ds-count{opacity:0.35}
 .fit-item-eq{font-size:.65em;color:var(--dimmer);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:1px}
+.fit-item.fit-item-off{opacity:0.4;pointer-events:none;cursor:default}
 
 /* ── Center plot area ────────────────────────────────────── */
 .app-center{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;background:var(--bg)}
