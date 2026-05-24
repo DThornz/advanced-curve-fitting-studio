@@ -365,6 +365,38 @@
           </div>
         </div>
 
+        <!-- Predict / Solve -->
+        <div class="ctrl-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+            <label class="ctrl-label" style="margin:0">Predict / Solve</label>
+            <select class="ctrl-select" id="pred-mode" style="font-size:.68em;padding:2px 5px;height:auto" title="X→Y: predict output from input; Y→X: calibration inversion">
+              <option value="x2y">X → Y (predict)</option>
+              <option value="y2x">Y → X (calibrate)</option>
+            </select>
+          </div>
+          <div class="ctrl-row">
+            <label class="ctrl-label" id="pred-label" style="margin:0;min-width:44px;flex-shrink:0">X value</label>
+            <input class="ctrl-input" id="pred-input" type="number" step="any" placeholder="enter value">
+            <button class="btn" style="margin-left:4px;padding:2px 9px;font-size:.65em;flex-shrink:0" id="btn-predict">Go</button>
+          </div>
+          <div id="pred-result" style="margin-top:7px;display:none"></div>
+        </div>
+
+        <!-- F-test -->
+        <div class="ctrl-section">
+          <label class="ctrl-label" title="F-test compares two nested models on the same dataset. The simpler model is the null hypothesis.">F-test (Model Comparison)</label>
+          <div class="ctrl-row">
+            <label class="ctrl-label" style="margin:0;min-width:30px;flex-shrink:0">A</label>
+            <select class="ctrl-select" id="ftest-fit-a" style="font-size:.72em;min-width:0"><option value="">— no fits —</option></select>
+          </div>
+          <div class="ctrl-row" style="margin-top:5px">
+            <label class="ctrl-label" style="margin:0;min-width:30px;flex-shrink:0">B</label>
+            <select class="ctrl-select" id="ftest-fit-b" style="font-size:.72em;min-width:0"><option value="">— no fits —</option></select>
+          </div>
+          <button class="btn" style="margin-top:6px;width:100%;padding:3px 0;font-size:.68em" id="btn-ftest">Run F-test</button>
+          <div id="ftest-result" style="margin-top:6px;display:none"></div>
+        </div>
+
       </div><!-- end app-right -->
     </div><!-- end app-workspace -->
 

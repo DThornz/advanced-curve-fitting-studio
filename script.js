@@ -125,6 +125,55 @@ function tCritical95(df) {
   return 1.960;
 }
 
+function lnGamma(z) {
+  const g = 7;
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lnGamma(1 - z);
+  z -= 1;
+  let x = c[0];
+  for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+  const t = z + g + 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+function betacf(a, b, x) {
+  const MAXIT = 200, EPS = 3e-7, FPMIN = 1e-30;
+  const qap = a + 1, qam = a - 1, qab = a + b;
+  let c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1 / d; let h = d;
+  for (let m = 1; m <= MAXIT; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; const del = d * c; h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+
+function regularizedBeta(x, a, b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const lbeta = lnGamma(a) + lnGamma(b) - lnGamma(a + b);
+  if (x < (a + 1) / (a + b + 2)) {
+    return Math.exp(a * Math.log(x) + b * Math.log(1 - x) - lbeta) / a * betacf(a, b, x);
+  }
+  return 1 - Math.exp(b * Math.log(1 - x) + a * Math.log(x) - lbeta) / b * betacf(b, a, 1 - x);
+}
+
+function fDistPValue(F, d1, d2) {
+  if (!isFinite(F) || F <= 0) return 1;
+  return regularizedBeta(d2 / (d2 + d1 * F), d2 / 2, d1 / 2);
+}
+
 function hexToRgba(hex, alpha) {
   const r = parseInt(hex.slice(1,3), 16);
   const g = parseInt(hex.slice(3,5), 16);
@@ -1277,6 +1326,75 @@ function computeCIBands(fit, xs) {
   return { lower, upper };
 }
 
+function predictAtX(fit, x) {
+  const { params, covMatrix, dof } = fit.result;
+  const y = fitEval(fit, x);
+  if (!isFinite(y)) return null;
+  if (!covMatrix || dof <= 0) return { y, lower: null, upper: null, hw: null };
+  const EPS = 1e-7;
+  const g = params.map((_, j) => {
+    const pp = params.slice();
+    const h = Math.max(Math.abs(pp[j]) * EPS, EPS);
+    pp[j] += h;
+    try { const v = fit.fn(x, pp); return isFinite(v) ? (v - y) / h : 0; } catch (_) { return 0; }
+  });
+  let variance = 0;
+  for (let i = 0; i < params.length; i++)
+    for (let j = 0; j < params.length; j++)
+      variance += g[i] * covMatrix[i][j] * g[j];
+  if (!isFinite(variance) || variance < 0) variance = 0;
+  const hw = tCritical95(dof) * Math.sqrt(variance);
+  return { y, lower: y - hw, upper: y + hw, hw };
+}
+
+function solveXfromY(fit, targetY, xMin, xMax) {
+  const N = 500;
+  const step = (xMax - xMin) / (N - 1);
+  const roots = [];
+  let prevX = xMin, prevY = fitEval(fit, xMin) - targetY;
+  for (let i = 1; i < N; i++) {
+    const curX = xMin + step * i;
+    const curY = fitEval(fit, curX) - targetY;
+    if (!isFinite(prevY) || !isFinite(curY) || prevY * curY > 0) { prevX = curX; prevY = curY; continue; }
+    // Bisect in [prevX, curX]
+    let lo = prevX, hi = curX;
+    for (let k = 0; k < 52; k++) {
+      const mid = (lo + hi) / 2;
+      const fm = fitEval(fit, mid) - targetY;
+      if (!isFinite(fm) || Math.abs(hi - lo) < 1e-12 * (Math.abs(mid) || 1)) break;
+      if ((fitEval(fit, lo) - targetY) * fm < 0) hi = mid; else lo = mid;
+    }
+    const xSol = (lo + hi) / 2;
+    // CI via delta method: dx_CI ≈ CI_y / |df/dx|
+    const h = Math.max(Math.abs(xSol) * 1e-6, 1e-8);
+    const dfdx = (fitEval(fit, xSol + h) - fitEval(fit, xSol - h)) / (2 * h);
+    let xCIHW = null;
+    if (isFinite(dfdx) && Math.abs(dfdx) > 1e-30) {
+      const predCI = predictAtX(fit, xSol);
+      if (predCI && predCI.hw != null) xCIHW = predCI.hw / Math.abs(dfdx);
+    }
+    roots.push({ x: xSol, xCIHW });
+    prevX = curX; prevY = curY;
+  }
+  return roots;
+}
+
+function runFTest(fitA, fitB) {
+  if (fitA.dsId !== fitB.dsId) return { error: 'Fits must use the same dataset.' };
+  const pA = fitA.result.params.length, pB = fitB.result.params.length;
+  if (pA === pB) return { error: 'Models have the same number of parameters — not nested.' };
+  const [simple, complex] = pA <= pB ? [fitA, fitB] : [fitB, fitA];
+  const n = simple.result.n, p1 = simple.result.params.length, p2 = complex.result.params.length;
+  const dof2 = n - p2;
+  if (dof2 <= 0) return { error: 'Insufficient degrees of freedom in the complex model.' };
+  if (complex.result.sse <= 0) return { error: 'SSE of complex model is zero or negative.' };
+  const sseSimple = simple.result.sse, sseComplex = complex.result.sse;
+  const deltaP = p2 - p1;
+  const F = ((sseSimple - sseComplex) / deltaP) / (sseComplex / dof2);
+  const pVal = fDistPValue(F, deltaP, dof2);
+  return { F, pVal, deltaP, dof2, simple, complex, sseSimple, sseComplex, n };
+}
+
 function buildMainTraces() {
   const traces = [];
   for (const ds of state.datasets) {
@@ -1807,6 +1925,79 @@ function renderFitList() {
       if (active) renderStats(active); else setConsole('Fit removed.', '');
     });
   });
+  syncFTestSelects();
+}
+
+function syncFTestSelects() {
+  const selA = document.getElementById('ftest-fit-a');
+  const selB = document.getElementById('ftest-fit-b');
+  if (!selA || !selB) return;
+  const fits = state.fits;
+  const empty = '<option value="">— no fits —</option>';
+  const opts = fits.map(f => `<option value="${f.id}">${f.label || f.model}</option>`).join('');
+  selA.innerHTML = opts || empty;
+  selB.innerHTML = opts || empty;
+  if (fits.length >= 2) {
+    selA.value = fits[fits.length - 2].id;
+    selB.value = fits[fits.length - 1].id;
+  } else if (fits.length === 1) {
+    selA.value = fits[0].id;
+    selB.value = fits[0].id;
+  }
+  const res = document.getElementById('ftest-result');
+  if (res) { res.style.display = 'none'; res.innerHTML = ''; }
+}
+
+function renderPredResult(result, mode) {
+  const el = document.getElementById('pred-result');
+  if (!el) return;
+  if (mode === 'x2y') {
+    const { y, lower, upper, hw } = result;
+    const ciRow = hw != null
+      ? `<tr><td>95% CI</td><td>[${fmt(lower)}, ${fmt(upper)}]</td></tr>
+         <tr><td>± hw</td><td>${fmt(hw)}</td></tr>`
+      : `<tr><td>95% CI</td><td>—</td></tr>`;
+    el.innerHTML = `<table class="pred-table">
+      <tr><td>Ŷ</td><td class="pred-val-hi">${fmt(y)}</td></tr>
+      ${ciRow}
+    </table>`;
+  } else {
+    if (!result.length) {
+      el.innerHTML = `<div class="pred-note">No solution found in the fit curve range.</div>`;
+    } else {
+      const rows = result.map((r, i) =>
+        `<tr><td>X${result.length > 1 ? (i + 1) : ''}</td><td class="pred-val-hi">${fmt(r.x)}</td></tr>` +
+        (r.xCIHW != null ? `<tr><td>± CI</td><td>${fmt(r.xCIHW)}</td></tr>` : '')
+      ).join('');
+      el.innerHTML = `<table class="pred-table">${rows}</table>`;
+      if (result.length > 1)
+        el.innerHTML += `<div class="pred-note">${result.length} solutions found — verify on plot.</div>`;
+    }
+  }
+  el.style.display = '';
+}
+
+function renderFTestResult(result) {
+  const el = document.getElementById('ftest-result');
+  if (!el) return;
+  if (result.error) {
+    el.innerHTML = `<div class="pred-note" style="color:var(--error,#e53e3e)">${result.error}</div>`;
+    el.style.display = '';
+    return;
+  }
+  const sig = result.pVal < 0.05;
+  const pStr = result.pVal < 0.001 ? result.pVal.toExponential(2) : result.pVal.toFixed(4);
+  el.innerHTML = `<table class="pred-table">
+    <tr><td>F statistic</td><td class="pred-val-hi">${fmt(result.F)}</td></tr>
+    <tr><td>df₁, df₂</td><td>${result.deltaP}, ${result.dof2}</td></tr>
+    <tr><td>p-value</td><td class="${sig ? 'ftest-sig' : 'ftest-ns'}">${pStr}</td></tr>
+    <tr><td>SSE (simple)</td><td>${fmt(result.sseSimple)}</td></tr>
+    <tr><td>SSE (complex)</td><td>${fmt(result.sseComplex)}</td></tr>
+  </table>
+  <div class="pred-note">${sig
+    ? `Significant (p&lt;0.05): <em>${result.complex.label || result.complex.model}</em> fits better.`
+    : `Not significant (p≥0.05): extra parameters not justified.`}</div>`;
+  el.style.display = '';
 }
 
 function sweepRange(row) {
@@ -3972,6 +4163,60 @@ function initEvents() {
   document.getElementById('btn-edit-undo').addEventListener('click', undoEdit);
   document.getElementById('btn-edit-redo').addEventListener('click', redoEdit);
   document.getElementById('btn-edit-reset').addEventListener('click', resetSelectionToOriginal);
+
+  /* ── Predict / Solve ────────────────────────────────────── */
+  const predModeEl = document.getElementById('pred-mode');
+  const predLabelEl = document.getElementById('pred-label');
+  const predInputEl = document.getElementById('pred-input');
+  if (predModeEl) {
+    predModeEl.addEventListener('change', () => {
+      predLabelEl.textContent = predModeEl.value === 'x2y' ? 'X value' : 'Y value';
+      const res = document.getElementById('pred-result');
+      if (res) { res.style.display = 'none'; res.innerHTML = ''; }
+    });
+  }
+  document.getElementById('btn-predict').addEventListener('click', () => {
+    const fit = state.fits.find(f => f.id === state.activeFitId);
+    if (!fit || !fit.result) { setConsole('No active fit — run a fit first.', 'error'); return; }
+    const val = parseFloat(predInputEl.value);
+    if (!isFinite(val)) { setConsole('Enter a valid number.', 'error'); return; }
+    const mode = predModeEl ? predModeEl.value : 'x2y';
+    if (mode === 'x2y') {
+      const result = predictAtX(fit, val);
+      if (!result) { setConsole('Model returned non-finite value at that X.', 'error'); return; }
+      renderPredResult(result, 'x2y');
+      setConsole(`Ŷ at X=${fmt(val)}: ${fmt(result.y)}`, '');
+    } else {
+      const ds = state.datasets.find(d => d.id === fit.dsId);
+      const xArr = ds ? ds.x.filter((_, i) => !(ds.excludedIndices || new Set()).has(i)) : [];
+      const xMin = state.fitConfig.xExtraMin ?? (xArr.length ? Math.min(...xArr) : -100);
+      const xMax = state.fitConfig.xExtraMax ?? (xArr.length ? Math.max(...xArr) : 100);
+      const roots = solveXfromY(fit, val, xMin, xMax);
+      renderPredResult(roots, 'y2x');
+      if (!roots.length) setConsole(`No X found where model = ${fmt(val)} in data range.`, 'warn');
+      else setConsole(`X where model = ${fmt(val)}: ${roots.map(r => fmt(r.x)).join(', ')}`, '');
+    }
+  });
+  if (predInputEl) {
+    predInputEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btn-predict').click();
+    });
+  }
+
+  /* ── F-test ─────────────────────────────────────────────── */
+  document.getElementById('btn-ftest').addEventListener('click', () => {
+    const idA = parseInt(document.getElementById('ftest-fit-a').value);
+    const idB = parseInt(document.getElementById('ftest-fit-b').value);
+    if (!idA || !idB) { setConsole('Select two fits for the F-test.', 'error'); return; }
+    if (idA === idB) { setConsole('Select two different fits.', 'error'); return; }
+    const fitA = state.fits.find(f => f.id === idA);
+    const fitB = state.fits.find(f => f.id === idB);
+    if (!fitA || !fitB) { setConsole('One or both fits not found.', 'error'); return; }
+    const result = runFTest(fitA, fitB);
+    renderFTestResult(result);
+    if (!result.error)
+      setConsole(`F-test: F=${fmt(result.F)}, p=${result.pVal < 0.001 ? result.pVal.toExponential(2) : result.pVal.toFixed(4)}`, '');
+  });
 
   /* ── Initial state ────────────────────────────────────── */
   document.getElementById('btn-toggle-residuals').classList.add('active');

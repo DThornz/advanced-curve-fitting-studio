@@ -704,3 +704,16 @@ body.dark-mode .param-sweep-val{color:#3d5470!important}
 .corr-matrix td:first-child{text-align:right;color:var(--muted);font-size:.85em;background:none!important;padding-right:6px}
 body.dark-mode .corr-matrix th{color:#3d5470!important}
 body.dark-mode .corr-matrix td:first-child{color:#7a90ae!important}
+
+/* ── Prediction / F-test result tables ───────────────────── */
+.pred-table{border-collapse:collapse;width:100%;font-size:.72em;font-family:var(--mono);margin-top:4px}
+.pred-table td{padding:2px 4px}
+.pred-table td:first-child{color:var(--muted);padding-right:8px;white-space:nowrap}
+.pred-table td:last-child{color:var(--text);font-weight:500}
+.pred-val-hi{color:var(--teal);font-weight:600!important;font-size:1.05em}
+.pred-note{font-size:.68em;color:var(--dimmer);margin-top:3px}
+.ftest-sig{color:#22c55e;font-weight:600}
+.ftest-ns{color:var(--muted)}
+body.dark-mode .pred-table td:first-child{color:#3d5470!important}
+body.dark-mode .pred-table td:last-child{color:#e2e8f0!important}
+body.dark-mode .ftest-ns{color:#7a90ae!important}
