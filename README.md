@@ -39,7 +39,9 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Log-scale auto-suggest** | Floating banner appears when data spans >100× on X or Y; one-click to apply log axis |
 | **Interactive plots** | Plotly.js scatter + fit curve overlay; residual subplot; zoom/pan/hover; draggable legend |
 | **Legend toggle** | Show/hide plot legend via modebar button (same bar as zoom/pan/box-select) |
-| **Log axes** | Toggle log X / log Y independently |
+| **Log axes** | Toggle log X / log Y from the ⚙ Style modal — persisted with graph style |
+| **Axis range & tick control** | Set X/Y min, max, and tick spacing (Δ) from the ⚙ Style modal; blank = Plotly autorange |
+| **Graph style editor** | Full control over global font (family, size, color), plot/paper background, grid lines (color, width, dash per axis), zero lines, axis spines, tick labels, and legend appearance; ⚙ Style button in the Plot Labels section |
 | **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker with optional σ column for files with more than two columns |
 | **12 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration — each with adjustable noise and optional outlier injection (count + scale) |
 | **Dataset enable/disable** | Toggle datasets on/off for fitting; disabled datasets dim on the plot and are excluded from the fit dropdown |
@@ -203,7 +205,7 @@ The p-value is computed from the exact F-distribution CDF using a Lanczos lnGamm
 
 ### Plot annotations
 
-The **Annotations** panel (bottom of the right panel) lets you add publication-ready overlays to the main plot. Three types are available:
+The **Annotations** panel (just below Plot Labels in the right panel) lets you add publication-ready overlays to the main plot. Three types are available:
 
 | Type | Use for |
 |---|---|
@@ -221,6 +223,24 @@ Click **+ Add** to open the annotation editor. Each annotation exposes full styl
 Click **Peaks** to automatically annotate the peak centre of any Gaussian or Lorentzian fit that is currently visible. The annotation is colored to match the fit curve and labelled with the fit name. Each fit can only receive one automatic peak annotation; re-clicking Peaks won't duplicate them.
 
 Annotations are saved to and restored from the session JSON file.
+
+### Graph style, log scale, and axis range
+
+Click **⚙ Style** (next to the Plot Labels header) to open the Graph Style modal. It has seven sections:
+
+| Section | Controls |
+|---|---|
+| **Global Font** | Family (9 presets + custom), size, and color for all axis labels, tick labels, and legend text |
+| **Background Colors** | Plot area background and paper (outer) background |
+| **Grid Lines** | Show/hide, color, line width, and dash style independently for X and Y grid lines |
+| **Zero Lines** | Show/hide, color, and line width for the X=0 and Y=0 reference lines |
+| **Axes & Ticks** | Tick label font size, show/hide tick labels per axis, show/hide axis spines, and spine color |
+| **Legend** | Legend font size, background color, and border color |
+| **Scale & Axis Range** | Log X / Log Y checkboxes; X and Y axis minimum and maximum (blank = autorange); X and Y tick spacing Δ (blank = auto-tick) |
+
+All fields use blank / unchecked as "use theme default" — no override is applied. Click **Apply** to commit, **Reset to Defaults** to clear all overrides and revert to the current dark/light theme.
+
+Log scale and axis range settings are saved with the session and restored on tab switch or session load.
 
 ### Dataset enable / disable
 

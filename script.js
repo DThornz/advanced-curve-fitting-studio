@@ -1062,6 +1062,7 @@ const DEFAULT_GRAPH_STYLE = {
   showTicksX: true, showTicksY: true,
   showAxisLineX: false, showAxisLineY: false, axisLineColor: '',
   legendFontSize: '', legendBgColor: '', legendBorderColor: '',
+  xMin: '', xMax: '', yMin: '', yMax: '', xDtick: '', yDtick: '',
 };
 
 const state = {
@@ -1374,6 +1375,15 @@ function baseLayout(extra) {
     linecolor:       axisLineCo, linewidth: 1,
     tickfont: { size: tickSize, color: tickColor },
     type: (isX ? state.plotConfig.logX : state.plotConfig.logY) ? 'log' : 'linear',
+    ...(() => {
+      const minV = parseFloat(isX ? gs.xMin : gs.yMin);
+      const maxV = parseFloat(isX ? gs.xMax : gs.yMax);
+      const dt   = parseFloat(isX ? gs.xDtick : gs.yDtick);
+      const out  = {};
+      if (isFinite(minV) && isFinite(maxV) && minV < maxV) { out.range = [minV, maxV]; out.autorange = false; }
+      if (isFinite(dt) && dt > 0) out.dtick = dt;
+      return out;
+    })(),
   });
 
   const base = {
@@ -2343,6 +2353,16 @@ function openGraphStyleEditor() {
   _gsSetColorField('gs-legend-bg',     'gs-legend-bg-hex',     gs.legendBgColor,     isDark() ? '#0a1628' : '#ffffff');
   _gsSetColorField('gs-legend-border', 'gs-legend-border-hex', gs.legendBorderColor, tc.gridCol);
 
+  // Scale & Axis Range
+  document.getElementById('gs-log-x').checked  = !!state.plotConfig.logX;
+  document.getElementById('gs-log-y').checked  = !!state.plotConfig.logY;
+  document.getElementById('gs-xmin').value     = gs.xMin   || '';
+  document.getElementById('gs-xmax').value     = gs.xMax   || '';
+  document.getElementById('gs-ymin').value     = gs.yMin   || '';
+  document.getElementById('gs-ymax').value     = gs.yMax   || '';
+  document.getElementById('gs-x-dtick').value  = gs.xDtick || '';
+  document.getElementById('gs-y-dtick').value  = gs.yDtick || '';
+
   modal.style.display = 'flex';
 }
 
@@ -2399,6 +2419,16 @@ function saveGraphStyle() {
   gs.legendFontSize    = document.getElementById('gs-legend-font-size').value.trim();
   gs.legendBgColor     = document.getElementById('gs-legend-bg-hex').value.trim();
   gs.legendBorderColor = document.getElementById('gs-legend-border-hex').value.trim();
+
+  // Scale & Axis Range
+  state.plotConfig.logX = document.getElementById('gs-log-x').checked;
+  state.plotConfig.logY = document.getElementById('gs-log-y').checked;
+  gs.xMin   = document.getElementById('gs-xmin').value.trim();
+  gs.xMax   = document.getElementById('gs-xmax').value.trim();
+  gs.yMin   = document.getElementById('gs-ymin').value.trim();
+  gs.yMax   = document.getElementById('gs-ymax').value.trim();
+  gs.xDtick = document.getElementById('gs-x-dtick').value.trim();
+  gs.yDtick = document.getElementById('gs-y-dtick').value.trim();
 
   document.getElementById('gs-modal').style.display = 'none';
   updatePlots();
@@ -3889,12 +3919,10 @@ function restoreSessionPayload(payload) {
   const eqInput = document.getElementById('custom-eq-input');
   if (eqInput && state.fitConfig.customExpr) { eqInput.value = state.fitConfig.customExpr; parseCustomEquation(state.fitConfig.customExpr); }
   // Reset toggle button states before restoring to prevent state leak across tabs
-  ['btn-log-x', 'btn-log-y', 'btn-toggle-residuals', 'btn-ci-bands', 'btn-norm-resid', 'btn-show-outliers'].forEach(id => {
+  ['btn-toggle-residuals', 'btn-ci-bands', 'btn-norm-resid', 'btn-show-outliers'].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.classList.remove('active');
   });
-  if (state.plotConfig.logX)               document.getElementById('btn-log-x').classList.add('active');
-  if (state.plotConfig.logY)               document.getElementById('btn-log-y').classList.add('active');
   if (state.plotConfig.showResiduals !== false) document.getElementById('btn-toggle-residuals').classList.add('active');
   if (state.plotConfig.showCI)             document.getElementById('btn-ci-bands').classList.add('active');
   if (state.plotConfig.normalizeResiduals) document.getElementById('btn-norm-resid').classList.add('active');
@@ -4448,16 +4476,6 @@ function initEvents() {
   document.getElementById('col-picker-y').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-sig').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-import').addEventListener('click', importFromColumnPicker);
-  document.getElementById('btn-log-x').addEventListener('click', function () {
-    state.plotConfig.logX = !state.plotConfig.logX;
-    this.classList.toggle('active', state.plotConfig.logX);
-    updatePlots();
-  });
-  document.getElementById('btn-log-y').addEventListener('click', function () {
-    state.plotConfig.logY = !state.plotConfig.logY;
-    this.classList.toggle('active', state.plotConfig.logY);
-    updatePlots();
-  });
 
   /* ── Residual tabs ────────────────────────────────────── */
   document.querySelectorAll('.resid-tab').forEach(btn => {
@@ -4471,12 +4489,10 @@ function initEvents() {
   /* ── Log-scale suggest banner ─────────────────────────── */
   document.getElementById('log-suggest-apply-x').addEventListener('click', () => {
     state.plotConfig.logX = true;
-    document.getElementById('btn-log-x').classList.add('active');
     updatePlots();
   });
   document.getElementById('log-suggest-apply-y').addEventListener('click', () => {
     state.plotConfig.logY = true;
-    document.getElementById('btn-log-y').classList.add('active');
     updatePlots();
   });
   document.getElementById('log-suggest-dismiss').addEventListener('click', () => {

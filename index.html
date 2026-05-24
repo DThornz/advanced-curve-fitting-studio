@@ -120,8 +120,6 @@
         <button class="btn btn-toggle" id="btn-ci-bands" title="Show 95% confidence bands around each fit curve">CI Bands</button>
         <button class="btn btn-toggle" id="btn-norm-resid" title="Normalize residuals by RMSE (show σ units)">Norm. Res.</button>
         <button class="btn btn-toggle" id="btn-show-outliers" title="Highlight points where |residual| > 2.5σ for the active fit">Outliers</button>
-        <button class="btn btn-toggle" id="btn-log-x" title="Toggle logarithmic X axis">Log X</button>
-        <button class="btn btn-toggle" id="btn-log-y" title="Toggle logarithmic Y axis">Log Y</button>
         <button class="btn btn-toggle" id="btn-edit-mode" title="Show/hide edit controls. Point editing is always active: click a point to select, drag to move, click empty space or Escape to deselect.">✏ Edit</button>
       </div>
       <div id="edit-mode-controls" style="display:none;align-items:center;gap:3px;flex-shrink:0">
@@ -346,6 +344,18 @@
           </div>
         </div>
 
+        <!-- Annotations -->
+        <div class="ctrl-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+            <label class="ctrl-label" style="margin:0" title="Add reference lines, text callouts, and peak markers to the plot">Annotations <span class="panel-fit-count" id="ann-count">0</span></label>
+            <div style="display:flex;gap:4px">
+              <button class="btn" id="btn-ann-peaks" title="Auto-annotate peak centres from Gaussian / Lorentzian fits" style="padding:1px 8px;font-size:.65em">Peaks</button>
+              <button class="btn" id="btn-ann-add" style="padding:1px 8px;font-size:.65em">+ Add</button>
+            </div>
+          </div>
+          <div id="ann-list"><div class="panel-empty-hint" style="font-size:.72em">No annotations. Use + Add or Peaks.</div></div>
+        </div>
+
         <!-- Fit curve resolution -->
         <div class="ctrl-section">
           <label class="ctrl-label">Fit Curve Points</label>
@@ -398,18 +408,6 @@
           </div>
           <button class="btn" style="margin-top:6px;width:100%;padding:3px 0;font-size:.68em" id="btn-ftest">Run F-test</button>
           <div id="ftest-result" style="margin-top:6px;display:none"></div>
-        </div>
-
-        <!-- Annotations -->
-        <div class="ctrl-section">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <label class="ctrl-label" style="margin:0" title="Add reference lines, text callouts, and peak markers to the plot">Annotations <span class="panel-fit-count" id="ann-count">0</span></label>
-            <div style="display:flex;gap:4px">
-              <button class="btn" id="btn-ann-peaks" title="Auto-annotate peak centres from Gaussian / Lorentzian fits" style="padding:1px 8px;font-size:.65em">Peaks</button>
-              <button class="btn" id="btn-ann-add" style="padding:1px 8px;font-size:.65em">+ Add</button>
-            </div>
-          </div>
-          <div id="ann-list"><div class="panel-empty-hint" style="font-size:.72em">No annotations. Use + Add or Peaks.</div></div>
         </div>
 
       </div><!-- end app-right -->
@@ -852,6 +850,33 @@
         </div>
       </div>
 
+      <!-- Scale & Axis Range -->
+      <div class="ann-section">
+        <div class="ann-section-title">Scale &amp; Axis Range</div>
+        <div class="ann-row" style="flex-wrap:wrap;gap:12px">
+          <label class="ann-check-label"><input type="checkbox" id="gs-log-x"> Log X scale</label>
+          <label class="ann-check-label"><input type="checkbox" id="gs-log-y"> Log Y scale</label>
+        </div>
+        <div class="ann-row" style="margin-top:5px">
+          <label style="min-width:48px;font-size:.78em">X min</label>
+          <input class="ctrl-input" type="number" id="gs-xmin" placeholder="auto" step="any" style="flex:1">
+          <label style="min-width:36px;margin-left:8px;font-size:.78em">X max</label>
+          <input class="ctrl-input" type="number" id="gs-xmax" placeholder="auto" step="any" style="flex:1">
+        </div>
+        <div class="ann-row" style="margin-top:5px">
+          <label style="min-width:48px;font-size:.78em">Y min</label>
+          <input class="ctrl-input" type="number" id="gs-ymin" placeholder="auto" step="any" style="flex:1">
+          <label style="min-width:36px;margin-left:8px;font-size:.78em">Y max</label>
+          <input class="ctrl-input" type="number" id="gs-ymax" placeholder="auto" step="any" style="flex:1">
+        </div>
+        <div class="ann-row" style="margin-top:5px">
+          <label style="min-width:48px;font-size:.78em">X tick &Delta;</label>
+          <input class="ctrl-input" type="number" id="gs-x-dtick" placeholder="auto" step="any" min="0" style="flex:1">
+          <label style="min-width:36px;margin-left:8px;font-size:.78em">Y tick &Delta;</label>
+          <input class="ctrl-input" type="number" id="gs-y-dtick" placeholder="auto" step="any" min="0" style="flex:1">
+        </div>
+      </div>
+
     </div><!-- modal-body -->
     <div class="modal-footer" style="justify-content:space-between">
       <button class="btn" id="gs-reset-btn" title="Clear all overrides and revert to theme defaults" style="color:var(--error,#e53e3e)">Reset to Defaults</button>
@@ -1133,7 +1158,7 @@
 
     <p>The <strong>F-test</strong> panel compares two nested fits on the same dataset. Select fit A and fit B from the dropdowns (which auto-populate from the fit list); the simpler model is identified automatically as the null hypothesis. The panel reports the F-statistic, degrees of freedom (Δp, n − p₂), exact p-value from the F-distribution CDF, both SSE values, and a plain-English verdict. p &lt; 0.05 means the extra parameters are statistically justified at α = 0.05.</p>
 
-    <p>The <strong>Annotations</strong> panel (bottom of the right panel) adds overlay graphics directly to the Plotly figure. Click <em>+ Add</em> to open the annotation editor and choose one of three types:</p>
+    <p>The <strong>Annotations</strong> panel (just below Plot Labels in the right panel) adds overlay graphics directly to the Plotly figure. Click <em>+ Add</em> to open the annotation editor and choose one of three types:</p>
     <ul style="margin:6px 0 6px 20px;line-height:1.9">
       <li><strong>Horizontal line</strong> — a reference line at a fixed Y value (e.g., a detection limit, a half-maximum threshold). Extend across the full plot width.</li>
       <li><strong>Vertical line</strong> — a reference line at a fixed X value (e.g., a time point, a dose level, a phase boundary).</li>
