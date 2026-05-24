@@ -1810,12 +1810,19 @@ function renderParamResults(fit) {
   const rows = container.querySelectorAll('.param-row:not(.param-row-header)');
   const { params, paramErrors } = fit.result;
   rows.forEach((row, i) => {
-    const fitSpan = row.querySelector('.param-fit-val');
-    if (!fitSpan || params[i] == null) return;
+    if (params[i] == null) return;
     const val = params[i];
     const err = paramErrors && paramErrors[i];
-    fitSpan.textContent = fmt(val);
-    fitSpan.title = err && isFinite(err) ? `${fit.paramNames[i]} = ${fmt(val)} ± ${fmt(err)}` : `${fit.paramNames[i]} = ${fmt(val)}`;
+    const initInp = row.querySelector('[data-field="init"]');
+    if (initInp) {
+      initInp.value = fmt(val);
+      if (i < state.paramRows.length) state.paramRows[i].init = val;
+    }
+    const fitSpan = row.querySelector('.param-fit-val');
+    if (fitSpan) {
+      fitSpan.textContent = fmt(val);
+      fitSpan.title = err && isFinite(err) ? `${fit.paramNames[i]} = ${fmt(val)} ± ${fmt(err)}` : `${fit.paramNames[i]} = ${fmt(val)}`;
+    }
   });
   renderCorrMatrix(fit);
 }
