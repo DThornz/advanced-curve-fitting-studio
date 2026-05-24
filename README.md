@@ -11,16 +11,18 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 
 | Capability | Detail |
 |---|---|
-| **16+ built-in models** | Linear, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Custom |
+| **17 built-in models** | Linear, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Custom |
 | **Fitting algorithms** | Levenberg-Marquardt · Gauss-Newton · Nelder-Mead Simplex · BFGS (selectable per fit); analytic Vandermonde normal equations for polynomials |
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
+| **Parameter bounds** | Optional min/max per parameter; all four solvers enforce box constraints via projection at every iteration; init is auto-clamped before dispatch; blank = unconstrained |
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^` |
 | **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status, final λ (LM), gradient norm (BFGS) |
 | **CI bands** | 95% confidence interval ribbon around each fit curve (toggle per session) |
 | **Weighted fitting** | Three schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate) |
-| **Try All Models** | One-click comparison table — fits all 16 non-Custom models and ranks by R²; apply any result to the active fit |
-| **Copy Parameters** | Copy active fit parameters (with ± std errors) to clipboard in one click |
+| **Try All Models** | One-click comparison table — fits all 17 non-Custom models and ranks by R²; apply any result to the active fit |
+| **Copy Parameters** | One-click copy of fit name, dataset, all parameters (with ± std errors), and full statistics (R², Adj-R², RMSE, SSE, AIC, BIC, N, status) to clipboard |
+| **Parameter table** | Init / Min / Max / Fit columns per parameter; Init preserves the starting guess; Fit column shows converged values; switching fits loads that fit's parameters into Init |
 | **Extrapolation range** | Set custom X min / X max for fit curves, independent of data extent; Reset button to revert to data range |
 | **Outlier detection** | Highlights points where \|residual\| > 2.5σ for the active fit with red rings; updates live as points are moved |
 | **Point masking** | Mask 2.5σ outliers to exclude them from fitting; Unmask All to restore; masked count shown in panel |
@@ -86,9 +88,9 @@ Click **Start Advanced Curve Fitting Studio** on the page. The app opens as a fu
 1. Click **Examples** and choose a dataset, or **Import CSV** / **Paste Data**.
 2. Select the target dataset in the **Target Dataset** dropdown (right panel).
 3. Choose a **Fit Model** from the dropdown.
-4. For nonlinear models, click **Auto Init** to set data-driven initial guesses, or tune manually.
+4. For nonlinear models, click **Auto Init** to set data-driven initial guesses, or tune manually. Optionally set Min/Max bounds on any parameter (leave blank for unconstrained).
 5. Press **Fit** (or `Ctrl+Enter`).
-6. Statistics (R², RMSE, AIC, BIC, etc.) appear in the resizable stats bar; parameters update in the right panel.
+6. Converged parameter values appear in the Fit column of the parameter table. Statistics (R², Adj-R², RMSE, SSE, AIC, BIC, N) appear in the stats bar at the bottom.
 
 ### Trying all models at once
 
@@ -105,6 +107,16 @@ Enable **Outliers** in the toolbar to highlight points where |residual| > 2.5σ 
 ### Multi-start fitting
 
 Set **Multi-start** (default: 8) in Algorithm Options. The solver launches N pilot runs from log-scale-perturbed starting points, picks the best result, and polishes it. Substantially reduces the chance of converging to a local minimum at ~4× the compute cost of a single run.
+
+### Parameter bounds
+
+The parameter table has four columns per row: **Init** (starting guess), **Min** (lower bound), **Max** (upper bound), and **Fit** (converged result). Min and Max are optional — leave them blank for unconstrained. Common uses:
+
+- Rate constants and amplitudes that cannot be negative: set Min = 0
+- Fractions or probabilities bounded between 0 and 1: set Min = 0, Max = 1
+- Preventing a peak centre from wandering outside the data range
+
+All four solvers (LM, Gauss-Newton, Nelder-Mead, BFGS) enforce bounds by projecting each candidate parameter vector back into the feasible box after every iteration. The initial guess is also auto-clamped to bounds before the fit is dispatched.
 
 ### Custom equations
 

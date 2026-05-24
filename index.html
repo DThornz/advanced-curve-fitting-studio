@@ -660,7 +660,7 @@
       <li><strong>Import CSV / TSV / TXT</strong> — drag a file onto the plot area or use the Import button. Headers are optional; the first two numeric columns are used as X and Y. Comma, semicolon, tab, and space delimiters are all detected automatically. Files with more than two columns open a <em>Column Picker</em> so you can choose which columns to use as X and Y.</li>
       <li><strong>Paste Data</strong> — paste directly from Excel, a terminal, or any text editor. The delimiter auto-detection handles mixed formats.</li>
     </ul>
-    <p>Multiple datasets can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled for fitting using the toggle button (●) that appears on hover.</p>
+    <p>Multiple datasets can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled for fitting using the toggle button that appears on hover.</p>
 
     <p>The right panel lists 17 built-in models grouped by family. A guide to choosing:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
@@ -681,6 +681,8 @@
     </table>
 
     <p>For iterative (nonlinear) models, the quality of the initial guess strongly affects convergence. Click Auto Init to run data-driven heuristics: amplitudes are estimated from the data range, rate constants from zero-crossing counts or log-linear regression, peak centres from the data maximum, and so on. If Auto Init produces a poor fit, inspect the parameter table and adjust manually — look at the plot to understand what each parameter physically controls. Enabling Multi-start (default: 8 pilots) perturbs the initial guess log-uniformly across an order of magnitude and picks the best result automatically, at the cost of ~4× compute time.</p>
+
+    <p>The parameter table shows four columns for each parameter. Init is the starting guess you provide; it is preserved across refits so you can always see where you started. Min and Max are optional box constraints — leave them blank for unconstrained, or enter a value to prevent the solver from crossing that boundary. All four solvers enforce bounds by projecting each candidate back into the feasible region at every iteration, and the initial guess is auto-clamped before dispatch. Typical uses: set Min = 0 for rates or amplitudes that cannot be negative, or Min = 0 / Max = 1 for fractions and probabilities. Fit shows the converged parameter value after the most recent run; hovering over a cell in that column shows the value with its ± standard error. Switching to a different fit in the fit list loads that fit's converged parameters into Init so you can re-run or modify it.</p>
 
     <p>The stats bar at the bottom shows all active fits side-by-side:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
@@ -709,7 +711,7 @@
 
     <p>Click Try All in the toolbar to automatically fit every built-in model to the active dataset. A comparison table opens, ranked by R², showing R², RMSE, AIC, and BIC for each model. Click Apply on any row to load that model and its initial parameter estimates into the right panel for further tuning. Use AIC or BIC — rather than R² alone — to identify the best model without overfitting.</p>
 
-    <p>After fitting, click Copy (next to Auto Init in the Parameters section) to copy the current fit parameters with their ± standard errors to the clipboard in plain text, ready to paste into a report or spreadsheet.</p>
+    <p>After fitting, click Copy (next to Auto Init in the Parameters section) to copy a plain-text summary to the clipboard. The output includes the fit name, model, dataset, all parameters with ± standard errors, and a full statistics block (R², Adj-R², RMSE, SSE, AIC, BIC, N, convergence status and iteration count).</p>
 
     <p>By default fit curves are drawn only over the data X range. Set X min and X max in the Extrapolation Range section at the bottom of the right panel to extend (or restrict) the curve beyond the data. Click Reset to revert to the data range.</p>
 
