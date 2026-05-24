@@ -80,6 +80,28 @@
      FULL-SCREEN APP OVERLAY
 ══════════════════════════════════════════════════════════ -->
 <div class="app-fullscreen-overlay" id="app-overlay">
+
+  <!-- ── FIRST-RUN TUTORIAL ──────────────────────────────── -->
+  <div id="tut-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Getting started">
+    <div id="tut-modal">
+      <div id="tut-dots"></div>
+      <div id="tut-illus" aria-hidden="true"></div>
+      <div id="tut-text">
+        <div id="tut-title"></div>
+        <div id="tut-body"></div>
+      </div>
+      <div id="tut-nav">
+        <button class="btn" id="tut-prev">← Back</button>
+        <span id="tut-count"></span>
+        <button class="btn btn-primary" id="tut-next">Next →</button>
+      </div>
+      <div id="tut-footer">
+        <button id="tut-no-show">Don't show this again</button>
+        <button id="tut-skip">Skip</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-shell">
 
     <!-- TAB BAR -->

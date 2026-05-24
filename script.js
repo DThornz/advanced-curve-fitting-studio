@@ -4817,6 +4817,7 @@ function initEvents() {
         plotsInitialised = false;
         updatePlots();
         appEverOpened = true;
+        if (localStorage.getItem(TUT_KEY) !== '1') setTimeout(tutShow, 320);
       } else {
         Plotly.Plots.resize('main-plot');
         const resEl = document.getElementById('residual-plot');
@@ -5005,6 +5006,271 @@ function initEvents() {
   document.getElementById('btn-toggle-residuals').classList.add('active');
   syncModelCustomSection();
   initResizablePanels();
+  tutInit();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FIRST-RUN TUTORIAL
+═══════════════════════════════════════════════════════════ */
+const TUT_KEY = 'cfs_tutorial_done';
+let _tutStep = 0;
+
+const TUT_SLIDES = [
+  {
+    title: 'Welcome to Advanced Curve Fitting Studio',
+    body: 'A fully offline, browser-native platform for scientific curve fitting and nonlinear regression. Load data, choose from <strong>24 built-in models</strong>, and fit with Levenberg-Marquardt, Gauss-Newton, Nelder-Mead, or BFGS — no installation or internet required.',
+    illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="500" height="160" rx="8" fill="#07111e"/>
+      <line x1="50" y1="20" x2="50" y2="148" stroke="#1c3050" stroke-width="1.5"/>
+      <line x1="50" y1="148" x2="490" y2="148" stroke="#1c3050" stroke-width="1.5"/>
+      <line x1="50" y1="104" x2="490" y2="104" stroke="#1c3050" stroke-width="0.5" opacity=".5"/>
+      <line x1="50" y1="60" x2="490" y2="60" stroke="#1c3050" stroke-width="0.5" opacity=".5"/>
+      <line x1="173" y1="20" x2="173" y2="148" stroke="#1c3050" stroke-width="0.5" opacity=".5"/>
+      <line x1="296" y1="20" x2="296" y2="148" stroke="#1c3050" stroke-width="0.5" opacity=".5"/>
+      <line x1="419" y1="20" x2="419" y2="148" stroke="#1c3050" stroke-width="0.5" opacity=".5"/>
+      <path d="M58,28 C110,42 165,68 220,91 C268,112 322,128 386,138 C420,143 456,144 486,144.5 L486,150 C456,150 420,149 386,144 C322,135 268,119 220,98 C165,75 110,49 58,34Z" fill="#0b9e8a" opacity="0.12"/>
+      <path d="M58,31 C110,45 165,71 220,94 C268,115 322,131 386,141 C420,145 456,146 486,146" stroke="#0b9e8a" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="61" cy="26" r="3.5" fill="#3b82f6"/><circle cx="84" cy="38" r="3.5" fill="#3b82f6"/>
+      <circle cx="110" cy="50" r="3.5" fill="#3b82f6"/><circle cx="138" cy="64" r="3.5" fill="#3b82f6"/>
+      <circle cx="164" cy="75" r="3.5" fill="#3b82f6"/><circle cx="193" cy="86" r="3.5" fill="#3b82f6"/>
+      <circle cx="224" cy="97" r="3.5" fill="#3b82f6"/><circle cx="258" cy="108" r="3.5" fill="#3b82f6"/>
+      <circle cx="297" cy="117" r="3.5" fill="#3b82f6"/><circle cx="342" cy="126" r="3.5" fill="#3b82f6"/>
+      <circle cx="390" cy="134" r="3.5" fill="#3b82f6"/><circle cx="440" cy="139" r="3.5" fill="#3b82f6"/>
+      <circle cx="73" cy="33" r="3" fill="#3b82f6" opacity=".6"/><circle cx="122" cy="57" r="3" fill="#3b82f6" opacity=".6"/>
+      <circle cx="153" cy="70" r="3" fill="#3b82f6" opacity=".6"/><circle cx="208" cy="91" r="3" fill="#3b82f6" opacity=".6"/>
+      <circle cx="248" cy="103" r="3" fill="#3b82f6" opacity=".6"/><circle cx="286" cy="113" r="3" fill="#3b82f6" opacity=".6"/>
+      <circle cx="362" cy="129" r="3" fill="#3b82f6" opacity=".6"/><circle cx="420" cy="136" r="3" fill="#3b82f6" opacity=".6"/>
+      <circle cx="465" cy="141" r="3" fill="#3b82f6" opacity=".6"/>
+      <rect x="330" y="15" width="156" height="22" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <circle cx="344" cy="26" r="4.5" fill="#0b9e8a"/>
+      <text x="354" y="30.5" font-size="10" fill="#94a3b8" font-family="monospace">Exp-Decay  R²=0.998</text>
+    </svg>`
+  },
+  {
+    title: 'Load Your Data',
+    body: 'Click <strong>Examples</strong> for built-in synthetic datasets, <strong>Import Data</strong> to upload a CSV/TSV/TXT file, or <strong>Paste Data</strong> to paste from a spreadsheet. Drag-and-drop onto the plot also works. Three-column files (X, Y, σ) unlock error-weighted fitting.',
+    illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="500" height="160" rx="8" fill="#07111e"/>
+      <rect x="16" y="16" width="126" height="28" rx="6" fill="#0b2c44" stroke="#0b9e8a" stroke-width="1.5"/>
+      <text x="79" y="34" font-size="11" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Examples ▾</text>
+      <rect x="154" y="16" width="114" height="28" rx="6" fill="#0d2040" stroke="#1c3050"/>
+      <text x="211" y="34" font-size="11" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Import Data</text>
+      <rect x="280" y="16" width="104" height="28" rx="6" fill="#0d2040" stroke="#1c3050"/>
+      <text x="332" y="34" font-size="11" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Paste Data</text>
+      <rect x="16" y="56" width="216" height="90" rx="6" fill="#0d2040" stroke="#1c3050"/>
+      <text x="30" y="74" font-size="10" fill="#0b9e8a" font-family="monospace" font-weight="600">x</text>
+      <text x="96" y="74" font-size="10" fill="#0b9e8a" font-family="monospace" font-weight="600">y</text>
+      <text x="162" y="74" font-size="10" fill="#0b9e8a" font-family="monospace" font-weight="600">σ  (optional)</text>
+      <line x1="16" y1="79" x2="232" y2="79" stroke="#1c3050"/>
+      <text x="30" y="94" font-size="10" fill="#94a3b8" font-family="monospace">0.0</text><text x="96" y="94" font-size="10" fill="#94a3b8" font-family="monospace">95.2</text><text x="162" y="94" font-size="10" fill="#94a3b8" font-family="monospace">0.8</text>
+      <text x="30" y="110" font-size="10" fill="#94a3b8" font-family="monospace">1.0</text><text x="96" y="110" font-size="10" fill="#94a3b8" font-family="monospace">78.4</text><text x="162" y="110" font-size="10" fill="#94a3b8" font-family="monospace">1.1</text>
+      <text x="30" y="126" font-size="10" fill="#94a3b8" font-family="monospace">2.0</text><text x="96" y="126" font-size="10" fill="#94a3b8" font-family="monospace">63.1</text><text x="162" y="126" font-size="10" fill="#94a3b8" font-family="monospace">0.9</text>
+      <text x="30" y="138" font-size="9" fill="#3b4f6b" font-family="monospace">...</text>
+      <rect x="248" y="56" width="236" height="90" rx="6" fill="#0d2040" stroke="#1c3050" stroke-dasharray="5 3"/>
+      <path d="M366,86 L366,112 M352,99 L380,99 M352,99 L358,93 M380,99 L374,93" stroke="#1c3050" stroke-width="2" stroke-linecap="round"/>
+      <text x="366" y="130" font-size="10" fill="#3b4f6b" text-anchor="middle" font-family="sans-serif">drag &amp; drop files here</text>
+      <text x="366" y="143" font-size="9" fill="#253448" text-anchor="middle" font-family="sans-serif">.csv  ·  .tsv  ·  .txt</text>
+    </svg>`
+  },
+  {
+    title: 'Select a Model and Fit',
+    body: 'Choose from <strong>24 built-in models</strong> across 7 groups — or write a <strong>Custom Equation</strong> in x. Click <strong>Auto Init</strong> for data-driven starting guesses, then press <strong>▶ Fit</strong> (or Ctrl+Enter). Set optional Min/Max bounds on any parameter. Drag the sweep slider for a live preview without fitting.',
+    illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="500" height="160" rx="8" fill="#07111e"/>
+      <text x="16" y="26" font-size="9" fill="#5a7090" font-family="sans-serif" letter-spacing=".07em" font-weight="600">FIT MODEL</text>
+      <rect x="16" y="31" width="220" height="26" rx="5" fill="#0d2040" stroke="#0b9e8a" stroke-width="1.5"/>
+      <text x="27" y="48" font-size="11" fill="#e2e8f0" font-family="sans-serif">Exponential  y = a·eᵇˣ</text>
+      <text x="224" y="48" font-size="10" fill="#6b82a0" font-family="sans-serif">▾</text>
+      <rect x="16" y="65" width="220" height="86" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <text x="25" y="80" font-size="9" fill="#5a7090" font-family="monospace" letter-spacing=".04em">PARAM   INIT       FIT</text>
+      <line x1="16" y1="84" x2="236" y2="84" stroke="#1c3050"/>
+      <text x="25" y="98" font-size="9.5" fill="#94a3b8" font-family="monospace">a     95.0     94.8 ±0.9</text>
+      <text x="25" y="112" font-size="9.5" fill="#94a3b8" font-family="monospace">b     0.18     0.179±0.003</text>
+      <text x="25" y="126" font-size="9.5" fill="#94a3b8" font-family="monospace">c     2.00     2.11 ±0.29</text>
+      <rect x="22" y="135" width="70" height="8" rx="3" fill="#1c3050"/>
+      <rect x="22" y="135" width="44" height="8" rx="3" fill="#0b9e8a" opacity=".45"/>
+      <text x="96" y="142" font-size="8" fill="#4a6080" font-family="sans-serif">param sweep</text>
+      <rect x="252" y="31" width="112" height="26" rx="6" fill="#0d2040" stroke="#1c3050"/>
+      <text x="308" y="48" font-size="11" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Auto Init</text>
+      <rect x="376" y="31" width="108" height="26" rx="6" fill="#0b2c44" stroke="#0b9e8a" stroke-width="1.5"/>
+      <text x="430" y="48" font-size="12" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">▶  Fit</text>
+      <rect x="252" y="67" width="232" height="22" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <text x="262" y="82" font-size="10" fill="#0b9e8a" font-family="monospace" font-weight="600">R² = 0.9984</text>
+      <text x="366" y="82" font-size="10" fill="#7a90ae" font-family="monospace">RMSE 1.23</text>
+      <rect x="252" y="97" width="232" height="54" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <text x="262" y="111" font-size="9" fill="#5a7090" font-family="sans-serif">Residuals</text>
+      <line x1="252" y1="124" x2="484" y2="124" stroke="#1c3050" stroke-width="0.8" stroke-dasharray="4 2"/>
+      <circle cx="269" cy="120" r="2.5" fill="#3b82f6"/><circle cx="290" cy="129" r="2.5" fill="#3b82f6"/>
+      <circle cx="314" cy="121" r="2.5" fill="#3b82f6"/><circle cx="340" cy="128" r="2.5" fill="#3b82f6"/>
+      <circle cx="366" cy="120" r="2.5" fill="#3b82f6"/><circle cx="394" cy="128" r="2.5" fill="#3b82f6"/>
+      <circle cx="420" cy="121" r="2.5" fill="#3b82f6"/><circle cx="448" cy="129" r="2.5" fill="#3b82f6"/>
+      <circle cx="470" cy="121" r="2.5" fill="#3b82f6"/>
+    </svg>`
+  },
+  {
+    title: 'Analyse Results',
+    body: 'Converged parameters appear with <strong>± standard errors</strong>. The stats bar shows <strong>R², Adj-R², RMSE, SSE, AIC, BIC, and N</strong>. Four diagnostic tabs — Residuals, Q-Q Plot, Histogram, and Convergence — help assess fit quality. Click <strong>Try All</strong> to rank every model by R² in one shot.',
+    illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="500" height="160" rx="8" fill="#07111e"/>
+      <rect x="12" y="12" width="476" height="22" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <text x="22" y="27" font-size="9.5" fill="#0b9e8a" font-family="monospace" font-weight="600">R² 0.9984</text>
+      <text x="98" y="27" font-size="9.5" fill="#7a90ae" font-family="monospace">Adj-R² 0.998</text>
+      <text x="200" y="27" font-size="9.5" fill="#7a90ae" font-family="monospace">RMSE 1.23</text>
+      <text x="284" y="27" font-size="9.5" fill="#7a90ae" font-family="monospace">AIC −32.4</text>
+      <text x="360" y="27" font-size="9.5" fill="#7a90ae" font-family="monospace">BIC −28.1</text>
+      <text x="432" y="27" font-size="9.5" fill="#7a90ae" font-family="monospace">N 24</text>
+      <rect x="12" y="42" width="238" height="106" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <text x="22" y="57" font-size="9" fill="#0b9e8a" font-family="sans-serif" font-weight="600">Residuals</text>
+      <text x="76" y="57" font-size="9" fill="#3b4f6b" font-family="sans-serif">Q-Q</text>
+      <text x="110" y="57" font-size="9" fill="#3b4f6b" font-family="sans-serif">Histogram</text>
+      <text x="176" y="57" font-size="9" fill="#3b4f6b" font-family="sans-serif">Convergence</text>
+      <line x1="12" y1="60" x2="250" y2="60" stroke="#1c3050"/>
+      <line x1="12" y1="96" x2="250" y2="96" stroke="#1c3050" stroke-width="0.7" stroke-dasharray="4 2"/>
+      <circle cx="30" cy="91" r="2.8" fill="#3b82f6"/><circle cx="54" cy="102" r="2.8" fill="#3b82f6"/>
+      <circle cx="80" cy="90" r="2.8" fill="#3b82f6"/><circle cx="104" cy="101" r="2.8" fill="#3b82f6"/>
+      <circle cx="130" cy="92" r="2.8" fill="#3b82f6"/><circle cx="156" cy="100" r="2.8" fill="#3b82f6"/>
+      <circle cx="180" cy="91" r="2.8" fill="#3b82f6"/><circle cx="204" cy="101" r="2.8" fill="#3b82f6"/>
+      <circle cx="228" cy="92" r="2.8" fill="#3b82f6"/><circle cx="244" cy="99" r="2.8" fill="#3b82f6"/>
+      <text x="22" y="136" font-size="9" fill="#3b4f6b" font-family="monospace">SSE 33.5  · df 21  · converged</text>
+      <rect x="262" y="42" width="226" height="106" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <text x="272" y="57" font-size="9" fill="#6b82a0" font-family="sans-serif" font-weight="600">Try All Models — by R²</text>
+      <line x1="262" y1="61" x2="488" y2="61" stroke="#1c3050"/>
+      <rect x="270" y="65" width="210" height="14" rx="3" fill="#0b2640" stroke="#0b9e8a" stroke-width=".8"/>
+      <text x="276" y="75" font-size="9" fill="#0b9e8a" font-family="monospace">Exp-Decay-Offset  0.9984</text>
+      <text x="455" y="75" font-size="8.5" fill="#0b9e8a" font-family="sans-serif">Apply</text>
+      <text x="276" y="91" font-size="9" fill="#7a90ae" font-family="monospace">Exponential       0.9921</text>
+      <text x="455" y="91" font-size="8.5" fill="#5a7090" font-family="sans-serif">Apply</text>
+      <text x="276" y="107" font-size="9" fill="#5a7090" font-family="monospace">Gaussian          0.9401</text>
+      <text x="455" y="107" font-size="8.5" fill="#3b4f6b" font-family="sans-serif">Apply</text>
+      <text x="276" y="123" font-size="9" fill="#3b4f6b" font-family="monospace">Logistic          0.8873</text>
+      <text x="276" y="139" font-size="9" fill="#253448" font-family="monospace">Power Law         0.7120</text>
+    </svg>`
+  },
+  {
+    title: 'Multiple Independent Workspaces',
+    body: 'Click <strong>+</strong> in the tab bar to open a new workspace. Every tab is completely independent — its own datasets, fits, annotations, graph style, and settings. Double-click a tab name to rename it. Use <strong>Save Session</strong> to export all tabs to JSON, and reload them anytime.',
+    illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="500" height="160" rx="8" fill="#07111e"/>
+      <rect x="0" y="0" width="500" height="36" rx="0" fill="#060e1a"/>
+      <rect x="10" y="6" width="110" height="28" rx="5" fill="#0d2040" stroke="#0b9e8a" stroke-width="1.2"/>
+      <text x="56" y="24" font-size="10" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Exp Decay</text>
+      <text x="108" y="24" font-size="10" fill="#2a3e56" font-family="sans-serif">×</text>
+      <rect x="126" y="6" width="96" height="28" rx="5" fill="#09141f" stroke="#1c3050"/>
+      <text x="166" y="24" font-size="10" fill="#4a6080" text-anchor="middle" font-family="sans-serif">G-V Curve</text>
+      <text x="211" y="24" font-size="10" fill="#1e2e40" font-family="sans-serif">×</text>
+      <rect x="228" y="6" width="86" height="28" rx="5" fill="#09141f" stroke="#1c3050"/>
+      <text x="264" y="24" font-size="10" fill="#4a6080" text-anchor="middle" font-family="sans-serif">Kir I-V</text>
+      <text x="303" y="24" font-size="10" fill="#1e2e40" font-family="sans-serif">×</text>
+      <rect x="320" y="10" width="28" height="20" rx="5" fill="#09141f" stroke="#1c3050"/>
+      <text x="334" y="24.5" font-size="14" fill="#2a3e56" text-anchor="middle" font-family="sans-serif">+</text>
+      <line x1="0" y1="36" x2="500" y2="36" stroke="#1c3050"/>
+      <rect x="0" y="36" width="130" height="124" fill="#060e1a"/>
+      <line x1="130" y1="36" x2="130" y2="160" stroke="#1c3050"/>
+      <text x="12" y="58" font-size="9" fill="#3b82f6" font-family="monospace">● Dataset 1</text>
+      <text x="20" y="72" font-size="9" fill="#2a3e56" font-family="monospace">  Exp-Decay fit</text>
+      <text x="12" y="94" font-size="8.5" fill="#1e2e40" font-family="sans-serif">Tab 2: G-V Curve</text>
+      <text x="12" y="108" font-size="8.5" fill="#1e2e40" font-family="sans-serif">Tab 3: Kir I-V</text>
+      <text x="148" y="60" font-size="9" fill="#5a7090" font-family="sans-serif" font-weight="600">INDEPENDENT WORKSPACES</text>
+      <text x="148" y="78" font-size="9" fill="#3b4f6b" font-family="sans-serif">Each tab has its own datasets, fits,</text>
+      <text x="148" y="93" font-size="9" fill="#3b4f6b" font-family="sans-serif">annotations, graph style, and settings.</text>
+      <text x="148" y="112" font-size="9" fill="#2a3a4e" font-family="sans-serif">Double-click a tab name to rename it.</text>
+      <text x="148" y="127" font-size="9" fill="#2a3a4e" font-family="sans-serif">Tabs never inherit state from each other.</text>
+      <rect x="148" y="140" width="90" height="14" rx="4" fill="#0d2040" stroke="#1c3050"/>
+      <text x="193" y="151" font-size="9" fill="#5a7090" text-anchor="middle" font-family="sans-serif">Save Session</text>
+      <rect x="248" y="140" width="80" height="14" rx="4" fill="#0d2040" stroke="#1c3050"/>
+      <text x="288" y="151" font-size="9" fill="#5a7090" text-anchor="middle" font-family="sans-serif">Load Session</text>
+    </svg>`
+  },
+  {
+    title: 'Annotate, Style, and Export',
+    body: 'Add <strong>reference lines, text callouts, and auto-peak markers</strong> from the Annotations panel. Click <strong>⚙ Style</strong> to adjust fonts, colours, grid, axis range, and log scale. <strong>Export</strong> saves the plot as PNG or SVG. <strong>Copy Params</strong> copies all fit results to the clipboard.',
+    illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="500" height="160" rx="8" fill="#07111e"/>
+      <rect x="12" y="12" width="240" height="136" rx="6" fill="#0d2040" stroke="#1c3050"/>
+      <line x1="12" y1="87" x2="252" y2="87" stroke="#dc2626" stroke-width="1.3" stroke-dasharray="5 3" opacity=".85"/>
+      <rect x="186" y="79" width="54" height="13" rx="3" fill="#1a0a0a" opacity=".9"/>
+      <text x="213" y="89" font-size="9" fill="#dc2626" text-anchor="middle" font-family="sans-serif">EC₅₀ = 2.4</text>
+      <path d="M22,140 C62,140 92,140 108,102 C118,82 124,60 128,50 C132,40 138,40 152,50 C156,60 162,82 172,102 C192,140 222,140 248,140" stroke="#0b9e8a" stroke-width="2.2" fill="none"/>
+      <circle cx="128" cy="50" r="4" fill="#f59e0b" stroke="#07111e" stroke-width="1.5"/>
+      <line x1="128" y1="45" x2="128" y2="28" stroke="#f59e0b" stroke-width="1.5"/>
+      <polygon points="124,28 132,28 128,22" fill="#f59e0b"/>
+      <rect x="96" y="16" width="84" height="14" rx="3" fill="#1c1200" opacity=".9"/>
+      <text x="138" y="26.5" font-size="9" fill="#f59e0b" text-anchor="middle" font-family="sans-serif">peak  x = −39 mV</text>
+      <text x="22" y="56" font-size="9" fill="#5a7090" font-family="sans-serif">Gaussian fit</text>
+      <rect x="268" y="12" width="220" height="62" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <text x="280" y="28" font-size="9" fill="#5a7090" font-family="sans-serif" font-weight="600">⚙ GRAPH STYLE</text>
+      <text x="280" y="43" font-size="9" fill="#3b4f6b" font-family="sans-serif">Fonts · Background · Grid · Zero lines</text>
+      <text x="280" y="57" font-size="9" fill="#3b4f6b" font-family="sans-serif">Axis range · Log scale · Tick spacing</text>
+      <rect x="268" y="82" width="220" height="66" rx="5" fill="#0d2040" stroke="#1c3050"/>
+      <text x="280" y="97" font-size="9" fill="#5a7090" font-family="sans-serif" font-weight="600">SAVE &amp; EXPORT</text>
+      <rect x="280" y="101" width="88" height="20" rx="5" fill="#0a1628" stroke="#1c3050"/>
+      <text x="324" y="115" font-size="9.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Save Session</text>
+      <rect x="378" y="101" width="96" height="20" rx="5" fill="#0a1628" stroke="#1c3050"/>
+      <text x="426" y="115" font-size="9.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Export PNG/SVG</text>
+      <rect x="280" y="129" width="88" height="14" rx="4" fill="#0a1628" stroke="#1c3050"/>
+      <text x="324" y="139.5" font-size="9" fill="#5a7090" text-anchor="middle" font-family="sans-serif">Copy Params</text>
+      <rect x="378" y="129" width="96" height="14" rx="4" fill="#0a1628" stroke="#1c3050"/>
+      <text x="426" y="139.5" font-size="9" fill="#5a7090" text-anchor="middle" font-family="sans-serif">Predict / Solve</text>
+    </svg>`
+  }
+];
+
+function tutShow() {
+  _tutStep = 0;
+  const el = document.getElementById('tut-overlay');
+  if (!el) return;
+  el.style.display = 'flex';
+  tutRender();
+  document.getElementById('tut-next').focus();
+}
+
+function tutClose() {
+  const el = document.getElementById('tut-overlay');
+  if (el) el.style.display = 'none';
+}
+
+function tutRender() {
+  const n = TUT_SLIDES.length;
+  const s = TUT_SLIDES[_tutStep];
+  document.getElementById('tut-illus').innerHTML = s.illus;
+  document.getElementById('tut-title').textContent = s.title;
+  document.getElementById('tut-body').innerHTML = s.body;
+  document.getElementById('tut-count').textContent = `${_tutStep + 1} / ${n}`;
+  document.getElementById('tut-prev').disabled = _tutStep === 0;
+  document.getElementById('tut-next').textContent = _tutStep === n - 1 ? 'Get Started!' : 'Next →';
+  const dots = document.getElementById('tut-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'tut-dot' + (i === _tutStep ? ' active' : '');
+    dots.appendChild(d);
+  }
+}
+
+function tutInit() {
+  document.getElementById('tut-prev').addEventListener('click', () => {
+    if (_tutStep > 0) { _tutStep--; tutRender(); }
+  });
+  document.getElementById('tut-next').addEventListener('click', () => {
+    if (_tutStep < TUT_SLIDES.length - 1) { _tutStep++; tutRender(); }
+    else tutClose();
+  });
+  document.getElementById('tut-skip').addEventListener('click', tutClose);
+  document.getElementById('tut-no-show').addEventListener('click', () => {
+    localStorage.setItem(TUT_KEY, '1');
+    tutClose();
+  });
+  document.getElementById('tut-overlay').addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (_tutStep < TUT_SLIDES.length - 1) { _tutStep++; tutRender(); } else tutClose();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (_tutStep > 0) { _tutStep--; tutRender(); }
+    } else if (e.key === 'Escape') {
+      e.preventDefault(); tutClose();
+    }
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════
