@@ -133,6 +133,24 @@ function hexToRgba(hex, alpha) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   BOUNDS HELPER
+═══════════════════════════════════════════════════════════ */
+function clampToBounds(p, lo, hi) {
+  if (!lo || !lo.length) return;
+  for (let i = 0; i < p.length; i++) {
+    if (lo[i] > -Infinity) p[i] = Math.max(p[i], lo[i]);
+    if (hi[i] < Infinity)  p[i] = Math.min(p[i], hi[i]);
+  }
+}
+function boundsFromOpts(opts) {
+  const rows = opts.paramRows || [];
+  if (!rows.length) return { lo: null, hi: null };
+  const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);
+  const hi = rows.map(r => (r && r.max < 1e9)  ? r.max :  Infinity);
+  return { lo, hi };
+}
+
+/* ═══════════════════════════════════════════════════════════
    FITTING ENGINE — LEVENBERG-MARQUARDT
 ═══════════════════════════════════════════════════════════ */
 function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
@@ -140,11 +158,13 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
   const maxIter = opts.maxIter || 1000;
   const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
   const EPS     = 1e-7;
+  const { lo, hi } = boundsFromOpts(opts);
 
   const n = xArr.length;
   const m = p0.length;
 
   let p = p0.map(Number);
+  clampToBounds(p, lo, hi);
   let lambda = 1e-2;
   let converged = false;
   let iter = 0;
@@ -200,6 +220,7 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     if (!delta.every(isFinite)) { lambda *= 10; continue; }
 
     const pNew = p.map((v, i) => v + delta[i]);
+    clampToBounds(pNew, lo, hi);
     const rNew = evalResiduals(pNew);
     const newSSE = sse(rNew);
 
@@ -262,8 +283,10 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
   const maxIter = opts.maxIter || 1000;
   const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
   const EPS = 1e-7;
+  const { lo, hi } = boundsFromOpts(opts);
   const n = xArr.length, m = p0.length;
   let p = p0.map(Number);
+  clampToBounds(p, lo, hi);
   let converged = false, iter = 0;
 
   const sqrtW_gn = opts.weights ? opts.weights.map(w => Math.sqrt(Math.max(w, 0))) : null;
@@ -302,10 +325,12 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
     // Backtracking line search
     let alpha = 1;
     let pNew = p.map((v, i) => v + alpha * delta[i]);
+    clampToBounds(pNew, lo, hi);
     let newSSE = sse(evalR(pNew));
     for (let ls = 0; ls < 12 && newSSE >= curSSE; ls++) {
       alpha *= 0.5;
       pNew = p.map((v, i) => v + alpha * delta[i]);
+      clampToBounds(pNew, lo, hi);
       newSSE = sse(evalR(pNew));
     }
     if (newSSE >= curSSE) break;
@@ -321,6 +346,7 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
   opts = opts || {};
   const maxIter = opts.maxIter || 2000;
   const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
+  const { lo, hi } = boundsFromOpts(opts);
   const n = xArr.length, m = p0.length;
 
   function obj(params) {
@@ -331,13 +357,14 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
     }
     return isFinite(s) ? s : 1e30;
   }
+  function clampV(v) { clampToBounds(v, lo, hi); return v; }
 
-  // Initial simplex: perturb each parameter by 5 % (or 0.05 if zero)
-  let simplex = [p0.slice()];
+  // Initial simplex: perturb each parameter by 5 % (or 0.05 if zero); clamp all vertices
+  let simplex = [clampV(p0.slice())];
   for (let j = 0; j < m; j++) {
     const v = p0.slice();
     v[j] += Math.abs(v[j]) > 1e-8 ? 0.05 * Math.abs(v[j]) : 0.05;
-    simplex.push(v);
+    simplex.push(clampV(v));
   }
   let fval = simplex.map(obj);
   let converged = false, iter = 0;
@@ -358,12 +385,12 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
     for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) c[j] += simplex[i][j] / m;
 
     // Reflection
-    const xr = c.map((ci, j) => ci + (ci - simplex[m][j]));
+    const xr = clampV(c.map((ci, j) => ci + (ci - simplex[m][j])));
     const fr = obj(xr);
 
     if (fr < fval[0]) {
       // Expansion
-      const xe = c.map((ci, j) => ci + 2 * (xr[j] - ci));
+      const xe = clampV(c.map((ci, j) => ci + 2 * (xr[j] - ci)));
       const fe = obj(xe);
       simplex[m] = fe < fr ? xe : xr;
       fval[m]    = fe < fr ? fe : fr;
@@ -372,13 +399,13 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
     } else {
       // Contraction
       const inside = fr >= fval[m];
-      const xc = c.map((ci, j) => ci + 0.5 * ((inside ? simplex[m][j] : xr[j]) - ci));
+      const xc = clampV(c.map((ci, j) => ci + 0.5 * ((inside ? simplex[m][j] : xr[j]) - ci)));
       const fc = obj(xc);
       if (fc < (inside ? fval[m] : fr)) { simplex[m] = xc; fval[m] = fc; }
       else {
         // Shrink toward best
         for (let i = 1; i <= m; i++) {
-          simplex[i] = simplex[0].map((s0, j) => s0 + 0.5 * (simplex[i][j] - s0));
+          simplex[i] = clampV(simplex[0].map((s0, j) => s0 + 0.5 * (simplex[i][j] - s0)));
           fval[i]    = obj(simplex[i]);
         }
       }
@@ -393,6 +420,7 @@ function bfgs(fn, xArr, yArr, p0, opts) {
   const maxIter = opts.maxIter || 1000;
   const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
   const EPS = 1e-6;
+  const { lo, hi } = boundsFromOpts(opts);
   const n = xArr.length, m = p0.length;
 
   function obj(params) {
@@ -416,6 +444,7 @@ function bfgs(fn, xArr, yArr, p0, opts) {
   // Inverse-Hessian approximation (starts as identity)
   let H = Array.from({ length: m }, (_, i) => Array.from({ length: m }, (_, j) => i === j ? 1 : 0));
   let p = p0.map(Number);
+  clampToBounds(p, lo, hi);
   let g = grad(p);
   let converged = false, iter = 0;
 
@@ -436,10 +465,12 @@ function bfgs(fn, xArr, yArr, p0, opts) {
     const f0 = obj(p);
     let alpha = 1;
     let pNew = p.map((v, i) => v + alpha * d[i]);
+    clampToBounds(pNew, lo, hi);
     let fNew = obj(pNew);
     for (let ls = 0; ls < 20 && fNew > f0 + 1e-4 * alpha * dg; ls++) {
       alpha *= 0.5;
       pNew = p.map((v, i) => v + alpha * d[i]);
+      clampToBounds(pNew, lo, hi);
       fNew = obj(pNew);
     }
     if (!isFinite(fNew) || fNew >= f0) break;
@@ -1744,12 +1775,18 @@ function renderParamTable() {
     max: prev[name] ? prev[name].max : 1e10,
   }));
 
-  container.innerHTML = state.paramRows.map((row, i) => `
+  container.innerHTML = `
+    <div class="param-row param-row-header">
+      <span class="param-name"></span>
+      <span class="param-col-hdr">Init</span>
+      <span class="param-col-hdr">Min</span>
+      <span class="param-col-hdr">Max</span>
+    </div>` + state.paramRows.map((row, i) => `
     <div class="param-row" data-pi="${i}">
       <span class="param-name">${row.name}</span>
       <input class="param-input" data-field="init" type="number" value="${fmt(row.init)}" step="any" title="Initial value">
-      <input class="param-input" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" title="Lower bound (leave blank for -∞)">
-      <input class="param-input" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" title="Upper bound (leave blank for +∞)">
+      <input class="param-input param-bound" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" placeholder="-∞" title="Lower bound (leave blank for -∞)">
+      <input class="param-input param-bound" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" placeholder="+∞" title="Upper bound (leave blank for +∞)">
     </div>`).join('');
 
   container.querySelectorAll('.param-row').forEach(row => {
@@ -2131,6 +2168,16 @@ function runFit() {
     setConsole('Unknown model.', 'error'); return;
   }
 
+  // Validate and apply parameter bounds
+  for (let i = 0; i < state.paramRows.length; i++) {
+    const row = state.paramRows[i];
+    if (row.min > -1e9 && row.max < 1e9 && row.min > row.max) {
+      setConsole(`Bound error: min > max for parameter "${row.name}".`, 'error'); return;
+    }
+    if (row.min > -1e9 && p0[i] < row.min) p0[i] = row.min;
+    if (row.max < 1e9  && p0[i] > row.max) p0[i] = row.max;
+  }
+
   const errMsg = validateFitInput(xArr, yArr, model, p0);
   if (errMsg) { setConsole(errMsg, 'error'); return; }
 
@@ -2143,7 +2190,7 @@ function runFit() {
     worker = new Worker('fitting-worker.js');
   } catch (e) {
     // Web Workers may be blocked (e.g. file:// protocol) — fall back to synchronous fit
-    _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0 });
+    _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows: state.paramRows.map(r => ({ init: r.init, min: r.min, max: r.max })) });
     return;
   }
 
@@ -2200,10 +2247,10 @@ function runFit() {
   });
 }
 
-function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0 }) {
+function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows }) {
   const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
   const solve = SOLVERS[algoKey] || levenbergMarquardt;
-  const opts  = { maxIter, tol, weights };
+  const opts  = { maxIter, tol, weights, paramRows };
   const m = MODELS[model];
   setConsole('Fitting (sync)…', '');
   let result, modelFn;

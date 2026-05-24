@@ -432,6 +432,12 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
   display:grid;grid-template-columns:44px 1fr 1fr 1fr;
   gap:3px;margin-bottom:4px;align-items:center
 }
+.param-row-header{margin-bottom:2px}
+.param-col-hdr{
+  font-size:.68em;text-align:center;color:var(--dimmer);
+  text-transform:uppercase;letter-spacing:.05em
+}
+.param-bound::placeholder{color:var(--dimmer);opacity:.7}
 .param-name{
   font-family:var(--mono);font-size:.78em;
   color:var(--teal);font-weight:600;

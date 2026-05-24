@@ -46,6 +46,22 @@ function invertMatrix(M) {
   return aug.map(row => row.slice(n));
 }
 
+/* ── Bounds helpers ──────────────────────────────────────── */
+function clampToBounds(p, lo, hi) {
+  if (!lo || !lo.length) return;
+  for (let i = 0; i < p.length; i++) {
+    if (lo[i] > -Infinity) p[i] = Math.max(p[i], lo[i]);
+    if (hi[i] < Infinity)  p[i] = Math.min(p[i], hi[i]);
+  }
+}
+function boundsFromOpts(opts) {
+  const rows = opts.paramRows || [];
+  if (!rows.length) return { lo: null, hi: null };
+  const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);
+  const hi = rows.map(r => (r && r.max < 1e9)  ? r.max :  Infinity);
+  return { lo, hi };
+}
+
 /* ── Shared finalisation ─────────────────────────────────── */
 function finaliseFit(fn, xArr, yArr, p, meta) {
   const EPS = 1e-7;
@@ -100,8 +116,11 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
   const maxIter = opts.maxIter || 1000;
   const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
   const EPS     = 1e-7;
+  const { lo, hi } = boundsFromOpts(opts);
   const n = xArr.length, m = p0.length;
-  let p = p0.map(Number), lambda = 1e-2, converged = false, iter = 0;
+  let p = p0.map(Number);
+  clampToBounds(p, lo, hi);
+  let lambda = 1e-2, converged = false, iter = 0;
   const sqrtW = opts.weights ? opts.weights.map(w => Math.sqrt(Math.max(w, 0))) : null;
 
   function evalResiduals(params) {
@@ -138,6 +157,7 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     try { delta = solveLinear(A, beta); } catch (_) { lambda *= 10; continue; }
     if (!delta.every(isFinite)) { lambda *= 10; continue; }
     const pNew = p.map((v, i) => v + delta[i]);
+    clampToBounds(pNew, lo, hi);
     const rNew = evalResiduals(pNew);
     const newSSE = sse(rNew);
     if (newSSE < curSSE) {
@@ -158,8 +178,11 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
   const maxIter = opts.maxIter || 1000;
   const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
   const EPS = 1e-7;
+  const { lo, hi } = boundsFromOpts(opts);
   const n = xArr.length, m = p0.length;
-  let p = p0.map(Number), converged = false, iter = 0;
+  let p = p0.map(Number);
+  clampToBounds(p, lo, hi);
+  let converged = false, iter = 0;
   const sqrtW = opts.weights ? opts.weights.map(w => Math.sqrt(Math.max(w, 0))) : null;
   function evalR(params) {
     return xArr.map((x, i) => {
@@ -195,10 +218,12 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
     if (!delta.every(isFinite)) break;
     let alpha = 1;
     let pNew = p.map((v, i) => v + alpha * delta[i]);
+    clampToBounds(pNew, lo, hi);
     let newSSE = sse(evalR(pNew));
     for (let ls = 0; ls < 12 && newSSE >= curSSE; ls++) {
       alpha *= 0.5;
       pNew = p.map((v, i) => v + alpha * delta[i]);
+      clampToBounds(pNew, lo, hi);
       newSSE = sse(evalR(pNew));
     }
     if (newSSE >= curSSE) break;
@@ -214,6 +239,7 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
   opts = opts || {};
   const maxIter = opts.maxIter || 2000;
   const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
+  const { lo, hi } = boundsFromOpts(opts);
   const n = xArr.length, m = p0.length;
   function obj(params) {
     let s = 0;
@@ -223,11 +249,12 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
     }
     return isFinite(s) ? s : 1e30;
   }
-  let simplex = [p0.slice()];
+  function clampV(v) { clampToBounds(v, lo, hi); return v; }
+  let simplex = [clampV(p0.slice())];
   for (let j = 0; j < m; j++) {
     const v = p0.slice();
     v[j] += Math.abs(v[j]) > 1e-8 ? 0.05 * Math.abs(v[j]) : 0.05;
-    simplex.push(v);
+    simplex.push(clampV(v));
   }
   let fval = simplex.map(obj);
   let converged = false, iter = 0;
@@ -241,10 +268,10 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
     if (spread < tol) { converged = true; break; }
     const c = Array(m).fill(0);
     for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) c[j] += simplex[i][j] / m;
-    const xr = c.map((ci, j) => ci + (ci - simplex[m][j]));
+    const xr = clampV(c.map((ci, j) => ci + (ci - simplex[m][j])));
     const fr = obj(xr);
     if (fr < fval[0]) {
-      const xe = c.map((ci, j) => ci + 2 * (xr[j] - ci));
+      const xe = clampV(c.map((ci, j) => ci + 2 * (xr[j] - ci)));
       const fe = obj(xe);
       simplex[m] = fe < fr ? xe : xr;
       fval[m]    = fe < fr ? fe : fr;
@@ -252,12 +279,12 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
       simplex[m] = xr; fval[m] = fr;
     } else {
       const inside = fr >= fval[m];
-      const xc = c.map((ci, j) => ci + 0.5 * ((inside ? simplex[m][j] : xr[j]) - ci));
+      const xc = clampV(c.map((ci, j) => ci + 0.5 * ((inside ? simplex[m][j] : xr[j]) - ci)));
       const fc = obj(xc);
       if (fc < (inside ? fval[m] : fr)) { simplex[m] = xc; fval[m] = fc; }
       else {
         for (let i = 1; i <= m; i++) {
-          simplex[i] = simplex[0].map((s0, j) => s0 + 0.5 * (simplex[i][j] - s0));
+          simplex[i] = clampV(simplex[0].map((s0, j) => s0 + 0.5 * (simplex[i][j] - s0)));
           fval[i]    = obj(simplex[i]);
         }
       }
@@ -272,6 +299,7 @@ function bfgs(fn, xArr, yArr, p0, opts) {
   const maxIter = opts.maxIter || 1000;
   const tol     = opts.tol != null ? parseFloat(opts.tol) || 1e-8 : 1e-8;
   const EPS = 1e-6;
+  const { lo, hi } = boundsFromOpts(opts);
   const n = xArr.length, m = p0.length;
   function obj(params) {
     let s = 0;
@@ -291,7 +319,9 @@ function bfgs(fn, xArr, yArr, p0, opts) {
     });
   }
   let H = Array.from({ length: m }, (_, i) => Array.from({ length: m }, (_, j) => i === j ? 1 : 0));
-  let p = p0.map(Number), g = grad(p), converged = false, iter = 0;
+  let p = p0.map(Number);
+  clampToBounds(p, lo, hi);
+  let g = grad(p), converged = false, iter = 0;
   for (iter = 0; iter < maxIter; iter++) {
     const gNorm = Math.sqrt(g.reduce((s, v) => s + v * v, 0));
     if (gNorm < tol) { converged = true; break; }
@@ -305,10 +335,12 @@ function bfgs(fn, xArr, yArr, p0, opts) {
     }
     let alpha = 1;
     let pNew = p.map((v, i) => v + alpha * d[i]);
+    clampToBounds(pNew, lo, hi);
     let fNew = obj(pNew);
     for (let ls = 0; ls < 20 && fNew > f0 + 1e-4 * alpha * dg; ls++) {
       alpha *= 0.5;
       pNew = p.map((v, i) => v + alpha * d[i]);
+      clampToBounds(pNew, lo, hi);
       fNew = obj(pNew);
     }
     if (!isFinite(fNew) || fNew >= f0) break;
