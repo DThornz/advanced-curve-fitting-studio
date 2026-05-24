@@ -1,5 +1,5 @@
-# RESEARCH USE ONLY SOFTWARE LICENSE AGREEMENT
-**Version 2.1 (2026)**
+# NON-COMMERCIAL USE LICENSE AGREEMENT
+**Version 2.2 (2026)**
 
 Copyright © 2026 Asad Mirza. All rights reserved.
 
@@ -15,15 +15,31 @@ Copyright © 2026 Asad Mirza. All rights reserved.
 
 **1.4 "Legal Entity"** means any corporation, partnership, limited liability company, association, government agency, or other organised group of persons, whether for-profit or not-for-profit.
 
-**1.5 "Non-Commercial Purpose"** means use solely by a natural person (not acting on behalf of a Legal Entity) for personal academic research, university coursework, or non-profit scientific investigation. For the avoidance of doubt:
+**1.5 "Non-Commercial Purpose"** means any of the following uses, provided they are not undertaken for monetary gain or commercial advantage:
 
-(a) use by or on behalf of any for-profit Legal Entity is not a Non-Commercial Purpose regardless of the nature of the specific project or activity;
+(a) **Personal and hobby use** — any individual using the Software for personal curiosity, self-learning, recreational data analysis, or hobby projects, regardless of the individual's profession or employer, provided the use is not on behalf of or for the benefit of a for-profit entity;
 
-(b) use by a non-profit or governmental entity that is directly and primarily contracted to perform work for, or whose output is primarily assigned to, a for-profit entity is not a Non-Commercial Purpose;
+(b) **Academic research** — research conducted at a university, college, research institute, or government laboratory, including research funded by public or non-profit grants (e.g. NSF, NIH, EPSRC), provided the research is not performed primarily for the direct commercial benefit of a for-profit sponsor and the results are not assigned exclusively to a for-profit entity;
 
-(c) use in any activity from which monetary or other material compensation flows as a direct or proximate result of the use of the Software to any party is not a Non-Commercial Purpose.
+(c) **Teaching and educational instruction** — use by an educator, instructor, or student in the course of classroom teaching, coursework, tutorials, or free educational materials at any educational level (K-12, undergraduate, postgraduate, independent), provided no direct fee is charged to students specifically for access to or use of the Software, and the instructor does not derive direct personal profit from a course whose primary content depends on the Software;
 
-**1.6 "Commercial Purpose"** means any use that is not a Non-Commercial Purpose, including but not limited to:
+(d) **Student coursework** — use by an enrolled student completing assignments, thesis work, or independent study as part of an accredited or non-profit educational programme;
+
+(e) **Non-profit scientific investigation** — use by individuals or non-profit organisations for scientific investigation where no commercial product, service, or revenue results from the use.
+
+For the avoidance of doubt, the following are **not** Non-Commercial Purposes:
+
+(i) use by or on behalf of any for-profit Legal Entity, regardless of the nature of the specific project or activity;
+
+(ii) use by a non-profit or governmental entity that is directly and primarily contracted to perform work for, or whose primary output is assigned to, a for-profit entity;
+
+(iii) use in paid consulting, contract work, or any service for which the Licensee charges a client or customer, even if the engagement is described as "research" or "education";
+
+(iv) use in a paid online course, subscription training platform, or commercial workshop where students pay fees and the instructor or platform derives revenue — regardless of whether the instructor considers the activity "teaching";
+
+(v) use in any activity from which monetary or other material compensation flows as a direct or proximate result of the use of the Software, excluding ordinary salary or stipend received from an educational institution or non-profit employer in the course of permitted teaching or research activities.
+
+**1.6 "Commercial Purpose"** means any use that is not a Non-Commercial Purpose as defined in Section 1.5, including but not limited to:
 
 (a) use by or on behalf of any for-profit Legal Entity for any purpose whatsoever, including internal evaluation, prototyping, research, or development;
 
@@ -31,9 +47,13 @@ Copyright © 2026 Asad Mirza. All rights reserved.
 
 (c) incorporation into any commercial product, platform, SaaS offering, or service;
 
-(d) use in paid consulting, contract research, sponsored research, or any services rendered for compensation;
+(d) use in paid consulting, contract work, or any services rendered for compensation, including where the engagement is framed as "research" or "training";
 
-(e) use to train, fine-tune, benchmark, or evaluate any machine-learning or artificial-intelligence system, model, or service that is or may be commercialised.
+(e) use in a paid online course, subscription training programme, or commercial workshop where students or participants pay fees and the instructor or platform derives revenue from those fees;
+
+(f) research performed primarily for the direct commercial benefit of a for-profit sponsor, or whose results are assigned exclusively to a for-profit entity;
+
+(g) use to train, fine-tune, benchmark, or evaluate any machine-learning or artificial-intelligence system, model, or service that is or may be commercialised.
 
 **1.7 "Derivative Work"** means any work that is based upon, derived from, incorporates, or is a modification or adaptation of the Software, including translations, ports, enhancements, or any work that would constitute a derivative work under applicable copyright law.
 

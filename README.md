@@ -349,5 +349,5 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## License
 
-Research use only. See [LICENSE.md](LICENSE.md) for full terms.  
+Non-commercial use only — personal, hobby, academic research, and teaching permitted; commercial use strictly prohibited. See [LICENSE.md](LICENSE.md) for full terms.  
 Copyright 2026 Asad Mirza. All rights reserved.
