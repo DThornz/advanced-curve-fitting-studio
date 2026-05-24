@@ -1287,7 +1287,11 @@ function buildMainTraces() {
     const activeX = ds.x.filter((_, i) => !excluded.has(i));
     const activeY = ds.y.filter((_, i) => !excluded.has(i));
     const activeOrigIdx = ds.x.map((_, i) => i).filter(i => !excluded.has(i));
-    const activeSig = ds.sigY ? ds.sigY.filter((_, i) => !excluded.has(i)) : null;
+    const activeSigRaw = ds.sigY ? ds.sigY.filter((_, i) => !excluded.has(i)) : null;
+    // Plotly renders NaN error bars inconsistently; map to null (= no bar for that point)
+    const activeSig = activeSigRaw?.some(v => isFinite(v))
+      ? activeSigRaw.map(v => (isFinite(v) && v > 0) ? v : null)
+      : null;
     traces.push({
       x: activeX, y: activeY,
       mode: 'markers', type: 'scatter', name: ds.name,
@@ -2308,9 +2312,13 @@ function runFit() {
     weights = yArr.map(y => 1 / Math.max(y * y, 1e-20));
   } else if (weightMode === '1/y') {
     weights = yArr.map(y => 1 / Math.max(Math.abs(y), 1e-10));
-  } else if (weightMode === 'sigma' && ds.sigY) {
-    const sigArr = ds.sigY.filter((_, i) => !excluded.has(i));
-    weights = sigArr.map(s => (isFinite(s) && s > 0) ? 1 / (s * s) : 1e-40);
+  } else if (weightMode === 'sigma') {
+    if (!ds.sigY) {
+      setConsole('No σ data on this dataset — fitting unweighted.', 'warn');
+    } else {
+      const sigArr = ds.sigY.filter((_, i) => !excluded.has(i));
+      weights = sigArr.map(s => (isFinite(s) && s > 0) ? 1 / (s * s) : 1e-40);
+    }
   }
   state.sweepParams = null;
 
@@ -3234,6 +3242,7 @@ function restoreSessionPayload(payload) {
   state.datasets = (payload.datasets || []).map(d => {
     if (!d.originalY) d.originalY = d.y.slice();  // backfill for older saves
     if (d.enabled == null) d.enabled = true;       // backfill for older saves
+    if (d.sigY && d.sigY.length !== d.x.length) delete d.sigY;  // guard against corrupt saves
     d.excludedIndices = new Set(d.excludedIndices || []);
     return d;
   });

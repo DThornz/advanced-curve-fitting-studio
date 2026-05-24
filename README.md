@@ -19,7 +19,9 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^` |
 | **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status, final λ (LM), gradient norm (BFGS) |
 | **CI bands** | 95% confidence interval ribbon around each fit curve (toggle per session) |
-| **Weighted fitting** | Three schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate) |
+| **Weighted fitting** | Four schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate), 1/σ² (supplied uncertainties from a σ column in the imported data) |
+| **Error bars** | Datasets with a σ column display Plotly error bars on the scatter plot; σ-weighted fits report reduced chi-square χ²ᵣ in the stats table, copy output, and TXT report |
+| **Parameter sweep** | Range slider under each parameter updates the model preview curve live as you drag — no fitting, instant visual feedback for building intuition about parameter roles |
 | **Try All Models** | One-click comparison table — fits all 17 non-Custom models and ranks by R²; apply any result to the active fit |
 | **Copy Parameters** | One-click copy of fit name, dataset, all parameters (with ± std errors), and full statistics (R², Adj-R², RMSE, SSE, AIC, BIC, N, status) to clipboard |
 | **Parameter table** | Init / Min / Max / Fit columns per parameter; Init preserves the starting guess; Fit column shows converged values; switching fits loads that fit's parameters into Init |
@@ -35,7 +37,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Interactive plots** | Plotly.js scatter + fit curve overlay; residual subplot; zoom/pan/hover; draggable legend |
 | **Legend toggle** | Show/hide plot legend via modebar button (same bar as zoom/pan/box-select) |
 | **Log axes** | Toggle log X / log Y independently |
-| **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker for files with more than two columns |
+| **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker with optional σ column for files with more than two columns |
 | **12 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration — each with adjustable noise and optional outlier injection (count + scale) |
 | **Dataset enable/disable** | Toggle datasets on/off for fitting; disabled datasets dim on the plot and are excluded from the fit dropdown |
 | **Multi-tab workspace** | Independent tabs with auto-naming from first dataset; double-click to rename |
@@ -108,6 +110,38 @@ Enable **Outliers** in the toolbar to highlight points where |residual| > 2.5σ 
 
 Set **Multi-start** (default: 8) in Algorithm Options. The solver launches N pilot runs from log-scale-perturbed starting points, picks the best result, and polishes it. Substantially reduces the chance of converging to a local minimum at ~4× the compute cost of a single run.
 
+### Supplied measurement uncertainties (σ data)
+
+If your CSV has a third column of per-point uncertainties (σ_y), select it in the **σ column** dropdown of the column picker. The dataset will display Plotly error bars on the scatter plot. Once loaded:
+
+- The **Weights** dropdown gains a **1/σ² (data σ)** option (only active when the selected dataset has σ data).
+- Selecting it fits by minimising χ² = Σ[(yᵢ − f(xᵢ))² / σᵢ²], the correct objective when measurement uncertainties are known.
+- The **reduced chi-square** χ²ᵣ = χ² / (n − m) appears in the stats table, Copy Parameters output, and TXT report. χ²ᵣ ≈ 1 indicates a well-calibrated fit; > 1 means the model under-fits or uncertainties are underestimated.
+
+Column headers are auto-detected: if the header matches `sigma`, `err`, `error`, `uncertainty`, `sd`, `std`, or `stdev`, the σ column is pre-selected.
+
+```
+x,y,sigma
+0.0,2.00,0.05
+1.0,1.21,0.04
+2.0,0.74,0.06
+...
+```
+
+### Parameter sweep
+
+Each parameter row has a range slider below it. Dragging the slider:
+
+1. Updates the **Init** value live.
+2. Evaluates the model at the current slider positions for all parameters and draws a dashed amber preview curve on the main plot — no fitting, just model evaluation.
+
+Releasing the slider commits the Init value. The preview curve disappears and the plot refreshes normally. This is useful for:
+- Building intuition about what each parameter controls.
+- Manually narrowing initial guesses before running the solver.
+- Diagnosing a poor fit by checking whether any slider position visually matches the data.
+
+The slider range is auto-sized to ±2×|Init| around the current Init value, or to the parameter bounds if set.
+
 ### Parameter bounds
 
 The parameter table has four columns per row: **Init** (starting guess), **Min** (lower bound), **Max** (upper bound), and **Fit** (converged result). Min and Max are optional — leave them blank for unconstrained. Common uses:
@@ -156,9 +190,20 @@ x,y
 ...
 ```
 
+Three-column format with measurement uncertainties:
+
+```
+x,y,sigma
+0.0,2.00,0.05
+1.0,1.21,0.04
+2.0,0.74,0.06
+...
+```
+
 - Headers are optional (detected automatically).
 - Supports comma, tab, semicolon, or space delimiters.
-- First two numeric columns are used as X and Y.
+- Files with three or more columns open a column picker; choose X, Y, and optionally σ.
+- Files with exactly two columns use them as X and Y directly.
 
 ### Keyboard shortcuts
 
