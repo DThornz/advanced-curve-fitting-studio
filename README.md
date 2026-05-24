@@ -27,7 +27,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Smart point editing** | Always-on context-aware interaction: click near a point to select/drag, click and drag away from points to pan, scroll to zoom; no mode toggle required |
 | **Residual analysis tabs** | Four sub-panels below the main plot: Residuals vs X · Q-Q Plot (Blom quantile approx vs normal) · Histogram (Sturges bins + normal overlay) · Convergence (SSE vs iteration; Log/Linear X and Y toggles, default Log Y) |
 | **Normalized residuals** | Toggle residual plot between raw units and σ (RMSE-normalized) units |
-| **Web Worker fitting** | All nonlinear solvers run in a background Web Worker — UI stays responsive; live SSE progress shown in the status bar; ✕ Cancel button terminates the fit instantly |
+| **Web Worker fitting** | All nonlinear solvers run in a background Web Worker — UI stays responsive; live SSE progress shown in the status bar; Cancel button terminates the fit instantly |
 | **Input validation** | Pre-flight checks before fitting: minimum point count, finite data, non-constant Y, model output sanity at initial parameters — with plain-language error messages |
 | **Log-scale auto-suggest** | Floating banner appears when data spans >100× on X or Y; one-click to apply log axis |
 | **Interactive plots** | Plotly.js scatter + fit curve overlay; residual subplot; zoom/pan/hover; draggable legend |
@@ -79,7 +79,7 @@ No `npm install`, no build step, no dependencies to install.
 
 ### Launching the app
 
-Click **▶ Start Advanced Curve Fitting Studio** on the page. The app opens as a full-screen overlay. Press **✕ Close** in the toolbar or `Escape` to return to the page.
+Click **Start Advanced Curve Fitting Studio** on the page. The app opens as a full-screen overlay. Press **Close** in the toolbar or `Escape` to return to the page.
 
 ### Fitting a dataset
 
@@ -87,7 +87,7 @@ Click **▶ Start Advanced Curve Fitting Studio** on the page. The app opens as 
 2. Select the target dataset in the **Target Dataset** dropdown (right panel).
 3. Choose a **Fit Model** from the dropdown.
 4. For nonlinear models, click **Auto Init** to set data-driven initial guesses, or tune manually.
-5. Press **▶ Fit** (or `Ctrl+Enter`).
+5. Press **Fit** (or `Ctrl+Enter`).
 6. Statistics (R², RMSE, AIC, BIC, etc.) appear in the resizable stats bar; parameters update in the right panel.
 
 ### Trying all models at once
@@ -96,7 +96,7 @@ Click **Try All** in the toolbar to fit every built-in model to the active datas
 
 ### Point editing
 
-Point editing is always active — no mode toggle is needed. Click near a data point to select it (a circle shows the selection radius). Drag a selected point to move it. Click and drag away from any point to pan the plot. Scroll to zoom. Shift+scroll adjusts the multi-select radius. Selected points can be nudged with arrow keys using the step value shown in the Edit controls panel (open via **✏ Edit**).
+Point editing is always active — no mode toggle is needed. Click near a data point to select it (a circle shows the selection radius). Drag a selected point to move it. Click and drag away from any point to pan the plot. Scroll to zoom. Shift+scroll adjusts the multi-select radius. Selected points can be nudged with arrow keys using the step value shown in the Edit controls panel (open via **Edit**).
 
 ### Outlier tools
 
@@ -128,7 +128,7 @@ The whole panel dims while a fit is running and when the active fit's source dat
 
 ### Dataset enable / disable
 
-Click the **●** toggle button (visible on hover in the dataset list) to enable or disable a dataset. Disabled datasets are dimmed on the plot and excluded from the fit dropdown.
+Click the toggle button (visible on hover in the dataset list) to enable or disable a dataset. Disabled datasets are dimmed on the plot and excluded from the fit dropdown.
 
 ### Multi-tab workflow
 
