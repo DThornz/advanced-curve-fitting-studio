@@ -1,5 +1,5 @@
 # RESEARCH USE ONLY SOFTWARE LICENSE AGREEMENT
-**Version 2.0 (2026)**
+**Version 2.1 (2026)**
 
 Copyright © 2026 Asad Mirza. All rights reserved.
 
@@ -19,13 +19,13 @@ Copyright © 2026 Asad Mirza. All rights reserved.
 
 (a) use by or on behalf of any for-profit Legal Entity is not a Non-Commercial Purpose regardless of the nature of the specific project or activity;
 
-(b) use by a non-profit or governmental entity whose activities directly benefit or are contracted to a for-profit entity is not a Non-Commercial Purpose;
+(b) use by a non-profit or governmental entity that is directly and primarily contracted to perform work for, or whose output is primarily assigned to, a for-profit entity is not a Non-Commercial Purpose;
 
-(c) use in any activity from which monetary or other material compensation flows, directly or indirectly, to any party is not a Non-Commercial Purpose.
+(c) use in any activity from which monetary or other material compensation flows as a direct or proximate result of the use of the Software to any party is not a Non-Commercial Purpose.
 
 **1.6 "Commercial Purpose"** means any use that is not a Non-Commercial Purpose, including but not limited to:
 
-(a) use by or on behalf of any for-profit Legal Entity for any purpose, including internal evaluation, prototyping, research, or development;
+(a) use by or on behalf of any for-profit Legal Entity for any purpose whatsoever, including internal evaluation, prototyping, research, or development;
 
 (b) sale, licensing, sublicensing, or distribution for revenue or other consideration;
 
@@ -36,6 +36,8 @@ Copyright © 2026 Asad Mirza. All rights reserved.
 (e) use to train, fine-tune, benchmark, or evaluate any machine-learning or artificial-intelligence system, model, or service that is or may be commercialised.
 
 **1.7 "Derivative Work"** means any work that is based upon, derived from, incorporates, or is a modification or adaptation of the Software, including translations, ports, enhancements, or any work that would constitute a derivative work under applicable copyright law.
+
+**1.8 "Derived Portions"** means those portions of a Derivative Work that are based upon, incorporate, or are directly derived from the Software, as distinguished from original material independently created by the Licensee with no reference to the Software.
 
 ---
 
@@ -71,7 +73,7 @@ The Licensee shall not, and shall not permit, assist, or enable any third party 
 
 **3.7** Use the Software or any Derivative Work in any manner that competes with, substitutes for, or reduces the commercial value of any product or service offered or planned by the Licensor;
 
-**3.8** Assert any intellectual property rights over the Software or any Derivative Work in a manner inconsistent with the Licensor's ownership as set forth in Section 5.
+**3.8** Assert any intellectual property rights over the Software, any Derivative Work, or any Derived Portions in a manner inconsistent with the Licensor's ownership as set forth in Section 5.
 
 ---
 
@@ -89,7 +91,7 @@ Redistribution of the Software, whether in original or Derivative Work form, is 
 
 (e) any modifications or additions are clearly identified as such and do not misrepresent the origin of the Software;
 
-(f) the Licensee does not impose any additional restrictions on the rights of recipients beyond those contained in this License; and
+(f) the Licensee does not impose any additional restrictions or grant any additional permissions beyond those contained in this License; and
 
 (g) the Licensee does not relicense the Software or any Derivative Work under any other license.
 
@@ -97,11 +99,13 @@ Redistribution of the Software, whether in original or Derivative Work form, is 
 
 ## 5. OWNERSHIP AND INTELLECTUAL PROPERTY
 
-The Software is licensed, not sold. The Licensor retains all right, title, and interest — including all copyright, patent, trade secret, trademark, and other intellectual property rights — in and to the Software and all Derivative Works, regardless of who creates them.
+The Software is licensed, not sold. The Licensor retains all right, title, and interest — including all copyright, patent, trade secret, trademark, and other intellectual property rights — in and to the Software, regardless of who creates modifications or additions.
 
-The Licensee acknowledges that no intellectual property rights are transferred by this License. Any Derivative Work created by the Licensee that is based upon the Software shall be the property of the Licensor to the maximum extent permitted by applicable law, and the Licensee hereby assigns to the Licensor all right, title, and interest in any such Derivative Work.
+The Licensee acknowledges that no intellectual property rights of any kind are transferred by this License. The Licensor retains full ownership of all Derived Portions of any Derivative Work created by the Licensee. The Licensee hereby irrevocably assigns to the Licensor all right, title, and interest in and to all Derived Portions of any Derivative Work, effective automatically upon creation, to the maximum extent permitted by applicable law. The Licensee shall execute any documents and take any actions the Licensor may reasonably request to perfect or evidence this assignment.
 
-No patent license of any kind is granted under this License, whether expressly, by implication, by estoppel, or otherwise.
+The Licensee retains ownership of original material in a Derivative Work that does not incorporate or derive from the Software, provided that such material is clearly separable from the Derived Portions.
+
+No patent license of any kind is granted under this License, whether expressly, by implication, by estoppel, or otherwise. The Licensor makes no representation that the Software does not infringe any third-party patent rights.
 
 ---
 
@@ -117,11 +121,11 @@ Nothing in this License grants permission to use the Licensor's name, institutio
 
 Commercial use of the Software is strictly prohibited absent a separate commercial license. Any such commercial license:
 
-(a) must be established solely through a separate written agreement mutually executed (signed) by both the Licensee and the Licensor;
+(a) must be established solely through a separate written agreement mutually executed (physically or electronically signed) by both the Licensee and the Licensor;
 
-(b) is effective only upon the Licensor's counter-signature and will not be implied from any course of dealing, email exchange, verbal discussion, or payment absent a fully executed written agreement;
+(b) is effective only upon the Licensor's counter-signature and will not be implied from any course of dealing, email exchange, verbal discussion, invoice, payment, or other conduct absent a fully executed written agreement;
 
-(c) is available entirely at the Licensor's sole discretion — the Licensor has no obligation to grant any commercial license to any party.
+(c) is available entirely at the Licensor's sole and absolute discretion — the Licensor has no obligation to negotiate, offer, or grant any commercial license to any party.
 
 Commercial licensing inquiries may be directed to:
 
@@ -129,11 +133,31 @@ Commercial licensing inquiries may be directed to:
 Florida International University
 asadmirza33165@gmail.com
 
-Unsolicited use of the Software for Commercial Purposes prior to the execution of a commercial license agreement constitutes copyright infringement and may subject the Licensee to all available legal remedies, including injunctive relief, actual damages, statutory damages, and attorney's fees.
+Any use of the Software for Commercial Purposes prior to the execution of a commercial license agreement constitutes wilful copyright infringement. The Licensee acknowledges that wilful infringement of a copyright may give rise to enhanced statutory damages under 17 U.S.C. § 504(c)(2) of up to USD $150,000 per work infringed, in addition to actual damages, disgorgement of profits, injunctive relief, and attorney's fees and costs.
 
 ---
 
-## 8. DISCLAIMER OF WARRANTIES
+## 8. AUDIT RIGHTS
+
+The Licensor may, upon reasonable written notice of not less than five (5) business days, audit the Licensee's use of the Software to verify compliance with this License. The Licensee shall cooperate fully with any such audit and shall provide reasonable access to relevant records, systems, and personnel. If an audit reveals any non-compliant use, the Licensee shall bear the reasonable cost of the audit in addition to any other remedies available to the Licensor.
+
+---
+
+## 9. INDEMNIFICATION
+
+The Licensee shall defend, indemnify, and hold harmless the Licensor and the Licensor's affiliates, officers, employees, agents, successors, and assigns from and against any and all claims, demands, suits, proceedings, liabilities, losses, damages, costs, and expenses (including reasonable attorney's fees) arising out of or relating to:
+
+(a) the Licensee's use of the Software or any Derivative Work;
+
+(b) any breach of this License by the Licensee;
+
+(c) the Licensee's violation of any applicable law or regulation in connection with the Software; or
+
+(d) any claim by a third party arising from the Licensee's use or distribution of the Software.
+
+---
+
+## 10. DISCLAIMER OF WARRANTIES
 
 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING BUT NOT LIMITED TO ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, ACCURACY, COMPLETENESS, NON-INFRINGEMENT, OR THAT THE SOFTWARE WILL BE ERROR-FREE, UNINTERRUPTED, OR FREE OF HARMFUL COMPONENTS.
 
@@ -143,7 +167,7 @@ THE LICENSOR DISCLAIMS ALL WARRANTIES ARISING OUT OF ANY COURSE OF DEALING, USAG
 
 ---
 
-## 9. LIMITATION OF LIABILITY
+## 11. LIMITATION OF LIABILITY
 
 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW:
 
@@ -153,7 +177,7 @@ TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW:
 
 ---
 
-## 10. INJUNCTIVE RELIEF
+## 12. INJUNCTIVE RELIEF
 
 The Licensee acknowledges and agrees that:
 
@@ -165,65 +189,75 @@ The Licensee acknowledges and agrees that:
 
 ---
 
-## 11. TERMINATION
+## 13. ATTORNEY'S FEES
 
-**11.1 Automatic Termination.** This License and all rights granted hereunder terminate automatically and immediately, without notice, upon any breach of any term of this License by the Licensee.
-
-**11.2 Termination for Convenience.** The Licensor may terminate this License at any time and for any reason by providing written notice to the Licensee. The Licensee shall cease all use of the Software within seven (7) days of receiving such notice.
-
-**11.3 Effect of Termination.** Upon termination for any reason, the Licensee shall immediately cease all use, reproduction, and distribution of the Software and all Derivative Works, and shall destroy or permanently delete all copies in its possession, custody, or control.
-
-**11.4 Survival.** Sections 1, 5, 6, 7, 8, 9, 10, 11.3, 11.4, 12, 13, 14, 15, and 16 shall survive any termination or expiration of this License.
+In any action, proceeding, or dispute arising out of or relating to this License or the Software in which the Licensor is the prevailing party, the Licensee shall pay the Licensor's reasonable attorney's fees, court costs, expert witness fees, and all other litigation expenses. This fee-shifting obligation is in addition to any damages or other relief awarded.
 
 ---
 
-## 12. NO TRADEMARK RIGHTS
+## 14. TERMINATION
+
+**14.1 Automatic Termination.** This License and all rights granted hereunder terminate automatically and immediately, without notice or further action by the Licensor, upon any breach of any term of this License by the Licensee.
+
+**14.2 Termination for Convenience.** The Licensor may terminate this License at any time and for any reason, with or without cause, by providing written notice to the Licensee. The Licensee shall cease all use of the Software within seven (7) days of receiving such notice.
+
+**14.3 Effect of Termination.** Upon termination for any reason, the Licensee shall immediately cease all use, reproduction, and distribution of the Software and all Derivative Works, and shall destroy or permanently delete all copies in its possession, custody, or control. Upon request, the Licensee shall certify in writing to the Licensor that it has complied with this Section 14.3.
+
+**14.4 Survival.** Sections 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14.3, 14.4, 15, 16, 17, 18, and 19 shall survive any termination or expiration of this License. Termination does not relieve the Licensee of liability for breaches that occurred prior to termination.
+
+---
+
+## 15. NO TRADEMARK RIGHTS
 
 Nothing in this License grants any right to use the Licensor's trade names, trademarks, service marks, product names, or logos, except as strictly required for attribution under Section 6 or with the Licensor's prior written consent.
 
 ---
 
-## 13. GOVERNING LAW AND DISPUTE RESOLUTION
+## 16. GOVERNING LAW AND DISPUTE RESOLUTION
 
-This License shall be governed by and construed in accordance with the laws of the State of Florida, United States of America, without regard to its conflict-of-law provisions.
+This License, and all matters relating to its interpretation, validity, and enforcement as a contract, shall be governed by and construed in accordance with the laws of the State of Florida, United States of America, without regard to its conflict-of-law provisions. All copyright, patent, and other intellectual property rights in the Software are governed by applicable United States federal law, including the Copyright Act (17 U.S.C. § 101 et seq.).
 
-Any dispute, claim, or controversy arising out of or relating to this License or the Software shall be subject to the exclusive jurisdiction of the state and federal courts located in Miami-Dade County, Florida. The Licensee irrevocably consents to the personal jurisdiction of such courts and waives any objection to venue.
-
----
-
-## 14. GENERAL PROVISIONS
-
-**14.1 Severability.** If any provision of this License is found by a court of competent jurisdiction to be invalid, illegal, or unenforceable, that provision shall be modified to the minimum extent necessary to make it enforceable, and the remaining provisions shall continue in full force and effect.
-
-**14.2 No Waiver.** The Licensor's failure to enforce any provision of this License on any occasion shall not constitute a waiver of that provision or of the Licensor's right to enforce it on any future occasion. No waiver is effective unless made in writing and signed by the Licensor.
-
-**14.3 Entire Agreement.** This License constitutes the entire agreement between the parties with respect to the Software and supersedes all prior or contemporaneous representations, understandings, negotiations, or agreements, whether oral or written. Any amendment to this License must be in a written document signed by both parties.
-
-**14.4 No Assignment.** The Licensee may not assign, delegate, or transfer any rights or obligations under this License, whether by operation of law or otherwise, without the Licensor's prior written consent. Any purported assignment in violation of this Section is void. The Licensor may assign this License freely.
-
-**14.5 Headings.** Section headings are for convenience only and shall not affect the interpretation of this License.
-
-**14.6 Export Compliance.** The Licensee shall comply with all applicable export control laws and regulations in connection with the use or distribution of the Software.
+Any dispute, claim, or controversy arising out of or relating to this License or the Software shall be subject to the exclusive jurisdiction of the state and federal courts located in Miami-Dade County, Florida. The Licensee irrevocably consents to the personal jurisdiction of such courts, waives any objection to venue in such courts, and waives any claim that such courts are an inconvenient forum.
 
 ---
 
-## 15. NO THIRD-PARTY BENEFICIARIES
+## 17. GENERAL PROVISIONS
+
+**17.1 Severability.** If any provision of this License is found by a court of competent jurisdiction to be invalid, illegal, or unenforceable, that provision shall be modified to the minimum extent necessary to make it enforceable, or severed if modification is not possible, and the remaining provisions shall continue in full force and effect.
+
+**17.2 No Waiver.** The Licensor's failure to enforce any provision of this License on any occasion shall not constitute a waiver of that provision or of the Licensor's right to enforce it on any future occasion. No waiver is effective unless made in a writing signed by the Licensor.
+
+**17.3 Amendments and License Versioning.** The Licensor reserves the right to publish updated versions of this License for future recipients of the Software. A Licensee is bound by the version of this License in effect at the time the Licensee first accessed or used the Software, unless the Licensee explicitly agrees in a signed writing to be bound by a newer version. Any amendment to the terms applicable to an existing Licensee requires a written document signed by both parties.
+
+**17.4 No Assignment.** The Licensee may not assign, delegate, novate, or transfer any rights or obligations under this License, whether by operation of law, merger, acquisition, or otherwise, without the Licensor's prior written consent. Any purported assignment in violation of this Section is void ab initio. The Licensor may assign or transfer this License and all associated rights freely and without consent.
+
+**17.5 Headings.** Section headings are for convenience only and shall not affect the interpretation of this License.
+
+**17.6 Export Compliance.** The Licensee shall comply with all applicable export control laws and regulations of the United States and any other applicable jurisdiction in connection with the use, reproduction, or distribution of the Software.
+
+**17.7 Cumulative Remedies.** All remedies available to the Licensor under this License, at law, or in equity are cumulative and not exclusive of any other remedy. The exercise of one remedy does not preclude the exercise of any other.
+
+---
+
+## 18. NO THIRD-PARTY BENEFICIARIES
 
 This License is entered into solely between the Licensor and the Licensee. Nothing in this License, express or implied, is intended to or shall confer upon any third party any legal or equitable right, benefit, or remedy under or by reason of this License.
 
 ---
 
-## 16. ACCEPTANCE
+## 19. ACCEPTANCE
 
 By accessing, downloading, copying, installing, using, or distributing the Software, the Licensee:
 
-(a) represents that it has read, understood, and agrees to be bound by all terms of this License;
+(a) represents that it has read, understood, and agrees to be bound by all terms and conditions of this License;
 
-(b) represents that it is lawfully authorised to enter into this agreement on behalf of itself or the entity it represents; and
+(b) represents that it is of legal age and is lawfully authorised to enter into binding contracts on behalf of itself or the entity it represents;
 
-(c) acknowledges that this License forms a binding contract between the Licensee and the Licensor.
+(c) acknowledges that this License forms a legally binding contract between the Licensee and the Licensor; and
 
-If the Licensee does not agree to all terms of this License, it must immediately cease all use of the Software and destroy all copies in its possession.
+(d) acknowledges that any unauthorised Commercial use constitutes wilful copyright infringement entitling the Licensor to enhanced damages.
+
+If the Licensee does not agree to all terms of this License, it must immediately cease all use of the Software and permanently destroy all copies in its possession.
 
 ---
 
