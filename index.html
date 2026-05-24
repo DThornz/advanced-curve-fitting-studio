@@ -91,22 +91,30 @@
         <div class="app-dropdown-wrap">
           <button class="btn" id="btn-examples">Examples ▾</button>
           <div class="app-dropdown" id="examples-menu">
-            <div class="app-dropdown-item" data-example="exponential-decay">Exponential Decay  <span class="app-dropdown-sub">radioactive / RC circuit</span></div>
-            <div class="app-dropdown-item" data-example="gaussian-peak">Gaussian Peak  <span class="app-dropdown-sub">spectroscopy</span></div>
-            <div class="app-dropdown-item" data-example="lorentzian-peak">Lorentzian Peak  <span class="app-dropdown-sub">NMR resonance</span></div>
-            <div class="app-dropdown-item" data-example="logistic-growth">Logistic Growth  <span class="app-dropdown-sub">cell culture / population</span></div>
-            <div class="app-dropdown-item" data-example="michaelis-menten">Michaelis-Menten  <span class="app-dropdown-sub">enzyme kinetics</span></div>
-            <div class="app-dropdown-item" data-example="hill-equation">Hill Equation  <span class="app-dropdown-sub">dose-response / binding</span></div>
-            <div class="app-dropdown-item" data-example="damped-oscillation">Damped Oscillation  <span class="app-dropdown-sub">mechanical vibration</span></div>
-            <div class="app-dropdown-item" data-example="sinusoidal">Sinusoidal Signal  <span class="app-dropdown-sub">periodic / seasonal</span></div>
-            <div class="app-dropdown-item" data-example="power-law">Power Law  <span class="app-dropdown-sub">allometric scaling</span></div>
-            <div class="app-dropdown-item" data-example="weibull-survival">Weibull CDF  <span class="app-dropdown-sub">reliability / survival</span></div>
-            <div class="app-dropdown-item" data-example="polynomial-calibration">Polynomial Calibration  <span class="app-dropdown-sub">nonlinear instrument response</span></div>
-            <div class="app-dropdown-item" data-example="linear-calibration">Linear Calibration  <span class="app-dropdown-sub">instrument response</span></div>
-            <div class="app-dropdown-item" data-example="gv-boltzmann">G-V Curve (Boltzmann)  <span class="app-dropdown-sub">voltage-gated channel activation</span></div>
-            <div class="app-dropdown-item" data-example="kir-iv">Kir Channel I-V  <span class="app-dropdown-sub">inward rectifier K⁺</span></div>
-            <div class="app-dropdown-item" data-example="hhna-iv">HH Na Channel I-V  <span class="app-dropdown-sub">Hodgkin-Huxley m³h model</span></div>
-            <div class="app-dropdown-item" data-example="tau-voltage">Voltage-Dependent τ  <span class="app-dropdown-sub">gating time constant bell curve</span></div>
+            <div class="examples-col">
+              <div class="examples-col-hdr">General</div>
+              <div class="app-dropdown-item" data-example="exponential-decay">Exponential Decay  <span class="app-dropdown-sub">radioactive / RC circuit</span></div>
+              <div class="app-dropdown-item" data-example="gaussian-peak">Gaussian Peak  <span class="app-dropdown-sub">spectroscopy</span></div>
+              <div class="app-dropdown-item" data-example="lorentzian-peak">Lorentzian Peak  <span class="app-dropdown-sub">NMR resonance</span></div>
+              <div class="app-dropdown-item" data-example="logistic-growth">Logistic Growth  <span class="app-dropdown-sub">cell culture / population</span></div>
+              <div class="app-dropdown-item" data-example="michaelis-menten">Michaelis-Menten  <span class="app-dropdown-sub">enzyme kinetics</span></div>
+              <div class="app-dropdown-item" data-example="hill-equation">Hill Equation  <span class="app-dropdown-sub">dose-response / binding</span></div>
+              <div class="app-dropdown-item" data-example="damped-oscillation">Damped Oscillation  <span class="app-dropdown-sub">mechanical vibration</span></div>
+              <div class="app-dropdown-item" data-example="sinusoidal">Sinusoidal Signal  <span class="app-dropdown-sub">periodic / seasonal</span></div>
+            </div>
+            <div class="examples-col">
+              <div class="examples-col-hdr">Calibration &amp; Distributions</div>
+              <div class="app-dropdown-item" data-example="power-law">Power Law  <span class="app-dropdown-sub">allometric scaling</span></div>
+              <div class="app-dropdown-item" data-example="weibull-survival">Weibull CDF  <span class="app-dropdown-sub">reliability / survival</span></div>
+              <div class="app-dropdown-item" data-example="polynomial-calibration">Polynomial Calibration  <span class="app-dropdown-sub">nonlinear instrument response</span></div>
+              <div class="app-dropdown-item" data-example="linear-calibration">Linear Calibration  <span class="app-dropdown-sub">instrument response</span></div>
+              <div class="app-dropdown-sep"></div>
+              <div class="examples-col-hdr">Electrophysiology</div>
+              <div class="app-dropdown-item" data-example="gv-boltzmann">G-V Curve (Boltzmann)  <span class="app-dropdown-sub">voltage-gated channel activation</span></div>
+              <div class="app-dropdown-item" data-example="kir-iv">Kir Channel I-V  <span class="app-dropdown-sub">inward rectifier K⁺</span></div>
+              <div class="app-dropdown-item" data-example="hhna-iv">HH Na Channel I-V  <span class="app-dropdown-sub">Hodgkin-Huxley m³h model</span></div>
+              <div class="app-dropdown-item" data-example="tau-voltage">Voltage-Dependent τ  <span class="app-dropdown-sub">gating time constant bell curve</span></div>
+            </div>
           </div>
         </div>
         <button class="btn" id="btn-import" title="Import a CSV, TSV, or TXT file (comma/semicolon delimited)">Import Data</button>

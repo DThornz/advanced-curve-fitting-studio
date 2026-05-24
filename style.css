@@ -558,6 +558,14 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 .app-dropdown-item:hover{color:var(--teal);background:var(--teal-glow)}
 .app-dropdown-sub{font-size:.85em;color:var(--dimmer);margin-left:auto}
 .app-dropdown-sep{height:1px;background:var(--border);margin:4px 0}
+#examples-menu{width:540px;display:flex;align-items:stretch;padding:5px}
+.examples-col{flex:1;min-width:0}
+.examples-col+.examples-col{border-left:1px solid var(--border);margin-left:3px;padding-left:3px}
+.examples-col-hdr{
+  padding:4px 11px 2px;font-size:.68em;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dimmer);pointer-events:none;user-select:none
+}
 
 /* ── Paste Modal ─────────────────────────────────────────── */
 .modal-backdrop{
