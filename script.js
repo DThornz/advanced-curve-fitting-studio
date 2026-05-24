@@ -5048,14 +5048,14 @@ function init() {
     }, { passive: true });
   }
 
-  // Auto-restore saved session or load example on first visit
+  // Auto-restore saved session or start with a blank workspace
   const autoRestore = localStorage.getItem('cfs_autorestore') !== '0';
   document.getElementById('btn-auto-restore').classList.toggle('active', autoRestore);
   const saved = localStorage.getItem('cfs_session');
   if (autoRestore && saved) {
     try { restoreMultiTabPayload(JSON.parse(saved)); return; } catch (_) {}
   }
-  loadDefaultExample();
+  clearWorkspace();
 }
 
 init();
