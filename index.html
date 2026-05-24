@@ -438,7 +438,7 @@
   <div class="section-num">§ 3</div>
   <h2 class="section-title">Mathematical Formulation</h2>
   <div class="section-body">
-    <p>The nonlinear least-squares objective to minimise over $\boldsymbol{p}$ is the <strong>sum of squared errors (SSE)</strong>:</p>
+    <p>The nonlinear least-squares objective to minimise over $\boldsymbol{p}$ is the sum of squared errors (SSE):</p>
 
     <div class="eq-block">
       <div class="eq-row">
@@ -665,7 +665,7 @@
     </ul>
     <p>Multiple datasets can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled for fitting using the toggle button (●) that appears on hover.</p>
 
-    <p>The right panel lists 16 built-in models grouped by family. A guide to choosing:</p>
+    <p>The right panel lists 17 built-in models grouped by family. A guide to choosing:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>If your data looks like…</th><th>Try</th></tr></thead>
       <tbody>
@@ -692,7 +692,9 @@
         <tr><td>$R^2$</td><td>Fraction of variance in $y$ explained by the model</td><td>0.99+ for precise data; 0.95+ acceptable</td></tr>
         <tr><td>Adj. $R^2$</td><td>$R^2$ penalised for extra parameters — use this to compare models of different complexity</td><td>Higher is better; should be close to $R^2$</td></tr>
         <tr><td>RMSE</td><td>Typical residual size in the same units as $y$</td><td>Should be comparable to your measurement noise</td></tr>
+        <tr><td>SSE</td><td>Total squared error — the raw objective minimised by the solver</td><td>Lower is better; context-dependent</td></tr>
         <tr><td>AIC / BIC</td><td>Model quality penalised for complexity — allows fair comparison across models</td><td>Lower is better; difference &gt; 10 is decisive</td></tr>
+        <tr><td>N</td><td>Number of non-masked data points used in the fit</td><td>Higher gives more reliable statistics</td></tr>
         <tr><td>Status</td><td>✓ = converged; ⚠ = hit iteration limit. Hover the ⓘ marker for solver diagnostics: final λ damping (LM) or gradient norm |∇| (BFGS)</td><td>Always aim for ✓; λ → 0 or small |∇| confirms a tight minimum</td></tr>
       </tbody>
     </table>
@@ -768,7 +770,7 @@
   <table class="param-table" style="margin-top:12px;font-size:.8em">
     <thead><tr><th>Model</th><th>Equation</th><th>Parameters</th><th>Use Case &amp; Notes</th></tr></thead>
     <tbody>
-      <tr><td><strong>Linear</strong></td><td>$y = a\,x + b$</td><td>a (slope), b (intercept)</td><td>Calibration curves, proportional relationships. Analytic solution.</td></tr>
+      <tr><td><strong>Linear</strong></td><td>$y = a\,x + b$</td><td>a (slope), b (intercept)</td><td>Calibration curves, proportional relationships.</td></tr>
       <tr><td><strong>Power Law</strong></td><td>$y = a\,|x|^b$</td><td>a (amplitude), b (exponent)</td><td>Allometric scaling ($b \approx 0.75$ in metabolic rate), fractal geometry, material hardness. Initial guess via log-linear regression.</td></tr>
       <tr><td><strong>Polynomial (2–6)</strong></td><td>$y = \sum_{k=0}^{n} c_k\,x^k$</td><td>$n+1$ coefficients $c_0\ldots c_n$</td><td>General smooth nonlinearity. Use AIC/BIC to select degree — higher is not always better. Analytic Vandermonde solution.</td></tr>
       <tr><td><strong>Exponential</strong></td><td>$y = a\,e^{bx}$</td><td>a (pre-factor), b (rate)</td><td>Unrestricted growth ($b>0$) or decay ($b<0$). First model to try for monotone data crossing zero.</td></tr>

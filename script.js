@@ -1327,10 +1327,12 @@ function buildResidualVsXPanel(xlabel, tc) {
     const ds = state.datasets.find(d => d.id === fit.dsId);
     if (!ds) continue;
     const dimmed = ds.enabled === false;
+    const excl = ds.excludedIndices || new Set();
+    const xRes = ds.x.filter((_, i) => !excl.has(i));
     const scale = normalize && fit.result.rmse > 0 ? 1 / fit.result.rmse : 1;
     const residuals = fit.result.residuals.map(v => v * scale);
     traces.push({
-      x: ds.x, y: residuals,
+      x: xRes, y: residuals,
       mode: 'markers', type: 'scatter',
       name: fit.label || fit.model,
       marker: { color: fit.color || ds.color, size: 5, opacity: dimmed ? 0.2 : 0.8 },
@@ -2365,10 +2367,13 @@ function exportCSV() {
   });
   csv += `\nR2,${fit.result.rSq}\nAdjR2,${fit.result.adjRSq}\nRMSE,${fit.result.rmse}\nSSE,${fit.result.sse}\nAIC,${fit.result.aic}\nBIC,${fit.result.bic}\n`;
   if (ds) {
-    csv += `\nX,Y,YFit,Residual\n`;
+    const excl = ds.excludedIndices || new Set();
+    csv += `\nX,Y,YFit,Residual,Masked\n`;
     ds.x.forEach((x, i) => {
-      const yFit = fit.fn ? fit.fn(x, fit.result.params) : NaN;
-      csv += `${x},${ds.y[i]},${isFinite(yFit) ? yFit : ''},${fit.result.residuals[i]}\n`;
+      const masked = excl.has(i);
+      const yFit = (!masked && fit.fn) ? fit.fn(x, fit.result.params) : NaN;
+      const residual = isFinite(yFit) ? ds.y[i] - yFit : '';
+      csv += `${x},${ds.y[i]},${isFinite(yFit) ? yFit : ''},${residual},${masked ? 1 : 0}\n`;
     });
   }
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -3524,10 +3529,13 @@ function initEvents() {
     if (!ds) return;
     if (!ds.excludedIndices) ds.excludedIndices = new Set();
     const threshold = 2.5 * fit.result.rmse;
+    // Build map from residual index (non-excluded subset) → original ds.x index
+    const origIndices = ds.x.map((_, i) => i).filter(i => !ds.excludedIndices.has(i));
     let added = 0;
-    fit.result.residuals.forEach((r, i) => {
-      if (Math.abs(r) > threshold && !ds.excludedIndices.has(i)) {
-        ds.excludedIndices.add(i); added++;
+    fit.result.residuals.forEach((r, ri) => {
+      const origIdx = origIndices[ri];
+      if (origIdx != null && Math.abs(r) > threshold && !ds.excludedIndices.has(origIdx)) {
+        ds.excludedIndices.add(origIdx); added++;
       }
     });
     renderDatasetList(); updatePlots();
