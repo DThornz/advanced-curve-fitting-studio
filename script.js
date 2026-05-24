@@ -1048,10 +1048,27 @@ function nextId() { return ++idCounter; }
 function nextAnnId() { return ++_annIdCounter; }
 function nextColor() { return DS_COLORS[colorIdx++ % DS_COLORS.length]; }
 
+const DEFAULT_GRAPH_STYLE = {
+  fontFamily: '',       // '' = theme default (DM Mono)
+  fontSize: '',         // '' = theme default (11)
+  fontColor: '',        // '' = theme text color
+  plotBgColor: '',      // '' = theme plot bg
+  paperBgColor: '',     // '' = theme paper bg
+  showGridX: true, gridXColor: '', gridXWidth: 1, gridXDash: 'solid',
+  showGridY: true, gridYColor: '', gridYWidth: 1, gridYDash: 'solid',
+  showZeroLineX: true, zeroLineXColor: '', zeroLineXWidth: 1,
+  showZeroLineY: true, zeroLineYColor: '', zeroLineYWidth: 1,
+  tickFontSize: '',     // '' = theme default (10)
+  showTicksX: true, showTicksY: true,
+  showAxisLineX: false, showAxisLineY: false, axisLineColor: '',
+  legendFontSize: '', legendBgColor: '', legendBorderColor: '',
+};
+
 const state = {
   datasets: [],    // {id, name, x, y, sigY?, color, visible}
   fits: [],        // {id, dsId, model, params, result, color, visible, label}
   annotations: [], // [{id, type, visible, x, y, label, font*, line*, arrow*}]
+  graphStyle: Object.assign({}, DEFAULT_GRAPH_STYLE),
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
@@ -1331,27 +1348,47 @@ function buildPlotlyAnnotations() {
 
 function baseLayout(extra) {
   const tc = themeColors();
+  const gs = state.graphStyle || {};
+  const gcol = (ov, fb) => (ov && ov !== '') ? ov : fb;
+  const gnum = (ov, fb) => { const v = parseFloat(ov); return (isFinite(v) && v > 0) ? v : fb; };
+
+  const fontFamily  = gcol(gs.fontFamily, "'DM Mono', monospace");
+  const fontSize    = gnum(gs.fontSize, 11);
+  const fontColor   = gcol(gs.fontColor, tc.textCol);
+  const tickColor   = gcol(gs.fontColor, tc.tickCol);
+  const tickSize    = gnum(gs.tickFontSize, 10);
+  const axisLineCo  = gcol(gs.axisLineColor, tc.gridCol);
+
+  const axisBase = (isX) => ({
+    gridcolor:       (isX ? gs.showGridX : gs.showGridY) !== false
+      ? gcol(isX ? gs.gridXColor : gs.gridYColor, tc.gridCol) : 'rgba(0,0,0,0)',
+    gridwidth:       isX ? (gs.gridXWidth || 1) : (gs.gridYWidth || 1),
+    griddash:        isX ? (gs.gridXDash || 'solid') : (gs.gridYDash || 'solid'),
+    showgrid:        (isX ? gs.showGridX : gs.showGridY) !== false,
+    zeroline:        (isX ? gs.showZeroLineX : gs.showZeroLineY) !== false,
+    zerolinecolor:   (isX ? gs.showZeroLineX : gs.showZeroLineY) !== false
+      ? gcol(isX ? gs.zeroLineXColor : gs.zeroLineYColor, tc.zeroLine) : 'rgba(0,0,0,0)',
+    zerolinewidth:   isX ? (gs.zeroLineXWidth || 1) : (gs.zeroLineYWidth || 1),
+    showticklabels:  (isX ? gs.showTicksX : gs.showTicksY) !== false,
+    showline:        !!(isX ? gs.showAxisLineX : gs.showAxisLineY),
+    linecolor:       axisLineCo, linewidth: 1,
+    tickfont: { size: tickSize, color: tickColor },
+    type: (isX ? state.plotConfig.logX : state.plotConfig.logY) ? 'log' : 'linear',
+  });
+
   const base = {
-    plot_bgcolor:  tc.plotBg,
-    paper_bgcolor: tc.paperBg,
+    plot_bgcolor:  gcol(gs.plotBgColor, tc.plotBg),
+    paper_bgcolor: gcol(gs.paperBgColor, tc.paperBg),
     margin: { l: 52, r: 16, t: 28, b: 44 },
-    font: { family: "'DM Mono', monospace", size: 11, color: tc.textCol },
-    xaxis: {
-      gridcolor: tc.gridCol, zerolinecolor: tc.zeroLine,
-      tickfont: { size: 10, color: tc.tickCol }, linecolor: tc.gridCol,
-      type: state.plotConfig.logX ? 'log' : 'linear',
-    },
-    yaxis: {
-      gridcolor: tc.gridCol, zerolinecolor: tc.zeroLine,
-      tickfont: { size: 10, color: tc.tickCol }, linecolor: tc.gridCol,
-      type: state.plotConfig.logY ? 'log' : 'linear',
-    },
+    font: { family: fontFamily, size: fontSize, color: fontColor },
+    xaxis: axisBase(true),
+    yaxis: axisBase(false),
     legend: (() => {
       const lp = computeAutoLegendPos();
       return {
-        font: { size: 10, color: tc.textCol },
-        bgcolor: isDark() ? 'rgba(10,22,40,0.82)' : 'rgba(255,255,255,0.82)',
-        bordercolor: tc.gridCol, borderwidth: 1,
+        font: { size: gnum(gs.legendFontSize, 10), color: fontColor },
+        bgcolor:     gcol(gs.legendBgColor, isDark() ? 'rgba(10,22,40,0.82)' : 'rgba(255,255,255,0.82)'),
+        bordercolor: gcol(gs.legendBorderColor, tc.gridCol), borderwidth: 1,
         x: lp.x, y: lp.y,
         xanchor: lp.x > 0.5 ? 'right' : 'left',
         yanchor: lp.y > 0.5 ? 'top' : 'bottom',
@@ -2244,6 +2281,128 @@ function autoAnnotatePeaks() {
   }
   if (added) { renderAnnList(); updatePlots(); setConsole(`Added ${added} peak annotation${added > 1 ? 's' : ''}.`, ''); }
   else setConsole('No new peak centres found — Gaussian / Lorentzian fits needed, or already annotated.', 'warn');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GRAPH STYLE EDITOR
+═══════════════════════════════════════════════════════════ */
+function openGraphStyleEditor() {
+  const gs = state.graphStyle;
+  const tc = themeColors();
+  const modal = document.getElementById('gs-modal');
+
+  // Font
+  const knownFamilies = ['DM Mono, monospace','DM Sans, sans-serif','Arial, sans-serif',
+    'Helvetica, sans-serif','Times New Roman, serif','Georgia, serif',
+    'Courier New, monospace','Verdana, sans-serif','Trebuchet MS, sans-serif'];
+  const famSel = document.getElementById('gs-font-family');
+  if (!gs.fontFamily || knownFamilies.includes(gs.fontFamily)) {
+    famSel.value = gs.fontFamily || '';
+    document.getElementById('gs-row-font-custom').style.display = 'none';
+  } else {
+    famSel.value = '__custom__';
+    document.getElementById('gs-font-custom').value = gs.fontFamily;
+    document.getElementById('gs-row-font-custom').style.display = '';
+  }
+  document.getElementById('gs-font-size').value   = gs.fontSize || '';
+  _gsSetColorField('gs-font-color', 'gs-font-color-hex', gs.fontColor, tc.textCol);
+
+  // Background
+  _gsSetColorField('gs-plot-bg',    'gs-plot-bg-hex',    gs.plotBgColor,   tc.plotBg);
+  _gsSetColorField('gs-paper-bg',   'gs-paper-bg-hex',   gs.paperBgColor,  tc.paperBg);
+
+  // Grid X
+  document.getElementById('gs-grid-x-show').checked  = gs.showGridX !== false;
+  _gsSetColorField('gs-grid-x-color', 'gs-grid-x-color-hex', gs.gridXColor, tc.gridCol);
+  document.getElementById('gs-grid-x-width').value = gs.gridXWidth || 1;
+  document.getElementById('gs-grid-x-dash').value  = gs.gridXDash  || 'solid';
+  // Grid Y
+  document.getElementById('gs-grid-y-show').checked  = gs.showGridY !== false;
+  _gsSetColorField('gs-grid-y-color', 'gs-grid-y-color-hex', gs.gridYColor, tc.gridCol);
+  document.getElementById('gs-grid-y-width').value = gs.gridYWidth || 1;
+  document.getElementById('gs-grid-y-dash').value  = gs.gridYDash  || 'solid';
+
+  // Zero lines
+  document.getElementById('gs-zeroline-x-show').checked = gs.showZeroLineX !== false;
+  _gsSetColorField('gs-zeroline-x-color', 'gs-zeroline-x-color-hex', gs.zeroLineXColor, tc.zeroLine);
+  document.getElementById('gs-zeroline-x-width').value = gs.zeroLineXWidth || 1;
+  document.getElementById('gs-zeroline-y-show').checked = gs.showZeroLineY !== false;
+  _gsSetColorField('gs-zeroline-y-color', 'gs-zeroline-y-color-hex', gs.zeroLineYColor, tc.zeroLine);
+  document.getElementById('gs-zeroline-y-width').value = gs.zeroLineYWidth || 1;
+
+  // Axes & Ticks
+  document.getElementById('gs-tick-size').value       = gs.tickFontSize || '';
+  document.getElementById('gs-show-ticks-x').checked  = gs.showTicksX !== false;
+  document.getElementById('gs-show-ticks-y').checked  = gs.showTicksY !== false;
+  document.getElementById('gs-axis-line-x').checked   = !!gs.showAxisLineX;
+  document.getElementById('gs-axis-line-y').checked   = !!gs.showAxisLineY;
+  _gsSetColorField('gs-axis-line-color', 'gs-axis-line-color-hex', gs.axisLineColor, tc.gridCol);
+
+  // Legend
+  document.getElementById('gs-legend-font-size').value = gs.legendFontSize || '';
+  _gsSetColorField('gs-legend-bg',     'gs-legend-bg-hex',     gs.legendBgColor,     isDark() ? '#0a1628' : '#ffffff');
+  _gsSetColorField('gs-legend-border', 'gs-legend-border-hex', gs.legendBorderColor, tc.gridCol);
+
+  modal.style.display = 'flex';
+}
+
+function _gsSetColorField(pickId, hexId, override, themeDefault) {
+  const pick = document.getElementById(pickId);
+  const hex  = document.getElementById(hexId);
+  if (!pick || !hex) return;
+  if (override && override !== '') {
+    pick.value = override;
+    hex.value  = override;
+  } else {
+    hex.value  = '';
+    // Show the current theme default in the picker so user can see what they're overriding
+    pick.value = /^#[0-9a-fA-F]{6}$/.test(themeDefault) ? themeDefault : '#888888';
+  }
+}
+
+function saveGraphStyle() {
+  const gs = state.graphStyle;
+  const famSel = document.getElementById('gs-font-family');
+  if (famSel.value === '__custom__') {
+    gs.fontFamily = document.getElementById('gs-font-custom').value.trim() || '';
+  } else {
+    gs.fontFamily = famSel.value;  // '' or a known family
+  }
+  gs.fontSize       = document.getElementById('gs-font-size').value.trim();
+  gs.fontColor      = document.getElementById('gs-font-color-hex').value.trim();
+  gs.plotBgColor    = document.getElementById('gs-plot-bg-hex').value.trim();
+  gs.paperBgColor   = document.getElementById('gs-paper-bg-hex').value.trim();
+
+  gs.showGridX      = document.getElementById('gs-grid-x-show').checked;
+  gs.gridXColor     = document.getElementById('gs-grid-x-color-hex').value.trim();
+  gs.gridXWidth     = parseFloat(document.getElementById('gs-grid-x-width').value) || 1;
+  gs.gridXDash      = document.getElementById('gs-grid-x-dash').value;
+  gs.showGridY      = document.getElementById('gs-grid-y-show').checked;
+  gs.gridYColor     = document.getElementById('gs-grid-y-color-hex').value.trim();
+  gs.gridYWidth     = parseFloat(document.getElementById('gs-grid-y-width').value) || 1;
+  gs.gridYDash      = document.getElementById('gs-grid-y-dash').value;
+
+  gs.showZeroLineX  = document.getElementById('gs-zeroline-x-show').checked;
+  gs.zeroLineXColor = document.getElementById('gs-zeroline-x-color-hex').value.trim();
+  gs.zeroLineXWidth = parseFloat(document.getElementById('gs-zeroline-x-width').value) || 1;
+  gs.showZeroLineY  = document.getElementById('gs-zeroline-y-show').checked;
+  gs.zeroLineYColor = document.getElementById('gs-zeroline-y-color-hex').value.trim();
+  gs.zeroLineYWidth = parseFloat(document.getElementById('gs-zeroline-y-width').value) || 1;
+
+  gs.tickFontSize   = document.getElementById('gs-tick-size').value.trim();
+  gs.showTicksX     = document.getElementById('gs-show-ticks-x').checked;
+  gs.showTicksY     = document.getElementById('gs-show-ticks-y').checked;
+  gs.showAxisLineX  = document.getElementById('gs-axis-line-x').checked;
+  gs.showAxisLineY  = document.getElementById('gs-axis-line-y').checked;
+  gs.axisLineColor  = document.getElementById('gs-axis-line-color-hex').value.trim();
+
+  gs.legendFontSize    = document.getElementById('gs-legend-font-size').value.trim();
+  gs.legendBgColor     = document.getElementById('gs-legend-bg-hex').value.trim();
+  gs.legendBorderColor = document.getElementById('gs-legend-border-hex').value.trim();
+
+  document.getElementById('gs-modal').style.display = 'none';
+  updatePlots();
+  setConsole('Graph style updated.', '');
 }
 
 function sweepRange(row) {
@@ -3523,6 +3682,7 @@ function clearWorkspace() {
   state.datasets = [];
   state.fits = [];
   state.annotations = [];
+  state.graphStyle = Object.assign({}, DEFAULT_GRAPH_STYLE);
   state.activeDatasetId = null;
   state.activeFitId = null;
   state.paramRows = [];
@@ -3676,6 +3836,7 @@ function buildSessionPayload() {
       weights:  document.getElementById('opt-weights').value || 'none',
     },
     annotations: state.annotations,
+    graphStyle: state.graphStyle,
     activeDatasetId: state.activeDatasetId,
     activeFitId: state.activeFitId,
   };
@@ -3716,6 +3877,7 @@ function restoreSessionPayload(payload) {
   );
   state.plotConfig.logSuggestDismissed = { x: false, y: false };
   state.annotations = (payload.annotations || []).map(a => ({ ...createDefaultAnnotation(a.type || 'hline'), ...a }));
+  state.graphStyle = Object.assign({}, DEFAULT_GRAPH_STYLE, payload.graphStyle || {});
   state.activeDatasetId = payload.activeDatasetId;
   state.activeFitId = payload.activeFitId;
 
@@ -4417,6 +4579,40 @@ function initEvents() {
   document.getElementById('btn-edit-undo').addEventListener('click', undoEdit);
   document.getElementById('btn-edit-redo').addEventListener('click', redoEdit);
   document.getElementById('btn-edit-reset').addEventListener('click', resetSelectionToOriginal);
+
+  /* ── Graph Style Editor ─────────────────────────────────── */
+  document.getElementById('btn-graph-style').addEventListener('click', openGraphStyleEditor);
+  document.getElementById('gs-modal-close').addEventListener('click',  () => { document.getElementById('gs-modal').style.display = 'none'; });
+  document.getElementById('gs-cancel-btn').addEventListener('click',   () => { document.getElementById('gs-modal').style.display = 'none'; });
+  document.getElementById('gs-save-btn').addEventListener('click', saveGraphStyle);
+  document.getElementById('gs-reset-btn').addEventListener('click', () => {
+    state.graphStyle = Object.assign({}, DEFAULT_GRAPH_STYLE);
+    document.getElementById('gs-modal').style.display = 'none';
+    updatePlots();
+    setConsole('Graph style reset to theme defaults.', '');
+  });
+  document.getElementById('gs-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.style.display = 'none'; });
+  document.getElementById('gs-font-family').addEventListener('change', function () {
+    document.getElementById('gs-row-font-custom').style.display = this.value === '__custom__' ? '' : 'none';
+  });
+  // Sync color picker ↔ hex for all gs- color pairs
+  [['gs-font-color','gs-font-color-hex'],['gs-plot-bg','gs-plot-bg-hex'],['gs-paper-bg','gs-paper-bg-hex'],
+   ['gs-grid-x-color','gs-grid-x-color-hex'],['gs-grid-y-color','gs-grid-y-color-hex'],
+   ['gs-zeroline-x-color','gs-zeroline-x-color-hex'],['gs-zeroline-y-color','gs-zeroline-y-color-hex'],
+   ['gs-axis-line-color','gs-axis-line-color-hex'],['gs-legend-bg','gs-legend-bg-hex'],['gs-legend-border','gs-legend-border-hex']
+  ].forEach(([pickId, hexId]) => {
+    const pick = document.getElementById(pickId), hex = document.getElementById(hexId);
+    if (!pick || !hex) return;
+    pick.addEventListener('input', () => { hex.value = pick.value; });
+    hex.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) pick.value = hex.value; });
+  });
+  // Clear buttons restore individual fields to "auto"
+  document.getElementById('gs-modal').addEventListener('click', e => {
+    const id = e.target.dataset.gsClear;
+    if (!id) return;
+    const hexEl = document.getElementById(`gs-${id}-hex`);
+    if (hexEl) hexEl.value = '';
+  });
 
   /* ── Annotations ─────────────────────────────────────────── */
   document.getElementById('btn-ann-add').addEventListener('click', () => openAnnEditor(null));

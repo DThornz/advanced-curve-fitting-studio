@@ -328,7 +328,10 @@
 
         <!-- Plot labels -->
         <div class="ctrl-section">
-          <label class="ctrl-label">Plot Labels</label>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+            <label class="ctrl-label" style="margin:0">Plot Labels</label>
+            <button class="btn" id="btn-graph-style" style="padding:1px 8px;font-size:.65em" title="Edit graph appearance: fonts, colors, grid, axes, legend">⚙ Style</button>
+          </div>
           <div class="ctrl-row">
             <label class="ctrl-label" style="margin:0;min-width:44px">X axis</label>
             <input class="ctrl-input" id="plot-xlabel" type="text" placeholder="e.g. Time (s)">
@@ -687,6 +690,175 @@
     <div class="modal-footer">
       <button class="btn" id="save-modal-cancel">Cancel</button>
       <button class="btn btn-primary" id="save-modal-confirm">Save &amp; Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- Graph Style Modal -->
+<div class="modal-backdrop" id="gs-modal" style="display:none;align-items:flex-start;justify-content:center;padding-top:30px">
+  <div class="modal" style="width:500px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <span class="modal-title">Graph Style</span>
+      <button class="modal-close" id="gs-modal-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:12px 14px;overflow-y:auto;flex:1">
+
+      <!-- Global Font -->
+      <div class="ann-section">
+        <div class="ann-section-title">Global Font</div>
+        <div class="ann-row">
+          <label>Family</label>
+          <select class="ctrl-select" id="gs-font-family" style="flex:1;font-size:.78em">
+            <option value="">Theme default (DM Mono)</option>
+            <option value="DM Sans, sans-serif">DM Sans</option>
+            <option value="DM Mono, monospace">DM Mono</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Helvetica, sans-serif">Helvetica</option>
+            <option value="Times New Roman, serif">Times New Roman</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="Courier New, monospace">Courier New</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+            <option value="__custom__">Custom…</option>
+          </select>
+        </div>
+        <div class="ann-row" id="gs-row-font-custom" style="display:none">
+          <label>Custom</label>
+          <input class="ctrl-input" type="text" id="gs-font-custom" placeholder="e.g. Roboto, sans-serif" style="flex:1">
+        </div>
+        <div class="ann-row">
+          <label>Size</label>
+          <input class="ctrl-input" type="number" id="gs-font-size" placeholder="11" min="6" max="28" step="1" style="width:55px;flex:none">
+          <span style="font-size:.7em;color:var(--dimmer);margin-left:5px">pt &mdash; blank = theme default</span>
+        </div>
+        <div class="ann-row">
+          <label>Color</label>
+          <input type="color" id="gs-font-color" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-font-color-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="font-color" title="Revert to theme color">✕</button>
+        </div>
+      </div>
+
+      <!-- Background Colors -->
+      <div class="ann-section">
+        <div class="ann-section-title">Background Colors</div>
+        <div class="ann-row">
+          <label title="The area inside the axes">Plot area</label>
+          <input type="color" id="gs-plot-bg" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-plot-bg-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="plot-bg" title="Revert to theme color">✕</button>
+        </div>
+        <div class="ann-row">
+          <label title="Margins and outer frame">Paper</label>
+          <input type="color" id="gs-paper-bg" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-paper-bg-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="paper-bg" title="Revert to theme color">✕</button>
+        </div>
+      </div>
+
+      <!-- Grid Lines -->
+      <div class="ann-section">
+        <div class="ann-section-title">Grid Lines</div>
+        <div class="gs-grid-row">
+          <label class="ann-check-label"><input type="checkbox" id="gs-grid-x-show" checked> X grid</label>
+          <input type="color" id="gs-grid-x-color" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-grid-x-color-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="grid-x-color" title="Revert to theme">✕</button>
+          <label style="margin-left:6px;flex-shrink:0">W</label>
+          <input class="ctrl-input" type="number" id="gs-grid-x-width" value="1" min="0.5" max="6" step="0.5" style="width:44px;flex:none">
+          <select class="ctrl-select" id="gs-grid-x-dash" style="width:90px;font-size:.75em;flex:none">
+            <option value="solid">Solid</option><option value="dot">Dot</option>
+            <option value="dash">Dash</option><option value="dashdot">Dash-dot</option>
+          </select>
+        </div>
+        <div class="gs-grid-row" style="margin-top:5px">
+          <label class="ann-check-label"><input type="checkbox" id="gs-grid-y-show" checked> Y grid</label>
+          <input type="color" id="gs-grid-y-color" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-grid-y-color-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="grid-y-color" title="Revert to theme">✕</button>
+          <label style="margin-left:6px;flex-shrink:0">W</label>
+          <input class="ctrl-input" type="number" id="gs-grid-y-width" value="1" min="0.5" max="6" step="0.5" style="width:44px;flex:none">
+          <select class="ctrl-select" id="gs-grid-y-dash" style="width:90px;font-size:.75em;flex:none">
+            <option value="solid">Solid</option><option value="dot">Dot</option>
+            <option value="dash">Dash</option><option value="dashdot">Dash-dot</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Zero Lines -->
+      <div class="ann-section">
+        <div class="ann-section-title">Zero Lines</div>
+        <div class="gs-grid-row">
+          <label class="ann-check-label"><input type="checkbox" id="gs-zeroline-x-show" checked> X zero</label>
+          <input type="color" id="gs-zeroline-x-color" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-zeroline-x-color-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="zeroline-x-color" title="Revert to theme">✕</button>
+          <label style="margin-left:6px;flex-shrink:0">W</label>
+          <input class="ctrl-input" type="number" id="gs-zeroline-x-width" value="1" min="0.5" max="6" step="0.5" style="width:44px;flex:none">
+        </div>
+        <div class="gs-grid-row" style="margin-top:5px">
+          <label class="ann-check-label"><input type="checkbox" id="gs-zeroline-y-show" checked> Y zero</label>
+          <input type="color" id="gs-zeroline-y-color" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-zeroline-y-color-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="zeroline-y-color" title="Revert to theme">✕</button>
+          <label style="margin-left:6px;flex-shrink:0">W</label>
+          <input class="ctrl-input" type="number" id="gs-zeroline-y-width" value="1" min="0.5" max="6" step="0.5" style="width:44px;flex:none">
+        </div>
+      </div>
+
+      <!-- Axes & Ticks -->
+      <div class="ann-section">
+        <div class="ann-section-title">Axes &amp; Ticks</div>
+        <div class="ann-row">
+          <label>Tick size</label>
+          <input class="ctrl-input" type="number" id="gs-tick-size" placeholder="10" min="6" max="24" step="1" style="width:55px;flex:none">
+          <span style="font-size:.7em;color:var(--dimmer);margin-left:5px">pt &mdash; blank = default</span>
+        </div>
+        <div class="ann-row" style="flex-wrap:wrap;gap:12px">
+          <label class="ann-check-label"><input type="checkbox" id="gs-show-ticks-x" checked> X tick labels</label>
+          <label class="ann-check-label"><input type="checkbox" id="gs-show-ticks-y" checked> Y tick labels</label>
+        </div>
+        <div class="ann-row" style="flex-wrap:wrap;gap:12px">
+          <label class="ann-check-label"><input type="checkbox" id="gs-axis-line-x"> X axis spine</label>
+          <label class="ann-check-label"><input type="checkbox" id="gs-axis-line-y"> Y axis spine</label>
+        </div>
+        <div class="ann-row">
+          <label>Spine color</label>
+          <input type="color" id="gs-axis-line-color" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-axis-line-color-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="axis-line-color" title="Revert to theme">✕</button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="ann-section">
+        <div class="ann-section-title">Legend</div>
+        <div class="ann-row">
+          <label>Font size</label>
+          <input class="ctrl-input" type="number" id="gs-legend-font-size" placeholder="10" min="6" max="24" step="1" style="width:55px;flex:none">
+          <span style="font-size:.7em;color:var(--dimmer);margin-left:5px">pt &mdash; blank = default</span>
+        </div>
+        <div class="ann-row">
+          <label>Background</label>
+          <input type="color" id="gs-legend-bg" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-legend-bg-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="legend-bg" title="Revert to theme">✕</button>
+        </div>
+        <div class="ann-row">
+          <label>Border</label>
+          <input type="color" id="gs-legend-border" class="ann-color-swatch">
+          <input class="ctrl-input ann-hex-input" type="text" id="gs-legend-border-hex" maxlength="9" placeholder="auto">
+          <button class="btn gs-clear-btn" data-gs-clear="legend-border" title="Revert to theme">✕</button>
+        </div>
+      </div>
+
+    </div><!-- modal-body -->
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn" id="gs-reset-btn" title="Clear all overrides and revert to theme defaults" style="color:var(--error,#e53e3e)">Reset to Defaults</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn" id="gs-cancel-btn">Cancel</button>
+        <button class="btn btn-primary" id="gs-save-btn">Apply</button>
+      </div>
     </div>
   </div>
 </div>

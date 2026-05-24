@@ -744,3 +744,7 @@ body.dark-mode .ann-color-swatch{border-color:#1c3050!important}
 body.dark-mode .ann-section-title{color:#3d5470!important}
 body.dark-mode .ann-row label{color:#3d5470!important}
 body.dark-mode .ann-check-label{color:#3d5470!important}
+.gs-clear-btn{padding:0 5px!important;font-size:.7em!important;line-height:1.6!important;flex-shrink:0;color:var(--muted)!important;min-width:0}
+.gs-clear-btn:hover{color:var(--error,#e53e3e)!important}
+.gs-grid-row{display:flex;align-items:center;gap:5px;font-size:.75em;flex-wrap:nowrap}
+.gs-grid-row .ann-check-label{min-width:62px;flex-shrink:0}
