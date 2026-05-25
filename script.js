@@ -2246,7 +2246,7 @@ function smoothDataset(windowSize) {
   if (n < 2) { setConsole('Need at least 2 points to smooth.', 'warn'); return; }
   const w = Math.max(2, Math.min(Math.floor(windowSize), n - 1));
   const half = Math.floor(w / 2);
-  state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice() });
+  state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice(), excl: new Set(ds.excludedIndices) });
   if (state.editHistory.undo.length > 100) state.editHistory.undo.shift();
   state.editHistory.redo = [];
   syncUndoRedoButtons();
@@ -2270,7 +2270,7 @@ function restoreOriginalData() {
   const ds = state.datasets.find(d => d.id === state.activeDatasetId);
   if (!ds) { setConsole('No active dataset.', 'warn'); return; }
   if (!ds.originalY) { setConsole('No original data stored for this dataset.', 'warn'); return; }
-  state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice() });
+  state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice(), excl: new Set(ds.excludedIndices) });
   if (state.editHistory.undo.length > 100) state.editHistory.undo.shift();
   state.editHistory.redo = [];
   syncUndoRedoButtons();
@@ -3444,7 +3444,7 @@ function runFit() {
     const nStarts2 = parseInt(document.getElementById('opt-n-starts').value) || 1;
     const SOLVERS2 = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
     const solve2 = SOLVERS2[algoKey2] || levenbergMarquardt;
-    const paramRows2 = state.paramRows.map(r => ({ init: r.init, min: r.min, max: r.max }));
+    const paramRows2 = state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max }));
     setConsole('IRLS fitting (Huber)…', '');
     let result2 = solve2(modelFn, xArr, yArr, p02, { maxIter: maxIter2, tol: tol2, paramRows: paramRows2 });
     const IRLS_ITERS = 5, HUBER_C = 1.345;
@@ -3496,19 +3496,19 @@ function runFit() {
     setConsole('Unknown model.', 'error'); return;
   }
 
-  // Validate and apply parameter bounds
+  // Validate and apply parameter bounds — use local lo/hi for locked params to avoid mutating state
   for (let i = 0; i < state.paramRows.length; i++) {
     const row = state.paramRows[i];
+    const lo = row.locked ? row.init : row.min;
+    const hi = row.locked ? row.init : row.max;
     if (row.locked) {
-      row.min = row.init;
-      row.max = row.init;
       p0[i] = row.init;
     }
-    if (row.min > -1e9 && row.max < 1e9 && row.min > row.max && !row.locked) {
+    if (lo > -1e9 && hi < 1e9 && lo > hi && !row.locked) {
       setConsole(`Bound error: min > max for parameter "${row.name}".`, 'error'); return;
     }
-    if (row.min > -1e9 && p0[i] < row.min) p0[i] = row.min;
-    if (row.max < 1e9  && p0[i] > row.max) p0[i] = row.max;
+    if (lo > -1e9 && p0[i] < lo) p0[i] = lo;
+    if (hi < 1e9  && p0[i] > hi) p0[i] = hi;
   }
 
   const errMsg = validateFitInput(xArr, yArr, model, p0);
@@ -3523,7 +3523,7 @@ function runFit() {
     worker = new Worker('fitting-worker.js');
   } catch (e) {
     // Web Workers may be blocked (e.g. file:// protocol) — fall back to synchronous fit
-    _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows: state.paramRows.map(r => ({ init: r.init, min: r.min, max: r.max })) });
+    _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows: state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max })) });
     return;
   }
 
@@ -3573,7 +3573,7 @@ function runFit() {
     setConsole('Worker error: ' + (e.message || 'unknown'), 'error');
   };
 
-  const paramRows = state.paramRows.map(r => ({ init: r.init, min: r.min, max: r.max }));
+  const paramRows = state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max }));
   worker.postMessage({
     jobId, modelKey: model, customExpr, paramNames, p0, x: xArr, y: yArr,
     opts: { algo: algoKey, maxIter, tol, weights, nStarts, paramRows },
@@ -3849,6 +3849,13 @@ function exportPython() {
     'Biexponential':    `return ${fit.paramNames[0]} * np.exp(-np.abs(${fit.paramNames[1]}) * x) + ${fit.paramNames[2]} * np.exp(-np.abs(${fit.paramNames[3]}) * x) + ${fit.paramNames[4]}`,
     'Rational':         `return (${fit.paramNames[0]} + ${fit.paramNames[1]} * x) / np.maximum(1 + ${fit.paramNames[2]} * x, 1e-10)`,
     'Power-Offset':     `return ${fit.paramNames[0]} * np.abs(x)**${fit.paramNames[1]} + ${fit.paramNames[2]}`,
+    'Boltzmann':        `return ${fit.paramNames[0]} / (1 + np.exp(-(x - ${fit.paramNames[1]}) / np.maximum(np.abs(${fit.paramNames[2]}), 1e-10)))`,
+    'Double-Boltzmann': `return (${fit.paramNames[0]}/(1+np.exp(-(x-${fit.paramNames[1]})/np.maximum(np.abs(${fit.paramNames[2]}),1e-10))) +\n           ${fit.paramNames[3]}/(1+np.exp(-(x-${fit.paramNames[4]})/np.maximum(np.abs(${fit.paramNames[5]}),1e-10))))`,
+    'HH-Activation':    `return ${fit.paramNames[0]} * np.power(np.maximum(1/(1+np.exp(-(x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[2]},1e-10))),1e-12),${fit.paramNames[3]}) * (x-${fit.paramNames[4]})`,
+    'HH-Na-IV':         `return ${fit.paramNames[0]} * (1/(1+np.exp(-(x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[2]},1e-10))))**3 * (1/(1+np.exp((x-${fit.paramNames[3]})/np.maximum(${fit.paramNames[4]},1e-10)))) * (x-${fit.paramNames[5]})`,
+    'Kir':              `return ${fit.paramNames[0]} * (x-${fit.paramNames[1]}) / (1+np.exp((x-${fit.paramNames[2]})/np.maximum(np.abs(${fit.paramNames[3]}),1e-10)))`,
+    'GHK':              `return np.where(np.abs(x)<1e-6, ${fit.paramNames[0]}*${fit.paramNames[2]}*(1-${fit.paramNames[1]}), ${fit.paramNames[0]}*x*(1-${fit.paramNames[1]}*np.exp(-x/np.maximum(${fit.paramNames[2]},1e-10)))/np.maximum(1-np.exp(-x/np.maximum(${fit.paramNames[2]},1e-10)),1e-10))`,
+    'Tau-Gaussian':     `return ${fit.paramNames[0]} * np.exp(-0.5*((x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[2]},1e-10))**2) + ${fit.paramNames[3]}`,
   };
   fnBody = modelDefs[fit.model] || `# Custom model: ${fit.model}\n    raise NotImplementedError("Define your model here")`;
 
@@ -3923,6 +3930,13 @@ function exportR() {
     'Biexponential':    `${fit.paramNames[0]} * exp(-abs(${fit.paramNames[1]}) * x) + ${fit.paramNames[2]} * exp(-abs(${fit.paramNames[3]}) * x) + ${fit.paramNames[4]}`,
     'Rational':         `(${fit.paramNames[0]} + ${fit.paramNames[1]} * x) / (1 + ${fit.paramNames[2]} * x)`,
     'Power-Offset':     `${fit.paramNames[0]} * abs(x)^${fit.paramNames[1]} + ${fit.paramNames[2]}`,
+    'Boltzmann':        `${fit.paramNames[0]} / (1 + exp(-(x - ${fit.paramNames[1]}) / pmax(abs(${fit.paramNames[2]}), 1e-10)))`,
+    'Double-Boltzmann': `${fit.paramNames[0]}/(1+exp(-(x-${fit.paramNames[1]})/pmax(abs(${fit.paramNames[2]}),1e-10))) + ${fit.paramNames[3]}/(1+exp(-(x-${fit.paramNames[4]})/pmax(abs(${fit.paramNames[5]}),1e-10)))`,
+    'HH-Activation':    `${fit.paramNames[0]} * pmax(1/(1+exp(-(x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))),1e-12)^${fit.paramNames[3]} * (x-${fit.paramNames[4]})`,
+    'HH-Na-IV':         `${fit.paramNames[0]} * (1/(1+exp(-(x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))))^3 * (1/(1+exp((x-${fit.paramNames[3]})/pmax(${fit.paramNames[4]},1e-10)))) * (x-${fit.paramNames[5]})`,
+    'Kir':              `${fit.paramNames[0]} * (x-${fit.paramNames[1]}) / (1+exp((x-${fit.paramNames[2]})/pmax(abs(${fit.paramNames[3]}),1e-10)))`,
+    'GHK':              `ifelse(abs(x)<1e-6, ${fit.paramNames[0]}*${fit.paramNames[2]}*(1-${fit.paramNames[1]}), ${fit.paramNames[0]}*x*(1-${fit.paramNames[1]}*exp(-x/pmax(${fit.paramNames[2]},1e-10)))/pmax(1-exp(-x/pmax(${fit.paramNames[2]},1e-10)),1e-10))`,
+    'Tau-Gaussian':     `${fit.paramNames[0]} * exp(-0.5*((x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))^2) + ${fit.paramNames[3]}`,
   };
   const formula = modelDefs[fit.model] || `# Define formula for ${fit.model}`;
 
@@ -3990,6 +4004,12 @@ function exportLatex() {
     'Rational':         `y = \\frac{${fmtL(p[0])} + ${fmtL(p[1])} x}{1 + ${fmtL(p[2])} x}`,
     'Power-Offset':     `y = ${fmtL(p[0])} x^{${fmtL(p[1])}} + ${fmtL(p[2])}`,
     'Boltzmann':        `y = \\frac{${fmtL(p[0])}}{1 + e^{-(x - ${fmtL(p[1])})/${fmtL(p[2])}}}`,
+    'Double-Boltzmann': `y = \\frac{${fmtL(p[0])}}{1+e^{-(x-${fmtL(p[1])})/${fmtL(p[2])}}} + \\frac{${fmtL(p[3])}}{1+e^{-(x-${fmtL(p[4])})/${fmtL(p[5])}}}`,
+    'HH-Activation':    `y = ${fmtL(p[0])} m^{${fmtL(p[3])}}(x-${fmtL(p[4])}),\\; m=\\tfrac{1}{1+e^{-(x-${fmtL(p[1])})/${fmtL(p[2])}}}`,
+    'HH-Na-IV':         `y = ${fmtL(p[0])} m^3 h (x-${fmtL(p[5])}),\\; m=\\tfrac{1}{1+e^{-(x-${fmtL(p[1])})/${fmtL(p[2])}}},\\; h=\\tfrac{1}{1+e^{(x-${fmtL(p[3])})/${fmtL(p[4])}}}`,
+    'Kir':              `y = ${fmtL(p[0])} \\frac{x-${fmtL(p[1])}}{1+e^{(x-${fmtL(p[2])})/${fmtL(p[3])}}}`,
+    'GHK':              `y = ${fmtL(p[0])} \\frac{x(1-${fmtL(p[1])} e^{-x/${fmtL(p[2])}})}{1-e^{-x/${fmtL(p[2])}}}`,
+    'Tau-Gaussian':     `y = ${fmtL(p[0])} e^{-\\frac{(x-${fmtL(p[1])})^2}{2 \\cdot ${fmtL(p[2])}^2}} + ${fmtL(p[3])}`,
   };
 
   let latex = latexDefs[fit.model];
@@ -4039,6 +4059,13 @@ function exportMATLAB() {
     'Biexponential':    `p(1).*exp(-abs(p(2)).*x) + p(3).*exp(-abs(p(4)).*x) + p(5)`,
     'Rational':         `(p(1) + p(2).*x) ./ (1 + p(3).*x)`,
     'Power-Offset':     `p(1) .* abs(x).^p(2) + p(3)`,
+    'Boltzmann':        `p(1) ./ (1 + exp(-(x - p(2)) ./ max(abs(p(3)), 1e-10)))`,
+    'Double-Boltzmann': `p(1)./(1+exp(-(x-p(2))./max(abs(p(3)),1e-10))) + p(4)./(1+exp(-(x-p(5))./max(abs(p(6)),1e-10)))`,
+    'HH-Activation':    `p(1) .* max(1./(1+exp(-(x-p(2))./max(p(3),1e-10))),1e-12).^p(4) .* (x-p(5))`,
+    'HH-Na-IV':         `p(1) .* (1./(1+exp(-(x-p(2))./max(p(3),1e-10)))).^3 .* (1./(1+exp((x-p(4))./max(p(5),1e-10)))) .* (x-p(6))`,
+    'Kir':              `p(1) .* (x-p(2)) ./ (1+exp((x-p(3))./max(abs(p(4)),1e-10)))`,
+    'GHK':              `(abs(x)<1e-6).*(p(1).*p(3).*(1-p(2))) + (abs(x)>=1e-6).*(p(1).*x.*(1-p(2).*exp(-x./max(p(3),1e-10)))./max(1-exp(-x./max(p(3),1e-10)),1e-10))`,
+    'Tau-Gaussian':     `p(1) .* exp(-0.5.*((x-p(2))./max(p(3),1e-10)).^2) + p(4)`,
   };
   const fnExpr = modelDefs[fit.model] || `% Define model for ${fit.model} here`;
 
@@ -4244,7 +4271,7 @@ function pushEditHistory() {
   const ds = state.datasets.find(d => d.id === state.selection.dsId);
   if (!ds) return;
   const h = state.editHistory;
-  h.undo.push({ dsId: ds.id, y: ds.y.slice() });
+  h.undo.push({ dsId: ds.id, y: ds.y.slice(), excl: new Set(ds.excludedIndices) });
   if (h.undo.length > 100) h.undo.shift();
   h.redo = [];
   syncUndoRedoButtons();
@@ -4256,9 +4283,10 @@ function undoEdit() {
   const entry = h.undo.pop();
   const ds = state.datasets.find(d => d.id === entry.dsId);
   if (ds) {
-    h.redo.push({ dsId: ds.id, y: ds.y.slice() });
+    h.redo.push({ dsId: ds.id, y: ds.y.slice(), excl: new Set(ds.excludedIndices) });
     if (h.redo.length > 100) h.redo.shift();
     ds.y = entry.y;
+    if (entry.excl !== undefined) ds.excludedIndices = new Set(entry.excl);
     updatePlots();
   }
   syncUndoRedoButtons();
@@ -4270,9 +4298,10 @@ function redoEdit() {
   const entry = h.redo.pop();
   const ds = state.datasets.find(d => d.id === entry.dsId);
   if (ds) {
-    h.undo.push({ dsId: ds.id, y: ds.y.slice() });
+    h.undo.push({ dsId: ds.id, y: ds.y.slice(), excl: new Set(ds.excludedIndices) });
     if (h.undo.length > 100) h.undo.shift();
     ds.y = entry.y;
+    if (entry.excl !== undefined) ds.excludedIndices = new Set(entry.excl);
     updatePlots();
   }
   syncUndoRedoButtons();
