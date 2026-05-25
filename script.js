@@ -2212,6 +2212,80 @@ function fitEval(fit, x) {
 /* ═══════════════════════════════════════════════════════════
    UI RENDERING
 ═══════════════════════════════════════════════════════════ */
+function smoothDataset(windowSize) {
+  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+  if (!ds) { setConsole('No active dataset to smooth.', 'warn'); return; }
+  const n = ds.y.length;
+  const w = Math.max(2, Math.min(Math.floor(windowSize), n - 1));
+  const half = Math.floor(w / 2);
+  // Push undo state
+  state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice() });
+  if (state.editHistory.undo.length > 100) state.editHistory.undo.shift();
+  state.editHistory.redo = [];
+  syncUndoRedoButtons();
+  // Moving average
+  const smoothed = ds.y.map((_, i) => {
+    const lo = Math.max(0, i - half);
+    const hi = Math.min(n - 1, i + half);
+    let sum = 0, cnt = 0;
+    for (let j = lo; j <= hi; j++) { sum += ds.y[j]; cnt++; }
+    return sum / cnt;
+  });
+  ds.y = smoothed;
+  updatePlots();
+  setConsole(`Applied moving average (window=${w}) to "${ds.name}". Use Undo to revert.`, '');
+}
+
+function openDataTable() {
+  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+  if (!ds) { setConsole('No active dataset.', 'warn'); return; }
+  const fit = state.fits.find(f => f.id === state.activeFitId && f.dsId === ds.id);
+  const excl = ds.excludedIndices || new Set();
+  const resMap = new Map();
+  if (fit && fit.result && fit.fn) {
+    const origIndices = ds.x.map((_, i) => i).filter(i => !excl.has(i));
+    (fit.result.residuals || []).forEach((r, ri) => { if (origIndices[ri] != null) resMap.set(origIndices[ri], r); });
+  }
+
+  document.getElementById('data-table-title').textContent = `Data Table — ${ds.name}`;
+  document.getElementById('data-table-summary').textContent =
+    `${ds.x.length} points · ${excl.size} excluded` + (fit ? ` · Residuals from "${fit.label || fit.model}"` : ' · No active fit for residuals');
+
+  const tbody = document.getElementById('dt-tbody');
+  tbody.innerHTML = ds.x.map((x, i) => {
+    const included = !excl.has(i);
+    const res = resMap.has(i) ? fmt(resMap.get(i)) : '—';
+    const resClass = resMap.has(i) && Math.abs(resMap.get(i)) > 2.5 * (fit?.result?.rmse || Infinity) ? ' style="color:var(--red)"' : '';
+    return `<tr class="${included ? '' : 'dt-row-excluded'}">
+      <td><input type="checkbox" class="dt-check" data-idx="${i}" ${included ? 'checked' : ''}></td>
+      <td style="color:var(--dimmer);font-family:var(--mono)">${i}</td>
+      <td style="font-family:var(--mono)">${fmt(x)}</td>
+      <td style="font-family:var(--mono)">${fmt(ds.y[i])}</td>
+      <td style="font-family:var(--mono)"${resClass}>${res}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.dt-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const idx = parseInt(cb.dataset.idx);
+      if (cb.checked) excl.delete(idx); else excl.add(idx);
+      ds.excludedIndices = excl;
+      const row = cb.closest('tr');
+      if (row) row.className = excl.has(idx) ? 'dt-row-excluded' : '';
+      document.getElementById('data-table-summary').textContent =
+        `${ds.x.length} points · ${excl.size} excluded` + (fit ? ` · Residuals from "${fit.label || fit.model}"` : ' · No active fit for residuals');
+      renderMaskCount();
+      updatePlots();
+    });
+  });
+
+  const checkAll = document.getElementById('dt-check-all');
+  checkAll.checked = excl.size === 0;
+  checkAll.indeterminate = excl.size > 0 && excl.size < ds.x.length;
+
+  document.getElementById('data-table-modal').style.display = 'flex';
+}
+
 function renderMaskCount() {
   const el = document.getElementById('mask-count');
   if (!el) return;
@@ -3295,6 +3369,55 @@ function runFit() {
     }
   }
   state.sweepParams = null;
+
+  // IRLS Huber: run synchronously with iterative Huber weights
+  if (weightMode === 'huber') {
+    const errMsg = validateFitInput(xArr, yArr, state.fitConfig.model, null);
+    if (errMsg) { setConsole(errMsg, 'error'); return; }
+    let modelFn, paramNames2, p02;
+    const m2 = MODELS[state.fitConfig.model];
+    if (state.fitConfig.model === 'Custom') {
+      if (!customCompiled) { setConsole('Parse custom equation first.', 'error'); return; }
+      paramNames2 = state.fitConfig.customParams;
+      const cExpr = state.fitConfig.customExpr;
+      modelFn = (x, params) => {
+        const scope = { x };
+        paramNames2.forEach((nm, i) => { scope[nm] = params[i]; });
+        try { const v = customCompiled.evaluate(scope); return isFinite(v) ? v : NaN; } catch (_) { return NaN; }
+      };
+      p02 = state.paramRows.length === paramNames2.length ? state.paramRows.map(r => r.init) : paramNames2.map(() => 1);
+    } else {
+      if (!m2 || !m2.fn) { setConsole('Unknown model.', 'error'); return; }
+      paramNames2 = m2.params;
+      modelFn = m2.fn;
+      p02 = state.paramRows.length === paramNames2.length ? state.paramRows.map(r => r.init) : m2.autoInit(xArr, yArr);
+    }
+    const algoKey2 = document.getElementById('opt-algo').value;
+    const maxIter2 = parseInt(document.getElementById('opt-max-iter').value) || 1000;
+    const tol2 = parseFloat(document.getElementById('opt-tol').value) || 1e-8;
+    const curvePts2 = parseInt(document.getElementById('opt-curve-pts').value) || 300;
+    const nStarts2 = parseInt(document.getElementById('opt-n-starts').value) || 1;
+    const SOLVERS2 = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
+    const solve2 = SOLVERS2[algoKey2] || levenbergMarquardt;
+    const paramRows2 = state.paramRows.map(r => ({ init: r.init, min: r.min, max: r.max }));
+    setConsole('IRLS fitting (Huber)…', '');
+    let result2 = solve2(modelFn, xArr, yArr, p02, { maxIter: maxIter2, tol: tol2, paramRows: paramRows2 });
+    const IRLS_ITERS = 5, HUBER_C = 1.345;
+    for (let iter = 0; iter < IRLS_ITERS; iter++) {
+      const resid = result2.residuals || xArr.map((x, i) => yArr[i] - modelFn(x, result2.params));
+      const rmse = Math.sqrt(resid.reduce((s, r) => s + r * r, 0) / Math.max(resid.length - result2.params.length, 1));
+      if (!isFinite(rmse) || rmse === 0) break;
+      const thresh = HUBER_C * rmse;
+      const huberW = resid.map(r => {
+        const ar = Math.abs(r);
+        return ar <= thresh ? 1 : thresh / ar;
+      });
+      const p02b = result2.params.slice();
+      result2 = solve2(modelFn, xArr, yArr, p02b, { maxIter: maxIter2, tol: tol2, weights: huberW, paramRows: paramRows2 });
+    }
+    _finaliseFitRecord({ result: result2, modelFn, paramNames: paramNames2, model: state.fitConfig.model, algoKey: algoKey2, dsId: parseInt(document.getElementById('fit-dataset-select').value), ds: state.datasets.find(d => d.id === parseInt(document.getElementById('fit-dataset-select').value)), excluded, weightMode: 'huber', nStarts: nStarts2, curvePts: curvePts2, sseHistory: null });
+    return;
+  }
 
   const m = MODELS[model];
 
@@ -5065,6 +5188,71 @@ function initEvents() {
     renderDatasetList(); updatePlots();
     setConsole(n > 0 ? `Unmasked ${n} point(s).` : 'No masked points.', '');
   });
+  document.getElementById('btn-smooth-data').addEventListener('click', () => {
+    document.getElementById('smooth-modal').style.display = 'flex';
+  });
+  document.getElementById('smooth-modal-close').addEventListener('click', () => {
+    document.getElementById('smooth-modal').style.display = 'none';
+  });
+  document.getElementById('smooth-cancel').addEventListener('click', () => {
+    document.getElementById('smooth-modal').style.display = 'none';
+  });
+  document.getElementById('smooth-apply').addEventListener('click', () => {
+    const w = parseInt(document.getElementById('smooth-window').value) || 3;
+    document.getElementById('smooth-modal').style.display = 'none';
+    smoothDataset(w);
+  });
+  document.getElementById('smooth-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('smooth-modal')) document.getElementById('smooth-modal').style.display = 'none';
+  });
+  document.getElementById('btn-data-table').addEventListener('click', openDataTable);
+  document.getElementById('data-table-close').addEventListener('click', () => {
+    document.getElementById('data-table-modal').style.display = 'none';
+  });
+  document.getElementById('data-table-close2').addEventListener('click', () => {
+    document.getElementById('data-table-modal').style.display = 'none';
+  });
+  document.getElementById('data-table-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('data-table-modal')) document.getElementById('data-table-modal').style.display = 'none';
+  });
+  document.getElementById('dt-check-all').addEventListener('change', function () {
+    const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+    if (!ds) return;
+    if (this.checked) {
+      ds.excludedIndices = new Set();
+    } else {
+      ds.excludedIndices = new Set(ds.x.map((_, i) => i));
+    }
+    openDataTable();
+    renderMaskCount();
+    updatePlots();
+  });
+  document.getElementById('dt-include-all').addEventListener('click', () => {
+    const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+    if (!ds) return;
+    ds.excludedIndices = new Set();
+    openDataTable();
+    renderMaskCount();
+    updatePlots();
+  });
+  document.getElementById('dt-exclude-selected').addEventListener('click', () => {
+    const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+    const fit = state.fits.find(f => f.id === state.activeFitId && f.dsId === ds?.id);
+    if (!fit || !fit.result || fit.result.rmse <= 0) { setConsole('Run a fit first.', 'warn'); return; }
+    if (!ds) return;
+    if (!ds.excludedIndices) ds.excludedIndices = new Set();
+    const threshold = 2.5 * fit.result.rmse;
+    const origIndices = ds.x.map((_, i) => i).filter(i => !ds.excludedIndices.has(i));
+    let added = 0;
+    (fit.result.residuals || []).forEach((r, ri) => {
+      const origIdx = origIndices[ri];
+      if (origIdx != null && Math.abs(r) > threshold) { ds.excludedIndices.add(origIdx); added++; }
+    });
+    openDataTable();
+    renderMaskCount();
+    updatePlots();
+    setConsole(added > 0 ? `Excluded ${added} outlier(s).` : 'No outliers above 2.5σ.', '');
+  });
 
   /* ── Column picker modal ──────────────────────────────────── */
   document.getElementById('col-picker-close').addEventListener('click', () => {
@@ -5156,7 +5344,26 @@ function initEvents() {
   if (btnLaunch) btnLaunch.addEventListener('click', openApp);
   document.getElementById('btn-close-app').addEventListener('click', closeApp);
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && appOverlay.classList.contains('open')) closeApp();
+    if (e.key === 'Escape' && appOverlay.classList.contains('open')) {
+      const openModal = document.querySelector('.app-modal[style*="flex"]');
+      if (openModal) { openModal.style.display = 'none'; return; }
+      closeApp();
+    }
+    if (e.key === '?' && appOverlay.classList.contains('open') && !e.target.matches('input,textarea,select')) {
+      document.getElementById('shortcuts-modal').style.display = 'flex';
+    }
+  });
+  document.getElementById('btn-shortcuts').addEventListener('click', () => {
+    document.getElementById('shortcuts-modal').style.display = 'flex';
+  });
+  document.getElementById('shortcuts-modal-close').addEventListener('click', () => {
+    document.getElementById('shortcuts-modal').style.display = 'none';
+  });
+  document.getElementById('shortcuts-modal-ok').addEventListener('click', () => {
+    document.getElementById('shortcuts-modal').style.display = 'none';
+  });
+  document.getElementById('shortcuts-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('shortcuts-modal')) document.getElementById('shortcuts-modal').style.display = 'none';
   });
   document.getElementById('btn-auto-restore').addEventListener('click', () => {
     const isOn = localStorage.getItem('cfs_autorestore') !== '0';

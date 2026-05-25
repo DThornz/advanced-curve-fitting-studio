@@ -187,6 +187,7 @@
         <button class="btn" id="btn-load" title="Load last saved session">Load Session</button>
         <button class="btn btn-toggle" id="btn-auto-restore" title="When ON, last saved session is automatically restored on page reload. Turn OFF to always start fresh.">Auto-restore</button>
         <div class="app-toolbar-sep"></div>
+        <button class="btn" id="btn-shortcuts" title="Keyboard shortcuts reference (?)">?</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -257,6 +258,8 @@
           <div style="display:flex;gap:5px">
             <button class="btn" style="flex:1;font-size:.68em;padding:3px 6px" id="btn-mask-outliers" title="Mask points where |residual / RMSE| > 2.5 for the active fit">Mask 2.5σ</button>
             <button class="btn" style="font-size:.68em;padding:3px 10px" id="btn-unmask-all" title="Remove all masked points for the active dataset">Unmask All</button>
+            <button class="btn" style="flex:1;font-size:.68em;padding:3px 6px" id="btn-smooth-data" title="Apply moving average smoothing to the active dataset">Smooth…</button>
+            <button class="btn" style="flex:1;font-size:.68em;padding:3px 6px" id="btn-data-table" title="View/edit data point exclusions in a table">Data Table</button>
           </div>
         </div>
 
@@ -372,6 +375,7 @@
               <option value="none">None (OLS)</option>
               <option value="1/y2">1/y² (relative)</option>
               <option value="1/y">1/|y|</option>
+              <option value="huber">Huber (IRLS)</option>
               <option value="sigma" disabled>1/σ² (no σ data)</option>
             </select>
           </div>
@@ -477,6 +481,76 @@
     </div>
 
   </div><!-- end app-shell -->
+
+  <!-- Smoothing modal -->
+  <div class="app-modal" id="smooth-modal" style="display:none" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width:320px">
+      <div class="modal-header"><span>Smooth Dataset</span><button class="modal-close-btn" id="smooth-modal-close">×</button></div>
+      <div style="padding:12px 16px;font-size:.82em">
+        <p style="margin:0 0 10px">Applies a centered moving average to the <strong>active dataset</strong>. This modifies the data in place; use the Undo button to revert.</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <label style="flex:1">Window size (points)</label>
+          <input id="smooth-window" class="ctrl-input" type="number" value="3" min="2" max="51" step="2" style="width:60px">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="smooth-cancel">Cancel</button>
+        <button class="btn btn-primary" id="smooth-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard shortcuts modal -->
+  <div class="app-modal" id="shortcuts-modal" style="display:none" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width:480px">
+      <div class="modal-header"><span>Keyboard Shortcuts</span><button class="modal-close-btn" id="shortcuts-modal-close">×</button></div>
+      <div style="padding:12px 16px">
+        <table style="width:100%;border-collapse:collapse;font-size:.8em">
+          <thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px">Shortcut</th><th style="text-align:left;padding:4px 8px">Action</th></tr></thead>
+          <tbody>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Ctrl+Enter</td><td style="padding:4px 8px">Run Fit</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Ctrl+Z</td><td style="padding:4px 8px">Undo point edit</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Ctrl+Y</td><td style="padding:4px 8px">Redo point edit</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Escape</td><td style="padding:4px 8px">Deselect point / close app</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Arrow keys</td><td style="padding:4px 8px">Nudge selected point (hold Shift for 10×)</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Shift+Scroll</td><td style="padding:4px 8px">Adjust multi-select radius (in edit mode)</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Click empty area</td><td style="padding:4px 8px">Deselect point</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Drag point</td><td style="padding:4px 8px">Move point vertically</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">?</td><td style="padding:4px 8px">Show this panel</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary" id="shortcuts-modal-ok">Close</button></div>
+    </div>
+  </div>
+
+  <!-- Data table modal -->
+  <div class="app-modal" id="data-table-modal" style="display:none" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width:580px;max-height:80vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <span id="data-table-title">Data Table</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn" id="dt-include-all" style="font-size:.72em;padding:2px 8px">Include All</button>
+          <button class="btn" id="dt-exclude-selected" style="font-size:.72em;padding:2px 8px" title="Exclude points where residual > 2.5σ (requires active fit on this dataset)">Exclude 2.5σ</button>
+          <button class="modal-close-btn" id="data-table-close">×</button>
+        </div>
+      </div>
+      <div style="padding:6px 12px;font-size:.75em;color:var(--dimmer)" id="data-table-summary"></div>
+      <div style="flex:1;overflow-y:auto;min-height:0">
+        <table class="dt-table" id="data-table-body">
+          <thead><tr>
+            <th style="width:32px"><input type="checkbox" id="dt-check-all" title="Toggle all"></th>
+            <th>#</th><th>X</th><th>Y</th><th>Residual</th>
+          </tr></thead>
+          <tbody id="dt-tbody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end">
+        <button class="btn btn-primary" id="data-table-close2">Close</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- end app-fullscreen-overlay -->
 
 <!-- Column Picker Modal -->
