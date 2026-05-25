@@ -34,7 +34,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Outlier detection** | Highlights points where \|residual\| > 2.5σ for the active fit with red rings; updates live as points are moved |
 | **Point masking** | Mask 2.5σ outliers to exclude them from fitting; Unmask All to restore; masked count shown in panel |
 | **Data table** | Per-point table showing x, y, and residual for every data point; checkbox to exclude individual points from fitting while keeping them visible as hollow markers on the plot; bulk exclude-by-2.5σ and include-all buttons |
-| **Data smoothing** | Apply a centered moving-average smooth to the active dataset (configurable window); undo-safe; useful for noisy data before fitting |
+| **Data smoothing** | Apply a centered moving-average smooth to the active dataset (configurable window); masked/excluded points are skipped from the window calculation and their values are left unchanged; **Restore Original** button reverts all smoothing back to the imported y-values at any time |
 | **Smart point editing** | Always-on context-aware interaction: click near a point to select/drag, click and drag away from points to pan, scroll to zoom; no mode toggle required |
 | **Residual analysis tabs** | Four sub-panels below the main plot: Residuals vs X · Q-Q Plot (Blom quantile approx vs normal) · Histogram (Sturges bins + normal overlay) · Convergence (SSE vs iteration; Log/Linear X and Y toggles, default Log Y) |
 | **Normalized residuals** | Toggle residual plot between raw units and σ (RMSE-normalized) units |
