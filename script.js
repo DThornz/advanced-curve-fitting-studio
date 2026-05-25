@@ -63,6 +63,20 @@ function getLiveResiduals() {
   return residuals.length >= 3 ? { residuals, fit, ds } : null;
 }
 
+// Returns live per-point residuals keyed by original dataset index.
+// Always reflects the current ds.y (after point edits), not the stale stored result.
+function getLiveResidualsWithIdx(fit, ds) {
+  const excl = ds.excludedIndices || new Set();
+  const pairs = [];
+  ds.x.forEach((x, i) => {
+    if (excl.has(i)) return;
+    const yhat = fitEval(fit, x);
+    pairs.push({ origIdx: i, r: isFinite(yhat) ? ds.y[i] - yhat : 0 });
+  });
+  const rmse = pairs.length > 0 ? Math.sqrt(pairs.reduce((s, p) => s + p.r * p.r, 0) / pairs.length) : 0;
+  return { pairs, rmse };
+}
+
 function solveLinear(A, b) {
   const n = b.length;
   const M = A.map((row, i) => [...row, b[i]]);
@@ -1932,10 +1946,20 @@ function buildResidualVsXPanel(xlabel, tc) {
     if (!fit.visible || !fit.result) continue;
     const ds = state.datasets.find(d => d.id === fit.dsId);
     if (!ds || ds.enabled === false) continue;
-    const excl = ds.excludedIndices || new Set();
-    const xRes = ds.x.filter((_, i) => !excl.has(i));
-    const scale = normalize && fit.result.rmse > 0 ? 1 / fit.result.rmse : 1;
-    const residuals = fit.result.residuals.map(v => v * scale);
+    let xRes, residualsRaw, rmseForScale;
+    if (fit.fn) {
+      const live = getLiveResidualsWithIdx(fit, ds);
+      xRes = live.pairs.map(p => ds.x[p.origIdx]);
+      residualsRaw = live.pairs.map(p => p.r);
+      rmseForScale = live.rmse;
+    } else {
+      const excl = ds.excludedIndices || new Set();
+      xRes = ds.x.filter((_, i) => !excl.has(i));
+      residualsRaw = fit.result.residuals || [];
+      rmseForScale = fit.result.rmse;
+    }
+    const scale = normalize && rmseForScale > 0 ? 1 / rmseForScale : 1;
+    const residuals = residualsRaw.map(v => v * scale);
     traces.push({
       x: xRes, y: residuals,
       mode: 'markers', type: 'scatter',
@@ -2253,9 +2277,11 @@ function openDataTable() {
   const fit = state.fits.find(f => f.id === state.activeFitId && f.dsId === ds.id);
   const excl = ds.excludedIndices || new Set();
   const resMap = new Map();
+  let liveRmse = Infinity;
   if (fit && fit.result && fit.fn) {
-    const origIndices = ds.x.map((_, i) => i).filter(i => !excl.has(i));
-    (fit.result.residuals || []).forEach((r, ri) => { if (origIndices[ri] != null) resMap.set(origIndices[ri], r); });
+    const live = getLiveResidualsWithIdx(fit, ds);
+    live.pairs.forEach(({ origIdx, r }) => resMap.set(origIdx, r));
+    liveRmse = live.rmse;
   }
 
   document.getElementById('data-table-title').textContent = `Data Table — ${ds.name}`;
@@ -2266,7 +2292,7 @@ function openDataTable() {
   tbody.innerHTML = ds.x.map((x, i) => {
     const included = !excl.has(i);
     const res = resMap.has(i) ? fmt(resMap.get(i)) : '—';
-    const resClass = resMap.has(i) && Math.abs(resMap.get(i)) > 2.5 * (fit?.result?.rmse || Infinity) ? ' style="color:var(--red)"' : '';
+    const resClass = resMap.has(i) && Math.abs(resMap.get(i)) > 2.5 * liveRmse ? ' style="color:var(--red)"' : '';
     return `<tr class="${included ? '' : 'dt-row-excluded'}">
       <td><input type="checkbox" class="dt-check" data-idx="${i}" ${included ? 'checked' : ''}></td>
       <td style="color:var(--dimmer);font-family:var(--mono)">${i}</td>
@@ -5259,13 +5285,11 @@ function initEvents() {
     const ds = state.datasets.find(d => d.id === fit.dsId);
     if (!ds) return;
     if (!ds.excludedIndices) ds.excludedIndices = new Set();
-    const threshold = 2.5 * fit.result.rmse;
-    // Build map from residual index (non-excluded subset) → original ds.x index
-    const origIndices = ds.x.map((_, i) => i).filter(i => !ds.excludedIndices.has(i));
+    const { pairs, rmse } = getLiveResidualsWithIdx(fit, ds);
+    const threshold = 2.5 * rmse;
     let added = 0;
-    fit.result.residuals.forEach((r, ri) => {
-      const origIdx = origIndices[ri];
-      if (origIdx != null && Math.abs(r) > threshold && !ds.excludedIndices.has(origIdx)) {
+    pairs.forEach(({ origIdx, r }) => {
+      if (Math.abs(r) > threshold && !ds.excludedIndices.has(origIdx)) {
         ds.excludedIndices.add(origIdx); added++;
       }
     });
@@ -5337,12 +5361,11 @@ function initEvents() {
     if (!fit || !fit.result || fit.result.rmse <= 0) { setConsole('Run a fit first.', 'warn'); return; }
     if (!ds) return;
     if (!ds.excludedIndices) ds.excludedIndices = new Set();
-    const threshold = 2.5 * fit.result.rmse;
-    const origIndices = ds.x.map((_, i) => i).filter(i => !ds.excludedIndices.has(i));
+    const { pairs, rmse } = getLiveResidualsWithIdx(fit, ds);
+    const threshold = 2.5 * rmse;
     let added = 0;
-    (fit.result.residuals || []).forEach((r, ri) => {
-      const origIdx = origIndices[ri];
-      if (origIdx != null && Math.abs(r) > threshold) { ds.excludedIndices.add(origIdx); added++; }
+    pairs.forEach(({ origIdx, r }) => {
+      if (Math.abs(r) > threshold) { ds.excludedIndices.add(origIdx); added++; }
     });
     openDataTable();
     renderMaskCount();
