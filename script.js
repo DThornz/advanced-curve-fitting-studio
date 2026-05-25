@@ -2218,12 +2218,10 @@ function smoothDataset(windowSize) {
   const n = ds.y.length;
   const w = Math.max(2, Math.min(Math.floor(windowSize), n - 1));
   const half = Math.floor(w / 2);
-  // Push undo state
   state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice() });
   if (state.editHistory.undo.length > 100) state.editHistory.undo.shift();
   state.editHistory.redo = [];
   syncUndoRedoButtons();
-  // Moving average
   const smoothed = ds.y.map((_, i) => {
     const lo = Math.max(0, i - half);
     const hi = Math.min(n - 1, i + half);
@@ -2233,7 +2231,20 @@ function smoothDataset(windowSize) {
   });
   ds.y = smoothed;
   updatePlots();
-  setConsole(`Applied moving average (window=${w}) to "${ds.name}". Use Undo to revert.`, '');
+  setConsole(`Applied moving average (window=${w}) to "${ds.name}". Use Restore Original to undo smoothing.`, '');
+}
+
+function restoreOriginalData() {
+  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+  if (!ds) { setConsole('No active dataset.', 'warn'); return; }
+  if (!ds.originalY) { setConsole('No original data stored for this dataset.', 'warn'); return; }
+  state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice() });
+  if (state.editHistory.undo.length > 100) state.editHistory.undo.shift();
+  state.editHistory.redo = [];
+  syncUndoRedoButtons();
+  ds.y = ds.originalY.slice();
+  updatePlots();
+  setConsole(`"${ds.name}" restored to original imported values.`, '');
 }
 
 function openDataTable() {
@@ -5282,6 +5293,10 @@ function initEvents() {
     const w = parseInt(document.getElementById('smooth-window').value) || 3;
     document.getElementById('smooth-modal').style.display = 'none';
     smoothDataset(w);
+  });
+  document.getElementById('smooth-restore').addEventListener('click', () => {
+    document.getElementById('smooth-modal').style.display = 'none';
+    restoreOriginalData();
   });
   document.getElementById('smooth-modal').addEventListener('click', e => {
     if (e.target === document.getElementById('smooth-modal')) document.getElementById('smooth-modal').style.display = 'none';

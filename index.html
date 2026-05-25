@@ -492,13 +492,14 @@
     <div class="modal-box" style="max-width:320px">
       <div class="modal-header"><span>Smooth Dataset</span><button class="modal-close-btn" id="smooth-modal-close">×</button></div>
       <div style="padding:12px 16px;font-size:.82em">
-        <p style="margin:0 0 10px">Applies a centered moving average to the <strong>active dataset</strong>. This modifies the data in place; use the Undo button to revert.</p>
+        <p style="margin:0 0 10px">Applies a centered moving average to the <strong>active dataset</strong>. Use <em>Restore Original</em> at any time to revert all smoothing back to the imported values.</p>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <label style="flex:1">Window size (points)</label>
           <input id="smooth-window" class="ctrl-input" type="number" value="3" min="2" max="51" step="2" style="width:60px">
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn" id="smooth-restore" title="Revert to the original imported y values" style="margin-right:auto">Restore Original</button>
         <button class="btn" id="smooth-cancel">Cancel</button>
         <button class="btn btn-primary" id="smooth-apply">Apply</button>
       </div>
