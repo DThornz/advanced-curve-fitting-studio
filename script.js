@@ -3090,32 +3090,7 @@ function renderCorrMatrix(fit) {
       return `<td style="background:${bg};color:${txtClr}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
     }).join('') + '</tr>'
   ).join('');
-  el.innerHTML = `<div class="corr-matrix-label">Parameter Correlations<span class="corr-info-btn" id="corr-info-btn">?</span></div><table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
-  const infoBtn = el.querySelector('#corr-info-btn');
-  if (infoBtn) {
-    infoBtn.addEventListener('mouseenter', e => {
-      const tt = document.getElementById('ui-tooltip');
-      if (!tt) return;
-      tt.innerHTML =
-        `<strong>Pearson correlation between each pair of parameters</strong>, derived from the covariance matrix.<br><br>` +
-        `<b>1.00</b> (diagonal) — a parameter always correlates perfectly with itself.<br>` +
-        `<b>Near 0</b> — parameters are independent; each is well-determined on its own.<br>` +
-        `<b>Near +1</b> — parameters increase together; the solver struggles to tell them apart.<br>` +
-        `<b>Near −1</b> — parameters trade off; one can compensate for the other.<br><br>` +
-        `<b>|r| &gt; 0.95</b> is a warning: the model may be over-parameterised. Try locking one parameter (🔒) or choosing a simpler model.<br><br>` +
-        `<span style="color:var(--teal)">■</span> Teal = positive &nbsp; <span style="color:#ef4444">■</span> Red = negative`;
-      tt.style.display = 'block';
-      const rect = e.currentTarget.getBoundingClientRect();
-      const left = Math.min(rect.left, window.innerWidth - 270);
-      const top = rect.bottom + 6;
-      tt.style.left = left + 'px';
-      tt.style.top = top + 'px';
-    });
-    infoBtn.addEventListener('mouseleave', () => {
-      const tt = document.getElementById('ui-tooltip');
-      if (tt) tt.style.display = 'none';
-    });
-  }
+  el.innerHTML = `<div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" data-tip="corr-matrix">?</span></div><table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
 }
 
 let _consoleMsg = { text: '', type: '', timer: null };
@@ -6204,5 +6179,115 @@ function init() {
 }
 
 init();
+
+/* ═══════════════════════════════════════════════════════════
+   PANEL TOOLTIP SYSTEM
+═══════════════════════════════════════════════════════════ */
+const PANEL_TIPS = {
+  'datasets':
+    `<b>Datasets</b><br>Lists all loaded datasets in this tab. Each entry shows the dataset name, point count, and colour swatch.<br><br>` +
+    `Click the <b>toggle</b> (on hover) to enable/disable a dataset — disabled datasets are hidden from the plot and excluded from fitting, residual panels, and the F-test.<br><br>` +
+    `Double-click a name to rename it.`,
+
+  'active-fits':
+    `<b>Active Fits</b><br>Lists every fit run in this tab. Click a fit to make it active — its parameters and result load into the right panel.<br><br>` +
+    `The coloured dot matches the fit curve on the plot. Hover a fit for a quick stats summary. Use <b>✕</b> to delete individual fits.`,
+
+  'target-dataset':
+    `<b>Target Dataset</b><br>Selects which dataset the solver runs against when you press <b>▶ Fit</b>. Only non-masked points from this dataset are used.`,
+
+  'point-masking':
+    `<b>Point Masking</b><br>Excludes individual points from fitting without deleting them — masked points stay visible as hollow markers on the plot.<br><br>` +
+    `<b>Mask 2.5σ</b> — exclude all points where |residual| &gt; 2.5 × RMSE for the active fit.<br>` +
+    `<b>Unmask All</b> — restore all masked points for the active dataset.<br>` +
+    `<b>Smooth…</b> — apply a centered moving-average; masked points are skipped from the window calculation.<br>` +
+    `<b>Data Table</b> — per-point view with checkboxes, live residuals, and bulk exclude / include controls.`,
+
+  'fit-model':
+    `<b>Fit Model</b><br>The mathematical equation to fit to the data. 28 built-in models are grouped by type.<br><br>` +
+    `Select <b>Custom Equation</b> to type any expression in <code>x</code> — parameters are detected automatically from symbol names (any symbol other than <code>x</code> and math functions).<br><br>` +
+    `Use <b>Try All</b> in the toolbar to fit every model at once and rank by R².`,
+
+  'custom-eq':
+    `<b>Custom Equation</b><br>Type any expression in the variable <code>x</code> using Math.js syntax. All symbols other than <code>x</code> and standard math functions become free parameters.<br><br>` +
+    `<b>Examples:</b> <code>a*exp(-b*x)+c</code> &nbsp; <code>a*x^b+c</code> &nbsp; <code>a/(1+exp(-b*(x-c)))</code><br><br>` +
+    `Supported: <code>exp log sin cos sqrt abs atan ^</code> and all Math.js built-ins.`,
+
+  'parameters':
+    `<b>Parameters</b><br>One row per model parameter.<br><br>` +
+    `<b>Init</b> — starting guess; preserved across refits.<br>` +
+    `<b>Min / Max</b> — optional box constraints; leave blank for unconstrained.<br>` +
+    `<b>Fit</b> — converged value; hover to see ± std error.<br>` +
+    `<b>🔒</b> — lock a parameter at its Init value; useful for fixing known constants while optimising the rest.<br>` +
+    `<b>Sweep slider</b> — drag to preview the model curve in real time without fitting.<br><br>` +
+    `Click <b>Auto Init</b> to estimate starting values from the data shape.`,
+
+  'algorithm-options':
+    `<b>Algorithm Options</b><br>Controls how the nonlinear solver runs.<br><br>` +
+    `<b>Solver</b> — LM (robust default) · Gauss-Newton (faster near solution) · Nelder-Mead (derivative-free, good on noisy surfaces) · BFGS (quasi-Newton, fast on smooth problems).<br>` +
+    `<b>Max Iter</b> — iteration limit before the solver stops.<br>` +
+    `<b>Tolerance</b> — convergence threshold; smaller = more precise but slower.<br>` +
+    `<b>Multi-start</b> — number of random pilot runs to escape local minima (1 = off, 8 = default, ~4× compute cost).<br>` +
+    `<b>Weights</b> — None/OLS (equal) · 1/y² (relative errors) · 1/|y| (intermediate) · Huber IRLS (robust, down-weights outliers, 5 reweighting iterations) · 1/σ² (requires a σ uncertainty column).`,
+
+  'plot-labels':
+    `<b>Plot Labels</b><br>Sets the X axis title, Y axis title, and plot title shown on the figure.<br><br>` +
+    `Click <b>⚙ Style</b> for full graph style control: global font, background colors, grid lines, zero lines, axis spines, tick labels, legend, log axes, and axis min/max/tick spacing.`,
+
+  'annotations':
+    `<b>Annotations</b><br>Adds overlay graphics to the Plotly figure. Three types:<br><br>` +
+    `<b>Horizontal line</b> — reference at a fixed Y value (e.g. detection limit, half-max threshold).<br>` +
+    `<b>Vertical line</b> — reference at a fixed X value (e.g. time point, dose level).<br>` +
+    `<b>Text callout</b> — free text at any (X, Y) coordinate, with optional arrow.<br><br>` +
+    `<b>Peaks</b> — auto-annotates peak centres of visible Gaussian or Lorentzian fits, coloured to match the fit curve.<br><br>` +
+    `Annotations are saved with the session file.`,
+
+  'fit-curve-points':
+    `<b>Fit Curve Points</b><br>Number of evenly-spaced X values used to draw the smooth fit curve. Higher = smoother curve but slightly slower to render.<br><br>` +
+    `300 is sufficient for most models. Increase to 1000+ for highly oscillatory or rapidly-varying functions where the default looks jagged.`,
+
+  'extrapolation-range':
+    `<b>Extrapolation Range</b><br>Sets the X range over which the fit curve is drawn — independent of the data extent. Leave blank to use the data range automatically.<br><br>` +
+    `Also sets the search domain used by <b>Y → X calibration</b> in Predict / Solve. Click <b>Reset</b> to revert to the data range.`,
+
+  'predict-solve':
+    `<b>Predict / Solve</b><br>Evaluates the active fit at a specific input value.<br><br>` +
+    `<b>X → Y (predict)</b> — type an X; returns Ŷ with 95% CI half-width from Jacobian gradient propagation through the covariance matrix.<br>` +
+    `<b>Y → X (calibrate)</b> — type a target Y; finds all X solutions numerically via 500-point grid scan + bisection. Returns IC50, EC50, K<sub>m</sub>, half-life, and calibration inverses directly with CI via the delta method.`,
+
+  'ftest':
+    `<b>F-test (Model Comparison)</b><br>Tests whether a more complex model fits significantly better than a simpler one on the <i>same dataset</i>.<br><br>` +
+    `F = [(SSE₁ − SSE₂) / Δp] / [SSE₂ / (n − p₂)]<br><br>` +
+    `Select fit A and fit B — the simpler model (fewer parameters) is automatically the null hypothesis.<br><br>` +
+    `<b>p &lt; 0.05</b> — extra parameters are statistically justified at α = 0.05.<br>` +
+    `<b>p ≥ 0.05</b> — simpler model is adequate; prefer it by parsimony.`,
+
+  'corr-matrix':
+    `<b>Pearson correlation between each pair of parameters</b>, derived from the covariance matrix.<br><br>` +
+    `<b>1.00</b> (diagonal) — a parameter always correlates perfectly with itself.<br>` +
+    `<b>Near 0</b> — parameters are independent; each is well-determined on its own.<br>` +
+    `<b>Near +1</b> — parameters increase together; the solver struggles to tell them apart.<br>` +
+    `<b>Near −1</b> — parameters trade off; one can compensate for the other.<br><br>` +
+    `<b>|r| &gt; 0.95</b> is a warning: the model may be over-parameterised. Try locking one parameter (🔒) or choosing a simpler model.<br><br>` +
+    `<span style="color:var(--teal)">■</span> Teal = positive &nbsp; <span style="color:#ef4444">■</span> Red = negative`,
+};
+
+(function wirePanelTips() {
+  const tt = document.getElementById('ui-tooltip');
+  if (!tt) return;
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('.panel-tip');
+    if (!el) return;
+    const html = PANEL_TIPS[el.dataset.tip] || el.dataset.tip;
+    tt.innerHTML = html;
+    tt.style.display = 'block';
+    const r = el.getBoundingClientRect();
+    tt.style.left = Math.min(r.left, window.innerWidth - 270) + 'px';
+    tt.style.top = (r.bottom + 6) + 'px';
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest('.panel-tip')) tt.style.display = 'none';
+  });
+})();
 
 })();

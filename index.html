@@ -203,14 +203,14 @@
       <!-- LEFT PANEL -->
       <div class="app-left" id="panel-left">
         <div class="panel-header">
-          <span>Datasets</span>
+          <span>Datasets <span class="panel-tip" data-tip="datasets">?</span></span>
           <button class="btn panel-action-btn" id="btn-clear-all" title="Remove all datasets and fits">✕ All</button>
         </div>
         <div class="panel-section" id="dataset-list">
           <div class="panel-empty-hint">Load an example<br>or import a CSV to begin.</div>
         </div>
         <div class="panel-header" style="border-top:1px solid var(--border)">
-          <span>Active Fits</span>
+          <span>Active Fits <span class="panel-tip" data-tip="active-fits">?</span></span>
           <span class="panel-fit-count" id="fit-count">0</span>
           <button class="btn panel-action-btn" id="btn-clear-all-fits" title="Remove all fits">✕ All</button>
         </div>
@@ -249,7 +249,7 @@
       <div class="app-right" id="panel-right">
 
         <div class="ctrl-section">
-          <label class="ctrl-label">Target Dataset</label>
+          <label class="ctrl-label">Target Dataset <span class="panel-tip" data-tip="target-dataset">?</span></label>
           <select class="ctrl-select" id="fit-dataset-select">
             <option value="">— no dataset loaded —</option>
           </select>
@@ -257,7 +257,7 @@
 
         <div class="ctrl-section" id="masking-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <span class="ctrl-label" style="margin:0">Point Masking</span>
+            <span class="ctrl-label" style="margin:0">Point Masking <span class="panel-tip" data-tip="point-masking">?</span></span>
             <span id="mask-count" style="font-size:.68em;color:var(--dimmer)">0 masked</span>
           </div>
           <div style="display:flex;gap:5px">
@@ -269,7 +269,7 @@
         </div>
 
         <div class="ctrl-section">
-          <label class="ctrl-label">Fit Model</label>
+          <label class="ctrl-label">Fit Model <span class="panel-tip" data-tip="fit-model">?</span></label>
           <select class="ctrl-select" id="model-select">
             <optgroup label="Basic">
               <option value="Linear">Linear  y = a·x + b</option>
@@ -324,7 +324,7 @@
         <!-- Custom equation editor (shown only when Custom is selected) -->
         <div class="ctrl-section" id="custom-eq-section" style="display:none">
           <label class="ctrl-label">
-            Equation &nbsp;<code style="color:var(--teal);font-size:.95em">x</code> is the independent variable
+            Equation &nbsp;<code style="color:var(--teal);font-size:.95em">x</code> is the independent variable <span class="panel-tip" data-tip="custom-eq">?</span>
           </label>
           <input class="ctrl-input" id="custom-eq-input" type="text"
                  placeholder="a * exp(-b * x) + c"
@@ -338,7 +338,7 @@
         <!-- Parameters -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <span class="ctrl-label" style="margin:0">Parameters</span>
+            <span class="ctrl-label" style="margin:0">Parameters <span class="panel-tip" data-tip="parameters">?</span></span>
             <div style="display:flex;gap:4px">
               <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-auto-init" title="Auto-estimate initial values from the loaded data">Auto Init</button>
               <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-copy-params" title="Copy fit parameters to clipboard">Copy</button>
@@ -352,7 +352,7 @@
 
         <!-- Algorithm options -->
         <div class="ctrl-section">
-          <label class="ctrl-label">Algorithm Options</label>
+          <label class="ctrl-label">Algorithm Options <span class="panel-tip" data-tip="algorithm-options">?</span></label>
           <div class="ctrl-row">
             <label class="ctrl-label" style="margin:0;min-width:72px">Solver</label>
             <select class="ctrl-input" id="opt-algo" title="Polynomial models always use analytic fitting regardless of this setting">
@@ -389,7 +389,7 @@
         <!-- Plot labels -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <label class="ctrl-label" style="margin:0">Plot Labels</label>
+            <label class="ctrl-label" style="margin:0">Plot Labels <span class="panel-tip" data-tip="plot-labels">?</span></label>
             <button class="btn" id="btn-graph-style" style="padding:1px 8px;font-size:.65em" title="Edit graph appearance: fonts, colors, grid, axes, legend">⚙ Style</button>
           </div>
           <div class="ctrl-row">
@@ -409,7 +409,7 @@
         <!-- Annotations -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <label class="ctrl-label" style="margin:0" title="Add reference lines, text callouts, and peak markers to the plot">Annotations <span class="panel-fit-count" id="ann-count">0</span></label>
+            <label class="ctrl-label" style="margin:0">Annotations <span class="panel-fit-count" id="ann-count">0</span> <span class="panel-tip" data-tip="annotations">?</span></label>
             <div style="display:flex;gap:4px">
               <button class="btn" id="btn-ann-peaks" title="Auto-annotate peak centres from Gaussian / Lorentzian fits" style="padding:1px 8px;font-size:.65em">Peaks</button>
               <button class="btn" id="btn-ann-add" style="padding:1px 8px;font-size:.65em">+ Add</button>
@@ -420,14 +420,14 @@
 
         <!-- Fit curve resolution -->
         <div class="ctrl-section">
-          <label class="ctrl-label">Fit Curve Points</label>
+          <label class="ctrl-label">Fit Curve Points <span class="panel-tip" data-tip="fit-curve-points">?</span></label>
           <input class="ctrl-input" id="opt-curve-pts" type="number" value="300" min="50" max="5000">
         </div>
 
         <!-- Extrapolation range -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <label class="ctrl-label" style="margin:0">Extrapolation Range</label>
+            <label class="ctrl-label" style="margin:0">Extrapolation Range <span class="panel-tip" data-tip="extrapolation-range">?</span></label>
             <button class="btn" style="padding:1px 7px;font-size:.65em" id="btn-extrap-reset" title="Reset to data range">Reset</button>
           </div>
           <div class="ctrl-row">
@@ -443,7 +443,7 @@
         <!-- Predict / Solve -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <label class="ctrl-label" style="margin:0">Predict / Solve</label>
+            <label class="ctrl-label" style="margin:0">Predict / Solve <span class="panel-tip" data-tip="predict-solve">?</span></label>
             <select class="ctrl-select" id="pred-mode" style="font-size:.68em;padding:2px 5px;height:auto" title="X→Y: predict output from input; Y→X: calibration inversion">
               <option value="x2y">X → Y (predict)</option>
               <option value="y2x">Y → X (calibrate)</option>
@@ -459,7 +459,7 @@
 
         <!-- F-test -->
         <div class="ctrl-section">
-          <label class="ctrl-label" title="F-test compares two nested models on the same dataset. The simpler model is the null hypothesis.">F-test (Model Comparison)</label>
+          <label class="ctrl-label">F-test (Model Comparison) <span class="panel-tip" data-tip="ftest">?</span></label>
           <div class="ctrl-row">
             <label class="ctrl-label" style="margin:0;min-width:30px;flex-shrink:0">A</label>
             <select class="ctrl-select" id="ftest-fit-a" style="font-size:.72em;min-width:0"><option value="">— no fits —</option></select>
