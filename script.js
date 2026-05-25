@@ -3090,7 +3090,32 @@ function renderCorrMatrix(fit) {
       return `<td style="background:${bg};color:${txtClr}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
     }).join('') + '</tr>'
   ).join('');
-  el.innerHTML = `<div class="corr-matrix-label">Parameter Correlations</div><table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
+  el.innerHTML = `<div class="corr-matrix-label">Parameter Correlations<span class="corr-info-btn" id="corr-info-btn">?</span></div><table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
+  const infoBtn = el.querySelector('#corr-info-btn');
+  if (infoBtn) {
+    infoBtn.addEventListener('mouseenter', e => {
+      const tt = document.getElementById('ui-tooltip');
+      if (!tt) return;
+      tt.innerHTML =
+        `<strong>Pearson correlation between each pair of parameters</strong>, derived from the covariance matrix.<br><br>` +
+        `<b>1.00</b> (diagonal) — a parameter always correlates perfectly with itself.<br>` +
+        `<b>Near 0</b> — parameters are independent; each is well-determined on its own.<br>` +
+        `<b>Near +1</b> — parameters increase together; the solver struggles to tell them apart.<br>` +
+        `<b>Near −1</b> — parameters trade off; one can compensate for the other.<br><br>` +
+        `<b>|r| &gt; 0.95</b> is a warning: the model may be over-parameterised. Try locking one parameter (🔒) or choosing a simpler model.<br><br>` +
+        `<span style="color:var(--teal)">■</span> Teal = positive &nbsp; <span style="color:#ef4444">■</span> Red = negative`;
+      tt.style.display = 'block';
+      const rect = e.currentTarget.getBoundingClientRect();
+      const left = Math.min(rect.left, window.innerWidth - 270);
+      const top = rect.bottom + 6;
+      tt.style.left = left + 'px';
+      tt.style.top = top + 'px';
+    });
+    infoBtn.addEventListener('mouseleave', () => {
+      const tt = document.getElementById('ui-tooltip');
+      if (tt) tt.style.display = 'none';
+    });
+  }
 }
 
 let _consoleMsg = { text: '', type: '', timer: null };
