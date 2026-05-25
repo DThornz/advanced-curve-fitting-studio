@@ -6339,7 +6339,10 @@ function initEvents() {
       if (_specVisible) renderFFTSpectrum(); // re-render with filtered data
     });
 
-    document.getElementById('pp-restore').addEventListener('click', () => { closePP(); restoreOriginalData(); });
+    document.getElementById('pp-restore').addEventListener('click', () => {
+      restoreOriginalData();
+      if (_specVisible) renderFFTSpectrum();
+    });
 
     // ── Spectrum preview ──────────────────────────────────────
     let _specVisible = false;
