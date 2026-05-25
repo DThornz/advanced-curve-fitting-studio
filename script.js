@@ -73,7 +73,9 @@ function getLiveResidualsWithIdx(fit, ds) {
     const yhat = fitEval(fit, x);
     pairs.push({ origIdx: i, r: isFinite(yhat) ? ds.y[i] - yhat : 0 });
   });
-  const rmse = pairs.length > 0 ? Math.sqrt(pairs.reduce((s, p) => s + p.r * p.r, 0) / pairs.length) : 0;
+  const nParams = fit.result && fit.result.params ? fit.result.params.length : 0;
+  const dof = Math.max(pairs.length - nParams, 1);
+  const rmse = pairs.length > 0 ? Math.sqrt(pairs.reduce((s, pair) => s + pair.r * pair.r, 0) / dof) : 0;
   return { pairs, rmse };
 }
 
@@ -1882,7 +1884,8 @@ function buildMainTraces() {
         liveRes.push({ i, r: isFinite(v) ? ds.y[i] - v : 0 });
       });
       if (!liveRes.length) return;
-      const liveRmse = Math.sqrt(liveRes.reduce((s, e) => s + e.r * e.r, 0) / liveRes.length);
+      const nPar = fit.result && fit.result.params ? fit.result.params.length : 0;
+      const liveRmse = Math.sqrt(liveRes.reduce((s, e) => s + e.r * e.r, 0) / Math.max(liveRes.length - nPar, 1));
       if (liveRmse <= 0) return;
       const threshold = 2.5 * liveRmse;
       const ols = [], olx = [], oly = [], olr = [];
@@ -1995,9 +1998,9 @@ function buildQQPanel(tc) {
   const { residuals, fit, ds } = data;
   const n = residuals.length;
   const sorted = residuals.slice().sort((a, b) => a - b);
-  const mu = sorted.reduce((s, r) => s + r, 0) / n;
-  const sigma = Math.sqrt(sorted.reduce((s, r) => s + (r - mu) ** 2, 0) / Math.max(n - 1, 1));
-  const stdRes = sorted.map(r => (r - mu) / (sigma || 1));
+  const sigma = (fit.result && fit.result.rmse) ? fit.result.rmse :
+    Math.sqrt(sorted.reduce((s, r) => s + r * r, 0) / Math.max(n - 1, 1));
+  const stdRes = sorted.map(r => r / (sigma || 1));
   const theoQ  = sorted.map((_, i) => probitApprox((i + 1 - 0.375) / (n + 0.25)));
   const lo = Math.min(theoQ[0], stdRes[0]) - 0.3;
   const hi = Math.max(theoQ[n - 1], stdRes[n - 1]) + 0.3;
@@ -3446,9 +3449,12 @@ function runFit() {
     const IRLS_ITERS = 5, HUBER_C = 1.345;
     for (let iter = 0; iter < IRLS_ITERS; iter++) {
       const resid = result2.residuals || xArr.map((x, i) => yArr[i] - modelFn(x, result2.params));
-      const rmse = Math.sqrt(resid.reduce((s, r) => s + r * r, 0) / Math.max(resid.length - result2.params.length, 1));
-      if (!isFinite(rmse) || rmse === 0) break;
-      const thresh = HUBER_C * rmse;
+      const absResid = resid.map(r => Math.abs(r));
+      const sortedAbs = absResid.slice().sort((a, b) => a - b);
+      const mad = sortedAbs[Math.floor(sortedAbs.length / 2)];
+      const s = mad / 0.6745;
+      if (!isFinite(s) || s === 0) break;
+      const thresh = HUBER_C * s;
       const huberW = resid.map(r => {
         const ar = Math.abs(r);
         return ar <= thresh ? 1 : thresh / ar;
