@@ -821,3 +821,16 @@ body.dark-mode .ann-check-label{color:#3d5470!important}
 .gs-clear-btn:hover{color:var(--error,#e53e3e)!important}
 .gs-grid-row{display:flex;align-items:center;gap:5px;font-size:.75em;flex-wrap:nowrap}
 .gs-grid-row .ann-check-label{min-width:62px;flex-shrink:0}
+/* Parameter lock button */
+.param-lock-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: .8em;
+  padding: 0 2px;
+  opacity: 0.45;
+  transition: opacity .15s;
+  line-height: 1;
+}
+.param-lock-btn:hover { opacity: 0.85; }
+.param-lock-btn.locked { opacity: 1; color: var(--amber); }

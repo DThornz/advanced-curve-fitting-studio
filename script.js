@@ -1254,7 +1254,7 @@ const state = {
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
-  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false } },
+  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, showPI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false } },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   sweepParams: null,  // non-null while sweep slider is active
   selection: { dsId: null, indices: new Set() },
@@ -1620,6 +1620,34 @@ function computeCIBands(fit, xs) {
   return { lower, upper };
 }
 
+function computePIBands(fit, xs) {
+  const { covMatrix, dof, params, rmse } = fit.result;
+  if (!covMatrix || dof <= 0 || rmse == null) return null;
+  const m = params.length;
+  const tCrit = tCritical95(dof);
+  const EPS = 1e-7;
+  const lower = [], upper = [];
+  for (const x of xs) {
+    const y0 = fitEval(fit, x);
+    if (!isFinite(y0)) { lower.push(null); upper.push(null); continue; }
+    const g = params.map((_, j) => {
+      const pp = params.slice();
+      const h = Math.max(Math.abs(pp[j]) * EPS, EPS);
+      pp[j] += h;
+      try { const v = fit.fn(x, pp); return isFinite(v) ? (v - y0) / h : 0; } catch (_) { return 0; }
+    });
+    let variance = 0;
+    for (let i = 0; i < m; i++)
+      for (let j = 0; j < m; j++)
+        variance += g[i] * covMatrix[i][j] * g[j];
+    if (!isFinite(variance) || variance < 0) variance = 0;
+    const hw = tCrit * Math.sqrt(variance + rmse * rmse);
+    lower.push(y0 - hw);
+    upper.push(y0 + hw);
+  }
+  return { lower, upper };
+}
+
 function predictAtX(fit, x) {
   const { params, covMatrix, dof } = fit.result;
   const y = fitEval(fit, x);
@@ -1745,6 +1773,19 @@ function buildMainTraces() {
           fill: 'toself', fillcolor: bandColor,
           line: { color: 'transparent' }, mode: 'none', type: 'scatter',
           showlegend: false, hoverinfo: 'skip', name: '_ci_' + fit.id,
+        });
+      }
+    }
+    if (state.plotConfig.showPI && fit.fn) {
+      const piBands = computePIBands(fit, xs);
+      if (piBands) {
+        const piColor = hexToRgba(fit.color || ds.color, 0.07);
+        traces.push({
+          x: [...xs, ...xs.slice().reverse()],
+          y: [...piBands.upper, ...piBands.lower.slice().reverse()],
+          fill: 'toself', fillcolor: piColor,
+          line: { color: 'transparent' }, mode: 'none', type: 'scatter',
+          showlegend: false, hoverinfo: 'skip', name: '_pi_' + fit.id,
         });
       }
     }
@@ -2697,6 +2738,7 @@ function renderParamTable() {
     init: prev[name] ? prev[name].init : 1,
     min: prev[name] ? prev[name].min : -1e10,
     max: prev[name] ? prev[name].max : 1e10,
+    locked: prev[name] ? (prev[name].locked || false) : false,
   }));
 
   container.innerHTML = `
@@ -2706,6 +2748,7 @@ function renderParamTable() {
       <span class="param-col-hdr">Min</span>
       <span class="param-col-hdr">Max</span>
       <span class="param-col-hdr">Fit</span>
+      <span class="param-col-hdr" style="width:24px"></span>
     </div>` + state.paramRows.map((row, i) => `
     <div class="param-row" data-pi="${i}">
       <span class="param-name">${row.name}</span>
@@ -2713,6 +2756,7 @@ function renderParamTable() {
       <input class="param-input param-bound" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" placeholder="-∞" title="Lower bound (leave blank for -∞)">
       <input class="param-input param-bound" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" placeholder="+∞" title="Upper bound (leave blank for +∞)">
       <span class="param-fit-val" title="">—</span>
+      <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? '🔒' : '🔓'}</button>
     </div>
     <div class="param-sweep-row" data-si="${i}">
       <span style="font-size:.62em;color:var(--dimmer);font-family:var(--mono)">sweep</span>
@@ -2735,6 +2779,18 @@ function renderParamTable() {
         } else if (inp.dataset.field === 'min') state.paramRows[i].min = -1e10;
         else if (inp.dataset.field === 'max') state.paramRows[i].max = 1e10;
       });
+    });
+  });
+
+  container.querySelectorAll('.param-lock-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.pi);
+      if (i >= 0 && i < state.paramRows.length) {
+        state.paramRows[i].locked = !state.paramRows[i].locked;
+        btn.textContent = state.paramRows[i].locked ? '🔒' : '🔓';
+        btn.title = state.paramRows[i].locked ? 'Unlock parameter (hold fixed)' : 'Lock parameter (hold fixed)';
+        btn.classList.toggle('locked', state.paramRows[i].locked);
+      }
     });
   });
 
@@ -3210,7 +3266,12 @@ function runFit() {
   // Validate and apply parameter bounds
   for (let i = 0; i < state.paramRows.length; i++) {
     const row = state.paramRows[i];
-    if (row.min > -1e9 && row.max < 1e9 && row.min > row.max) {
+    if (row.locked) {
+      row.min = row.init;
+      row.max = row.init;
+      p0[i] = row.init;
+    }
+    if (row.min > -1e9 && row.max < 1e9 && row.min > row.max && !row.locked) {
       setConsole(`Bound error: min > max for parameter "${row.name}".`, 'error'); return;
     }
     if (row.min > -1e9 && p0[i] < row.min) p0[i] = row.min;
@@ -4707,6 +4768,11 @@ function initEvents() {
   document.getElementById('btn-ci-bands').addEventListener('click', function () {
     state.plotConfig.showCI = !state.plotConfig.showCI;
     this.classList.toggle('active', state.plotConfig.showCI);
+    updatePlots();
+  });
+  document.getElementById('btn-pi-bands').addEventListener('click', function () {
+    state.plotConfig.showPI = !state.plotConfig.showPI;
+    this.classList.toggle('active', state.plotConfig.showPI);
     updatePlots();
   });
   document.getElementById('btn-norm-resid').addEventListener('click', function () {
