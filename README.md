@@ -16,7 +16,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
 | **Parameter bounds** | Optional min/max per parameter; all four solvers enforce box constraints via projection at every iteration; init is auto-clamped before dispatch; blank = unconstrained |
-| **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^` |
+| **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^`. **Visual Equation Editor** popup (⊞ button) provides a click-to-insert operator/function palette (trig, hyperbolic, rounding, constants), 30+ categorised example equations, and live Math.js validation with parameter detection. |
 | **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status, final λ (LM), gradient norm (BFGS) |
 | **Expandable stats bar** | Click any row in the bottom stats table to expand it: shows per-parameter fitted value, std error, 95% CI (t-distribution at correct dof), and t-statistic (green = significant); right column shows full suite of summary stats at larger size; click again to collapse |
 | **CI bands** | 95% confidence interval ribbon around each fit curve (toggle per session) |
@@ -53,9 +53,10 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Blank startup** | App opens with an empty workspace — no example data pre-loaded; start from a clean slate every time |
 | **First-run tutorial** | 6-slide modal on first launch with SVG illustrations of the real app UI that automatically adapt to light/dark mode; forward/back navigation, keyboard support (arrow keys, Escape), and a "Don't show this again" option stored in localStorage |
 | **Multi-tab workspace** | Fully independent tabs — each starts from a clean default state with no settings inherited from other tabs; auto-naming from first dataset; double-click to rename |
+| **Mobile / responsive layout** | On screens ≤640px the left and right panels collapse into side drawers toggled by a **☰ Datasets & Fits** / **⚙ Model & Params** bar below the toolbar. The toolbar itself scrolls horizontally with the Close button always pinned to the right edge. Portrait screens up to 1080 px wide (e.g., 1080×1920) show all toolbar buttons without scrolling at 100 % zoom. |
 | **Resizable panels** | Left/right panels resize by width; residual and stats bar resize by height — all drag handles |
 | **Export** | Plot as PNG or SVG; fit results as CSV; full fit report as TXT; reproducible code as Python (scipy.optimize), R (nls/minpack.lm), MATLAB (lsqcurvefit), or LaTeX (tabular + equation) |
-| **Session persistence** | Save selected tabs (current / all / pick) to JSON file; load on demand; optional auto-restore on reload |
+| **Session persistence** | **Session ▾** dropdown in the toolbar groups Save Session, Load Session, Auto-restore (●/○ indicator), and Shortcuts. Save selected tabs (current / all / pick) to JSON; load on demand; Auto-restore replays the last save on reload. The **✕ Close** button is permanently pinned to the right edge of the toolbar, always visible regardless of horizontal scroll. |
 | **Full-screen app** | Launched via button on the page — opens as a full-screen overlay for maximum workspace |
 | **100% local** | No server, no cloud, no telemetry — all computation in the browser |
 
@@ -167,9 +168,14 @@ All four solvers (LM, Gauss-Newton, Nelder-Mead, BFGS) enforce bounds by project
 ### Custom equations
 
 1. Select **Custom Equation** from the model dropdown.
-2. Type any expression in `x`, e.g. `a * exp(-b * x) + c * x^d`.
-3. Parameters are detected automatically (any symbol other than `x` and math functions).
-4. Set initial values, then press **Fit**.
+2. Type any expression in `x` directly into the input field, e.g. `a * exp(-b * x) + c * x^d`.
+3. Alternatively, click **⊞ Equation Editor…** to open the visual equation builder:
+   - **Operator / function palette** — click any button to insert at the cursor; function buttons (e.g. `exp()`, `sin()`, `sqrt()`) place the cursor between the parentheses automatically.
+   - **Example equations** — 30+ categorised examples (exponential, sigmoidal, peak shapes, oscillatory, biochemistry, rational) that load into the editor on click.
+   - **Live validation** — equation is parsed by Math.js in real time; detected parameters shown in teal; errors shown in red.
+   - Press `Ctrl+Enter` to apply or click **Apply Equation**; `Escape` cancels.
+4. Parameters are detected automatically (any symbol other than `x` and standard math functions).
+5. Set initial values, then press **Fit**.
 
 ### Electrophysiology models
 
@@ -269,9 +275,32 @@ Log scale and axis range settings are saved with the session and restored on tab
 
 Click the toggle button (visible on hover in the dataset list) to enable or disable a dataset. Disabling a dataset fully hides it and all its associated fits from the main plot, residual panels, stats table, F-test dropdowns, and peak-annotation detection. The fits are shown greyed out with "(dataset off)" in the fit list and remain deletable. Re-enabling the dataset instantly restores everything.
 
+### Session management
+
+The **Session ▾** dropdown (right side of the toolbar) consolidates all session controls:
+
+| Item | Action |
+|---|---|
+| **Save Session** | Export selected tabs (current / all / custom pick) to a `.json` file |
+| **Load Session** | Reload a previously saved `.json` file |
+| **Auto-restore** (●/○) | When ON, the last saved session is automatically restored on next page reload |
+| **Shortcuts** | Open the keyboard shortcuts reference modal |
+
+The **✕ Close** button is permanently pinned to the far-right edge of the toolbar — it stays visible regardless of how far the toolbar has been scrolled horizontally on narrow screens.
+
 ### Multi-tab workflow
 
 Click **+** in the tab bar to open a new workspace. Tabs are auto-named from the first dataset loaded; double-click to rename. Use **Save Session** to export one, some, or all tabs to JSON. Toggle **Auto-restore** to control whether the last saved session is restored on page reload.
+
+### Mobile and small-screen layout
+
+On screens ≤640 px wide the app switches to a single-panel drawer layout:
+
+- The left panel (**Datasets & Fits**) and right panel (**Model & Params**) are hidden by default and slide in from the sides when toggled.
+- A **☰ Datasets & Fits** / **⚙ Model & Params** bar appears below the toolbar; tap either button to open the corresponding panel as an overlay drawer.
+- Tapping the semi-transparent backdrop outside the open panel closes it.
+- The toolbar scrolls horizontally; **✕ Close** is always pinned to the right edge.
+- On portrait screens up to 1080 px wide (e.g. 1080×1920 at 100 % zoom) all toolbar buttons fit in a single row without horizontal scrolling.
 
 ### Data format (CSV / paste)
 

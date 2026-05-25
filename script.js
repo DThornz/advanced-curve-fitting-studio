@@ -4011,6 +4011,15 @@ function syncModelCustomSection() {
 ═══════════════════════════════════════════════════════════ */
 let customCompiled = null;
 
+// Shared set used by parseCustomEquation and the Equation Editor validator
+const CUSTOM_EQ_MATH_SYMS = new Set([
+  'sin','cos','tan','asin','acos','atan','atan2',
+  'sinh','cosh','tanh',
+  'exp','log','log2','log10','sqrt','abs','sign','pow',
+  'ceil','floor','round','max','min','mod',
+  'pi','e',
+]);
+
 function parseCustomEquation(expr) {
   const statusEl = document.getElementById('custom-eq-status');
   if (!expr.trim()) {
@@ -4021,8 +4030,7 @@ function parseCustomEquation(expr) {
     const node = math.parse(expr);
     const syms = new Set();
     node.traverse(n => { if (n.type === 'SymbolNode') syms.add(n.name); });
-    // Remove known math functions and x
-    const mathFns = new Set(['sin','cos','tan','exp','log','log2','log10','sqrt','abs','pi','e','asin','acos','atan','atan2','sinh','cosh','tanh','ceil','floor','round','sign','pow','max','min','mod']);
+    const mathFns = CUSTOM_EQ_MATH_SYMS;
     syms.delete('x');
     mathFns.forEach(f => syms.delete(f));
     const params = [...syms].sort();
@@ -6654,13 +6662,7 @@ function initEvents() {
     const statEl   = document.getElementById('eq-editor-status');
     const mainIn   = document.getElementById('custom-eq-input');
 
-    const MATH_FNS = new Set([
-      'sin','cos','tan','asin','acos','atan','atan2',
-      'sinh','cosh','tanh',
-      'exp','log','log2','log10','sqrt','abs','sign','pow',
-      'ceil','floor','round','max','min','mod',
-      'pi','e',
-    ]);
+    const MATH_FNS = CUSTOM_EQ_MATH_SYMS;
 
     function validateExpr(expr) {
       if (!expr.trim()) { statEl.textContent = ''; return; }
@@ -6717,7 +6719,9 @@ function initEvents() {
 
     // Keyboard: Ctrl+Enter applies, Escape closes
     ta.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { e.preventDefault(); closeEditor(); }
+      // stopPropagation on Escape: without it the global handler fires after
+      // closeEditor() already hid the modal, finds no open modal, and calls closeApp().
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeEditor(); }
       if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); document.getElementById('eq-editor-apply').click(); }
     });
 

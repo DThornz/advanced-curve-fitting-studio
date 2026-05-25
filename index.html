@@ -58,6 +58,9 @@
     <span class="pill">Data Table &amp; Pre-Processing</span>
     <span class="pill">Python · R · LaTeX Export</span>
     <span class="pill">Web Worker · Background Fitting</span>
+    <span class="pill">Visual Equation Editor</span>
+    <span class="pill">Session Management</span>
+    <span class="pill">Mobile Responsive</span>
     <span class="pill">Plotly.js</span>
     <span class="pill">Math.js</span>
     <span class="pill">Offline-First</span>
@@ -178,9 +181,9 @@
         <button class="btn btn-toggle" id="btn-edit-mode" title="Show/hide edit controls. Point editing is always active: click a point to select, drag to move, click empty space or Escape to deselect.">✏ Edit</button>
       </div>
       <div id="edit-mode-controls" style="display:none;align-items:center;gap:3px;flex-shrink:0">
-        <button class="btn" id="btn-edit-undo" title="Undo (Ctrl+Z)" disabled style="padding:3px 7px">↩</button>
-        <button class="btn" id="btn-edit-redo" title="Redo (Ctrl+Y)" disabled style="padding:3px 7px">↪</button>
-        <button class="btn btn-danger" id="btn-edit-reset" title="Reset selected points to original values" disabled style="padding:3px 7px">⟳</button>
+        <button class="btn" id="btn-edit-undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled style="padding:3px 7px">↩</button>
+        <button class="btn" id="btn-edit-redo" title="Redo (Ctrl+Y)" aria-label="Redo" disabled style="padding:3px 7px">↪</button>
+        <button class="btn btn-danger" id="btn-edit-reset" title="Reset selected points to original values" aria-label="Reset selected points" disabled style="padding:3px 7px">⟳</button>
         <span class="app-toolbar-sep" style="margin:0 2px"></span>
         <input class="ctrl-input" id="edit-nudge-step" type="number" value="0.1" step="any" title="Arrow-key nudge step" style="width:60px;padding:3px 5px;font-size:.82em">
         <span id="edit-radius-display" title="Multi-select radius (Shift+scroll to adjust)" style="font-size:.74em;font-family:var(--mono);color:var(--text);min-width:36px;cursor:default">0 px</span>
@@ -1657,12 +1660,12 @@
 
     <p>Use the legend-icon button in the Plotly modebar (the toolbar that contains zoom, pan, and box-select) to toggle the legend on or off. The legend is draggable — click and drag it anywhere on the plot.</p>
 
-    <p>For custom equations, select <em>Custom Equation</em> from the model dropdown. Type any expression in the variable <code>x</code> using Math.js syntax. Parameters are any symbols other than <code>x</code> and standard math functions. Examples:</p>
+    <p>For custom equations, select <em>Custom Equation</em> from the model dropdown. Type any Math.js expression in <code>x</code> directly, or click <strong>⊞ Equation Editor…</strong> to open the visual builder. The builder provides a click-to-insert <strong>operator and function palette</strong> (common functions, trig, hyperbolic, rounding, constants π and e — each places the cursor between parentheses automatically), plus <strong>30+ categorised example equations</strong> (exponential, sigmoidal, peak shapes, oscillatory, biochemistry, rational) that load on click. The equation is validated by Math.js in real time with detected parameters shown immediately. Press <code>Ctrl+Enter</code> or click <em>Apply Equation</em> to commit. Examples of valid expressions:</p>
     <div class="eq-block" style="margin:10px 0">
       <div class="eq-row"><span class="eq-label">Double exp.:</span><span class="eq-main"><code>a * exp(-b*x) + c * exp(-d*x)</code></span></div>
       <div class="eq-row"><span class="eq-label">Power + offset:</span><span class="eq-main"><code>a * x^b + c</code></span></div>
       <div class="eq-row"><span class="eq-label">Stretched exp.:</span><span class="eq-main"><code>a * exp(-(x/tau)^beta)</code></span></div>
-      <div class="eq-row"><span class="eq-label">Rational:</span><span class="eq-main"><code>(a*x + b) / (x^2 + c*x + d)</code></span></div>
+      <div class="eq-row"><span class="eq-label">4PL logistic:</span><span class="eq-main"><code>d + (a - d) / (1 + (x/c)^b)</code></span></div>
       <div class="eq-note">Supported functions include <code>exp</code>, <code>log</code>, <code>sin</code>, <code>cos</code>, <code>sqrt</code>, <code>abs</code>, <code>atan</code>, and all Math.js builtins. Use <code>^</code> or <code>**</code> for powers.</div>
     </div>
 
@@ -1679,7 +1682,7 @@
     <p>Each annotation exposes full style controls: font family (9 presets including DM Sans, DM Mono, Arial, Helvetica, Times New Roman, Georgia, Courier New, Verdana, Trebuchet MS, or a custom string), size, bold, italic, and color; label horizontal anchor (left / center / right) and vertical anchor (top / middle / bottom); label background color + opacity and optional border; reference-line dash style (solid, dash, dot, dash-dot, long-dash, long-dash-dot), width, color, and opacity; and for text/peak callouts, arrowhead type (8 styles from filled triangle to open circle), size, line width, color, and pixel offset of the text from the arrow tail. Annotations are saved with the session and restore on tab switch or session load.</p>
     <p>Click <em>Peaks</em> to automatically annotate the peak centre of every visible Gaussian or Lorentzian fit. Each auto-annotation is colored to match the fit curve, labelled with the fit name, and targeted to the peak centre parameter (μ or x₀). Re-clicking Peaks will not add duplicates.</p>
 
-    <p><strong>Each tab</strong> is a fully independent workspace — opening a new tab starts with a clean slate (default model, no datasets, default solver settings, no annotations) with nothing inherited from other tabs. Tabs are auto-named from the first dataset loaded; double-click a tab name to rename it. Use Save Session to export one, some, or all tabs to a JSON file that can be reloaded later with Load Session. Enable Auto-restore to automatically reload the last saved session on page refresh; disable it to always start fresh.</p>
+    <p><strong>Each tab</strong> is a fully independent workspace — opening a new tab starts with a clean slate (default model, no datasets, default solver settings, no annotations) with nothing inherited from other tabs. Tabs are auto-named from the first dataset loaded; double-click a tab name to rename it. The <strong>Session ▾</strong> dropdown on the right side of the toolbar groups all session controls: <em>Save Session</em> (export one, some, or all tabs to a JSON file), <em>Load Session</em> (restore from a file), <em>Auto-restore</em> (● = ON: last saved session is reloaded automatically on page refresh; ○ = OFF: always start fresh), and <em>Shortcuts</em>. The <strong>✕ Close</strong> button is always pinned to the right edge of the toolbar and remains visible regardless of horizontal scroll.</p>
 
     <p>Export options:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
