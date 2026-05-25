@@ -2578,31 +2578,202 @@ function fitEval(fit, x) {
 /* ═══════════════════════════════════════════════════════════
    UI RENDERING
 ═══════════════════════════════════════════════════════════ */
-function smoothDataset(windowSize) {
-  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
-  if (!ds) { setConsole('No active dataset to smooth.', 'warn'); return; }
-  const n = ds.y.length;
-  if (n < 2) { setConsole('Need at least 2 points to smooth.', 'warn'); return; }
-  const w = Math.max(2, Math.min(Math.floor(windowSize), n - 1));
-  const half = Math.floor(w / 2);
+
+/* ─── Pre-Process helpers ────────────────────────────────── */
+function _ppPushUndo(ds) {
   state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice(), excl: new Set(ds.excludedIndices) });
   if (state.editHistory.undo.length > 100) state.editHistory.undo.shift();
   state.editHistory.redo = [];
   syncUndoRedoButtons();
+}
+
+function _solveLU(A, b) {
+  const n = A.length;
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let col = 0; col < n; col++) {
+    let maxRow = col;
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(M[row][col]) > Math.abs(M[maxRow][col])) maxRow = row;
+    }
+    [M[col], M[maxRow]] = [M[maxRow], M[col]];
+    if (Math.abs(M[col][col]) < 1e-14) return null;
+    for (let row = col + 1; row < n; row++) {
+      const f = M[row][col] / M[col][col];
+      for (let j = col; j <= n; j++) M[row][j] -= f * M[col][j];
+    }
+  }
+  const x = new Array(n).fill(0);
+  for (let row = n - 1; row >= 0; row--) {
+    x[row] = M[row][n];
+    for (let j = row + 1; j < n; j++) x[row] -= M[row][j] * x[j];
+    x[row] /= M[row][row];
+  }
+  return x;
+}
+
+function applySmoothing(method, winSize, sigma, polyOrd) {
+  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+  if (!ds) { setConsole('No active dataset.', 'warn'); return; }
+  if (ds.y.length < 3) { setConsole('Need at least 3 points to smooth.', 'warn'); return; }
+  const w = Math.max(3, winSize % 2 === 0 ? winSize + 1 : winSize);
   const excl = ds.excludedIndices || new Set();
-  const smoothed = ds.y.map((v, i) => {
-    if (excl.has(i)) return v; // leave masked points unchanged
-    const lo = Math.max(0, i - half);
-    const hi = Math.min(n - 1, i + half);
+  _ppPushUndo(ds);
+  const fns = { movavg: _smMovAvg, gaussian: _smGaussian, median: _smMedian, savgol: _smSavGol };
+  ds.y = (fns[method] || _smMovAvg)(ds.y, excl, w, sigma, polyOrd);
+  updatePlots();
+  const labels = { movavg: 'Moving Average', gaussian: 'Gaussian', median: 'Median', savgol: 'Savitzky-Golay' };
+  setConsole(`Applied ${labels[method] || method} (window=${w}) to "${ds.name}".`, '');
+}
+
+function _smMovAvg(y, excl, w) {
+  const n = y.length, h = w >> 1;
+  return y.map((v, i) => {
+    if (excl.has(i)) return v;
     let sum = 0, cnt = 0;
-    for (let j = lo; j <= hi; j++) {
-      if (!excl.has(j)) { sum += ds.y[j]; cnt++; }
+    for (let j = Math.max(0, i - h); j <= Math.min(n - 1, i + h); j++) {
+      if (!excl.has(j)) { sum += y[j]; cnt++; }
     }
     return cnt > 0 ? sum / cnt : v;
   });
-  ds.y = smoothed;
+}
+
+function _smGaussian(y, excl, w, sigma) {
+  const n = y.length, h = w >> 1, sig = Math.max(sigma, 0.1);
+  return y.map((v, i) => {
+    if (excl.has(i)) return v;
+    let sum = 0, wsum = 0;
+    for (let j = Math.max(0, i - h); j <= Math.min(n - 1, i + h); j++) {
+      if (!excl.has(j)) {
+        const wt = Math.exp(-0.5 * ((j - i) / sig) ** 2);
+        sum += y[j] * wt; wsum += wt;
+      }
+    }
+    return wsum > 0 ? sum / wsum : v;
+  });
+}
+
+function _smMedian(y, excl, w) {
+  const n = y.length, h = w >> 1;
+  return y.map((v, i) => {
+    if (excl.has(i)) return v;
+    const vals = [];
+    for (let j = Math.max(0, i - h); j <= Math.min(n - 1, i + h); j++) {
+      if (!excl.has(j)) vals.push(y[j]);
+    }
+    if (!vals.length) return v;
+    vals.sort((a, b) => a - b);
+    const m = vals.length >> 1;
+    return vals.length & 1 ? vals[m] : (vals[m - 1] + vals[m]) / 2;
+  });
+}
+
+function _smSavGol(y, excl, w, _sig, polyOrd) {
+  const n = y.length, h = w >> 1, result = y.slice();
+  for (let i = 0; i < n; i++) {
+    if (excl.has(i)) continue;
+    const xi = [], yi = [];
+    for (let j = Math.max(0, i - h); j <= Math.min(n - 1, i + h); j++) {
+      if (!excl.has(j)) { xi.push(j - i); yi.push(y[j]); }
+    }
+    const deg = Math.min(polyOrd, xi.length - 1);
+    if (xi.length < 2 || deg < 1) continue;
+    const m = xi.length, d = deg + 1;
+    const ATA = Array.from({ length: d }, () => new Array(d).fill(0));
+    const ATy = new Array(d).fill(0);
+    for (let r = 0; r < m; r++) {
+      const row = Array.from({ length: d }, (_, k) => Math.pow(xi[r], k));
+      for (let a = 0; a < d; a++) {
+        ATy[a] += row[a] * yi[r];
+        for (let b = 0; b < d; b++) ATA[a][b] += row[a] * row[b];
+      }
+    }
+    const c = _solveLU(ATA, ATy);
+    if (c) result[i] = c[0];
+  }
+  return result;
+}
+
+/* — FFT-based filtering — */
+function _nextPow2(n) { let p = 1; while (p < n) p <<= 1; return p; }
+
+function _fftInPlace(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len;
+    const wRe = Math.cos(ang), wIm = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let j = 0; j < (len >> 1); j++) {
+        const ur = re[i+j], ui = im[i+j];
+        const vr = re[i+j+(len>>1)]*cr - im[i+j+(len>>1)]*ci;
+        const vi = re[i+j+(len>>1)]*ci + im[i+j+(len>>1)]*cr;
+        re[i+j] = ur+vr; im[i+j] = ui+vi;
+        re[i+j+(len>>1)] = ur-vr; im[i+j+(len>>1)] = ui-vi;
+        const nr = cr*wRe - ci*wIm; ci = cr*wIm + ci*wRe; cr = nr;
+      }
+    }
+  }
+}
+
+function _ifftInPlace(re, im) {
+  for (let i = 0; i < im.length; i++) im[i] = -im[i];
+  _fftInPlace(re, im);
+  const n = re.length;
+  for (let i = 0; i < n; i++) { re[i] /= n; im[i] = -im[i] / n; }
+}
+
+function applyFourierFilter(type, cutoffLo, cutoffHi, rolloff) {
+  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+  if (!ds) { setConsole('No active dataset.', 'warn'); return; }
+  const n = ds.y.length;
+  if (n < 8) { setConsole('Need at least 8 points for Fourier filtering.', 'warn'); return; }
+  _ppPushUndo(ds);
+
+  const N = _nextPow2(n);
+  const re = new Float64Array(N), im = new Float64Array(N);
+  for (let i = 0; i < n; i++) re[i] = ds.y[i];
+  _fftInPlace(re, im);
+
+  const halfN = N >> 1;
+  const loIdx = Math.round(cutoffLo / 100 * halfN);
+  const hiIdx = Math.round(cutoffHi / 100 * halfN);
+  const tw = Math.max(2, Math.round(halfN * 0.06));
+
+  function stepGain(k, edge, ascending) {
+    const d = ascending ? k - edge : edge - k;
+    if (rolloff === 'brick') return d >= 0 ? 1 : 0;
+    const t = Math.max(0, Math.min(1, (d + tw * 0.5) / tw));
+    if (rolloff === 'cosine') return 0.5 - 0.5 * Math.cos(Math.PI * t);
+    return Math.pow(Math.sin(Math.PI * t * 0.5), 2);
+  }
+
+  function gain(k) {
+    switch (type) {
+      case 'lowpass':  return stepGain(k, loIdx, false);
+      case 'highpass': return stepGain(k, loIdx, true);
+      case 'bandpass': return stepGain(k, loIdx, true) * stepGain(k, hiIdx, false);
+      case 'notch':    return 1 - stepGain(k, loIdx, true) * stepGain(k, hiIdx, false);
+      default: return 1;
+    }
+  }
+
+  for (let k = 0; k <= halfN; k++) {
+    const g = gain(k);
+    re[k] *= g; im[k] *= g;
+    if (k > 0 && k < halfN) { re[N - k] *= g; im[N - k] *= g; }
+  }
+  _ifftInPlace(re, im);
+
+  for (let i = 0; i < n; i++) ds.y[i] = re[i];
   updatePlots();
-  setConsole(`Applied moving average (window=${w}) to "${ds.name}". Use Restore Original to undo smoothing.`, '');
+  const labels = { lowpass: 'Low-pass', highpass: 'High-pass', bandpass: 'Band-pass', notch: 'Notch' };
+  setConsole(`Applied ${labels[type]} Fourier filter to "${ds.name}".`, '');
 }
 
 function restoreOriginalData() {
@@ -5800,27 +5971,67 @@ function initEvents() {
     renderDatasetList(); updatePlots();
     setConsole(n > 0 ? `Unmasked ${n} point(s).` : 'No masked points.', '');
   });
-  document.getElementById('btn-smooth-data').addEventListener('click', () => {
-    document.getElementById('smooth-modal').style.display = 'flex';
-  });
-  document.getElementById('smooth-modal-close').addEventListener('click', () => {
-    document.getElementById('smooth-modal').style.display = 'none';
-  });
-  document.getElementById('smooth-cancel').addEventListener('click', () => {
-    document.getElementById('smooth-modal').style.display = 'none';
-  });
-  document.getElementById('smooth-apply').addEventListener('click', () => {
-    const w = parseInt(document.getElementById('smooth-window').value) || 3;
-    document.getElementById('smooth-modal').style.display = 'none';
-    smoothDataset(w);
-  });
-  document.getElementById('smooth-restore').addEventListener('click', () => {
-    document.getElementById('smooth-modal').style.display = 'none';
-    restoreOriginalData();
-  });
-  document.getElementById('smooth-modal').addEventListener('click', e => {
-    if (e.target === document.getElementById('smooth-modal')) document.getElementById('smooth-modal').style.display = 'none';
-  });
+  // Pre-Process modal
+  (function() {
+    const ppModal = document.getElementById('preprocess-modal');
+    const closePP = () => { ppModal.style.display = 'none'; };
+    document.getElementById('btn-preprocess').addEventListener('click', () => { ppModal.style.display = 'flex'; });
+    document.getElementById('pp-modal-close').addEventListener('click', closePP);
+    document.getElementById('pp-close').addEventListener('click', closePP);
+    ppModal.addEventListener('click', e => { if (e.target === ppModal) closePP(); });
+
+    const smDescs = {
+      movavg:  'Replaces each point with the unweighted mean of its neighbors. Fast and simple; blurs sharp features.',
+      gaussian:'Weighted average using a Gaussian kernel — nearer points contribute more. Better shape preservation than moving average.',
+      savgol:  'Fits a local polynomial to each window (Savitzky-Golay). Best for preserving peak heights and curvature.',
+      median:  'Replaces each point with the window median. Excellent at removing spike noise while keeping edges sharp.'
+    };
+    const fftDescs = {
+      lowpass: 'Passes low-frequency components; removes rapid fluctuations. Good for denoising signals with a smooth trend.',
+      highpass:'Removes slow baseline drift; passes rapid variations and fine structure.',
+      bandpass:'Passes only a specified frequency band. Useful for isolating a periodic signal of known frequency.',
+      notch:   'Rejects a specific frequency band. Useful for eliminating periodic interference (e.g. 50/60 Hz hum).'
+    };
+
+    const smMethod = document.getElementById('pp-sm-method');
+    smMethod.addEventListener('change', () => {
+      const m = smMethod.value;
+      document.getElementById('pp-sm-sigma-row').style.display = m === 'gaussian' ? 'flex' : 'none';
+      document.getElementById('pp-sm-poly-row').style.display  = m === 'savgol'   ? 'flex' : 'none';
+      document.getElementById('pp-sm-desc').textContent = smDescs[m] || '';
+    });
+
+    document.getElementById('pp-sm-apply').addEventListener('click', () => {
+      const method = smMethod.value;
+      const win    = parseInt(document.getElementById('pp-sm-win').value)   || 5;
+      const sigma  = parseFloat(document.getElementById('pp-sm-sigma').value) || 1.5;
+      const poly   = parseInt(document.getElementById('pp-sm-poly').value)  || 3;
+      applySmoothing(method, win, sigma, poly);
+    });
+
+    const fftType = document.getElementById('pp-fft-type');
+    fftType.addEventListener('change', () => {
+      const t = fftType.value;
+      const single = t === 'lowpass' || t === 'highpass';
+      document.getElementById('pp-fft-cutoff-row').style.display = single ? 'flex' : 'none';
+      document.getElementById('pp-fft-lo-row').style.display     = single ? 'none' : 'flex';
+      document.getElementById('pp-fft-hi-row').style.display     = single ? 'none' : 'flex';
+      document.getElementById('pp-fft-desc').textContent = fftDescs[t] || '';
+    });
+
+    document.getElementById('pp-fft-apply').addEventListener('click', () => {
+      const t      = fftType.value;
+      const rolloff = document.getElementById('pp-fft-rolloff').value;
+      const single = t === 'lowpass' || t === 'highpass';
+      let lo = single ? parseFloat(document.getElementById('pp-fft-cutoff').value) || 20
+                      : parseFloat(document.getElementById('pp-fft-lo').value) || 10;
+      let hi = single ? lo : parseFloat(document.getElementById('pp-fft-hi').value) || 30;
+      if (hi < lo) [lo, hi] = [hi, lo];
+      applyFourierFilter(t, lo, hi, rolloff);
+    });
+
+    document.getElementById('pp-restore').addEventListener('click', () => { closePP(); restoreOriginalData(); });
+  })();
   document.getElementById('btn-data-table').addEventListener('click', openDataTable);
   document.getElementById('data-table-close').addEventListener('click', () => {
     document.getElementById('data-table-modal').style.display = 'none';
@@ -6721,11 +6932,11 @@ const PANEL_TIPS = {
     `<b>Point Masking</b><br>Excludes individual points from fitting without deleting them — masked points stay visible as hollow markers on the plot.<br><br>` +
     `<b>Mask 2.5σ</b> — exclude all points where |residual| &gt; 2.5 × RMSE for the active fit.<br>` +
     `<b>Unmask All</b> — restore all masked points for the active dataset.<br>` +
-    `<b>Smooth…</b> — apply a centered moving-average; masked points are skipped from the window calculation.<br>` +
+    `<b>Pre-Process…</b> — open the Pre-Process panel to smooth (Moving Average, Gaussian, Savitzky-Golay, Median) or Fourier-filter (low-pass, high-pass, band-pass, notch) the active dataset, or restore it to original imported values. Masked points are skipped during smoothing.<br>` +
     `<b>Data Table</b> — per-point view with checkboxes, live residuals, and bulk exclude / include controls.`,
 
   'fit-model':
-    `<b>Fit Model</b><br>The mathematical equation to fit to the data. 28 built-in models are grouped by type.<br><br>` +
+    `<b>Fit Model</b><br>The mathematical equation to fit to the data. 38 built-in models are grouped by type.<br><br>` +
     `Select <b>Custom Equation</b> to type any expression in <code>x</code> — parameters are detected automatically from symbol names (any symbol other than <code>x</code> and math functions).<br><br>` +
     `Use <b>Try All</b> in the toolbar to fit every model at once and rank by R².`,
 

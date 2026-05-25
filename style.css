@@ -922,3 +922,14 @@ body.dark-mode .ann-check-label{color:#3d5470!important}
 .dt-table tr:hover td { background: var(--bg3); }
 .dt-row-excluded { opacity: 0.45; }
 .dt-row-excluded td { text-decoration: line-through; }
+
+/* ── Pre-Process modal ──────────────────────────────────── */
+.pp-section{border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.pp-section:last-child{margin-bottom:0}
+.pp-section-hd{font-weight:600;font-size:.78em;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:0 0 10px}
+.pp-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.pp-row label{flex:0 0 148px;color:var(--dim);font-size:.82em}
+.pp-hint{color:var(--dimmer);font-size:.8em;flex-shrink:0}
+.pp-desc{color:var(--dim);font-size:.77em;font-style:italic;margin:2px 0 10px;line-height:1.4}
+.pp-warn{font-size:.77em;margin:4px 0 10px;line-height:1.4;color:#966f1a}
+body.dark-mode .pp-warn{color:#c09840}

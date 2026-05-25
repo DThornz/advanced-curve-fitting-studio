@@ -55,7 +55,7 @@
     <span class="pill">Outlier Detection &amp; Masking</span>
     <span class="pill">Huber IRLS Robust Fitting</span>
     <span class="pill">Parameter Locking</span>
-    <span class="pill">Data Table &amp; Smoothing</span>
+    <span class="pill">Data Table &amp; Pre-Processing</span>
     <span class="pill">Python · R · LaTeX Export</span>
     <span class="pill">Web Worker · Background Fitting</span>
     <span class="pill">Plotly.js</span>
@@ -277,7 +277,7 @@
           <div style="display:flex;gap:5px">
             <button class="btn" style="flex:1;font-size:.68em;padding:3px 6px" id="btn-mask-outliers" title="Mask points where |residual / RMSE| > 2.5 for the active fit">Mask 2.5σ</button>
             <button class="btn" style="font-size:.68em;padding:3px 10px" id="btn-unmask-all" title="Remove all masked points for the active dataset">Unmask All</button>
-            <button class="btn" style="flex:1;font-size:.68em;padding:3px 6px" id="btn-smooth-data" title="Apply moving average smoothing to the active dataset">Smooth…</button>
+            <button class="btn" style="flex:1;font-size:.68em;padding:3px 6px" id="btn-preprocess" title="Smooth, Fourier-filter, or restore the active dataset">Pre-Process…</button>
             <button class="btn" style="flex:1;font-size:.68em;padding:3px 6px" id="btn-data-table" title="View/edit data point exclusions in a table">Data Table</button>
           </div>
         </div>
@@ -513,21 +513,93 @@
 
   </div><!-- end app-shell -->
 
-  <!-- Smoothing modal -->
-  <div class="app-modal" id="smooth-modal" style="display:none" role="dialog" aria-modal="true">
-    <div class="modal-box" style="max-width:320px">
-      <div class="modal-header"><span>Smooth Dataset</span><button class="modal-close-btn" id="smooth-modal-close">×</button></div>
-      <div style="padding:12px 16px;font-size:.82em">
-        <p style="margin:0 0 10px">Applies a centered moving average to the <strong>active dataset</strong>. Use <em>Restore Original</em> at any time to revert all smoothing back to the imported values.</p>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <label style="flex:1">Window size (points)</label>
-          <input id="smooth-window" class="ctrl-input" type="number" value="3" min="2" max="51" step="2" style="width:60px">
+  <!-- Pre-Process modal -->
+  <div class="app-modal" id="preprocess-modal" style="display:none" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width:530px">
+      <div class="modal-header"><span>Pre-Process Data</span><button class="modal-close-btn" id="pp-modal-close">×</button></div>
+      <div style="padding:14px 16px;overflow-y:auto;flex:1;font-size:.82em">
+
+        <!-- Smoothing section -->
+        <div class="pp-section">
+          <p class="pp-section-hd">Smoothing Filter</p>
+          <div class="pp-row">
+            <label>Method</label>
+            <select class="ctrl-select" id="pp-sm-method" style="flex:1">
+              <option value="movavg">Moving Average</option>
+              <option value="gaussian">Gaussian</option>
+              <option value="savgol">Savitzky-Golay</option>
+              <option value="median">Median</option>
+            </select>
+          </div>
+          <div class="pp-row">
+            <label>Window (points)</label>
+            <input class="ctrl-input" type="number" id="pp-sm-win" value="5" min="3" max="201" step="2" style="width:62px;flex:none">
+            <span class="pp-hint">odd — centers on each point</span>
+          </div>
+          <div class="pp-row" id="pp-sm-sigma-row" style="display:none">
+            <label>Sigma σ (points)</label>
+            <input class="ctrl-input" type="number" id="pp-sm-sigma" value="1.5" min="0.1" max="50" step="0.1" style="width:70px;flex:none">
+            <span class="pp-hint">kernel std dev</span>
+          </div>
+          <div class="pp-row" id="pp-sm-poly-row" style="display:none">
+            <label>Poly order</label>
+            <select class="ctrl-select" id="pp-sm-poly" style="flex:1">
+              <option value="2">2 — quadratic</option>
+              <option value="3" selected>3 — cubic</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <p class="pp-desc" id="pp-sm-desc">Replaces each point with the unweighted mean of its neighbors. Fast and simple; blurs sharp features.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" id="pp-sm-apply">Apply Smoothing</button>
+          </div>
         </div>
+
+        <!-- Fourier filter section -->
+        <div class="pp-section">
+          <p class="pp-section-hd">Fourier Filter</p>
+          <div class="pp-row">
+            <label>Filter type</label>
+            <select class="ctrl-select" id="pp-fft-type" style="flex:1">
+              <option value="lowpass">Low-pass</option>
+              <option value="highpass">High-pass</option>
+              <option value="bandpass">Band-pass</option>
+              <option value="notch">Notch (band-reject)</option>
+            </select>
+          </div>
+          <div class="pp-row" id="pp-fft-cutoff-row">
+            <label>Cutoff (% Nyquist)</label>
+            <input class="ctrl-input" type="number" id="pp-fft-cutoff" value="20" min="1" max="99" step="1" style="width:62px;flex:none">
+            <span class="pp-hint">1 = DC only · 99 = nearly all pass</span>
+          </div>
+          <div class="pp-row" id="pp-fft-lo-row" style="display:none">
+            <label>Low cutoff (% Nyq)</label>
+            <input class="ctrl-input" type="number" id="pp-fft-lo" value="10" min="1" max="98" step="1" style="width:62px;flex:none">
+          </div>
+          <div class="pp-row" id="pp-fft-hi-row" style="display:none">
+            <label>High cutoff (% Nyq)</label>
+            <input class="ctrl-input" type="number" id="pp-fft-hi" value="30" min="2" max="99" step="1" style="width:62px;flex:none">
+          </div>
+          <div class="pp-row">
+            <label>Rolloff shape</label>
+            <select class="ctrl-select" id="pp-fft-rolloff" style="flex:1">
+              <option value="brick">Brick-wall (sharp cutoff)</option>
+              <option value="cosine" selected>Cosine taper</option>
+              <option value="hann">Hann window</option>
+            </select>
+          </div>
+          <p class="pp-desc" id="pp-fft-desc">Passes low-frequency components; removes rapid fluctuations. Good for denoising signals with a smooth trend.</p>
+          <p class="pp-warn">⚠ Assumes uniform x-axis spacing. Operates on all data points; masked-point status is preserved.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" id="pp-fft-apply">Apply Fourier Filter</button>
+          </div>
+        </div>
+
       </div>
       <div class="modal-footer">
-        <button class="btn" id="smooth-restore" title="Revert to the original imported y values" style="margin-right:auto">Restore Original</button>
-        <button class="btn" id="smooth-cancel">Cancel</button>
-        <button class="btn btn-primary" id="smooth-apply">Apply</button>
+        <button class="btn" id="pp-restore" style="margin-right:auto" title="Revert to the original imported y values">Restore Original</button>
+        <button class="btn" id="pp-close">Close</button>
       </div>
     </div>
   </div>
