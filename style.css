@@ -301,12 +301,13 @@ body.size-lg .app-shell{font-size:16px!important}
 
 /* ── Top bar ─────────────────────────────────────────────── */
 .app-topbar{
-  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  display:flex;align-items:center;gap:6px;flex-wrap:nowrap;
   padding:0 12px;height:46px;min-height:46px;
   background:var(--bg2);border-bottom:1px solid var(--border);
-  flex-shrink:0;overflow:visible;
+  flex-shrink:0;overflow-x:auto;scrollbar-width:none;
   position:relative;z-index:100
 }
+.app-topbar::-webkit-scrollbar{display:none}
 .app-toolbar-group{display:flex;align-items:center;gap:4px}
 .app-toolbar-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
 
@@ -792,9 +793,8 @@ body.dark-mode .panel-resize::after{background:#2dd4bf}
     box-shadow:-4px 0 24px rgba(0,0,0,.22);display:flex!important
   }
   .app-right.mob-open{transform:translateX(0)}
-  /* Topbar scrolls horizontally — all buttons remain accessible */
-  .app-topbar{overflow-x:auto;flex-wrap:nowrap;height:auto;min-height:40px;padding:4px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .app-topbar::-webkit-scrollbar{display:none}
+  /* Topbar: reduce height on narrow screens */
+  .app-topbar{height:auto;min-height:40px;padding:4px 8px;-webkit-overflow-scrolling:touch}
   /* Hide resize handles on mobile */
   .panel-resize{display:none!important}
   /* Stats bar: compact, capped so it can't crush the workspace */

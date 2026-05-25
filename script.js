@@ -6007,15 +6007,16 @@ function initResizablePanels() {
 ═══════════════════════════════════════════════════════════ */
 function initEvents() {
   /* ── Dropdown toggles ─────────────────────────────────── */
-  function setupDropdown(btnId, menuId) {
+  // The topbar uses overflow-x:auto (to prevent button wrapping at any screen
+  // width), which clips position:absolute children. Use position:fixed for all
+  // dropdowns, anchored to the trigger button's live viewport rect.
+  function setupDropdown(btnId, menuId, preferredW) {
     const btn  = document.getElementById(btnId);
     const menu = document.getElementById(menuId);
     if (!btn || !menu) return;
-    // On narrow screens, the topbar is overflow-x:auto which would clip position:absolute
-    // dropdowns. Use position:fixed instead, anchored to the button's viewport rect.
-    function positionMobile() {
+    function positionMenu() {
       const r    = btn.getBoundingClientRect();
-      const w    = Math.min(window.innerWidth - 16, 360);
+      const w    = Math.min(window.innerWidth - 16, preferredW || 540);
       const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
       menu.style.cssText = `position:fixed;top:${Math.round(r.bottom + 4)}px;left:${Math.round(left)}px;width:${w}px;`;
     }
@@ -6023,23 +6024,19 @@ function initEvents() {
       e.stopPropagation();
       const wasOpen = menu.classList.contains('open');
       document.querySelectorAll('.app-dropdown.open').forEach(m => { m.classList.remove('open'); m.style.cssText = ''; });
-      if (!wasOpen) {
-        if (window.innerWidth <= 640) positionMobile();
-        menu.classList.add('open');
-      }
+      if (!wasOpen) { positionMenu(); menu.classList.add('open'); }
     });
     document.addEventListener('click', e => {
       if (!menu.contains(e.target) && e.target !== btn) { menu.classList.remove('open'); menu.style.cssText = ''; }
     });
-    // Item clicks inside the menu close it; clear mobile styles in the next frame
-    // (after item handlers run and remove 'open') so styles don't persist across
-    // orientation changes.
+    // Item clicks inside the menu close it via their own handlers; clear fixed
+    // positioning in the next frame so it doesn't persist across orientations.
     menu.addEventListener('click', () => {
       requestAnimationFrame(() => { if (!menu.classList.contains('open')) menu.style.cssText = ''; });
     });
   }
-  setupDropdown('btn-examples', 'examples-menu');
-  setupDropdown('btn-export', 'export-menu');
+  setupDropdown('btn-examples', 'examples-menu', 540);
+  setupDropdown('btn-export',   'export-menu',   220);
 
   /* ── Example datasets ─────────────────────────────────── */
   document.getElementById('examples-menu').querySelectorAll('.app-dropdown-item').forEach(item => {
