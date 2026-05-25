@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Advanced Curve Fitting Studio — Asad Mirza</title>
-<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 24 built-in models including electrophysiology (Boltzmann G-V, HH, Kir, GHK), Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
+<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 28 built-in models including electrophysiology (Boltzmann G-V, HH, Kir, GHK), Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -261,6 +261,7 @@
             <optgroup label="Basic">
               <option value="Linear">Linear  y = a·x + b</option>
               <option value="Power">Power Law  y = a·xᵇ</option>
+              <option value="Power-Offset">Power+Offset  a·xᵇ+c</option>
             </optgroup>
             <optgroup label="Polynomial">
               <option value="Polynomial-2">Polynomial  degree 2</option>
@@ -272,15 +273,18 @@
             <optgroup label="Growth / Decay">
               <option value="Exponential" selected>Exponential  y = a·eᵇˣ</option>
               <option value="Exp-Decay-Offset">Exp Decay + Offset  a·e⁻ᵇˣ + c</option>
+              <option value="Biexponential">Biexponential  A₁·e⁻ᵇ¹ˣ+A₂·e⁻ᵇ²ˣ</option>
               <option value="Logistic">Logistic / Sigmoid</option>
             </optgroup>
             <optgroup label="Peak / Spectral">
               <option value="Gaussian">Gaussian Peak</option>
               <option value="Lorentzian">Lorentzian Peak</option>
+              <option value="Double-Gaussian">Double Gaussian  A₁·G(x,μ₁,σ₁)+A₂·G(x,μ₂,σ₂)</option>
             </optgroup>
             <optgroup label="Biology / Pharmacology">
               <option value="Michaelis-Menten">Michaelis-Menten</option>
               <option value="Hill">Hill Equation</option>
+              <option value="Rational">Rational (Padé)  (a+bx)/(1+cx)</option>
             </optgroup>
             <optgroup label="Oscillation">
               <option value="Sine">Sinusoidal</option>
@@ -1131,7 +1135,7 @@
     </ul>
     <p>Multiple datasets can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled using the toggle button that appears on hover. Disabling a dataset hides it and all its associated fits from the plot, residual panels, stats table, and F-test — they are restored instantly when re-enabled.</p>
 
-    <p>The right panel lists 24 built-in models across 7 groups. A guide to choosing:</p>
+    <p>The right panel lists 28 built-in models across 7 groups. A guide to choosing:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>If your data looks like…</th><th>Try</th></tr></thead>
       <tbody>

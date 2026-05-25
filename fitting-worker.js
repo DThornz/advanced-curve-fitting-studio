@@ -471,6 +471,13 @@ const MODEL_FNS = {
                        },
   'Tau-Gaussian':      (x, [tau_max, Vpeak, k, tau_min]) =>
                          tau_max * Math.exp(-0.5 * ((x - Vpeak) / (k || 1e-10)) ** 2) + tau_min,
+  'Double-Gaussian': (x, [A1, m1, s1, A2, m2, s2, C]) =>
+    A1 * Math.exp(-0.5 * ((x - m1) / (s1 || 1e-10)) ** 2) +
+    A2 * Math.exp(-0.5 * ((x - m2) / (s2 || 1e-10)) ** 2) + C,
+  'Biexponential': (x, [A1, b1, A2, b2, C]) =>
+    A1 * Math.exp(-Math.abs(b1) * x) + A2 * Math.exp(-Math.abs(b2) * x) + C,
+  'Rational':      (x, [a, b, c]) => (a + b * x) / Math.max(1 + c * x, 1e-10),
+  'Power-Offset':  (x, [a, b, c]) => a * Math.pow(Math.abs(x) + 1e-12, b) + c,
 };
 
 const MODEL_DEGREES = {

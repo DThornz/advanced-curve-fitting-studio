@@ -906,6 +906,68 @@ const MODELS = {
       return [isFinite(tau_max) ? tau_max : 1, Vpeak, xRng, tau_min];
     }
   },
+  'Double-Gaussian': {
+    params: ['A1', 'μ1', 'σ1', 'A2', 'μ2', 'σ2', 'C'],
+    fn: (x, [A1, m1, s1, A2, m2, s2, C]) =>
+      A1 * Math.exp(-0.5 * ((x - m1) / (s1 || 1e-10)) ** 2) +
+      A2 * Math.exp(-0.5 * ((x - m2) / (s2 || 1e-10)) ** 2) + C,
+    analytic: false,
+    autoInit(x, y) {
+      const sortedY = y.slice().sort((a, b) => a - b);
+      const nBase = Math.max(2, Math.ceil(y.length * 0.25));
+      const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
+      const shifted = y.map(v => v - C);
+      const peak = Math.max(...shifted);
+      const imax = shifted.indexOf(peak);
+      const mu1 = x[imax] ?? x[Math.floor(x.length / 2)];
+      const A1 = Math.max(peak, 1e-6);
+      const xRange = Math.max(...x) - Math.min(...x);
+      const sig = xRange / 8 || 1;
+      const mu2 = mu1 + sig * 2;
+      return [A1 * 0.8, mu1, sig, A1 * 0.5, mu2, sig, C];
+    }
+  },
+  'Biexponential': {
+    params: ['A1', 'b1', 'A2', 'b2', 'C'],
+    fn: (x, [A1, b1, A2, b2, C]) =>
+      A1 * Math.exp(-Math.abs(b1) * x) + A2 * Math.exp(-Math.abs(b2) * x) + C,
+    analytic: false,
+    autoInit(x, y) {
+      const C = Math.min(...y);
+      const range = Math.max(...y) - C;
+      const xRange = Math.max(Math.max(...x) - Math.min(...x), 1e-10);
+      return [range * 0.7, 2 / xRange, range * 0.3, 0.3 / xRange, C];
+    }
+  },
+  'Rational': {
+    params: ['a', 'b', 'c'],
+    fn: (x, [a, b, c]) => (a + b * x) / Math.max(1 + c * x, 1e-10),
+    analytic: false,
+    autoInit(x, y) {
+      const ym = y.reduce((s, v) => s + v, 0) / y.length;
+      const xm = x.reduce((s, v) => s + v, 0) / x.length;
+      return [ym, 0, 1 / Math.max(Math.abs(xm), 1)];
+    }
+  },
+  'Power-Offset': {
+    params: ['a', 'b', 'c'],
+    fn: (x, [a, b, c]) => a * Math.pow(Math.abs(x) + 1e-12, b) + c,
+    analytic: false,
+    autoInit(x, y) {
+      const c = Math.min(...y);
+      const shifted = y.map(v => Math.max(v - c, 1e-10));
+      const pairs = x.map((xi, i) => [xi, shifted[i]]).filter(([xi, yi]) => xi > 0 && yi > 0);
+      if (pairs.length < 2) return [Math.abs(y.reduce((s, v) => s + v, 0) / y.length) || 1, 1, c];
+      const lx = pairs.map(([xi]) => Math.log(xi));
+      const ly = pairs.map(([, yi]) => Math.log(yi));
+      const xlm = lx.reduce((s, v) => s + v, 0) / lx.length;
+      const ylm = ly.reduce((s, v) => s + v, 0) / ly.length;
+      const b = lx.reduce((s, lxi, i) => s + (lxi - xlm) * (ly[i] - ylm), 0) /
+                (lx.reduce((s, lxi) => s + (lxi - xlm) ** 2, 0) || 1);
+      const a = Math.exp(ylm - b * xlm);
+      return [isFinite(a) ? a : 1, isFinite(b) ? b : 1, c];
+    }
+  },
   'Custom': {
     params: [],
     fn: null,
