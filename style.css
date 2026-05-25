@@ -301,19 +301,27 @@ body.size-lg .app-shell{font-size:16px!important}
 
 /* ── Top bar ─────────────────────────────────────────────── */
 .app-topbar{
-  display:flex;align-items:center;gap:4px;flex-wrap:nowrap;
-  padding:0 8px;height:46px;min-height:46px;
+  display:flex;align-items:center;
+  height:46px;min-height:46px;
   background:var(--bg2);border-bottom:1px solid var(--border);
-  flex-shrink:0;overflow-x:auto;scrollbar-width:none;
-  position:relative;z-index:100
+  flex-shrink:0;position:relative;z-index:100
 }
-.app-topbar::-webkit-scrollbar{display:none}
+/* Scrollable portion — overflow here, not on the outer topbar, so position:sticky
+   is never needed and the Chrome compositor paint bug cannot occur */
+.app-topbar-scroll{
+  flex:1;min-width:0;
+  display:flex;align-items:center;gap:4px;flex-wrap:nowrap;
+  overflow-x:auto;scrollbar-width:none;
+  padding:0 8px;height:100%
+}
+.app-topbar-scroll::-webkit-scrollbar{display:none}
 /* Tighter spacing scoped to the topbar so panels/modals are unaffected */
 .app-topbar .btn{padding:4px 8px}
 .app-topbar .app-toolbar-group{gap:3px}
 .app-topbar .app-toolbar-sep{margin:0 1px}
-.topbar-right-pin{position:sticky;right:0;display:flex;align-items:center;padding-left:6px;background:var(--bg2);box-shadow:-6px 0 6px var(--bg2);flex-shrink:0}
-body.dark-mode .topbar-right-pin{background:#0a1628!important;box-shadow:-6px 0 6px #0a1628!important}
+/* Close button always visible outside the scroll container */
+.topbar-close-pin{flex-shrink:0;display:flex;align-items:center;padding:0 8px 0 4px;background:var(--bg2);box-shadow:-6px 0 8px var(--bg2)}
+body.dark-mode .topbar-close-pin{background:#0a1628!important;box-shadow:-6px 0 8px #0a1628!important}
 .app-toolbar-group{display:flex;align-items:center;gap:4px}
 .app-toolbar-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
 
@@ -800,7 +808,9 @@ body.dark-mode .panel-resize::after{background:#2dd4bf}
   }
   .app-right.mob-open{transform:translateX(0)}
   /* Topbar: reduce height on narrow screens */
-  .app-topbar{height:auto;min-height:40px;padding:4px 8px;-webkit-overflow-scrolling:touch}
+  .app-topbar{height:auto;min-height:40px}
+  .app-topbar-scroll{padding:4px 8px;height:auto;min-height:40px;-webkit-overflow-scrolling:touch}
+  .topbar-close-pin{padding:4px 8px 4px 4px}
   /* Hide resize handles on mobile */
   .panel-resize{display:none!important}
   /* Stats bar: compact, capped so it can't crush the workspace */

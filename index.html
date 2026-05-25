@@ -114,6 +114,7 @@
 
     <!-- TOP BAR -->
     <div class="app-topbar">
+      <div class="app-topbar-scroll">
       <div class="app-toolbar-group">
         <div class="app-dropdown-wrap">
           <button class="btn" id="btn-examples">Examples ▾</button>
@@ -167,6 +168,7 @@
       <button class="btn btn-danger" id="btn-cancel-fit" style="display:none" title="Cancel the current fit">✕ Cancel</button>
       <button class="btn" id="btn-try-all" title="Fit every built-in model and rank by R²">Try All</button>
       <button class="btn btn-danger" id="btn-clear-fit" title="Remove the selected fit">✕  Remove Fit</button>
+      <div style="flex:1"></div>
       <div class="app-toolbar-sep"></div>
       <div class="app-toolbar-group">
         <button class="btn btn-toggle" id="btn-toggle-residuals" title="Show / hide residual plot">Residuals</button>
@@ -184,7 +186,6 @@
         <input class="ctrl-input" id="edit-nudge-step" type="number" value="0.1" step="any" title="Arrow-key nudge step" style="width:60px;padding:3px 5px;font-size:.82em">
         <span id="edit-radius-display" title="Multi-select radius (Shift+scroll to adjust)" style="font-size:.74em;font-family:var(--mono);color:var(--text);min-width:36px;cursor:default">0 px</span>
       </div>
-      <div style="flex:1"></div>
       <div class="app-toolbar-sep"></div>
       <div class="app-toolbar-group">
         <div class="app-dropdown-wrap">
@@ -218,9 +219,10 @@
         <button id="btn-load" style="display:none"></button>
         <button class="btn-toggle" id="btn-auto-restore" style="display:none"></button>
         <button id="btn-shortcuts" style="display:none"></button>
-        <span class="topbar-right-pin">
-          <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
-        </span>
+      </div>
+      </div><!-- end .app-topbar-scroll -->
+      <div class="topbar-close-pin">
+        <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
 
