@@ -6196,10 +6196,39 @@ function tutClose() {
   if (el) el.style.display = 'none';
 }
 
+function tutThemeIllus(svg) {
+  if (document.body.classList.contains('dark-mode')) return svg;
+  // Swap every dark-mode hex colour for its light-mode equivalent.
+  // Order matters: longer/more-specific strings before shorter ones.
+  return svg
+    .replace(/#0b2640/gi, '#c8f0ea')   // teal-highlighted row bg
+    .replace(/#0b2c44/gi, '#c0ebe4')   // teal button bg
+    .replace(/#0a1628/gi, '#f8fafc')   // callout/overlay bg
+    .replace(/#1a0808/gi, '#fff0f0')   // red annotation bg
+    .replace(/#1c1200/gi, '#fffbeb')   // amber annotation bg
+    .replace(/#060e1c/gi, '#f0f4f8')   // deepest bg
+    .replace(/#07111e/gi, '#e8eef5')   // panel bg
+    .replace(/#0d2040/gi, '#dde5f0')   // button / element bg
+    .replace(/#1c3050/gi, '#b8c8de')   // borders
+    .replace(/#1e2e3c/gi, '#b0bec5')   // very dim variant
+    .replace(/#1e2e40/gi, '#b0bec5')   // very dim
+    .replace(/#2a3e58/gi, '#94a3b8')   // dim blue
+    .replace(/#2a4060/gi, '#94a3b8')   // dim text
+    .replace(/#253448/gi, '#94a3b8')   // very dim 2
+    .replace(/#3b4f6b/gi, '#64748b')   // dim blue 2
+    .replace(/#3d5070/gi, '#64748b')   // dimmer variant
+    .replace(/#3d5470/gi, '#64748b')   // dimmer text
+    .replace(/#4a6080/gi, '#475569')   // section headers
+    .replace(/#5a7090/gi, '#475569')   // medium dim
+    .replace(/#7a90ae/gi, '#475569')   // muted text
+    .replace(/#94a3b8/gi, '#64748b')   // muted text 2
+    .replace(/#e2e8f0/gi, '#1e293b');  // primary text
+}
+
 function tutRender() {
   const n = TUT_SLIDES.length;
   const s = TUT_SLIDES[_tutStep];
-  document.getElementById('tut-illus').innerHTML = s.illus;
+  document.getElementById('tut-illus').innerHTML = tutThemeIllus(s.illus);
   document.getElementById('tut-title').textContent = s.title;
   document.getElementById('tut-body').innerHTML = s.body;
   document.getElementById('tut-count').textContent = `${_tutStep + 1} / ${n}`;
