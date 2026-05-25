@@ -1257,7 +1257,7 @@
 
     <p>The <strong>Weights</strong> dropdown in Algorithm Options includes a <strong>Huber (IRLS)</strong> option for robust fitting. Standard least squares treats all residuals equally, making it sensitive to outliers. Huber IRLS (Iteratively Reweighted Least Squares) assigns full weight to points whose residuals fall within c = 1.345 × MAD, and down-weights larger residuals proportionally. The solver runs 5 reweighting iterations, each refitting with the updated weights. The result is a fit that minimises the influence of outliers without discarding them — compare the Huber fit against the OLS fit to quickly identify which points are pulling the curve.</p>
 
-    <p>The stats bar at the bottom shows all active fits side-by-side:</p>
+    <p>The stats bar at the bottom shows all active fits side-by-side. <strong>Click any row</strong> to expand it — the row opens an inline detail panel showing every parameter with its fitted value, standard error, 95% confidence interval (t-distribution at the correct degrees of freedom), and t-statistic (green = statistically significant at the 95% level, amber = not significant). A right-hand column repeats the global summary stats at a larger, more readable size. Click the same row again to collapse it. Multiple rows can be expanded simultaneously and the bar scrolls.</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>Metric</th><th>What it tells you</th><th>Good range</th></tr></thead>
       <tbody>

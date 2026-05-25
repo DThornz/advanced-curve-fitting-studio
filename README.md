@@ -18,6 +18,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Parameter bounds** | Optional min/max per parameter; all four solvers enforce box constraints via projection at every iteration; init is auto-clamped before dispatch; blank = unconstrained |
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^` |
 | **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status, final λ (LM), gradient norm (BFGS) |
+| **Expandable stats bar** | Click any row in the bottom stats table to expand it: shows per-parameter fitted value, std error, 95% CI (t-distribution at correct dof), and t-statistic (green = significant); right column shows full suite of summary stats at larger size; click again to collapse |
 | **CI bands** | 95% confidence interval ribbon around each fit curve (toggle per session) |
 | **Prediction interval bands** | 95% PI ribbon — wider than CI, adds per-observation scatter (RMSE²) to parameter uncertainty; toggle independently of CI bands |
 | **Weighted fitting** | Five schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate), 1/σ² (supplied uncertainties), Huber (IRLS robust fitting — downweights outliers via Iteratively Reweighted Least Squares, c = 1.345) |

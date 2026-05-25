@@ -3205,15 +3205,14 @@ function buildStatExpandRow(fit, r, colSpan) {
   const weightNames = { sigma: '1/σ²', huber: 'Huber IRLS', y2: '1/y²', y: '1/y', none: 'none' };
   const statusStr = r.converged ? '✓ Converged' : '⚠ Did not converge';
   const iterStr = r.iter != null ? ` (${r.iter} iter)` : '';
-  const lambdaStr = r.finalLambda != null ? ` · λ=${r.finalLambda.toExponential(2)}` : '';
   const metaStr = [
     statusStr + iterStr,
     algoNames[fit.algoKey] || fit.algoKey || '—',
-    `N=${r.n}`,
-    `dof=${dof}`,
+    `N = ${r.n}`,
+    `dof = ${dof}`,
     `Weights: ${weightNames[fit.weightMode] || fit.weightMode || 'none'}`,
-    lambdaStr ? lambdaStr.replace(' · ', '') : null,
-  ].filter(Boolean).join(' · ');
+    r.finalLambda != null ? `λ = ${r.finalLambda.toExponential(2)}` : null,
+  ].filter(Boolean).join('  ·  ');
 
   let paramRows = '';
   if (r.params && fit.paramNames) {
@@ -3229,23 +3228,41 @@ function buildStatExpandRow(fit, r, colSpan) {
         <td class="sep-name">${name}</td>
         <td>${fmt(val, 6)}</td>
         <td>${err ? '± ' + fmt(err, 4) : '<span class="sep-na">—</span>'}</td>
-        <td>${ciLo != null ? fmt(ciLo, 5) + ' to ' + fmt(ciHi, 5) : '<span class="sep-na">—</span>'}</td>
+        <td>${ciLo != null ? fmt(ciLo, 5) + '&nbsp; to &nbsp;' + fmt(ciHi, 5) : '<span class="sep-na">—</span>'}</td>
         <td class="${tCls}">${tStat != null ? fmt(tStat, 3) : '<span class="sep-na">—</span>'}</td>
       </tr>`;
     }).join('');
   }
 
+  const sumStats = [
+    ['R²',     isFinite(r.rSq)    ? r.rSq.toFixed(6)    : '—'],
+    ['Adj-R²', isFinite(r.adjRSq) ? r.adjRSq.toFixed(6) : '—'],
+    ['RMSE',   fmt(r.rmse)],
+    ['SSE',    fmt(r.sse)],
+    ['AIC',    fmt(r.aic)],
+    ['BIC',    fmt(r.bic)],
+    ...(r.chiSqRed != null ? [['χ²ᵣ', fmt(r.chiSqRed)]] : []),
+  ];
+  const sumHtml = sumStats.map(([lbl, val]) =>
+    `<div class="sep-sum-row"><span class="sep-sum-lbl">${lbl}</span><span class="sep-sum-val">${val}</span></div>`
+  ).join('');
+
   return `<tr class="stats-expand-row">
     <td colspan="${colSpan}">
       <div class="stats-expand-body">
         <div class="stats-expand-meta">${metaStr}</div>
-        <table class="stats-param-detail">
-          <thead><tr>
-            <th>Parameter</th><th>Fitted Value</th><th>Std Error</th>
-            <th>95% CI &nbsp;(t<sub>${dof}</sub>=${fmt(tc, 3)})</th><th>t-stat</th>
-          </tr></thead>
-          <tbody>${paramRows}</tbody>
-        </table>
+        <div class="stats-expand-cols">
+          <div class="stats-expand-params">
+            <table class="stats-param-detail">
+              <thead><tr>
+                <th>Parameter</th><th>Fitted Value</th><th>Std Error</th>
+                <th>95% CI &nbsp;(t<sub>${dof}</sub> = ${fmt(tc, 3)})</th><th>t-stat</th>
+              </tr></thead>
+              <tbody>${paramRows}</tbody>
+            </table>
+          </div>
+          <div class="stats-expand-summary">${sumHtml}</div>
+        </div>
       </div>
     </td>
   </tr>`;
