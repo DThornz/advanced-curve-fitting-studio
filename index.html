@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Advanced Curve Fitting Studio — Asad Mirza</title>
-<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 29 built-in models including electrophysiology (Boltzmann G-V, HH, Kir, GHK), Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
+<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 39 built-in models including electrophysiology (Boltzmann G-V, HH, Kir, GHK), Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -64,7 +64,7 @@
     <span class="pill">Export-Ready</span>
   </div>
   <div class="hero-meta">
-    <div><div class="hero-stat-num">29</div><div class="hero-stat-label">Built-in Models</div></div>
+    <div><div class="hero-stat-num">39</div><div class="hero-stat-label">Built-in Models</div></div>
     <div><div class="hero-stat-num">4</div><div class="hero-stat-label">Fit Algorithms</div></div>
     <div><div class="hero-stat-num">8+</div><div class="hero-stat-label">Fit Diagnostics</div></div>
     <div><div class="hero-stat-num">100%</div><div class="hero-stat-label">Client-Side</div></div>
@@ -128,6 +128,13 @@
               <div class="app-dropdown-item" data-example="hill-equation">Hill Equation  <span class="app-dropdown-sub">dose-response / binding</span></div>
               <div class="app-dropdown-item" data-example="damped-oscillation">Damped Oscillation  <span class="app-dropdown-sub">mechanical vibration</span></div>
               <div class="app-dropdown-item" data-example="sinusoidal">Sinusoidal Signal  <span class="app-dropdown-sub">periodic / seasonal</span></div>
+              <div class="app-dropdown-item" data-example="gompertz-growth">Gompertz Growth  <span class="app-dropdown-sub">tumor / bacterial growth</span></div>
+              <div class="app-dropdown-sep"></div>
+              <div class="examples-col-hdr">Spectral / Physics</div>
+              <div class="app-dropdown-item" data-example="xrd-peak">XRD Diffraction Peak  <span class="app-dropdown-sub">Pseudo-Voigt lineshape</span></div>
+              <div class="app-dropdown-item" data-example="fano-resonance">Fano Resonance  <span class="app-dropdown-sub">asymmetric nanophotonic</span></div>
+              <div class="app-dropdown-item" data-example="langevin-mh">Superparamagnetic M-H  <span class="app-dropdown-sub">Langevin magnetization</span></div>
+              <div class="app-dropdown-item" data-example="stress-strain">Stress-Strain Curve  <span class="app-dropdown-sub">Ramberg-Osgood plasticity</span></div>
             </div>
             <div class="examples-col">
               <div class="examples-col-hdr">Calibration &amp; Distributions</div>
@@ -135,6 +142,13 @@
               <div class="app-dropdown-item" data-example="weibull-survival">Weibull CDF  <span class="app-dropdown-sub">reliability / survival</span></div>
               <div class="app-dropdown-item" data-example="polynomial-calibration">Polynomial Calibration  <span class="app-dropdown-sub">nonlinear instrument response</span></div>
               <div class="app-dropdown-item" data-example="linear-calibration">Linear Calibration  <span class="app-dropdown-sub">instrument response</span></div>
+              <div class="app-dropdown-sep"></div>
+              <div class="examples-col-hdr">Biology / Pharmacology</div>
+              <div class="app-dropdown-item" data-example="elisa-4pl">ELISA Dose-Response  <span class="app-dropdown-sub">4-parameter logistic</span></div>
+              <div class="app-dropdown-item" data-example="oral-pk">Oral Drug PK  <span class="app-dropdown-sub">1-compartment absorption</span></div>
+              <div class="app-dropdown-item" data-example="polymer-kww">Polymer Relaxation  <span class="app-dropdown-sub">KWW stretched exponential</span></div>
+              <div class="app-dropdown-item" data-example="stern-volmer">Fluorescence Quenching  <span class="app-dropdown-sub">Stern-Volmer combined</span></div>
+              <div class="app-dropdown-item" data-example="vant-hoff">Van't Hoff Equilibrium  <span class="app-dropdown-sub">K vs temperature</span></div>
               <div class="app-dropdown-sep"></div>
               <div class="examples-col-hdr">Electrophysiology</div>
               <div class="app-dropdown-item" data-example="gv-boltzmann">G-V Curve (Boltzmann)  <span class="app-dropdown-sub">voltage-gated channel activation</span></div>
@@ -288,15 +302,22 @@
               <option value="Exp-Decay-Offset">Exp Decay + Offset  a·e⁻ᵇˣ + c</option>
               <option value="Biexponential">Biexponential  A₁·e⁻ᵇ¹ˣ+A₂·e⁻ᵇ²ˣ</option>
               <option value="Logistic">Logistic / Sigmoid</option>
+              <option value="Gompertz">Gompertz  A·exp(−exp(−k(x−x₀)))</option>
+              <option value="KWW">KWW Stretched Exp  A·exp(−(x/τ)^β)+C</option>
             </optgroup>
             <optgroup label="Peak / Spectral">
               <option value="Gaussian">Gaussian Peak</option>
               <option value="Lorentzian">Lorentzian Peak</option>
               <option value="Double-Gaussian">Double Gaussian  A₁·G(x,μ₁,σ₁)+A₂·G(x,μ₂,σ₂)</option>
+              <option value="Pseudo-Voigt">Pseudo-Voigt  η·L+(1−η)·G</option>
+              <option value="Fano">Fano Resonance  asymmetric lineshape</option>
             </optgroup>
             <optgroup label="Biology / Pharmacology">
               <option value="Michaelis-Menten">Michaelis-Menten</option>
               <option value="Hill">Hill Equation</option>
+              <option value="4PL">4-Parameter Logistic (4PL / ELISA)</option>
+              <option value="Oral-PK">Oral 1-Compartment PK</option>
+              <option value="Stern-Volmer">Stern-Volmer  fluorescence quenching</option>
               <option value="Rational">Rational (Padé)  (a+bx)/(1+cx)</option>
             </optgroup>
             <optgroup label="Oscillation">
@@ -305,6 +326,11 @@
             </optgroup>
             <optgroup label="Distribution">
               <option value="Weibull">Weibull CDF</option>
+            </optgroup>
+            <optgroup label="Physics / Material">
+              <option value="Langevin">Langevin  paramagnetism / polymer</option>
+              <option value="Van-t-Hoff">Van't Hoff  K vs temperature</option>
+              <option value="Ramberg-Osgood">Ramberg-Osgood  stress-strain</option>
             </optgroup>
             <optgroup label="Electrophysiology">
               <option value="Boltzmann">Boltzmann G-V  A/(1+e^−(V−Vh)/k)</option>
@@ -1220,7 +1246,7 @@
     </ul>
     <p>Multiple datasets can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled using the toggle button that appears on hover. Disabling a dataset hides it and all its associated fits from the plot, residual panels, stats table, and F-test — they are restored instantly when re-enabled.</p>
 
-    <p>The right panel lists 29 built-in models across 7 groups. A guide to choosing:</p>
+    <p>The right panel lists 39 built-in models across 9 groups. A guide to choosing:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>If your data looks like…</th><th>Try</th></tr></thead>
       <tbody>
@@ -1392,6 +1418,20 @@
       <tr><td><strong>Biexponential</strong></td><td>$y = A_1\,e^{-k_1 x} + A_2\,e^{-k_2 x} + C$</td><td>A1, k1 (fast component), A2, k2 (slow component), C (offset)</td><td>Two-compartment pharmacokinetics, fluorescence decay with two lifetime components, parallel first-order reactions. The two rate constants k1 and k2 capture fast and slow processes simultaneously.</td></tr>
       <tr><td><strong>Rational (1,1)</strong></td><td>$y = \dfrac{p_0 + p_1\,x}{1 + q_1\,x}$</td><td>p0 (numerator intercept), p1 (numerator slope), q1 (denominator slope)</td><td>Padé approximant for functions with a horizontal asymptote; enzyme inhibition with substrate excess; adsorption isotherms with saturation. More flexible than a hyperbola for asymmetric data.</td></tr>
       <tr><td><strong>Power Law + Offset</strong></td><td>$y = a\,x^b + c$</td><td>a (amplitude), b (exponent), c (baseline offset)</td><td>Power law with a non-zero floor; material strength–thickness relationships, electrode impedance scaling. The offset c prevents the curve from passing through zero, unlike the basic power law.</td></tr>
+      <tr><td colspan="4" style="background:var(--bg2);color:var(--muted);font-size:.75em;letter-spacing:.06em;font-weight:600;padding:6px 10px">GROWTH / DECAY (EXTENDED)</td></tr>
+      <tr><td><strong>Gompertz</strong></td><td>$y = A\,e^{-e^{-k(x-x_0)}}$</td><td>A (carrying capacity), k (growth rate), x₀ (inflection point)</td><td>Asymmetric sigmoid — saturates more slowly than logistic. Tumor volume growth, bacterial growth curves, technology adoption, insect population dynamics. Inflection at y = A/e ≈ 0.368 A.</td></tr>
+      <tr><td><strong>KWW (Stretched Exp)</strong></td><td>$y = A\,e^{-(x/\tau)^\beta}+C$</td><td>A (amplitude), τ (characteristic time), β (stretch exponent, 0–1), C (baseline)</td><td>Kohlrausch-Williams-Watts stretched exponential. β = 1 is ordinary exponential; β &lt; 1 gives subexponential (dispersive) decay. Dielectric relaxation in glasses, polymer chain dynamics, fluorescence afterglow, battery capacity fade. Also written as exp(-(t/τ)^β).</td></tr>
+      <tr><td colspan="4" style="background:var(--bg2);color:var(--muted);font-size:.75em;letter-spacing:.06em;font-weight:600;padding:6px 10px">PEAK / SPECTRAL (EXTENDED)</td></tr>
+      <tr><td><strong>Pseudo-Voigt</strong></td><td>$y = A\left[\eta\dfrac{\gamma^2}{(x-x_0)^2+\gamma^2}+(1-\eta)\,e^{-(x-x_0)^2/2\sigma^2}\right]+C$</td><td>A (amplitude), x₀ (center), γ (Lorentz HWHM), σ (Gauss width), η (mixing, 0–1), C (baseline)</td><td>Weighted sum of Lorentzian and Gaussian approximating the true Voigt convolution to &lt;1% error. Standard in X-ray diffraction (XRD), Raman, IR, neutron scattering. η → 1 approaches pure Lorentzian; η → 0 pure Gaussian. More physically meaningful than fitting either lineshape alone.</td></tr>
+      <tr><td><strong>Fano Resonance</strong></td><td>$y = A\dfrac{(q+\varepsilon)^2}{1+\varepsilon^2}+C,\;\varepsilon=\dfrac{x-x_0}{\Gamma}$</td><td>A (amplitude), x₀ (resonance center), Γ (linewidth), q (asymmetry / Fano parameter), C (background)</td><td>Asymmetric lineshape arising from quantum interference between a discrete resonance and a continuum. Seen in nanophotonic/plasmonic structures, NEMS resonators, Raman spectra near electronic resonances, photonic crystals, atomic physics. q = 0 gives a symmetric dip (anti-resonance); large |q| approaches a symmetric peak.</td></tr>
+      <tr><td colspan="4" style="background:var(--bg2);color:var(--muted);font-size:.75em;letter-spacing:.06em;font-weight:600;padding:6px 10px">BIOLOGY / PHARMACOLOGY (EXTENDED)</td></tr>
+      <tr><td><strong>4-Parameter Logistic (4PL)</strong></td><td>$y = D + \dfrac{A-D}{1+(x/C)^B}$</td><td>A (top asymptote), D (bottom asymptote), C (EC50/IC50), B (Hill slope)</td><td>Standard model for ELISA, immunoassays, flow cytometry, and dose-response. Unlike Logistic and Hill (which force the lower asymptote to 0), 4PL has free upper and lower plateaux. C is the inflection point (EC50 or IC50); B is the Hill slope (steepness). Reduces to Hill equation when D = 0.</td></tr>
+      <tr><td><strong>Oral 1-Compartment PK</strong></td><td>$C = \dfrac{\mathrm{Amp}\cdot k_a}{k_a-k_e}(e^{-k_e t}-e^{-k_a t})$</td><td>Amp (dose factor = F·D/V), ka (absorption rate h⁻¹), ke (elimination rate h⁻¹)</td><td>Drug concentration-time profile after oral administration. Rising absorption phase (ka) followed by exponential elimination (ke). Peak concentration at T_max = ln(ka/ke)/(ka−ke). L'Hôpital limit applied analytically when ka ≈ ke. Amp absorbs bioavailability, dose, and volume of distribution.</td></tr>
+      <tr><td><strong>Stern-Volmer</strong></td><td>$F = \dfrac{F_0}{(1+K_D[Q])(1+K_S[Q])}$</td><td>F₀ (unquenched fluorescence), KD (dynamic quenching constant M⁻¹), KS (static quenching constant M⁻¹)</td><td>Combined static and dynamic fluorescence quenching. Dynamic quenching (KS = 0) gives a linear Stern-Volmer plot; static + dynamic gives upward curvature. Used in biosensor characterisation, protein-ligand binding studies, FRET, and collisional quenching assays. Setting KS = 0 recovers the classical linear form F₀/F = 1 + Ksv[Q].</td></tr>
+      <tr><td colspan="4" style="background:var(--bg2);color:var(--muted);font-size:.75em;letter-spacing:.06em;font-weight:600;padding:6px 10px">PHYSICS / MATERIAL</td></tr>
+      <tr><td><strong>Langevin</strong></td><td>$y = A\!\left(\coth(Bx)-\dfrac{1}{Bx}\right)$</td><td>A (saturation value Ms), B (Langevin parameter ∝ μ/kT)</td><td>Magnetization of a classical paramagnet or superparamagnetic nanoparticle vs. applied field H. A = saturation magnetization Ms; B = μ/(kBT) where μ is the particle moment. Also describes polymer chain extension (freely-jointed chain model) and orientational polarization in dielectrics. L'Hôpital limit applied at Bx ≈ 0 to avoid 0/0.</td></tr>
+      <tr><td><strong>Van't Hoff</strong></td><td>$\ln K = \dfrac{\Delta S}{R} - \dfrac{\Delta H}{RT}$, i.e. $K = e^{\Delta S/R - \Delta H/(RT)}$</td><td>dHR = ΔH/R (K), dSR = ΔS/R (dimensionless); x = T (Kelvin)</td><td>Equilibrium constant K vs. absolute temperature T. Linear in a ln K vs. 1/T (Van't Hoff plot) for constant ΔH; the nonlinear form here fits K vs. T directly. Used for protein folding/unfolding thermodynamics, binding affinity temperature dependence, solubility and reaction equilibria. Auto-init uses log-linear regression on ln K vs. 1/T.</td></tr>
+      <tr><td><strong>Ramberg-Osgood</strong></td><td>$\varepsilon = \dfrac{\sigma}{E} + \left(\dfrac{|\sigma|}{K}\right)^{1/n}$</td><td>E (Young's modulus, elastic stiffness), K (strength coefficient), n (hardening exponent)</td><td>Smooth elastic-plastic stress-strain relationship. The linear term σ/E is elastic; the power-law term captures work hardening. Common for metals (aluminium alloys, steels) and polymers above the yield point. n ≈ 5–20 for most metals; larger n → sharper yield transition. Sign-preserving: works for both tensile (σ &gt; 0) and compressive (σ &lt; 0) loading.</td></tr>
       <tr><td><strong>Custom Equation</strong></td><td>Any Math.js expression in $x$</td><td>Auto-detected symbols</td><td>Any application. Supports <code>exp</code>, <code>log</code>, <code>sin</code>, <code>cos</code>, <code>sqrt</code>, <code>abs</code>, <code>atan</code>, <code>^</code>, and all Math.js builtins.</td></tr>
     </tbody>
   </table>

@@ -478,6 +478,39 @@ const MODEL_FNS = {
     A1 * Math.exp(-Math.abs(b1) * x) + A2 * Math.exp(-Math.abs(b2) * x) + C,
   'Rational':      (x, [a, b, c]) => (a + b * x) / Math.max(1 + c * x, 1e-10),
   'Power-Offset':  (x, [a, b, c]) => a * Math.pow(Math.abs(x) + 1e-12, b) + c,
+  '4PL':           (x, [A, D, C, B]) => D + (A - D) / (1 + Math.pow(Math.max(x, 0) / Math.max(Math.abs(C), 1e-12), B)),
+  'Gompertz':      (x, [A, k, x0]) => A * Math.exp(-Math.exp(-k * (x - x0))),
+  'Pseudo-Voigt':  (x, [A, x0, g, s, eta, C]) => {
+                     const etaC = Math.max(0, Math.min(1, eta));
+                     const L = (g || 1e-10) ** 2 / ((x - x0) ** 2 + (g || 1e-10) ** 2);
+                     const G = Math.exp(-0.5 * ((x - x0) / (s || 1e-10)) ** 2);
+                     return A * (etaC * L + (1 - etaC) * G) + C;
+                   },
+  'Fano':          (x, [A, x0, G, q, C]) => {
+                     const eps = (x - x0) / (G || 1e-10);
+                     return A * (q + eps) ** 2 / (1 + eps ** 2) + C;
+                   },
+  'Oral-PK':       (x, [Amp, ka, ke]) => {
+                     if (x <= 0) return 0;
+                     if (Math.abs(ka - ke) < 1e-6 * (Math.abs(ka) + Math.abs(ke) + 1))
+                       return Amp * ka * x * Math.exp(-ka * x);
+                     return Amp * ka / (ka - ke) * (Math.exp(-ke * x) - Math.exp(-ka * x));
+                   },
+  'KWW':           (x, [A, tau, beta, C]) =>
+                     A * Math.exp(-Math.pow(Math.max(x, 0) / Math.max(tau, 1e-12), Math.max(beta, 1e-6))) + C,
+  'Langevin':      (x, [A, B]) => {
+                     const u = B * x;
+                     if (Math.abs(u) < 1e-6) return A * u / 3;
+                     return A * (1 / Math.tanh(u) - 1 / u);
+                   },
+  'Stern-Volmer':  (x, [F0, KD, KS]) =>
+                     F0 / (Math.max(1 + KD * x, 1e-10) * Math.max(1 + KS * x, 1e-10)),
+  'Van-t-Hoff':    (x, [dHR, dSR]) => Math.exp(dSR - dHR / Math.max(x, 1e-6)),
+  'Ramberg-Osgood':(x, [E, K, n]) => {
+                     const elastic = x / Math.max(E, 1e-12);
+                     const plastic = Math.sign(x) * Math.pow(Math.abs(x) / Math.max(K, 1e-12), 1 / Math.max(n, 1e-6));
+                     return elastic + plastic;
+                   },
 };
 
 const MODEL_DEGREES = {

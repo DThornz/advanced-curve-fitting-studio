@@ -984,6 +984,170 @@ const MODELS = {
       return [isFinite(a) ? a : 1, isFinite(b) ? b : 1, c];
     }
   },
+  '4PL': {
+    params: ['A', 'D', 'C', 'B'],
+    fn: (x, [A, D, C, B]) => D + (A - D) / (1 + Math.pow(Math.max(x, 0) / Math.max(Math.abs(C), 1e-12), B)),
+    analytic: false,
+    autoInit(x, y) {
+      const A = Math.max(...y), D = Math.min(...y);
+      const mid = (A + D) / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - mid) < Math.abs(y[b] - mid) ? i : b, 0);
+      const C = Math.max(x[idx], 1e-6);
+      const i1 = Math.max(idx - 2, 0), i2 = Math.min(idx + 2, x.length - 1);
+      const slope = (x[i2] > x[i1]) ? (y[i2] - y[i1]) / ((x[i2] - x[i1]) || 1) : 1;
+      const B = Math.max(Math.abs(slope) * 4 * C / Math.max(Math.abs(A - D), 1e-10), 0.5);
+      return [A, D, C, B];
+    }
+  },
+  'Gompertz': {
+    params: ['A', 'k', 'x0'],
+    fn: (x, [A, k, x0]) => A * Math.exp(-Math.exp(-k * (x - x0))),
+    analytic: false,
+    autoInit(x, y) {
+      const A = Math.max(...y) * 1.05;
+      const inflY = A * Math.exp(-1);
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - inflY) < Math.abs(y[b] - inflY) ? i : b, 0);
+      const x0 = x[idx];
+      const xRange = Math.max(...x) - Math.min(...x);
+      return [isFinite(A) ? A : 1, 2 / Math.max(xRange, 1), x0];
+    }
+  },
+  'Pseudo-Voigt': {
+    params: ['A', 'x0', 'g', 's', 'eta', 'C'],
+    fn: (x, [A, x0, g, s, eta, C]) => {
+      const etaC = Math.max(0, Math.min(1, eta));
+      const L = (g || 1e-10) ** 2 / ((x - x0) ** 2 + (g || 1e-10) ** 2);
+      const G = Math.exp(-0.5 * ((x - x0) / (s || 1e-10)) ** 2);
+      return A * (etaC * L + (1 - etaC) * G) + C;
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const sortedY = y.slice().sort((a, b) => a - b);
+      const nBase = Math.max(2, Math.ceil(y.length * 0.25));
+      const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
+      const shifted = y.map(v => v - C);
+      const maxI = shifted.indexOf(Math.max(...shifted));
+      const A = Math.max(shifted[maxI], 1e-6), x0 = x[maxI];
+      const w = (Math.max(...x) - Math.min(...x)) / 8 || 1;
+      return [A, x0, w, w, 0.5, C];
+    }
+  },
+  'Fano': {
+    params: ['A', 'x0', 'G', 'q', 'C'],
+    fn: (x, [A, x0, G, q, C]) => {
+      const eps = (x - x0) / (G || 1e-10);
+      return A * (q + eps) ** 2 / (1 + eps ** 2) + C;
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const sortedY = y.slice().sort((a, b) => a - b);
+      const nBase = Math.max(2, Math.ceil(y.length * 0.25));
+      const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
+      const shifted = y.map(v => v - C);
+      const maxI = shifted.indexOf(Math.max(...shifted));
+      const A = Math.max(shifted[maxI], 1e-6), x0 = x[maxI];
+      const xRange = Math.max(...x) - Math.min(...x);
+      return [A, x0, xRange / 10 || 1, 1, C];
+    }
+  },
+  'Oral-PK': {
+    params: ['Amp', 'ka', 'ke'],
+    fn: (x, [Amp, ka, ke]) => {
+      if (x <= 0) return 0;
+      if (Math.abs(ka - ke) < 1e-6 * (Math.abs(ka) + Math.abs(ke) + 1))
+        return Amp * ka * x * Math.exp(-ka * x);
+      return Amp * ka / (ka - ke) * (Math.exp(-ke * x) - Math.exp(-ka * x));
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const peakI = y.indexOf(Math.max(...y));
+      const tmax = x[peakI] || (x[x.length - 1] - x[0]) * 0.3;
+      const ka = 3 / Math.max(tmax, 1e-6), ke = ka / 10;
+      const predPeak = ka / (ka - ke) * (Math.exp(-ke * tmax) - Math.exp(-ka * tmax));
+      const Amp = Math.max(...y) / Math.max(predPeak, 1e-10);
+      return [isFinite(Amp) ? Amp : 1, ka, ke];
+    }
+  },
+  'KWW': {
+    params: ['A', 'tau', 'beta', 'C'],
+    fn: (x, [A, tau, beta, C]) =>
+      A * Math.exp(-Math.pow(Math.max(x, 0) / Math.max(tau, 1e-12), Math.max(beta, 1e-6))) + C,
+    analytic: false,
+    autoInit(x, y) {
+      const C = Math.min(...y);
+      const A = Math.max(Math.max(...y) - C, 1e-6);
+      const target = A * Math.exp(-1) + C;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - target) < Math.abs(y[b] - target) ? i : b, 0);
+      const tau = Math.max(x[idx] - x[0], (x[x.length - 1] - x[0]) / 3, 1e-6);
+      return [A, tau, 0.7, C];
+    }
+  },
+  'Langevin': {
+    params: ['A', 'B'],
+    fn: (x, [A, B]) => {
+      const u = B * x;
+      if (Math.abs(u) < 1e-6) return A * u / 3;
+      return A * (1 / Math.tanh(u) - 1 / u);
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const A = Math.max(...y.filter(isFinite)) * 1.05;
+      const half = A / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      const B = 1.6 / Math.max(Math.abs(x[idx]), 1e-6);
+      return [isFinite(A) ? A : 1, isFinite(B) ? B : 1];
+    }
+  },
+  'Stern-Volmer': {
+    params: ['F0', 'KD', 'KS'],
+    fn: (x, [F0, KD, KS]) =>
+      F0 / (Math.max(1 + KD * x, 1e-10) * Math.max(1 + KS * x, 1e-10)),
+    analytic: false,
+    autoInit(x, y) {
+      const F0 = Math.max(...y.filter(isFinite));
+      const xm = mean(x);
+      const ratio = y.map(yi => Math.max(F0 / Math.max(yi, 1e-10) - 1, 0));
+      const rm = mean(ratio);
+      const Ksv = Math.max(x.reduce((s, xi, i) => s + (xi - xm) * (ratio[i] - rm), 0) /
+                  Math.max(x.reduce((s, xi) => s + (xi - xm) ** 2, 0), 1e-10), 0.01);
+      return [isFinite(F0) ? F0 : 1, Ksv * 0.6, Ksv * 0.4];
+    }
+  },
+  'Van-t-Hoff': {
+    params: ['dHR', 'dSR'],
+    fn: (x, [dHR, dSR]) => Math.exp(dSR - dHR / Math.max(x, 1e-6)),
+    analytic: false,
+    autoInit(x, y) {
+      const valid = x.map((xi, i) => [xi, y[i]]).filter(([xi, yi]) => xi > 0 && yi > 0);
+      if (valid.length < 2) return [-5000, 10];
+      const inv = valid.map(([xi]) => 1 / xi);
+      const lny = valid.map(([, yi]) => Math.log(yi));
+      const invm = mean(inv), lnym = mean(lny);
+      const dHR = -inv.reduce((s, v, i) => s + (v - invm) * (lny[i] - lnym), 0) /
+                  Math.max(inv.reduce((s, v) => s + (v - invm) ** 2, 0), 1e-15);
+      const dSR = lnym + dHR * invm;
+      return [isFinite(dHR) ? dHR : -5000, isFinite(dSR) ? dSR : 10];
+    }
+  },
+  'Ramberg-Osgood': {
+    params: ['E', 'K', 'n'],
+    fn: (x, [E, K, n]) => {
+      const elastic = x / Math.max(E, 1e-12);
+      const plastic = Math.sign(x) * Math.pow(Math.abs(x) / Math.max(K, 1e-12), 1 / Math.max(n, 1e-6));
+      return elastic + plastic;
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const nLin = Math.max(2, Math.ceil(x.length * 0.2));
+      const xL = x.slice(0, nLin), yL = y.slice(0, nLin);
+      const xmL = mean(xL), ymL = mean(yL);
+      const slope = xL.reduce((s, xi, i) => s + (xi - xmL) * (yL[i] - ymL), 0) /
+                    Math.max(xL.reduce((s, xi) => s + (xi - xmL) ** 2, 0), 1e-15);
+      const E = (slope > 1e-10) ? Math.min(1 / slope, 1e9) : 200000;
+      const xMax = Math.max(...x.filter(isFinite));
+      return [isFinite(E) ? E : 200000, xMax * 0.5 || 250, 5];
+    }
+  },
   'Custom': {
     params: [],
     fn: null,
@@ -1281,6 +1445,181 @@ const EXAMPLES = {
       const V = linspace(-100, 60, p.N);
       const tau = V.map(v => p.tau_max * Math.exp(-0.5 * ((v - p.Vpeak) / p.k) ** 2) + p.tau_min);
       return { name: 'Voltage-Dependent τ', x: V, y: noisyGauss(tau, p.noise), xlabel: 'Voltage (mV)', ylabel: 'τ (ms)', suggestModel: 'Tau-Gaussian' };
+    }
+  },
+  'elisa-4pl': {
+    title: 'ELISA Dose-Response (4PL)',
+    params: [
+      { key: 'A',    label: 'Top (A)',         value: 2.8,  min: 0.1,  max: 10,   step: 0.05 },
+      { key: 'D',    label: 'Bottom (D)',       value: 0.05, min: 0,    max: 1,    step: 0.01 },
+      { key: 'C',    label: 'EC50 (ng/mL)',     value: 5,    min: 0.1,  max: 100,  step: 0.1  },
+      { key: 'B',    label: 'Hill slope (B)',   value: 1.8,  min: 0.5,  max: 5,    step: 0.1  },
+      { key: 'noise',   label: 'Noise (σ)',        value: 0.04, min: 0,    max: 0.5,  step: 0.005},
+      { key: 'outliers',label: 'Outliers',          value: 0,    min: 0,    max: 4,    step: 1    },
+    ],
+    generate(p) {
+      const conc = [0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200];
+      const y = noisyGauss(conc.map(x => p.D + (p.A - p.D) / (1 + Math.pow(x / p.C, p.B))), p.noise);
+      return { name: 'ELISA Dose-Response', x: conc, y: injectOutliers(y, p.outliers, 3), xlabel: 'Concentration (ng/mL)', ylabel: 'Absorbance (450 nm)', suggestModel: '4PL' };
+    }
+  },
+  'gompertz-growth': {
+    title: 'Gompertz Tumor Growth',
+    params: [
+      { key: 'A',    label: 'Carrying cap. (mm³)', value: 2500, min: 100,  max: 10000,step: 100  },
+      { key: 'k',    label: 'Growth rate (k)',      value: 0.12, min: 0.01, max: 1,    step: 0.01 },
+      { key: 'x0',   label: 'Inflection (x₀, d)',  value: 18,   min: 1,    max: 100,  step: 1    },
+      { key: 'noise',   label: 'Noise (σ, mm³)',      value: 50,   min: 0,    max: 500,  step: 5    },
+      { key: 'N',       label: 'Points (N)',           value: 28,   min: 5,    max: 100,  step: 1    },
+      { key: 'outliers',label: 'Outliers',              value: 0,    min: 0,    max: 4,    step: 1    },
+    ],
+    generate(p) {
+      const t = linspace(0, 50, p.N);
+      const y = noisyGauss(t.map(ti => p.A * Math.exp(-Math.exp(-p.k * (ti - p.x0)))), p.noise);
+      return { name: 'Gompertz Tumor Growth', x: t, y: injectOutliers(y.map(v => Math.max(v, 0)), p.outliers, 3), xlabel: 'Time (days)', ylabel: 'Tumor Volume (mm³)', suggestModel: 'Gompertz' };
+    }
+  },
+  'xrd-peak': {
+    title: 'XRD Diffraction Peak (Pseudo-Voigt)',
+    params: [
+      { key: 'A',    label: 'Intensity (A)',    value: 5000, min: 100,  max: 50000,step: 100  },
+      { key: 'x0',   label: '2θ center (°)',    value: 28.4, min: 5,    max: 80,   step: 0.1  },
+      { key: 'g',    label: 'Lorentz HWHM (°)', value: 0.12, min: 0.01, max: 2,    step: 0.01 },
+      { key: 's',    label: 'Gauss σ (°)',       value: 0.14, min: 0.01, max: 2,    step: 0.01 },
+      { key: 'eta',  label: 'Mixing η (0–1)',    value: 0.55, min: 0,    max: 1,    step: 0.05 },
+      { key: 'C',    label: 'Background (C)',    value: 120,  min: 0,    max: 2000, step: 10   },
+      { key: 'noise',   label: 'Noise (σ)',         value: 30,   min: 0,    max: 500,  step: 5    },
+      { key: 'N',       label: 'Points (N)',         value: 60,   min: 10,   max: 200,  step: 1    },
+    ],
+    generate(p) {
+      const x = linspace(p.x0 - 1.5, p.x0 + 1.5, p.N);
+      const y = x.map(xi => {
+        const etaC = Math.max(0, Math.min(1, p.eta));
+        const L = p.g ** 2 / ((xi - p.x0) ** 2 + p.g ** 2);
+        const G = Math.exp(-0.5 * ((xi - p.x0) / p.s) ** 2);
+        return p.A * (etaC * L + (1 - etaC) * G) + p.C;
+      });
+      return { name: 'XRD Diffraction Peak', x, y: noisyGauss(y, p.noise), xlabel: '2θ (°)', ylabel: 'Intensity (counts)', suggestModel: 'Pseudo-Voigt' };
+    }
+  },
+  'fano-resonance': {
+    title: 'Fano Resonance (Nanophotonics)',
+    params: [
+      { key: 'A',    label: 'Amplitude (A)',    value: 1.0,  min: 0.01, max: 10,   step: 0.05 },
+      { key: 'x0',   label: 'Resonance (x₀)',   value: 800,  min: 400,  max: 1200, step: 5    },
+      { key: 'G',    label: 'Linewidth Γ (nm)', value: 30,   min: 1,    max: 200,  step: 1    },
+      { key: 'q',    label: 'Asymmetry (q)',     value: 2.5,  min: -10,  max: 10,   step: 0.1  },
+      { key: 'C',    label: 'Background (C)',    value: 0.3,  min: 0,    max: 2,    step: 0.05 },
+      { key: 'noise',   label: 'Noise (σ)',         value: 0.02, min: 0,    max: 0.2,  step: 0.005},
+      { key: 'N',       label: 'Points (N)',         value: 80,   min: 10,   max: 300,  step: 1    },
+    ],
+    generate(p) {
+      const x = linspace(p.x0 - 4 * p.G, p.x0 + 4 * p.G, p.N);
+      const y = x.map(xi => {
+        const eps = (xi - p.x0) / p.G;
+        return p.A * (p.q + eps) ** 2 / (1 + eps ** 2) + p.C;
+      });
+      return { name: 'Fano Resonance', x, y: noisyGauss(y, p.noise), xlabel: 'Wavelength (nm)', ylabel: 'Scattering Cross-section (a.u.)', suggestModel: 'Fano' };
+    }
+  },
+  'oral-pk': {
+    title: 'Oral Drug PK (1-Compartment)',
+    params: [
+      { key: 'Amp',  label: 'Dose factor (Amp)', value: 12,   min: 0.1,  max: 500,  step: 0.5  },
+      { key: 'ka',   label: 'Absorption ka (1/h)',value: 1.5,  min: 0.05, max: 10,   step: 0.05 },
+      { key: 'ke',   label: 'Elimination ke (1/h)',value:0.18, min: 0.01, max: 5,    step: 0.01 },
+      { key: 'noise',   label: 'Noise (σ, ng/mL)', value: 0.4,  min: 0,    max: 10,   step: 0.1  },
+      { key: 'N',       label: 'Points (N)',          value: 24,   min: 5,    max: 100,  step: 1    },
+      { key: 'outliers',label: 'Outliers',              value: 0,    min: 0,    max: 4,    step: 1    },
+    ],
+    generate(p) {
+      const t = [0, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 14, 18, 24, 30, 36, 48, 60, 72, 96].slice(0, p.N);
+      const y = t.map(ti => {
+        if (ti <= 0) return 0;
+        if (Math.abs(p.ka - p.ke) < 1e-6) return p.Amp * p.ka * ti * Math.exp(-p.ka * ti);
+        return p.Amp * p.ka / (p.ka - p.ke) * (Math.exp(-p.ke * ti) - Math.exp(-p.ka * ti));
+      });
+      return { name: 'Oral Drug PK', x: t, y: injectOutliers(noisyGauss(y, p.noise).map(v => Math.max(v, 0)), p.outliers, 3), xlabel: 'Time (h)', ylabel: 'Concentration (ng/mL)', suggestModel: 'Oral-PK' };
+    }
+  },
+  'polymer-kww': {
+    title: 'Polymer Relaxation (KWW)',
+    params: [
+      { key: 'A',    label: 'Amplitude (A)',   value: 1.0,   min: 0.01, max: 10,   step: 0.05 },
+      { key: 'tau',  label: 'Relaxation τ (s)',value: 500,   min: 1,    max: 50000, step: 10  },
+      { key: 'beta', label: 'Stretch β',        value: 0.55,  min: 0.1,  max: 1,    step: 0.05 },
+      { key: 'C',    label: 'Baseline (C)',     value: 0,     min: -1,   max: 1,    step: 0.01 },
+      { key: 'noise',   label: 'Noise (σ)',        value: 0.01,  min: 0,    max: 0.1,  step: 0.005},
+      { key: 'N',       label: 'Points (N)',        value: 30,    min: 5,    max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const t = Array.from({ length: p.N }, (_, i) => Math.pow(10, -1 + i * 5 / (p.N - 1)));
+      const y = t.map(ti => p.A * Math.exp(-Math.pow(ti / p.tau, p.beta)) + p.C);
+      return { name: 'Polymer Relaxation (KWW)', x: t, y: noisyGauss(y, p.noise), xlabel: 'Time (s)', ylabel: 'Modulus G(t) / G₀', suggestModel: 'KWW' };
+    }
+  },
+  'langevin-mh': {
+    title: 'Superparamagnetic M-H (Langevin)',
+    params: [
+      { key: 'A',    label: 'Saturation Ms (A/m)', value: 400000, min: 1000, max: 2e6,  step: 1000 },
+      { key: 'B',    label: 'Langevin B (m/A)',    value: 2e-5,   min: 1e-7, max: 1e-3, step: 1e-7 },
+      { key: 'noise',   label: 'Noise (σ)',             value: 3000,   min: 0,    max: 50000,step: 500  },
+      { key: 'N',       label: 'Points (N)',             value: 30,     min: 5,    max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const H = linspace(-1.5e5, 1.5e5, p.N);
+      const y = H.map(h => {
+        const u = p.B * h;
+        if (Math.abs(u) < 1e-6) return p.A * u / 3;
+        return p.A * (1 / Math.tanh(u) - 1 / u);
+      });
+      return { name: 'Superparamagnetic M-H', x: H, y: noisyGauss(y, p.noise), xlabel: 'Applied Field H (A/m)', ylabel: 'Magnetization M (A/m)', suggestModel: 'Langevin' };
+    }
+  },
+  'stern-volmer': {
+    title: 'Fluorescence Quenching (Stern-Volmer)',
+    params: [
+      { key: 'F0',   label: 'F₀ (unquenched)',  value: 1000, min: 10,   max: 10000,step: 10   },
+      { key: 'KD',   label: 'K_D (dynamic, M⁻¹)',value: 8,   min: 0,    max: 200,  step: 0.5  },
+      { key: 'KS',   label: 'K_S (static, M⁻¹)', value: 3,   min: 0,    max: 100,  step: 0.5  },
+      { key: 'noise',   label: 'Noise (σ)',          value: 8,    min: 0,    max: 100,  step: 1    },
+      { key: 'outliers',label: 'Outliers',             value: 0,    min: 0,    max: 4,    step: 1    },
+    ],
+    generate(p) {
+      const Q = [0, 0.01, 0.02, 0.05, 0.08, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0];
+      const y = Q.map(q => p.F0 / ((1 + p.KD * q) * (1 + p.KS * q)));
+      return { name: 'Fluorescence Quenching', x: Q, y: injectOutliers(noisyGauss(y, p.noise), p.outliers, 3), xlabel: '[Quencher] (M)', ylabel: 'Fluorescence Intensity (a.u.)', suggestModel: 'Stern-Volmer' };
+    }
+  },
+  'vant-hoff': {
+    title: "Van't Hoff Equilibrium",
+    params: [
+      { key: 'dH',   label: 'ΔH (kJ/mol)',      value: -45,  min: -300, max: 300,  step: 1    },
+      { key: 'dS',   label: 'ΔS (J/mol/K)',      value: -120, min: -500, max: 500,  step: 5    },
+      { key: 'noise',   label: 'Noise (σ, ln K)',   value: 0.05, min: 0,    max: 1,    step: 0.01 },
+      { key: 'N',       label: 'Points (N)',          value: 14,   min: 4,    max: 40,   step: 1    },
+    ],
+    generate(p) {
+      const R = 8.314;
+      const T = linspace(278, 340, p.N);
+      const K = T.map(t => Math.exp(-p.dH * 1000 / (R * t) + p.dS / R));
+      const dHR = p.dH * 1000 / R, dSR = p.dS / R;
+      return { name: "Van't Hoff Equilibrium", x: T, y: noisyGauss(K, p.noise * mean(K)), xlabel: 'Temperature (K)', ylabel: 'Equilibrium Constant K', suggestModel: 'Van-t-Hoff', _note: `dHR=${dHR.toFixed(0)}, dSR=${dSR.toFixed(2)}` };
+    }
+  },
+  'stress-strain': {
+    title: 'Stress-Strain (Ramberg-Osgood)',
+    params: [
+      { key: 'E',    label: "Young's mod. E (MPa)",value: 200000, min: 10000, max: 500000, step: 1000},
+      { key: 'K',    label: 'Strength coeff. K (MPa)',value: 700, min: 10,   max: 5000,  step: 10  },
+      { key: 'n',    label: 'Hardening exp. n',    value: 8,      min: 1,    max: 30,    step: 0.5 },
+      { key: 'noise',   label: 'Noise (σ, strain)',   value: 5e-5,   min: 0,    max: 2e-3,  step: 1e-5},
+      { key: 'N',       label: 'Points (N)',            value: 25,     min: 5,    max: 100,   step: 1   },
+    ],
+    generate(p) {
+      const sigma = linspace(0, p.K * 1.3, p.N);
+      const eps = sigma.map(s => s / p.E + Math.pow(s / p.K, 1 / p.n));
+      return { name: 'Stress-Strain Curve', x: sigma, y: noisyGauss(eps, p.noise), xlabel: 'Stress σ (MPa)', ylabel: 'Strain ε', suggestModel: 'Ramberg-Osgood' };
     }
   }
 };
@@ -3933,6 +4272,16 @@ function exportPython() {
     'Kir':              `return ${fit.paramNames[0]} * (x-${fit.paramNames[1]}) / (1+np.exp((x-${fit.paramNames[2]})/np.maximum(np.abs(${fit.paramNames[3]}),1e-10)))`,
     'GHK':              `return np.where(np.abs(x)<1e-6, ${fit.paramNames[0]}*${fit.paramNames[2]}*(1-${fit.paramNames[1]}), ${fit.paramNames[0]}*x*(1-${fit.paramNames[1]}*np.exp(-x/np.maximum(${fit.paramNames[2]},1e-10)))/np.maximum(1-np.exp(-x/np.maximum(${fit.paramNames[2]},1e-10)),1e-10))`,
     'Tau-Gaussian':     `return ${fit.paramNames[0]} * np.exp(-0.5*((x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[2]},1e-10))**2) + ${fit.paramNames[3]}`,
+    '4PL':              `return ${fit.paramNames[1]} + (${fit.paramNames[0]} - ${fit.paramNames[1]}) / (1 + (np.maximum(x, 0) / np.maximum(np.abs(${fit.paramNames[2]}), 1e-12))**${fit.paramNames[3]})`,
+    'Gompertz':         `return ${fit.paramNames[0]} * np.exp(-np.exp(-${fit.paramNames[1]} * (x - ${fit.paramNames[2]})))`,
+    'Pseudo-Voigt':     `eta_c = np.clip(${fit.paramNames[4]}, 0, 1)\n    L = ${fit.paramNames[2]}**2 / ((x-${fit.paramNames[1]})**2 + ${fit.paramNames[2]}**2)\n    G = np.exp(-0.5*((x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[3]},1e-10))**2)\n    return ${fit.paramNames[0]} * (eta_c*L + (1-eta_c)*G) + ${fit.paramNames[5]}`,
+    'Fano':             `eps = (x - ${fit.paramNames[1]}) / np.maximum(${fit.paramNames[2]}, 1e-10)\n    return ${fit.paramNames[0]} * (${fit.paramNames[3]} + eps)**2 / (1 + eps**2) + ${fit.paramNames[4]}`,
+    'Oral-PK':          `return np.where(np.abs(${fit.paramNames[1]}-${fit.paramNames[2]})<1e-9*max(abs(${fit.paramNames[1]})+abs(${fit.paramNames[2]}),1), ${fit.paramNames[0]}*${fit.paramNames[1]}*x*np.exp(-${fit.paramNames[1]}*x), ${fit.paramNames[0]}*${fit.paramNames[1]}/(${fit.paramNames[1]}-${fit.paramNames[2]})*(np.exp(-${fit.paramNames[2]}*x)-np.exp(-${fit.paramNames[1]}*x)))`,
+    'KWW':              `return ${fit.paramNames[0]} * np.exp(-(np.maximum(x,0)/np.maximum(${fit.paramNames[1]},1e-12))**np.maximum(${fit.paramNames[2]},1e-6)) + ${fit.paramNames[3]}`,
+    'Langevin':         `u = ${fit.paramNames[1]} * x\n    return np.where(np.abs(u)<1e-6, ${fit.paramNames[0]}*u/3, ${fit.paramNames[0]}*(1/np.tanh(u) - 1/u))`,
+    'Stern-Volmer':     `return ${fit.paramNames[0]} / (np.maximum(1+${fit.paramNames[1]}*x,1e-10) * np.maximum(1+${fit.paramNames[2]}*x,1e-10))`,
+    'Van-t-Hoff':       `return np.exp(${fit.paramNames[1]} - ${fit.paramNames[0]} / np.maximum(x, 1e-6))`,
+    'Ramberg-Osgood':   `return x/np.maximum(${fit.paramNames[0]},1e-12) + np.sign(x)*(np.abs(x)/np.maximum(${fit.paramNames[1]},1e-12))**(1.0/np.maximum(${fit.paramNames[2]},1e-6))`,
   };
   fnBody = modelDefs[fit.model] || `# Custom model: ${fit.model}\n    raise NotImplementedError("Define your model here")`;
 
@@ -4014,6 +4363,16 @@ function exportR() {
     'Kir':              `${fit.paramNames[0]} * (x-${fit.paramNames[1]}) / (1+exp((x-${fit.paramNames[2]})/pmax(abs(${fit.paramNames[3]}),1e-10)))`,
     'GHK':              `ifelse(abs(x)<1e-6, ${fit.paramNames[0]}*${fit.paramNames[2]}*(1-${fit.paramNames[1]}), ${fit.paramNames[0]}*x*(1-${fit.paramNames[1]}*exp(-x/pmax(${fit.paramNames[2]},1e-10)))/pmax(1-exp(-x/pmax(${fit.paramNames[2]},1e-10)),1e-10))`,
     'Tau-Gaussian':     `${fit.paramNames[0]} * exp(-0.5*((x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))^2) + ${fit.paramNames[3]}`,
+    '4PL':              `${fit.paramNames[1]} + (${fit.paramNames[0]} - ${fit.paramNames[1]}) / (1 + (pmax(x, 0) / pmax(abs(${fit.paramNames[2]}), 1e-12))^${fit.paramNames[3]})`,
+    'Gompertz':         `${fit.paramNames[0]} * exp(-exp(-${fit.paramNames[1]} * (x - ${fit.paramNames[2]})))`,
+    'Pseudo-Voigt':     `${fit.paramNames[0]} * (pmin(pmax(${fit.paramNames[4]},0),1)*${fit.paramNames[2]}^2/((x-${fit.paramNames[1]})^2+${fit.paramNames[2]}^2) + (1-pmin(pmax(${fit.paramNames[4]},0),1))*exp(-0.5*((x-${fit.paramNames[1]})/pmax(${fit.paramNames[3]},1e-10))^2)) + ${fit.paramNames[5]}`,
+    'Fano':             `${fit.paramNames[0]} * (${fit.paramNames[3]} + (x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))^2 / (1 + ((x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))^2) + ${fit.paramNames[4]}`,
+    'Oral-PK':          `ifelse(abs(${fit.paramNames[1]}-${fit.paramNames[2]})<1e-9*(abs(${fit.paramNames[1]})+abs(${fit.paramNames[2]})+1), ${fit.paramNames[0]}*${fit.paramNames[1]}*x*exp(-${fit.paramNames[1]}*x), ${fit.paramNames[0]}*${fit.paramNames[1]}/(${fit.paramNames[1]}-${fit.paramNames[2]})*(exp(-${fit.paramNames[2]}*x)-exp(-${fit.paramNames[1]}*x)))`,
+    'KWW':              `${fit.paramNames[0]} * exp(-(pmax(x,0)/pmax(${fit.paramNames[1]},1e-12))^pmax(${fit.paramNames[2]},1e-6)) + ${fit.paramNames[3]}`,
+    'Langevin':         `ifelse(abs(${fit.paramNames[1]}*x)<1e-6, ${fit.paramNames[0]}*${fit.paramNames[1]}*x/3, ${fit.paramNames[0]}*(1/tanh(${fit.paramNames[1]}*x) - 1/(${fit.paramNames[1]}*x)))`,
+    'Stern-Volmer':     `${fit.paramNames[0]} / (pmax(1+${fit.paramNames[1]}*x,1e-10) * pmax(1+${fit.paramNames[2]}*x,1e-10))`,
+    'Van-t-Hoff':       `exp(${fit.paramNames[1]} - ${fit.paramNames[0]} / pmax(x, 1e-6))`,
+    'Ramberg-Osgood':   `x/pmax(${fit.paramNames[0]},1e-12) + sign(x)*(abs(x)/pmax(${fit.paramNames[1]},1e-12))^(1/pmax(${fit.paramNames[2]},1e-6))`,
   };
   const formula = modelDefs[fit.model] || `# Define formula for ${fit.model}`;
 
@@ -4087,6 +4446,16 @@ function exportLatex() {
     'Kir':              `y = ${fmtL(p[0])} \\frac{x-${fmtL(p[1])}}{1+e^{(x-${fmtL(p[2])})/${fmtL(p[3])}}}`,
     'GHK':              `y = ${fmtL(p[0])} \\frac{x(1-${fmtL(p[1])} e^{-x/${fmtL(p[2])}})}{1-e^{-x/${fmtL(p[2])}}}`,
     'Tau-Gaussian':     `y = ${fmtL(p[0])} e^{-\\frac{(x-${fmtL(p[1])})^2}{2 \\cdot ${fmtL(p[2])}^2}} + ${fmtL(p[3])}`,
+    '4PL':              `y = ${fmtL(p[1])} + \\frac{${fmtL(p[0])} - ${fmtL(p[1])}}{1 + \\left(\\frac{x}{${fmtL(p[2])}}\\right)^{${fmtL(p[3])}}}`,
+    'Gompertz':         `y = ${fmtL(p[0])} e^{-e^{-${fmtL(p[1])}(x - ${fmtL(p[2])})}}`,
+    'Pseudo-Voigt':     `y = ${fmtL(p[0])}\\left[${fmtL(p[4])}\\frac{${fmtL(p[2])}^2}{(x-${fmtL(p[1])})^2+${fmtL(p[2])}^2} + (1-${fmtL(p[4])})e^{-\\frac{(x-${fmtL(p[1])})^2}{2\\cdot${fmtL(p[3])}^2}}\\right] + ${fmtL(p[5])}`,
+    'Fano':             `y = ${fmtL(p[0])}\\frac{(${fmtL(p[3])}+\\varepsilon)^2}{1+\\varepsilon^2} + ${fmtL(p[4])},\\;\\varepsilon=\\frac{x-${fmtL(p[1])}}{${fmtL(p[2])}}`,
+    'Oral-PK':          `C = \\frac{${fmtL(p[0])} k_a}{k_a - k_e}\\left(e^{-k_e t}-e^{-k_a t}\\right),\\;k_a=${fmtL(p[1])},\\;k_e=${fmtL(p[2])}`,
+    'KWW':              `y = ${fmtL(p[0])} e^{-(x/${fmtL(p[1])})^{${fmtL(p[2])}}} + ${fmtL(p[3])}`,
+    'Langevin':         `y = ${fmtL(p[0])}\\left(\\coth(${fmtL(p[1])} x) - \\frac{1}{${fmtL(p[1])} x}\\right)`,
+    'Stern-Volmer':     `\\frac{F_0}{F} = (1+K_D[Q])(1+K_S[Q]),\\;F_0=${fmtL(p[0])},\\;K_D=${fmtL(p[1])},\\;K_S=${fmtL(p[2])}`,
+    'Van-t-Hoff':       `\\ln K = \\frac{\\Delta S}{R} - \\frac{\\Delta H}{RT},\\;\\Delta H/R=${fmtL(p[0])}\\text{ K},\\;\\Delta S/R=${fmtL(p[1])}`,
+    'Ramberg-Osgood':   `\\varepsilon = \\frac{\\sigma}{${fmtL(p[0])}} + \\left(\\frac{\\sigma}{${fmtL(p[1])}}\\right)^{1/${fmtL(p[2])}}`,
   };
 
   let latex = latexDefs[fit.model];
@@ -4143,6 +4512,16 @@ function exportMATLAB() {
     'Kir':              `p(1) .* (x-p(2)) ./ (1+exp((x-p(3))./max(abs(p(4)),1e-10)))`,
     'GHK':              `(abs(x)<1e-6).*(p(1).*p(3).*(1-p(2))) + (abs(x)>=1e-6).*(p(1).*x.*(1-p(2).*exp(-x./max(p(3),1e-10)))./max(1-exp(-x./max(p(3),1e-10)),1e-10))`,
     'Tau-Gaussian':     `p(1) .* exp(-0.5.*((x-p(2))./max(p(3),1e-10)).^2) + p(4)`,
+    '4PL':              `p(2) + (p(1)-p(2)) ./ (1 + (max(x,0)./max(abs(p(3)),1e-12)).^p(4))`,
+    'Gompertz':         `p(1) .* exp(-exp(-p(2).*(x-p(3))))`,
+    'Pseudo-Voigt':     `p(1).*(min(max(p(5),0),1).*p(3).^2./((x-p(2)).^2+p(3).^2)+(1-min(max(p(5),0),1)).*exp(-0.5.*((x-p(2))./max(p(4),1e-10)).^2))+p(6)`,
+    'Fano':             `p(1).*(p(4)+(x-p(2))./max(p(3),1e-10)).^2./(1+((x-p(2))./max(p(3),1e-10)).^2)+p(5)`,
+    'Oral-PK':          `(abs(p(2)-p(3))<1e-9*(abs(p(2))+abs(p(3))+1)).*(p(1).*p(2).*x.*exp(-p(2).*x))+(abs(p(2)-p(3))>=1e-9*(abs(p(2))+abs(p(3))+1)).*(p(1).*p(2)./(p(2)-p(3)).*(exp(-p(3).*x)-exp(-p(2).*x)))`,
+    'KWW':              `p(1).*exp(-(max(x,0)./max(p(2),1e-12)).^max(p(3),1e-6))+p(4)`,
+    'Langevin':         `(abs(p(2).*x)<1e-6).*(p(1).*p(2).*x./3)+(abs(p(2).*x)>=1e-6).*(p(1).*(1./tanh(p(2).*x)-1./(p(2).*x)))`,
+    'Stern-Volmer':     `p(1)./(max(1+p(2).*x,1e-10).*max(1+p(3).*x,1e-10))`,
+    'Van-t-Hoff':       `exp(p(2)-p(1)./max(x,1e-6))`,
+    'Ramberg-Osgood':   `x./max(p(1),1e-12)+sign(x).*(abs(x)./max(p(2),1e-12)).^(1./max(p(3),1e-6))`,
   };
   const fnExpr = modelDefs[fit.model] || `% Define model for ${fit.model} here`;
 
