@@ -6235,6 +6235,7 @@ function initEvents() {
       const sigma  = parseFloat(document.getElementById('pp-sm-sigma').value) || 1.5;
       const poly   = parseInt(document.getElementById('pp-sm-poly').value)  || 3;
       applySmoothing(method, win, sigma, poly);
+      if (_specVisible) renderFFTSpectrum();
     });
 
     const fftType = document.getElementById('pp-fft-type');
