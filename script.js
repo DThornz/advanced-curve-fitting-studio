@@ -2246,12 +2246,16 @@ function smoothDataset(windowSize) {
   if (state.editHistory.undo.length > 100) state.editHistory.undo.shift();
   state.editHistory.redo = [];
   syncUndoRedoButtons();
-  const smoothed = ds.y.map((_, i) => {
+  const excl = ds.excludedIndices || new Set();
+  const smoothed = ds.y.map((v, i) => {
+    if (excl.has(i)) return v; // leave masked points unchanged
     const lo = Math.max(0, i - half);
     const hi = Math.min(n - 1, i + half);
     let sum = 0, cnt = 0;
-    for (let j = lo; j <= hi; j++) { sum += ds.y[j]; cnt++; }
-    return sum / cnt;
+    for (let j = lo; j <= hi; j++) {
+      if (!excl.has(j)) { sum += ds.y[j]; cnt++; }
+    }
+    return cnt > 0 ? sum / cnt : v;
   });
   ds.y = smoothed;
   updatePlots();
