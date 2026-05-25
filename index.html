@@ -202,12 +202,25 @@
             <div class="app-dropdown-item" id="exp-matlab">🔢  MATLAB Code</div>
           </div>
         </div>
-        <button class="btn" id="btn-save" title="Save session to browser local storage">Save Session</button>
-        <button class="btn" id="btn-load" title="Load last saved session">Load Session</button>
-        <button class="btn btn-toggle" id="btn-auto-restore" title="When ON, last saved session is automatically restored on page reload. Turn OFF to always start fresh.">Auto-restore</button>
-        <div class="app-toolbar-sep"></div>
-        <button class="btn" id="btn-shortcuts" title="Keyboard shortcuts reference (?)">?</button>
-        <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
+        <div class="app-dropdown-wrap">
+          <button class="btn" id="btn-session">Session ▾</button>
+          <div class="app-dropdown" id="session-menu">
+            <div class="app-dropdown-item" id="sess-save">💾&nbsp; Save Session</div>
+            <div class="app-dropdown-item" id="sess-load">📂&nbsp; Load Session</div>
+            <div class="app-dropdown-sep"></div>
+            <div class="app-dropdown-item" id="sess-auto-restore">○&nbsp; Auto-restore</div>
+            <div class="app-dropdown-sep"></div>
+            <div class="app-dropdown-item" id="sess-shortcuts">⌨&nbsp; Shortcuts</div>
+          </div>
+        </div>
+        <!-- Hidden: keep IDs in DOM so existing JS event bindings remain valid -->
+        <button id="btn-save" style="display:none"></button>
+        <button id="btn-load" style="display:none"></button>
+        <button class="btn-toggle" id="btn-auto-restore" style="display:none"></button>
+        <button id="btn-shortcuts" style="display:none"></button>
+        <span class="topbar-right-pin">
+          <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
+        </span>
       </div>
     </div>
 

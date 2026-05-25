@@ -6037,6 +6037,7 @@ function initEvents() {
   }
   setupDropdown('btn-examples', 'examples-menu', 540);
   setupDropdown('btn-export',   'export-menu',   220);
+  setupDropdown('btn-session',  'session-menu',  200);
 
   /* ── Example datasets ─────────────────────────────────── */
   document.getElementById('examples-menu').querySelectorAll('.app-dropdown-item').forEach(item => {
@@ -6537,6 +6538,35 @@ function initEvents() {
   document.getElementById('btn-save').addEventListener('click', saveSession);
   document.getElementById('btn-load').addEventListener('click', loadSession);
 
+  function syncSessionAutoRestore() {
+    const isOn = localStorage.getItem('cfs_autorestore') !== '0';
+    const item = document.getElementById('sess-auto-restore');
+    if (item) item.textContent = (isOn ? '● ' : '○ ') + ' Auto-restore';
+  }
+  syncSessionAutoRestore();
+
+  document.getElementById('sess-save').addEventListener('click', () => {
+    saveSession();
+    const m = document.getElementById('session-menu');
+    m.classList.remove('open'); m.style.cssText = '';
+  });
+  document.getElementById('sess-load').addEventListener('click', () => {
+    loadSession();
+    const m = document.getElementById('session-menu');
+    m.classList.remove('open'); m.style.cssText = '';
+  });
+  document.getElementById('sess-shortcuts').addEventListener('click', () => {
+    document.getElementById('shortcuts-modal').style.display = 'flex';
+    const m = document.getElementById('session-menu');
+    m.classList.remove('open'); m.style.cssText = '';
+  });
+  document.getElementById('sess-auto-restore').addEventListener('click', () => {
+    document.getElementById('btn-auto-restore').click();
+    syncSessionAutoRestore();
+    const m = document.getElementById('session-menu');
+    m.classList.remove('open'); m.style.cssText = '';
+  });
+
   /* ── Full-screen overlay open / close ─────────────────── */
   const appOverlay = document.getElementById('app-overlay');
   let appEverOpened = false;
@@ -6622,6 +6652,7 @@ function initEvents() {
     localStorage.setItem('cfs_autorestore', next ? '1' : '0');
     document.getElementById('btn-auto-restore').classList.toggle('active', next);
     setConsole(next ? 'Auto-restore ON — saved session will be restored on next reload.' : 'Auto-restore OFF — next reload will start fresh.', '');
+    syncSessionAutoRestore();
   });
 
   /* ── Save modal ───────────────────────────────────────── */
