@@ -772,6 +772,10 @@ body.dark-mode .panel-header{background:#0f1f38!important;border-color:#1c3050!i
 body.dark-mode .panel-section{scrollbar-color:#1c3050 transparent}
 body.dark-mode .ctrl-section{border-color:#1c3050!important}
 body.dark-mode .ctrl-select,body.dark-mode .ctrl-input{background:#0a1628!important;border-color:#1c3050!important;color:#e2e8f0!important}
+body.dark-mode .ctrl-select optgroup{color:#3d5470!important}
+body.dark-mode .ctrl-select option{color:#e2e8f0!important}
+body.dark-mode .examples-col-hdr{color:#3d5470!important}
+body.dark-mode .app-dropdown-sub{color:#3d5470!important}
 body.dark-mode .param-input{background:#0a1628!important;border-color:#1c3050!important;color:#e2e8f0!important}
 body.dark-mode .plot-div-residual{border-color:#1c3050!important}
 body.dark-mode #residual-tab-bar{background:#060e1c!important;border-color:#1c3050!important}
