@@ -3098,6 +3098,7 @@ function renderCorrMatrix(fit) {
 }
 
 let _consoleMsg = { text: '', type: '', timer: null };
+let _expandedFitIds = new Set();
 
 function setConsole(msg, type) {
   if (_consoleMsg.timer) clearTimeout(_consoleMsg.timer);
@@ -3143,9 +3144,11 @@ function renderStatsTable() {
     return;
   }
 
+  const NCOLS = 12;
   const rows = visibleFits.map(fit => {
     const r = fit.result;
     const isActive = fit.id === state.activeFitId;
+    const isExpanded = _expandedFitIds.has(fit.id);
     const ds = state.datasets.find(d => d.id === fit.dsId);
     const dsName = ds ? ds.name : '—';
     const lambdaTip  = r?.finalLambda != null ? ` λ=${r.finalLambda.toExponential(2)}` : '';
@@ -3154,9 +3157,11 @@ function renderStatsTable() {
     const statusText = !r ? '—' : r.converged ? `✓ ${r.iter}` : `⚠ ${r.iter}`;
     const statusCls  = !r ? '' : r.converged ? 'stat-status-ok' : 'stat-status-warn';
     const label = (fit.label || fit.model).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const chevron = `<span class="stats-chevron">${isExpanded ? '▾' : '▸'}</span>`;
+    const expandHtml = (isExpanded && r) ? buildStatExpandRow(fit, r, NCOLS) : '';
     return `<tr class="stats-row${isActive ? ' active' : ''}" data-fit-id="${fit.id}">
       <td><span class="stats-color-dot" style="background:${fit.color}"></span></td>
-      <td title="${label}">${label}</td>
+      <td title="${label}">${chevron}${label}</td>
       <td title="${dsName}">${dsName}</td>
       <td>${r ? fmt(r.rSq, 5) : '—'}</td>
       <td>${r ? fmt(r.adjRSq, 5) : '—'}</td>
@@ -3167,7 +3172,7 @@ function renderStatsTable() {
       <td>${r ? fmt(r.bic) : '—'}</td>
       <td>${r ? r.n : '—'}</td>
       <td class="${statusCls}" title="${diagTip.trim()}">${statusText}${diagTip ? ' ⓘ' : ''}</td>
-    </tr>`;
+    </tr>${expandHtml}`;
   }).join('');
 
   el.innerHTML = msgHtml + `<div class="stats-table-wrap"><table class="stats-table">
@@ -3184,11 +3189,66 @@ function renderStatsTable() {
       const fit = state.fits.find(f => f.id === id);
       if (!fit) return;
       state.activeFitId = id;
+      if (_expandedFitIds.has(id)) _expandedFitIds.delete(id);
+      else _expandedFitIds.add(id);
       renderParamResults(fit);
       renderFitList();
       renderStatsTable();
     });
   });
+}
+
+function buildStatExpandRow(fit, r, colSpan) {
+  const dof = r.dof || 1;
+  const tc = tCritical95(dof);
+  const algoNames = { lm: 'Levenberg-Marquardt', gn: 'Gauss-Newton', nm: 'Nelder-Mead', bfgs: 'BFGS' };
+  const weightNames = { sigma: '1/σ²', huber: 'Huber IRLS', y2: '1/y²', y: '1/y', none: 'none' };
+  const statusStr = r.converged ? '✓ Converged' : '⚠ Did not converge';
+  const iterStr = r.iter != null ? ` (${r.iter} iter)` : '';
+  const lambdaStr = r.finalLambda != null ? ` · λ=${r.finalLambda.toExponential(2)}` : '';
+  const metaStr = [
+    statusStr + iterStr,
+    algoNames[fit.algoKey] || fit.algoKey || '—',
+    `N=${r.n}`,
+    `dof=${dof}`,
+    `Weights: ${weightNames[fit.weightMode] || fit.weightMode || 'none'}`,
+    lambdaStr ? lambdaStr.replace(' · ', '') : null,
+  ].filter(Boolean).join(' · ');
+
+  let paramRows = '';
+  if (r.params && fit.paramNames) {
+    paramRows = fit.paramNames.map((name, i) => {
+      const val = r.params[i];
+      const rawErr = r.paramErrors && r.paramErrors[i];
+      const err = rawErr && isFinite(rawErr) && rawErr > 0 ? rawErr : null;
+      const ciLo = err ? val - tc * err : null;
+      const ciHi = err ? val + tc * err : null;
+      const tStat = err ? val / err : null;
+      const tCls = tStat != null ? (Math.abs(tStat) >= 2 ? 'sep-sig' : 'sep-insig') : '';
+      return `<tr>
+        <td class="sep-name">${name}</td>
+        <td>${fmt(val, 6)}</td>
+        <td>${err ? '± ' + fmt(err, 4) : '<span class="sep-na">—</span>'}</td>
+        <td>${ciLo != null ? fmt(ciLo, 5) + ' to ' + fmt(ciHi, 5) : '<span class="sep-na">—</span>'}</td>
+        <td class="${tCls}">${tStat != null ? fmt(tStat, 3) : '<span class="sep-na">—</span>'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  return `<tr class="stats-expand-row">
+    <td colspan="${colSpan}">
+      <div class="stats-expand-body">
+        <div class="stats-expand-meta">${metaStr}</div>
+        <table class="stats-param-detail">
+          <thead><tr>
+            <th>Parameter</th><th>Fitted Value</th><th>Std Error</th>
+            <th>95% CI &nbsp;(t<sub>${dof}</sub>=${fmt(tc, 3)})</th><th>t-stat</th>
+          </tr></thead>
+          <tbody>${paramRows}</tbody>
+        </table>
+      </div>
+    </td>
+  </tr>`;
 }
 
 function syncFitDatasetSelect() {
