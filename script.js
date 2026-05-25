@@ -6545,6 +6545,34 @@ function initEvents() {
   const btnLaunch = document.getElementById('btn-launch-app');
   if (btnLaunch) btnLaunch.addEventListener('click', openApp);
   document.getElementById('btn-close-app').addEventListener('click', closeApp);
+
+  // ── Mobile panel drawers ─────────────────────────────────────
+  (function() {
+    const leftPanel  = document.getElementById('panel-left');
+    const rightPanel = document.getElementById('panel-right');
+    const backdrop   = document.getElementById('mob-panel-backdrop');
+    const btnL = document.getElementById('mob-btn-left');
+    const btnR = document.getElementById('mob-btn-right');
+    function mobClose() {
+      leftPanel.classList.remove('mob-open');
+      rightPanel.classList.remove('mob-open');
+      backdrop.classList.remove('mob-active');
+      btnL.classList.remove('mob-active');
+      btnR.classList.remove('mob-active');
+    }
+    function mobToggle(panel, btn) {
+      const opening = !panel.classList.contains('mob-open');
+      mobClose();
+      if (opening) {
+        panel.classList.add('mob-open');
+        backdrop.classList.add('mob-active');
+        btn.classList.add('mob-active');
+      }
+    }
+    btnL.addEventListener('click', () => mobToggle(leftPanel, btnL));
+    btnR.addEventListener('click', () => mobToggle(rightPanel, btnR));
+    backdrop.addEventListener('click', mobClose);
+  })();
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && appOverlay.classList.contains('open')) {
       const openModal = document.querySelector('.app-modal[style*="flex"]');

@@ -104,8 +104,22 @@ body.dark-mode .katex{color:inherit}
   .page-wrap{padding:0 16px 60px}
   .hero{padding:32px 0 24px}
 }
+@media(max-width:640px){
+  .hero-title{font-size:2em}
+  .hero-sub{font-size:.93em}
+  .section-title{font-size:1.4em}
+  .page-wrap{padding:0 12px 48px}
+  .param-table{font-size:.72em}
+  .site-nav{gap:2px;padding:0 10px}
+  .site-nav-link{padding:5px 8px;font-size:.72em}
+}
 @media(max-width:560px){
   .hero-meta{gap:16px}
+  .hero-pills{gap:5px}
+  .hero-kicker{font-size:.75em}
+  .hero-stat-num{font-size:1.6em}
+  .hero-stat-label{font-size:.62em}
+  .app-launch-btn{padding:10px 20px!important;font-size:.9em!important}
 }
 
 /* ─── Accessibility Panel ─────────────────────────────────── */
@@ -747,11 +761,48 @@ body.dark-mode .panel-resize::after{background:#2dd4bf}
   .app-left{width:160px}
   .app-right{width:260px}
 }
-@media(max-width:680px){
-  .app-left{display:none}
-  .app-right{width:200px}
-  .app-topbar{height:auto;padding:6px 10px}
+
+/* ── Mobile drawer layout (≤ 640px) ─────────────────────── */
+.mob-panel-bar{display:none;align-items:center;gap:5px;padding:4px 8px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
+.mob-panel-btn{flex:1;padding:5px 6px;font-size:.72em;font-family:var(--mono);background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--dim);cursor:pointer;text-align:center;transition:all .12s}
+.mob-panel-btn.mob-active{border-color:var(--teal);color:var(--teal);background:var(--teal-glow)}
+.mob-panel-backdrop{display:none;position:absolute;inset:0;z-index:55;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s}
+.mob-panel-backdrop.mob-active{opacity:1;pointer-events:all}
+@media(max-width:640px){
+  /* Panels become slide-in drawers */
+  .mob-panel-bar{display:flex}
+  .mob-panel-backdrop{display:block}
+  .app-workspace{position:relative;overflow:hidden}
+  .app-left{
+    position:absolute!important;left:0;top:0;bottom:0;
+    width:230px!important;z-index:60;
+    transform:translateX(-100%);transition:transform .22s ease;
+    box-shadow:4px 0 24px rgba(0,0,0,.22);display:flex!important
+  }
+  .app-left.mob-open{transform:translateX(0)}
+  .app-right{
+    position:absolute!important;right:0;top:0;bottom:0;
+    width:280px!important;z-index:60;
+    transform:translateX(100%);transition:transform .22s ease;
+    box-shadow:-4px 0 24px rgba(0,0,0,.22);display:flex!important
+  }
+  .app-right.mob-open{transform:translateX(0)}
+  /* Topbar scrolls horizontally — all buttons remain accessible */
+  .app-topbar{overflow-x:auto;flex-wrap:nowrap;height:auto;min-height:40px;padding:4px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .app-topbar::-webkit-scrollbar{display:none}
+  /* Hide resize handles on mobile */
+  .panel-resize{display:none!important}
+  /* Stats bar: compact scroll */
+  .app-statsbar{font-size:.72em}
+  .stats-expand-summary{display:none}
 }
+/* Use dynamic viewport height on mobile (handles browser chrome) */
+@supports (height:100dvh){
+  .app-fullscreen-overlay{height:100dvh}
+}
+body.dark-mode .mob-panel-btn{background:#0a1628!important;border-color:#1c3050!important;color:#7a90ae!important}
+body.dark-mode .mob-panel-btn.mob-active{border-color:#2dd4bf!important;color:#2dd4bf!important;background:rgba(45,212,191,.08)!important}
+body.dark-mode .mob-panel-bar{background:#060e1c!important;border-color:#1c3050!important}
 
 /* ══════════════════════════════════════════════════════════
    DARK MODE — APP
