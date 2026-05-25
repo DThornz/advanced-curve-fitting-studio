@@ -6008,11 +6008,35 @@ function initResizablePanels() {
 function initEvents() {
   /* ── Dropdown toggles ─────────────────────────────────── */
   function setupDropdown(btnId, menuId) {
-    const btn = document.getElementById(btnId);
+    const btn  = document.getElementById(btnId);
     const menu = document.getElementById(menuId);
     if (!btn || !menu) return;
-    btn.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
-    document.addEventListener('click', e => { if (!menu.contains(e.target) && e.target !== btn) menu.classList.remove('open'); });
+    // On narrow screens, the topbar is overflow-x:auto which would clip position:absolute
+    // dropdowns. Use position:fixed instead, anchored to the button's viewport rect.
+    function positionMobile() {
+      const r    = btn.getBoundingClientRect();
+      const w    = Math.min(window.innerWidth - 16, 360);
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+      menu.style.cssText = `position:fixed;top:${Math.round(r.bottom + 4)}px;left:${Math.round(left)}px;width:${w}px;`;
+    }
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const wasOpen = menu.classList.contains('open');
+      document.querySelectorAll('.app-dropdown.open').forEach(m => { m.classList.remove('open'); m.style.cssText = ''; });
+      if (!wasOpen) {
+        if (window.innerWidth <= 640) positionMobile();
+        menu.classList.add('open');
+      }
+    });
+    document.addEventListener('click', e => {
+      if (!menu.contains(e.target) && e.target !== btn) { menu.classList.remove('open'); menu.style.cssText = ''; }
+    });
+    // Item clicks inside the menu close it; clear mobile styles in the next frame
+    // (after item handlers run and remove 'open') so styles don't persist across
+    // orientation changes.
+    menu.addEventListener('click', () => {
+      requestAnimationFrame(() => { if (!menu.classList.contains('open')) menu.style.cssText = ''; });
+    });
   }
   setupDropdown('btn-examples', 'examples-menu');
   setupDropdown('btn-export', 'export-menu');

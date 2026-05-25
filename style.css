@@ -761,6 +761,11 @@ body.dark-mode .panel-resize::after{background:#2dd4bf}
   .app-left{width:160px}
   .app-right{width:260px}
 }
+/* Landscape phones / narrow tablets: tighten panels so center gets more room */
+@media(max-width:767px){
+  .app-left{width:140px}
+  .app-right{width:220px}
+}
 
 /* ── Mobile drawer layout (≤ 640px) ─────────────────────── */
 .mob-panel-bar{display:none;align-items:center;gap:5px;padding:4px 8px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
@@ -792,14 +797,21 @@ body.dark-mode .panel-resize::after{background:#2dd4bf}
   .app-topbar::-webkit-scrollbar{display:none}
   /* Hide resize handles on mobile */
   .panel-resize{display:none!important}
-  /* Stats bar: compact scroll */
-  .app-statsbar{font-size:.72em}
+  /* Stats bar: compact, capped so it can't crush the workspace */
+  .app-statsbar{font-size:.72em;max-height:28vh;overflow-y:auto}
   .stats-expand-summary{display:none}
+  /* Examples dropdown: single-column, scrollable */
+  #examples-menu{flex-direction:column;max-height:65vh;overflow-y:auto}
+  .examples-col{flex:none}
+  .examples-col+.examples-col{border-left:none;border-top:1px solid var(--border);margin-left:0;padding-left:0;margin-top:4px;padding-top:4px}
+  /* Modals: keep a small margin on narrow screens */
+  .modal-box{max-width:calc(100vw - 24px)!important}
 }
 /* Use dynamic viewport height on mobile (handles browser chrome) */
 @supports (height:100dvh){
   .app-fullscreen-overlay{height:100dvh}
 }
+body.dark-mode .examples-col+.examples-col{border-color:#1c3050!important}
 body.dark-mode .mob-panel-btn{background:#0a1628!important;border-color:#1c3050!important;color:#7a90ae!important}
 body.dark-mode .mob-panel-btn.mob-active{border-color:#2dd4bf!important;color:#2dd4bf!important;background:rgba(45,212,191,.08)!important}
 body.dark-mode .mob-panel-bar{background:#060e1c!important;border-color:#1c3050!important}
