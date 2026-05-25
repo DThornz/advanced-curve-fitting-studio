@@ -400,7 +400,7 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 
 /* ── Right panel ─────────────────────────────────────────── */
 .app-right{
-  width:268px;flex-shrink:0;
+  width:300px;flex-shrink:0;
   overflow-y:auto;display:flex;flex-direction:column;
   scrollbar-gutter:stable
 }
