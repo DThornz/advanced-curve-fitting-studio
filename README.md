@@ -53,7 +53,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **First-run tutorial** | 6-slide modal on first launch with SVG illustrations of the real app UI, forward/back navigation, keyboard support (arrow keys, Escape), and a "Don't show this again" option stored in localStorage |
 | **Multi-tab workspace** | Fully independent tabs — each starts from a clean default state with no settings inherited from other tabs; auto-naming from first dataset; double-click to rename |
 | **Resizable panels** | Left/right panels resize by width; residual and stats bar resize by height — all drag handles |
-| **Export** | Plot as PNG or SVG; fit results as CSV; full fit report as TXT; reproducible code as Python (scipy.optimize), R (nls/minpack.lm), or LaTeX (tabular + equation) |
+| **Export** | Plot as PNG or SVG; fit results as CSV; full fit report as TXT; reproducible code as Python (scipy.optimize), R (nls/minpack.lm), MATLAB (lsqcurvefit), or LaTeX (tabular + equation) |
 | **Session persistence** | Save selected tabs (current / all / pick) to JSON file; load on demand; optional auto-restore on reload |
 | **Full-screen app** | Launched via button on the page — opens as a full-screen overlay for maximum workspace |
 | **100% local** | No server, no cloud, no telemetry — all computation in the browser |

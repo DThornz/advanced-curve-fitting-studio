@@ -185,6 +185,7 @@
             <div class="app-dropdown-item" id="exp-python">🐍  Python Code</div>
             <div class="app-dropdown-item" id="exp-r">📊  R Code</div>
             <div class="app-dropdown-item" id="exp-latex">∫  LaTeX Equation</div>
+            <div class="app-dropdown-item" id="exp-matlab">🔢  MATLAB Code</div>
           </div>
         </div>
         <button class="btn" id="btn-save" title="Save session to browser local storage">Save Session</button>
@@ -1329,6 +1330,7 @@
         <tr><td>TXT Report</td><td>Full human-readable fit report with all statistics and parameter table</td></tr>
         <tr><td>Python</td><td>Self-contained <code>scipy.optimize.curve_fit</code> script with the fitted model, converged parameters as initial values, and plotting code — paste directly into a notebook</td></tr>
         <tr><td>R</td><td><code>nls()</code> script (falls back to <code>minpack.lm::nlsLM()</code> for robustness) with model formula, converged parameters, and <code>ggplot2</code> plotting code</td></tr>
+        <tr><td>MATLAB</td><td><code>lsqcurvefit</code> script (Optimization Toolbox) with anonymous model function, converged parameters as <code>p0</code>, uncertainty from the Jacobian, and a scatter + line plot</td></tr>
         <tr><td>LaTeX</td><td>Tabular environment with model equation, parameter table (value ± std error), and key statistics — paste into a paper or thesis</td></tr>
       </tbody>
     </table>

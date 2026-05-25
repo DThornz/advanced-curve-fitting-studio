@@ -3960,6 +3960,87 @@ function exportLatex() {
     });
 }
 
+function exportMATLAB() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
+  const ds = state.datasets.find(d => d.id === fit.dsId);
+  const r = fit.result;
+  const excl = ds ? (ds.excludedIndices || new Set()) : new Set();
+  const xData = ds ? ds.x.filter((_, i) => !excl.has(i)) : [];
+  const yData = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
+
+  const p0Str = r.params.map(v => v.toPrecision(6)).join(', ');
+  const xArr = xData.map(v => v.toPrecision(8)).join('; ');
+  const yArr = yData.map(v => v.toPrecision(8)).join('; ');
+  const namesComment = fit.paramNames.map((n, i) => `%   p(${i+1}) = ${n}`).join('\n');
+
+  const modelDefs = {
+    'Linear':           `p(1) .* x + p(2)`,
+    'Power':            `p(1) .* abs(x).^p(2)`,
+    'Exponential':      `p(1) .* exp(p(2) .* x)`,
+    'Exp-Decay-Offset': `p(1) .* exp(-p(2) .* x) + p(3)`,
+    'Logistic':         `p(1) ./ (1 + exp(-p(2) .* (x - p(3))))`,
+    'Gaussian':         `p(1) .* exp(-0.5 .* ((x - p(2)) ./ p(3)).^2) + p(4)`,
+    'Lorentzian':       `p(1) .* p(3).^2 ./ ((x - p(2)).^2 + p(3).^2) + p(4)`,
+    'Michaelis-Menten': `p(1) .* x ./ (p(2) + x)`,
+    'Hill':             `p(1) .* x.^p(3) ./ (p(2).^p(3) + x.^p(3))`,
+    'Sine':             `p(1) .* sin(p(2) .* x + p(3)) + p(4)`,
+    'Damped-Sine':      `p(1) .* exp(-p(2) .* x) .* sin(p(3) .* x + p(4)) + p(5)`,
+    'Weibull':          `1 - exp(-(max(x, 1e-12) ./ p(1)).^p(2))`,
+    'Double-Gaussian':  `p(1).*exp(-0.5.*((x-p(2))./p(3)).^2) + p(4).*exp(-0.5.*((x-p(5))./p(6)).^2) + p(7)`,
+    'Biexponential':    `p(1).*exp(-abs(p(2)).*x) + p(3).*exp(-abs(p(4)).*x) + p(5)`,
+    'Rational':         `(p(1) + p(2).*x) ./ (1 + p(3).*x)`,
+    'Power-Offset':     `p(1) .* abs(x).^p(2) + p(3)`,
+  };
+  const fnExpr = modelDefs[fit.model] || `% Define model for ${fit.model} here`;
+
+  const lines = [
+    `% Advanced Curve Fitting Studio — MATLAB export`,
+    `% Model: ${fit.model}`,
+    `% Parameter map:`,
+    namesComment,
+    ``,
+    `% Data`,
+    `x_data = [${xArr}]';`,
+    `y_data = [${yArr}]';`,
+    ``,
+    `% Model (Optimization Toolbox — lsqcurvefit)`,
+    `model = @(p, x) ${fnExpr};`,
+    ``,
+    `% Initial parameters from fit`,
+    `p0 = [${p0Str}];`,
+    ``,
+    `% Fit`,
+    `opts = optimoptions('lsqcurvefit', 'MaxFunctionEvaluations', 10000, 'Display', 'off');`,
+    `[popt, ~, res, ~, ~, ~, J] = lsqcurvefit(model, p0, x_data, y_data, [], [], opts);`,
+    ``,
+    `% Parameter uncertainties`,
+    `MSE  = sum(res.^2) / (numel(x_data) - numel(p0));`,
+    `Cov  = MSE * full(pinv(full(J)' * full(J)));`,
+    `perr = sqrt(diag(Cov));`,
+    ``,
+    `% Results`,
+    `param_names = {${fit.paramNames.map(n => `'${n}'`).join(', ')}};`,
+    `for i = 1:numel(popt)`,
+    `    fprintf('%s = %.6g +/- %.6g\\n', param_names{i}, popt(i), perr(i));`,
+    `end`,
+    ``,
+    `% Plot`,
+    `figure;`,
+    `scatter(x_data, y_data, 36, 'filled'); hold on;`,
+    `x_fit = linspace(min(x_data), max(x_data), 300)';`,
+    `plot(x_fit, model(popt, x_fit), 'r-', 'LineWidth', 2);`,
+    `xlabel('x'); ylabel('y');`,
+    `title('${fit.model} fit');`,
+    `legend('Data', 'Fit');`,
+  ];
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `${exportFilename()}-fit.m`; a.click();
+  setConsole('MATLAB script downloaded.', '');
+}
+
 /* ═══════════════════════════════════════════════════════════
    EXAMPLE GENERATOR MODAL
 ═══════════════════════════════════════════════════════════ */
@@ -5309,6 +5390,7 @@ function initEvents() {
   document.getElementById('exp-python').addEventListener('click', () => { exportPython(); document.getElementById('export-menu').classList.remove('open'); });
   document.getElementById('exp-r').addEventListener('click', () => { exportR(); document.getElementById('export-menu').classList.remove('open'); });
   document.getElementById('exp-latex').addEventListener('click', () => { exportLatex(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-matlab').addEventListener('click', () => { exportMATLAB(); document.getElementById('export-menu').classList.remove('open'); });
 
   /* ── Session ──────────────────────────────────────────── */
   document.getElementById('btn-save').addEventListener('click', saveSession);
