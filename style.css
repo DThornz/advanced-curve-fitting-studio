@@ -891,6 +891,74 @@ body.dark-mode .modal-footer{border-color:#1c3050!important}
 body.dark-mode .modal-box{background:#0a1628!important;border-color:#1c3050!important;color:#e2e8f0!important}
 body.dark-mode .modal-close-btn{color:#3d5470!important}
 body.dark-mode .modal-close-btn:hover{color:#7a90ae!important}
+
+/* ── Equation Editor Modal ──────────────────────────────────── */
+.eq-ed-modal-box{max-width:760px;width:95vw;height:min(640px,90vh)}
+.eq-ed-body{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.eq-ed-top{display:flex;align-items:flex-start;gap:10px;padding:12px 18px 0}
+.eq-ed-flabel{font-family:var(--mono);font-size:.9em;font-weight:700;color:var(--teal);padding-top:9px;white-space:nowrap;flex-shrink:0}
+.eq-ed-textarea{
+  flex:1;font-family:var(--mono);font-size:.92em;line-height:1.55;
+  padding:7px 10px;border:1px solid var(--border);border-radius:6px;
+  background:var(--bg);color:var(--text);resize:none;min-height:50px
+}
+.eq-ed-textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-glow)}
+.eq-ed-status-row{display:flex;align-items:center;gap:10px;padding:4px 18px 8px;min-height:22px;flex-shrink:0}
+#eq-editor-status{font-family:var(--mono);font-size:.7em;flex-shrink:0}
+.eq-ed-hint{font-size:.7em;color:var(--dim);margin-left:auto;text-align:right}
+.eq-ed-hint code{font-size:.95em;background:var(--bg);padding:1px 4px;border-radius:3px;border:1px solid var(--border)}
+.eq-ed-cols{display:flex;flex:1;min-height:0;border-top:1px solid var(--border)}
+/* Palette */
+.eq-ed-palette{
+  width:260px;flex-shrink:0;overflow-y:auto;scrollbar-width:thin;
+  padding:10px 12px 14px;display:flex;flex-direction:column;gap:10px;
+  border-right:1px solid var(--border)
+}
+.eq-pal-group{display:flex;flex-direction:column;gap:5px}
+.eq-pal-hdr{font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--dim)}
+.eq-pal-row{display:flex;flex-wrap:wrap;gap:4px}
+.eq-pal-btn{
+  padding:3px 8px;border-radius:5px;
+  border:1px solid var(--border);background:var(--bg);
+  color:var(--text);font-family:var(--mono);font-size:.76em;
+  cursor:pointer;white-space:nowrap;line-height:1.5;transition:all .1s
+}
+.eq-pal-btn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-glow)}
+.eq-pal-fn{color:var(--muted)}
+/* Examples */
+.eq-ed-examples{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.eq-ex-list{flex:1;overflow-y:auto;scrollbar-width:thin;padding:4px 10px 14px}
+.eq-ex-cat{
+  font-size:.65em;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--dim);margin-top:12px;margin-bottom:4px;
+  padding-bottom:4px;border-bottom:1px solid var(--border)
+}
+.eq-ex-cat:first-child{margin-top:4px}
+.eq-ex-item{
+  display:flex;align-items:baseline;gap:8px;width:100%;
+  padding:5px 7px;border-radius:6px;border:1px solid transparent;
+  background:none;cursor:pointer;text-align:left;
+  transition:background .1s,border-color .1s
+}
+.eq-ex-item:hover{background:var(--teal-glow);border-color:var(--teal)}
+.eq-ex-name{font-size:.76em;color:var(--text);white-space:nowrap;flex-shrink:0;min-width:155px}
+.eq-ex-code{font-family:var(--mono);font-size:.7em;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.eq-ex-item:hover .eq-ex-name,.eq-ex-item:hover .eq-ex-code{color:var(--teal)}
+/* Dark mode overrides */
+body.dark-mode .eq-ed-textarea{background:#060e1c!important;border-color:#1c3050!important;color:#e2e8f0!important}
+body.dark-mode .eq-ed-textarea:focus{border-color:var(--teal)!important}
+body.dark-mode .eq-pal-btn{background:#060e1c!important;border-color:#1c3050!important;color:#7a90ae!important}
+body.dark-mode .eq-pal-btn:hover{border-color:var(--teal)!important;color:var(--teal)!important;background:rgba(45,212,191,.08)!important}
+body.dark-mode .eq-ex-name{color:#c4cdd6!important}
+body.dark-mode .eq-ex-cat{border-color:#1c3050!important}
+/* Mobile: single-column, shorter palette */
+@media(max-width:640px){
+  .eq-ed-modal-box{height:95vh}
+  .eq-ed-cols{flex-direction:column}
+  .eq-ed-palette{width:100%;border-right:none;border-bottom:1px solid var(--border);max-height:200px;flex-shrink:0}
+  .eq-ex-name{min-width:110px}
+}
+
 body.dark-mode .dt-table th{background:#0a1628!important;border-color:#1c3050!important;color:#3d5470!important}
 body.dark-mode .dt-table td{border-color:#1c3050!important;color:#7a90ae!important}
 body.dark-mode .dt-table tr:hover td{background:#0f1f38!important}

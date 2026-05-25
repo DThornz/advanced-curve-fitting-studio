@@ -380,6 +380,7 @@
                  placeholder="a * exp(-b * x) + c"
                  value="a * exp(-b * x) + c"
                  spellcheck="false" autocomplete="off">
+          <button class="btn" id="btn-eq-editor" style="width:100%;margin-top:5px;font-size:.76em" title="Open visual equation builder">⊞ Equation Editor…</button>
           <div style="margin-top:5px;min-height:16px">
             <span id="custom-eq-status" style="font-family:var(--mono);font-size:.68em;letter-spacing:0"></span>
           </div>
@@ -665,6 +666,223 @@
         </table>
       </div>
       <div class="modal-footer"><button class="btn btn-primary" id="shortcuts-modal-ok">Close</button></div>
+    </div>
+  </div>
+
+  <!-- Equation Editor Modal -->
+  <div class="app-modal" id="eq-editor-modal" style="display:none" role="dialog" aria-modal="true" aria-label="Equation Editor">
+    <div class="modal-box eq-ed-modal-box">
+      <div class="modal-header"><span>Equation Editor</span><button class="modal-close-btn" id="eq-editor-close">×</button></div>
+      <div class="eq-ed-body">
+        <!-- Top: textarea + status -->
+        <div class="eq-ed-top">
+          <div class="eq-ed-flabel">f(x) =</div>
+          <textarea class="eq-ed-textarea" id="eq-editor-textarea"
+            placeholder="a * exp(-b * x) + c"
+            spellcheck="false" autocomplete="off" rows="2"></textarea>
+        </div>
+        <div class="eq-ed-status-row">
+          <span id="eq-editor-status"></span>
+          <span class="eq-ed-hint">All symbols other than <code>x</code> and math functions are free parameters</span>
+        </div>
+        <!-- Two-column: palette + examples -->
+        <div class="eq-ed-cols">
+          <!-- LEFT: function/operator palette -->
+          <div class="eq-ed-palette">
+            <div class="eq-pal-group">
+              <div class="eq-pal-hdr">Operators &amp; Grouping</div>
+              <div class="eq-pal-row">
+                <button class="eq-pal-btn" data-ins=" + ">+</button>
+                <button class="eq-pal-btn" data-ins=" - ">−</button>
+                <button class="eq-pal-btn" data-ins=" * ">×</button>
+                <button class="eq-pal-btn" data-ins=" / ">÷</button>
+                <button class="eq-pal-btn" data-ins="^">^</button>
+                <button class="eq-pal-btn" data-ins="(">(</button>
+                <button class="eq-pal-btn" data-ins=")">)</button>
+                <button class="eq-pal-btn" data-ins=", ">,</button>
+              </div>
+            </div>
+            <div class="eq-pal-group">
+              <div class="eq-pal-hdr">Common Functions</div>
+              <div class="eq-pal-row">
+                <button class="eq-pal-btn eq-pal-fn" data-ins="exp()" data-cur="-1" title="eˣ — exponential">exp( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="log()" data-cur="-1" title="Natural logarithm (base e)">ln( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="log10()" data-cur="-1" title="Base-10 logarithm">log₁₀( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="log2()" data-cur="-1" title="Base-2 logarithm">log₂( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="sqrt()" data-cur="-1" title="Square root">√( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="abs()" data-cur="-1" title="Absolute value">|x|</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="sign()" data-cur="-1" title="Sign: −1, 0, or +1">sign( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="pow(, )" data-cur="-3" title="pow(base, exponent)">pow( )</button>
+              </div>
+            </div>
+            <div class="eq-pal-group">
+              <div class="eq-pal-hdr">Trigonometric</div>
+              <div class="eq-pal-row">
+                <button class="eq-pal-btn eq-pal-fn" data-ins="sin()" data-cur="-1">sin( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="cos()" data-cur="-1">cos( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="tan()" data-cur="-1">tan( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="asin()" data-cur="-1" title="Inverse sine">asin( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="acos()" data-cur="-1" title="Inverse cosine">acos( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="atan()" data-cur="-1" title="Inverse tangent">atan( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="atan2(, )" data-cur="-3" title="atan2(y, x) — four-quadrant">atan2( )</button>
+              </div>
+            </div>
+            <div class="eq-pal-group">
+              <div class="eq-pal-hdr">Hyperbolic</div>
+              <div class="eq-pal-row">
+                <button class="eq-pal-btn eq-pal-fn" data-ins="sinh()" data-cur="-1">sinh( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="cosh()" data-cur="-1">cosh( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="tanh()" data-cur="-1">tanh( )</button>
+              </div>
+            </div>
+            <div class="eq-pal-group">
+              <div class="eq-pal-hdr">Rounding &amp; Misc</div>
+              <div class="eq-pal-row">
+                <button class="eq-pal-btn eq-pal-fn" data-ins="floor()" data-cur="-1">floor( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="ceil()" data-cur="-1">ceil( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="round()" data-cur="-1">round( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="mod(, )" data-cur="-3" title="mod(a, b) — remainder">mod( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="max(, )" data-cur="-3">max( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="min(, )" data-cur="-3">min( )</button>
+              </div>
+            </div>
+            <div class="eq-pal-group">
+              <div class="eq-pal-hdr">Constants</div>
+              <div class="eq-pal-row">
+                <button class="eq-pal-btn" data-ins="pi" title="π ≈ 3.14159265">π</button>
+                <button class="eq-pal-btn" data-ins="e" title="e ≈ 2.71828182">e</button>
+              </div>
+            </div>
+          </div>
+          <!-- RIGHT: example equations -->
+          <div class="eq-ed-examples">
+            <div class="eq-pal-hdr" style="padding:10px 14px 6px;border-bottom:1px solid var(--border)">Example Equations <span style="font-weight:400;color:var(--dim)">— click to load</span></div>
+            <div class="eq-ex-list">
+              <div class="eq-ex-cat">Exponential / Decay</div>
+              <button class="eq-ex-item" data-eq="a * exp(-b * x) + c">
+                <span class="eq-ex-name">Single exponential</span>
+                <code class="eq-ex-code">a·exp(−b·x) + c</code>
+              </button>
+              <button class="eq-ex-item" data-eq="a * exp(-b * x) + c * exp(-d * x)">
+                <span class="eq-ex-name">Double exponential</span>
+                <code class="eq-ex-code">a·exp(−b·x) + c·exp(−d·x)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="a * exp(-(x / tau)^beta)">
+                <span class="eq-ex-name">Stretched exponential (KWW)</span>
+                <code class="eq-ex-code">a·exp(−(x/τ)^β)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="a * (1 - exp(-b * x))">
+                <span class="eq-ex-name">Saturating growth</span>
+                <code class="eq-ex-code">a·(1 − exp(−b·x))</code>
+              </button>
+              <button class="eq-ex-item" data-eq="a * (1 - exp(-b * x)) + c * (1 - exp(-d * x))">
+                <span class="eq-ex-name">Biexponential growth</span>
+                <code class="eq-ex-code">a·(1−exp(−b·x)) + c·(1−exp(−d·x))</code>
+              </button>
+
+              <div class="eq-ex-cat">Power / Polynomial</div>
+              <button class="eq-ex-item" data-eq="a * x^b">
+                <span class="eq-ex-name">Power law</span>
+                <code class="eq-ex-code">a·x^b</code>
+              </button>
+              <button class="eq-ex-item" data-eq="a * x^b + c">
+                <span class="eq-ex-name">Power law + offset</span>
+                <code class="eq-ex-code">a·x^b + c</code>
+              </button>
+              <button class="eq-ex-item" data-eq="a * x^2 + b * x + c">
+                <span class="eq-ex-name">Quadratic</span>
+                <code class="eq-ex-code">a·x² + b·x + c</code>
+              </button>
+              <button class="eq-ex-item" data-eq="a * x^3 + b * x^2 + c * x + d">
+                <span class="eq-ex-name">Cubic</span>
+                <code class="eq-ex-code">a·x³ + b·x² + c·x + d</code>
+              </button>
+
+              <div class="eq-ex-cat">Sigmoidal / Dose-Response</div>
+              <button class="eq-ex-item" data-eq="L / (1 + exp(-k * (x - x0)))">
+                <span class="eq-ex-name">Logistic (3-param)</span>
+                <code class="eq-ex-code">L / (1 + exp(−k·(x−x₀)))</code>
+              </button>
+              <button class="eq-ex-item" data-eq="d + (a - d) / (1 + (x / c)^b)">
+                <span class="eq-ex-name">4-Parameter logistic (4PL)</span>
+                <code class="eq-ex-code">d + (a−d) / (1+(x/c)^b)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="Vmax * x^n / (Km^n + x^n)">
+                <span class="eq-ex-name">Hill equation</span>
+                <code class="eq-ex-code">Vmax·x^n / (Km^n + x^n)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A2 + (A1 - A2) / (1 + exp((x - x0) / dx))">
+                <span class="eq-ex-name">Boltzmann sigmoid</span>
+                <code class="eq-ex-code">A2 + (A1−A2) / (1+exp((x−x₀)/dx))</code>
+              </button>
+
+              <div class="eq-ex-cat">Peak Shapes</div>
+              <button class="eq-ex-item" data-eq="A * exp(-((x - mu)^2) / (2 * sigma^2))">
+                <span class="eq-ex-name">Gaussian peak</span>
+                <code class="eq-ex-code">A·exp(−(x−μ)²/(2σ²))</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A / (1 + ((x - x0) / w)^2)">
+                <span class="eq-ex-name">Lorentzian peak</span>
+                <code class="eq-ex-code">A / (1+((x−x₀)/w)²)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A * (eta / (1 + ((x - x0) / w)^2) + (1 - eta) * exp(-((x - x0)^2) / (2 * (w * 0.849)^2)))">
+                <span class="eq-ex-name">Pseudo-Voigt</span>
+                <code class="eq-ex-code">η·Lorentzian + (1−η)·Gaussian</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A * (1 + 2 * q * (x - x0) / w) * exp(-((x - x0)^2) / (2 * w^2))">
+                <span class="eq-ex-name">Skewed Gaussian</span>
+                <code class="eq-ex-code">Gaussian with skew parameter q</code>
+              </button>
+
+              <div class="eq-ex-cat">Oscillatory</div>
+              <button class="eq-ex-item" data-eq="A * sin(2 * pi * f * x + phi) + C">
+                <span class="eq-ex-name">Sinusoidal</span>
+                <code class="eq-ex-code">A·sin(2π·f·x + φ) + C</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A * exp(-b * x) * cos(2 * pi * f * x + phi)">
+                <span class="eq-ex-name">Damped sinusoid</span>
+                <code class="eq-ex-code">A·exp(−b·x)·cos(2π·f·x+φ)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A * cos(2 * pi * f * x + phi) + B * sin(2 * pi * f * x) + C">
+                <span class="eq-ex-name">Sinusoid + harmonic</span>
+                <code class="eq-ex-code">A·cos(…) + B·sin(…) + C</code>
+              </button>
+
+              <div class="eq-ex-cat">Biochemistry / Chemistry</div>
+              <button class="eq-ex-item" data-eq="Vmax * x / (Km + x)">
+                <span class="eq-ex-name">Michaelis-Menten</span>
+                <code class="eq-ex-code">Vmax·x / (Km + x)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="q_max * K * x / (1 + K * x)">
+                <span class="eq-ex-name">Langmuir adsorption</span>
+                <code class="eq-ex-code">q_max·K·x / (1 + K·x)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A * exp(-Ea / (8.314 * x))">
+                <span class="eq-ex-name">Arrhenius (T in Kelvin)</span>
+                <code class="eq-ex-code">A·exp(−Ea / (R·T))</code>
+              </button>
+              <button class="eq-ex-item" data-eq="C0 * exp(-k * x) + Css">
+                <span class="eq-ex-name">1st-order approach to steady state</span>
+                <code class="eq-ex-code">C₀·exp(−k·x) + Css</code>
+              </button>
+
+              <div class="eq-ex-cat">Rational Functions</div>
+              <button class="eq-ex-item" data-eq="(a * x + b) / (c * x + d)">
+                <span class="eq-ex-name">Linear rational (Padé 1,1)</span>
+                <code class="eq-ex-code">(a·x + b) / (c·x + d)</code>
+              </button>
+              <button class="eq-ex-item" data-eq="(a * x^2 + b * x + c) / (x^2 + d * x + f)">
+                <span class="eq-ex-name">Quadratic rational (Padé 2,2)</span>
+                <code class="eq-ex-code">(a·x²+b·x+c) / (x²+d·x+f)</code>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="eq-editor-cancel">Cancel</button>
+        <button class="btn btn-primary" id="eq-editor-apply">Apply Equation</button>
+      </div>
     </div>
   </div>
 

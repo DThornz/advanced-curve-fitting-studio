@@ -6646,6 +6646,98 @@ function initEvents() {
   document.getElementById('shortcuts-modal').addEventListener('click', e => {
     if (e.target === document.getElementById('shortcuts-modal')) document.getElementById('shortcuts-modal').style.display = 'none';
   });
+
+  /* ── Equation Editor Modal ────────────────────────────────── */
+  (function() {
+    const overlay  = document.getElementById('eq-editor-modal');
+    const ta       = document.getElementById('eq-editor-textarea');
+    const statEl   = document.getElementById('eq-editor-status');
+    const mainIn   = document.getElementById('custom-eq-input');
+
+    const MATH_FNS = new Set([
+      'sin','cos','tan','asin','acos','atan','atan2',
+      'sinh','cosh','tanh',
+      'exp','log','log2','log10','sqrt','abs','sign','pow',
+      'ceil','floor','round','max','min','mod',
+      'pi','e',
+    ]);
+
+    function validateExpr(expr) {
+      if (!expr.trim()) { statEl.textContent = ''; return; }
+      try {
+        const syms = new Set();
+        math.parse(expr).traverse(n => { if (n.type === 'SymbolNode') syms.add(n.name); });
+        syms.delete('x');
+        MATH_FNS.forEach(f => syms.delete(f));
+        const params = [...syms].sort();
+        if (!params.length) {
+          statEl.style.color = 'var(--amber)';
+          statEl.textContent = '⚠ No free parameters detected (only x)';
+        } else {
+          statEl.style.color = 'var(--teal)';
+          statEl.textContent = `✓ Parameters: ${params.join(', ')}`;
+        }
+      } catch (err) {
+        statEl.style.color = 'var(--red)';
+        statEl.textContent = `✗ ${err.message}`;
+      }
+    }
+
+    function insertAtCursor(text, cursorBack) {
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
+      const pos = s + text.length + (cursorBack || 0);
+      ta.selectionStart = ta.selectionEnd = pos;
+      ta.focus();
+      ta.dispatchEvent(new Event('input'));
+    }
+
+    function openEditor() {
+      ta.value = mainIn.value;
+      validateExpr(ta.value);
+      overlay.style.display = 'flex';
+      requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); });
+    }
+    function closeEditor() { overlay.style.display = 'none'; }
+
+    document.getElementById('btn-eq-editor').addEventListener('click', openEditor);
+    document.getElementById('eq-editor-close').addEventListener('click', closeEditor);
+    document.getElementById('eq-editor-cancel').addEventListener('click', closeEditor);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeEditor(); });
+
+    document.getElementById('eq-editor-apply').addEventListener('click', () => {
+      const expr = ta.value.trim();
+      mainIn.value = expr;
+      parseCustomEquation(expr);
+      closeEditor();
+    });
+
+    let debounce;
+    ta.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(() => validateExpr(ta.value), 280); });
+
+    // Keyboard: Ctrl+Enter applies, Escape closes
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); closeEditor(); }
+      if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); document.getElementById('eq-editor-apply').click(); }
+    });
+
+    // Palette buttons
+    overlay.querySelectorAll('.eq-pal-btn[data-ins]').forEach(btn => {
+      btn.addEventListener('click', () => insertAtCursor(btn.dataset.ins, btn.dataset.cur ? parseInt(btn.dataset.cur) : 0));
+    });
+
+    // Example items
+    overlay.querySelectorAll('.eq-ex-item[data-eq]').forEach(item => {
+      item.addEventListener('click', () => {
+        ta.value = item.dataset.eq;
+        ta.dispatchEvent(new Event('input'));
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      });
+    });
+  })();
+  /* ────────────────────────────────────────────────────────── */
+
   document.getElementById('btn-auto-restore').addEventListener('click', () => {
     const isOn = localStorage.getItem('cfs_autorestore') !== '0';
     const next = !isOn;
