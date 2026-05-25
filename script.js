@@ -25,7 +25,11 @@ document.addEventListener('click', e => { if (!accPanel.contains(e.target) && e.
 darkToggle.addEventListener('change', () => {
   localStorage.setItem('dark', darkToggle.checked ? '1' : '0');
   applyPrefs();
-  setTimeout(() => { if (state.datasets.length) updatePlots(); }, 80);
+  setTimeout(() => {
+    if (state.datasets.length) updatePlots();
+    const specWrap = document.getElementById('pp-fft-spectrum-wrap');
+    if (specWrap && specWrap.style.display !== 'none') renderFFTSpectrum();
+  }, 80);
 });
 document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { localStorage.setItem('size', b.dataset.size); applyPrefs(); }));
 document.querySelectorAll('[data-font]').forEach(b => b.addEventListener('click', () => { localStorage.setItem('font', b.dataset.font); applyPrefs(); }));
@@ -2791,7 +2795,7 @@ function renderFFTSpectrum() {
   const dark  = document.body.classList.contains('dark-mode');
   const textC = dark ? '#8fa3c0' : '#4b5563';
   const gridC = dark ? '#1c3050' : '#e5e7eb';
-  const bgC   = dark ? '#101c2c' : '#f9fafb';
+  const bgC   = dark ? '#0a1628' : '#f9fafb';
 
   Plotly.react(plotEl, [{
     x: freqPct, y: yData,
