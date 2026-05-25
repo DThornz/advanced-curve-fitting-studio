@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Advanced Curve Fitting Studio — Asad Mirza</title>
-<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 28 built-in models including electrophysiology (Boltzmann G-V, HH, Kir, GHK), Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
+<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 29 built-in models including electrophysiology (Boltzmann G-V, HH, Kir, GHK), Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -64,7 +64,7 @@
     <span class="pill">Export-Ready</span>
   </div>
   <div class="hero-meta">
-    <div><div class="hero-stat-num">28</div><div class="hero-stat-label">Built-in Models</div></div>
+    <div><div class="hero-stat-num">29</div><div class="hero-stat-label">Built-in Models</div></div>
     <div><div class="hero-stat-num">4</div><div class="hero-stat-label">Fit Algorithms</div></div>
     <div><div class="hero-stat-num">8+</div><div class="hero-stat-label">Fit Diagnostics</div></div>
     <div><div class="hero-stat-num">100%</div><div class="hero-stat-label">Client-Side</div></div>
@@ -1220,7 +1220,7 @@
     </ul>
     <p>Multiple datasets can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled using the toggle button that appears on hover. Disabling a dataset hides it and all its associated fits from the plot, residual panels, stats table, and F-test — they are restored instantly when re-enabled.</p>
 
-    <p>The right panel lists 28 built-in models across 7 groups. A guide to choosing:</p>
+    <p>The right panel lists 29 built-in models across 7 groups. A guide to choosing:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>If your data looks like…</th><th>Try</th></tr></thead>
       <tbody>
@@ -1255,7 +1255,7 @@
 
     <p>Each parameter row has a <strong>lock button</strong> (🔒) to the right. Clicking it freezes that parameter at its current Init value for the duration of the fit — the solver treats it as a constant. This is useful when one parameter is known from independent data (e.g. a fixed Hill coefficient, a known reversal potential, or a fixed baseline) and only the remaining parameters need optimisation. Locked parameters are shown in amber; clicking again unlocks them.</p>
 
-    <p>The <strong>Weights</strong> dropdown in Algorithm Options includes a <strong>Huber (IRLS)</strong> option for robust fitting. Standard least squares treats all residuals equally, making it sensitive to outliers. Huber IRLS (Iteratively Reweighted Least Squares) assigns full weight to points whose residuals fall within c = 1.345 × MAD, and down-weights larger residuals proportionally. The solver runs 5 reweighting iterations, each refitting with the updated weights. The result is a fit that minimises the influence of outliers without discarding them — compare the Huber fit against the OLS fit to quickly identify which points are pulling the curve.</p>
+    <p>The <strong>Weights</strong> dropdown in Algorithm Options includes a <strong>Huber (IRLS)</strong> option for robust fitting. Standard least squares treats all residuals equally, making it sensitive to outliers. Huber IRLS (Iteratively Reweighted Least Squares) down-weights points with large residuals. At each of 5 reweighting iterations, the scale is estimated as MAD/0.6745 — the median absolute deviation scaled to be a consistent estimator of σ. This is deliberately chosen over RMSE because MAD is itself robust to outliers, so the threshold adapts correctly even when many points are contaminated. Points whose residuals fall within c = 1.345 standard deviations of this scale receive full weight; larger residuals are down-weighted proportionally. The result is a fit that minimises the influence of outliers without discarding them — compare the Huber fit against the OLS fit to quickly identify which points are pulling the curve.</p>
 
     <p>The stats bar at the bottom shows all active fits side-by-side. <strong>Click any row</strong> to expand it — the row opens an inline detail panel showing every parameter with its fitted value, standard error, 95% confidence interval (t-distribution at the correct degrees of freedom), and t-statistic (green = statistically significant at the 95% level, amber = not significant). A right-hand column repeats the global summary stats at a larger, more readable size. Click the same row again to collapse it. Multiple rows can be expanded simultaneously and the bar scrolls.</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
@@ -1273,7 +1273,7 @@
     </table>
     <p>Nonlinear fits run in a background Web Worker — the UI remains fully responsive while the solver iterates. Live progress (iteration count and current SSE) appears in the status bar. A red ✕ Cancel button is visible next to the Fit button while a fit is running; clicking it terminates the worker instantly. On browsers that block Workers (e.g. opening the file directly from disk), fitting falls back transparently to the main thread. The app validates your data before dispatching any fit: it checks for sufficient points, non-finite values, constant Y, and whether the model produces finite outputs at the initial parameters — plain-language errors are shown in the status bar so you know exactly what to fix.</p>
 
-    <p>The panel below the main plot has four tabs. Residuals shows $y_i - \hat{y}_i$ vs. $x_i$ for all fits whose source dataset is enabled; fits on disabled datasets are excluded entirely. Q-Q Plot plots standardised sample residuals against theoretical normal quantiles (Blom approximation) — points lying on the diagonal reference line indicate Gaussian-distributed residuals; systematic curvature reveals non-normality or outliers. Histogram shows the residual distribution with Sturges-rule binning and a fitted normal density overlay, providing a complementary view of the same information. Convergence plots SSE versus iteration; the default view uses a logarithmic Y axis (SSE) and a linear X axis (iterations). In-chart toggle buttons let you switch each axis independently between Log and Linear — useful for spotting early-iteration jumps on a linear scale or examining very fast convergence on a log X axis. For multi-start fits the pilot-selection phase and the final polish run share a monotonically increasing x-axis so you can see how much improvement the polishing step adds. The panel dims automatically while a fit is in progress. Enable Norm. Res. in the toolbar to switch residuals to σ units across all relevant tabs.</p>
+    <p>The panel below the main plot has four tabs. Residuals shows $y_i - \hat{y}_i$ vs. $x_i$ for all fits whose source dataset is enabled; fits on disabled datasets are excluded entirely. Q-Q Plot plots sample residuals standardised by the fit RMSE against theoretical normal quantiles (Blom approximation) — points lying on the diagonal reference line indicate Gaussian-distributed residuals; systematic curvature reveals non-normality or outliers. Histogram shows the residual distribution with Sturges-rule binning and a fitted normal density overlay, providing a complementary view of the same information. Convergence plots SSE versus iteration; the default view uses a logarithmic Y axis (SSE) and a linear X axis (iterations). In-chart toggle buttons let you switch each axis independently between Log and Linear — useful for spotting early-iteration jumps on a linear scale or examining very fast convergence on a log X axis. For multi-start fits the pilot-selection phase and the final polish run share a monotonically increasing x-axis so you can see how much improvement the polishing step adds. The panel dims automatically while a fit is in progress. Enable Norm. Res. in the toolbar to switch residuals to σ units across all relevant tabs.</p>
 
     <p>When the active data spans more than two decades (100×) on X or Y, a notification banner appears at the top of the main plot suggesting log axes with one-click apply buttons. Dismiss it with ✕ if not needed; it will not reappear until the session is reloaded.</p>
 
