@@ -51,8 +51,12 @@
     <span class="pill">LM · Gauss-Newton · Nelder-Mead · BFGS</span>
     <span class="pill">Custom Equations</span>
     <span class="pill">Electrophysiology Models</span>
-    <span class="pill">CI Bands · Weighted Fitting</span>
+    <span class="pill">CI &amp; PI Bands · Weighted Fitting</span>
     <span class="pill">Outlier Detection &amp; Masking</span>
+    <span class="pill">Huber IRLS Robust Fitting</span>
+    <span class="pill">Parameter Locking</span>
+    <span class="pill">Data Table &amp; Smoothing</span>
+    <span class="pill">Python · R · LaTeX Export</span>
     <span class="pill">Web Worker · Background Fitting</span>
     <span class="pill">Plotly.js</span>
     <span class="pill">Math.js</span>
@@ -60,7 +64,7 @@
     <span class="pill">Export-Ready</span>
   </div>
   <div class="hero-meta">
-    <div><div class="hero-stat-num">24</div><div class="hero-stat-label">Built-in Models</div></div>
+    <div><div class="hero-stat-num">28</div><div class="hero-stat-label">Built-in Models</div></div>
     <div><div class="hero-stat-num">4</div><div class="hero-stat-label">Fit Algorithms</div></div>
     <div><div class="hero-stat-num">8+</div><div class="hero-stat-label">Fit Diagnostics</div></div>
     <div><div class="hero-stat-num">100%</div><div class="hero-stat-label">Client-Side</div></div>
@@ -1235,6 +1239,10 @@
         <tr><td>Inward-rectifier K⁺ channel I-V</td><td>Kir Inward Rectifier</td></tr>
         <tr><td>Ion channel current under constant field (asymmetric concs.)</td><td>GHK Current</td></tr>
         <tr><td>Bell-shaped voltage dependence of a gating time constant</td><td>τ-V Gaussian</td></tr>
+        <tr><td>Two overlapping bell-shaped peaks</td><td>Double-Gaussian Peak</td></tr>
+        <tr><td>Decay with a fast and a slow component</td><td>Biexponential</td></tr>
+        <tr><td>Monotone curve with a horizontal asymptote, asymmetric shape</td><td>Rational (1,1)</td></tr>
+        <tr><td>Power-law curve that does not pass through zero</td><td>Power Law + Offset</td></tr>
         <tr><td>None of the above</td><td>Custom Equation</td></tr>
       </tbody>
     </table>
@@ -1242,6 +1250,10 @@
     <p>For iterative (nonlinear) models, the quality of the initial guess strongly affects convergence. Click Auto Init to run data-driven heuristics: amplitudes are estimated from the data range, rate constants from zero-crossing counts or log-linear regression, peak centres from the data maximum, and so on. If Auto Init produces a poor fit, inspect the parameter table and adjust manually — look at the plot to understand what each parameter physically controls. Each parameter also has a <strong>sweep slider</strong> directly below its row: drag it to preview the model curve in real time with no fitting. The slider updates the Init input live and draws a dashed amber preview line on the main plot, making it easy to build intuition about what each parameter controls and to narrow initial guesses visually before running the solver. Releasing the slider clears the preview. Enabling Multi-start (default: 8 pilots) perturbs the initial guess log-uniformly across an order of magnitude and picks the best result automatically, at the cost of ~4× compute time.</p>
 
     <p>The parameter table shows four columns for each parameter. Init is the starting guess you provide; it is preserved across refits so you can always see where you started. Min and Max are optional box constraints — leave them blank for unconstrained, or enter a value to prevent the solver from crossing that boundary. All four solvers enforce bounds by projecting each candidate back into the feasible region at every iteration, and the initial guess is auto-clamped before dispatch. Typical uses: set Min = 0 for rates or amplitudes that cannot be negative, or Min = 0 / Max = 1 for fractions and probabilities. Fit shows the converged parameter value after the most recent run; hovering over a cell in that column shows the value with its ± standard error. Switching to a different fit in the fit list loads that fit's converged parameters into Init so you can re-run or modify it.</p>
+
+    <p>Each parameter row has a <strong>lock button</strong> (🔒) to the right. Clicking it freezes that parameter at its current Init value for the duration of the fit — the solver treats it as a constant. This is useful when one parameter is known from independent data (e.g. a fixed Hill coefficient, a known reversal potential, or a fixed baseline) and only the remaining parameters need optimisation. Locked parameters are shown in amber; clicking again unlocks them.</p>
+
+    <p>The <strong>Weights</strong> dropdown in Algorithm Options includes a <strong>Huber (IRLS)</strong> option for robust fitting. Standard least squares treats all residuals equally, making it sensitive to outliers. Huber IRLS (Iteratively Reweighted Least Squares) assigns full weight to points whose residuals fall within c = 1.345 × MAD, and down-weights larger residuals proportionally. The solver runs 5 reweighting iterations, each refitting with the updated weights. The result is a fit that minimises the influence of outliers without discarding them — compare the Huber fit against the OLS fit to quickly identify which points are pulling the curve.</p>
 
     <p>The stats bar at the bottom shows all active fits side-by-side:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
@@ -1265,9 +1277,13 @@
 
     <p>Toggle the Residuals panel to inspect $y_i - \hat{y}_i$ vs. $x_i$. A good fit shows randomly scattered residuals around zero with no systematic trend. Curved residuals indicate the wrong model family. Fanning residuals (variance growing with $x$) suggest heteroscedasticity — consider log-transforming $y$ or switching to weighted fitting (1/y², 1/|y|, or 1/σ² if you have supplied uncertainties, selectable under Algorithm Options). Enable Norm. Res. in the toolbar to plot residuals in σ units (RMSE-normalised) instead of raw units — helpful for comparing residuals across fits with different scales.</p>
 
-    <p>Click CI Bands in the toolbar to overlay 95% confidence interval ribbons around each fit curve. The ribbon width at each point reflects parameter uncertainty propagated through the model — narrow ribbons indicate a well-constrained fit; wide ribbons suggest under-determined parameters or sparse data.</p>
+    <p>Click <em>CI Bands</em> in the toolbar to overlay 95% confidence interval ribbons around each fit curve. The ribbon width reflects parameter uncertainty propagated through the Jacobian — narrow ribbons indicate a well-constrained fit; wide ribbons suggest under-determined parameters or sparse data. Click <em>PI Bands</em> to additionally show the wider 95% prediction interval ribbon, which adds per-observation scatter (RMSE²) to the parameter uncertainty. Use PI bands when you want to visualise where a new single measurement is likely to fall, rather than where the true mean curve lies.</p>
 
-    <p>Enable Outliers in the toolbar after fitting. Points where |residual| exceeds 2.5 × RMSE for the active fit are circled in red. The rings update live as you edit or move points. To exclude outliers from the fit entirely, click Mask 2.5σ in the Point Masking section of the right panel and refit — masked points remain visible on the plot but are excluded from the optimisation. Click Unmask All to restore them.</p>
+    <p>Enable Outliers in the toolbar after fitting. Points where |residual| exceeds 2.5 × RMSE for the active fit are circled in red. The rings update live as you edit or move points. To exclude outliers from the fit entirely, click <em>Mask 2.5σ</em> in the Point Masking section of the right panel and refit — masked points remain visible on the plot but are excluded from the optimisation. Click <em>Unmask All</em> to restore them.</p>
+
+    <p>Click <em>Data Table</em> in the Point Masking section to open a scrollable table of every x/y pair in the active dataset, with the residual from the active fit shown for each point. A checkbox on each row lets you exclude that individual point from fitting while it remains visible on the plot as a hollow marker. Use <em>Exclude 2.5σ</em> to bulk-exclude all statistical outliers from the table, or <em>Include All</em> to restore the full dataset. This is the recommended way to handle a bad measurement point that should not be deleted entirely.</p>
+
+    <p>Click <em>Smooth…</em> in the Point Masking section to apply a centered moving-average smooth to the active dataset. Choose the window size (number of points) and click Apply — the smoothed values replace the raw y-values in place, with undo available via <kbd>Ctrl+Z</kbd>. Smoothing is useful for very noisy data where an analytical fit struggles to distinguish signal from noise, or for visually cleaning up data before exporting the plot.</p>
 
     <p>Click Try All in the toolbar to automatically fit every built-in model to the active dataset. A comparison table opens, ranked by R², showing R², RMSE, AIC, and BIC for each model. Click Apply on any row to load that model and its initial parameter estimates into the right panel for further tuning. Use AIC or BIC — rather than R² alone — to identify the best model without overfitting.</p>
 
@@ -1311,6 +1327,9 @@
         <tr><td>SVG</td><td>Vector plot — scales perfectly for publication; editable in Inkscape / Illustrator</td></tr>
         <tr><td>CSV</td><td>All fit results: model, parameters ± std errors, R², RMSE, AIC, BIC, SSE, N</td></tr>
         <tr><td>TXT Report</td><td>Full human-readable fit report with all statistics and parameter table</td></tr>
+        <tr><td>Python</td><td>Self-contained <code>scipy.optimize.curve_fit</code> script with the fitted model, converged parameters as initial values, and plotting code — paste directly into a notebook</td></tr>
+        <tr><td>R</td><td><code>nls()</code> script (falls back to <code>minpack.lm::nlsLM()</code> for robustness) with model formula, converged parameters, and <code>ggplot2</code> plotting code</td></tr>
+        <tr><td>LaTeX</td><td>Tabular environment with model equation, parameter table (value ± std error), and key statistics — paste into a paper or thesis</td></tr>
       </tbody>
     </table>
   </div>
@@ -1324,9 +1343,11 @@
         <tr><td><kbd>Ctrl + Z / Y</kbd></td><td>Undo / redo point edits (when selection exists)</td></tr>
         <tr><td><kbd>← → ↑ ↓</kbd></td><td>Nudge selected points by the step value</td></tr>
         <tr><td><kbd>Shift + Scroll</kbd></td><td>Adjust multi-select radius</td></tr>
-        <tr><td><kbd>Escape</kbd></td><td>Deselect points / close full-screen app</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Open keyboard shortcuts reference</td></tr>
+        <tr><td><kbd>Escape</kbd></td><td>Close open modal / deselect points / close full-screen app</td></tr>
       </tbody>
     </table>
+    <p style="margin-top:8px;font-size:.8em;color:var(--muted)">Press <kbd>?</kbd> inside the app at any time to open the interactive shortcuts reference.</p>
   </div>
 </div>
 
@@ -1363,6 +1384,11 @@
       <tr><td><strong>Kir Inward Rectifier</strong></td><td>$I = g\cdot\dfrac{V-E_K}{1+e^{(V-V_h)/k}}$</td><td>g (conductance), EK (reversal mV), Vh (rectification mV), k (slope mV)</td><td>Inward-rectifier K⁺ channel (Kir2.x). The Boltzmann denominator captures the strong inward rectification; Vh sets the voltage at which rectification is half-maximal.</td></tr>
       <tr><td><strong>GHK Current</strong></td><td>$I = A\cdot\dfrac{V(1-r\,e^{-V/V_t})}{1-e^{-V/V_t}}$</td><td>A (permeability × conc. factor), r = [ion]_out/[ion]_in, Vt (thermal voltage ≈ 25.7 mV)</td><td>Goldman-Hodgkin-Katz constant-field current equation. Accounts for asymmetric ion concentrations across the membrane. L'Hôpital limit applied analytically at V = 0 to avoid singularity.</td></tr>
       <tr><td><strong>τ-V Gaussian</strong></td><td>$\tau = \tau_\text{max}\,e^{-\frac{1}{2}\left(\frac{V-V_\text{peak}}{k}\right)^2} + \tau_\text{min}$</td><td>τmax (peak time constant ms), Vpeak (peak voltage mV), k (width mV), τmin (baseline ms)</td><td>Bell-shaped voltage dependence of a gating time constant, as observed for HH m and h gates. τmin sets the asymptotic floor at extreme voltages.</td></tr>
+      <tr><td colspan="4" style="background:var(--bg2);color:var(--muted);font-size:.75em;letter-spacing:.06em;font-weight:600;padding:6px 10px">GENERAL (EXTENDED)</td></tr>
+      <tr><td><strong>Double-Gaussian Peak</strong></td><td>$y = A_1\,e^{-(x-\mu_1)^2/2\sigma_1^2} + A_2\,e^{-(x-\mu_2)^2/2\sigma_2^2} + C$</td><td>A1, μ1, σ1 (first peak), A2, μ2, σ2 (second peak), C (baseline)</td><td>Overlapping spectroscopic peaks, bimodal distributions, doublet resonances. Use AIC to verify the second component is justified vs. a single Gaussian.</td></tr>
+      <tr><td><strong>Biexponential</strong></td><td>$y = A_1\,e^{-k_1 x} + A_2\,e^{-k_2 x} + C$</td><td>A1, k1 (fast component), A2, k2 (slow component), C (offset)</td><td>Two-compartment pharmacokinetics, fluorescence decay with two lifetime components, parallel first-order reactions. The two rate constants k1 and k2 capture fast and slow processes simultaneously.</td></tr>
+      <tr><td><strong>Rational (1,1)</strong></td><td>$y = \dfrac{p_0 + p_1\,x}{1 + q_1\,x}$</td><td>p0 (numerator intercept), p1 (numerator slope), q1 (denominator slope)</td><td>Padé approximant for functions with a horizontal asymptote; enzyme inhibition with substrate excess; adsorption isotherms with saturation. More flexible than a hyperbola for asymmetric data.</td></tr>
+      <tr><td><strong>Power Law + Offset</strong></td><td>$y = a\,x^b + c$</td><td>a (amplitude), b (exponent), c (baseline offset)</td><td>Power law with a non-zero floor; material strength–thickness relationships, electrode impedance scaling. The offset c prevents the curve from passing through zero, unlike the basic power law.</td></tr>
       <tr><td><strong>Custom Equation</strong></td><td>Any Math.js expression in $x$</td><td>Auto-detected symbols</td><td>Any application. Supports <code>exp</code>, <code>log</code>, <code>sin</code>, <code>cos</code>, <code>sqrt</code>, <code>abs</code>, <code>atan</code>, <code>^</code>, and all Math.js builtins.</td></tr>
     </tbody>
   </table>

@@ -11,7 +11,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 
 | Capability | Detail |
 |---|---|
-| **24 built-in models** | Linear, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF · **Electrophysiology:** Boltzmann G-V, Double Boltzmann, HH Activation I-V, HH Na Channel I-V, Kir Inward Rectifier, GHK Current, τ-V Gaussian · Custom |
+| **28 built-in models** | Linear, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Double-Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Biexponential, Rational, Power-law + Offset · **Electrophysiology:** Boltzmann G-V, Double Boltzmann, HH Activation I-V, HH Na Channel I-V, Kir Inward Rectifier, GHK Current, τ-V Gaussian · Custom |
 | **Fitting algorithms** | Levenberg-Marquardt · Gauss-Newton · Nelder-Mead Simplex · BFGS (selectable per fit); analytic Vandermonde normal equations for polynomials |
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
@@ -19,18 +19,22 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^` |
 | **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status, final λ (LM), gradient norm (BFGS) |
 | **CI bands** | 95% confidence interval ribbon around each fit curve (toggle per session) |
-| **Weighted fitting** | Four schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate), 1/σ² (supplied uncertainties from a σ column in the imported data) |
+| **Prediction interval bands** | 95% PI ribbon — wider than CI, adds per-observation scatter (RMSE²) to parameter uncertainty; toggle independently of CI bands |
+| **Weighted fitting** | Five schemes: OLS (none), 1/y² (relative errors), 1/\|y\| (intermediate), 1/σ² (supplied uncertainties), Huber (IRLS robust fitting — downweights outliers via Iteratively Reweighted Least Squares, c = 1.345) |
 | **Error bars** | Datasets with a σ column display Plotly error bars on the scatter plot; σ-weighted fits report reduced chi-square χ²ᵣ in the stats table, copy output, and TXT report |
 | **Parameter sweep** | Range slider under each parameter updates the model preview curve live as you drag — no fitting, instant visual feedback for building intuition about parameter roles |
 | **Prediction lookup** | Type an X value → get Ŷ with 95% CI (Jacobian propagation); or type a Y value → solve for X numerically (grid scan + bisection) with CI via delta method — returns IC50, EC50, Km, half-life, etc. directly |
 | **F-test** | Nested model comparison: select two fits on the same dataset; computes F-statistic and exact p-value (regularized incomplete beta) and reports whether extra parameters are statistically justified at α = 0.05 |
 | **Plot annotations** | Add horizontal/vertical reference lines, text callouts, and auto-peak markers; per-annotation control over font family, size, bold/italic, color, label placement, background, border, line style/width/opacity, and arrowhead type/size/color |
-| **Try All Models** | One-click comparison table — fits all 24 non-Custom models and ranks by R²; apply any result to the active fit |
+| **Try All Models** | One-click comparison table — fits all 27 non-Custom models and ranks by R²; apply any result to the active fit |
 | **Copy Parameters** | One-click copy of fit name, dataset, all parameters (with ± std errors), and full statistics (R², Adj-R², RMSE, SSE, AIC, BIC, N, status) to clipboard |
 | **Parameter table** | Init / Min / Max / Fit columns per parameter; Init preserves the starting guess; Fit column shows converged values; switching fits loads that fit's parameters into Init |
+| **Parameter locking** | Lock icon on any parameter row — freezes that parameter at its Init value during fitting; useful for fixing known constants while optimising the rest |
 | **Extrapolation range** | Set custom X min / X max for fit curves, independent of data extent; Reset button to revert to data range |
 | **Outlier detection** | Highlights points where \|residual\| > 2.5σ for the active fit with red rings; updates live as points are moved |
 | **Point masking** | Mask 2.5σ outliers to exclude them from fitting; Unmask All to restore; masked count shown in panel |
+| **Data table** | Per-point table showing x, y, and residual for every data point; checkbox to exclude individual points from fitting while keeping them visible as hollow markers on the plot; bulk exclude-by-2.5σ and include-all buttons |
+| **Data smoothing** | Apply a centered moving-average smooth to the active dataset (configurable window); undo-safe; useful for noisy data before fitting |
 | **Smart point editing** | Always-on context-aware interaction: click near a point to select/drag, click and drag away from points to pan, scroll to zoom; no mode toggle required |
 | **Residual analysis tabs** | Four sub-panels below the main plot: Residuals vs X · Q-Q Plot (Blom quantile approx vs normal) · Histogram (Sturges bins + normal overlay) · Convergence (SSE vs iteration; Log/Linear X and Y toggles, default Log Y) |
 | **Normalized residuals** | Toggle residual plot between raw units and σ (RMSE-normalized) units |
@@ -49,7 +53,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **First-run tutorial** | 6-slide modal on first launch with SVG illustrations of the real app UI, forward/back navigation, keyboard support (arrow keys, Escape), and a "Don't show this again" option stored in localStorage |
 | **Multi-tab workspace** | Fully independent tabs — each starts from a clean default state with no settings inherited from other tabs; auto-naming from first dataset; double-click to rename |
 | **Resizable panels** | Left/right panels resize by width; residual and stats bar resize by height — all drag handles |
-| **Export** | Plot as PNG or SVG; fit results as CSV; full fit report as TXT |
+| **Export** | Plot as PNG or SVG; fit results as CSV; full fit report as TXT; reproducible code as Python (scipy.optimize), R (nls/minpack.lm), or LaTeX (tabular + equation) |
 | **Session persistence** | Save selected tabs (current / all / pick) to JSON file; load on demand; optional auto-restore on reload |
 | **Full-screen app** | Launched via button on the page — opens as a full-screen overlay for maximum workspace |
 | **100% local** | No server, no cloud, no telemetry — all computation in the browser |
@@ -301,7 +305,8 @@ x,y,sigma
 | `Ctrl + Z / Y` | Undo / redo point edits (when selection exists) |
 | `↑ ↓ ← →` | Nudge selected points by the step value |
 | `Shift + Scroll` | Adjust multi-select radius |
-| `Escape` | Deselect points / close full-screen app |
+| `?` | Open keyboard shortcuts reference modal |
+| `Escape` | Close open modal / deselect points / close full-screen app |
 
 ---
 
