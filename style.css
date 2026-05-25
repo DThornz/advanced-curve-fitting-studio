@@ -821,3 +821,61 @@ body.dark-mode .ann-check-label{color:#3d5470!important}
 .gs-clear-btn:hover{color:var(--error,#e53e3e)!important}
 .gs-grid-row{display:flex;align-items:center;gap:5px;font-size:.75em;flex-wrap:nowrap}
 .gs-grid-row .ann-check-label{min-width:62px;flex-shrink:0}
+
+/* App-modal overlay (smooth, shortcuts, data-table) */
+.app-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dim);
+  font-size: 1.1em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color .12s;
+  flex-shrink: 0;
+}
+.modal-close-btn:hover { color: var(--text); }
+
+/* Data table modal */
+.dt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .78em;
+}
+.dt-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  border-bottom: 2px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+  z-index: 1;
+}
+.dt-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.dt-table tr:hover td { background: var(--bg3); }
+.dt-row-excluded { opacity: 0.45; }
+.dt-row-excluded td { text-decoration: line-through; }
