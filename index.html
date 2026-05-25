@@ -1481,8 +1481,8 @@
   <div class="section-body">
     <p>All built-in models, their equations, parameters, and physical interpretation. Polynomial models use analytic least-squares (Vandermonde normal equations — single pass, no iteration). All other models support four iterative solvers selectable in the Algorithm Options panel. Custom equations are parsed by Math.js — any symbol other than <code>x</code> and standard math functions is treated as a free parameter.</p>
   </div>
-  <table class="param-table" style="margin-top:12px;font-size:.8em">
-    <thead><tr><th>Model</th><th>Equation</th><th>Parameters</th><th>Use Case &amp; Notes</th></tr></thead>
+  <table class="param-table" id="model-ref-table" style="margin-top:12px;font-size:.8em">
+    <thead><tr><th>Model</th><th style="text-align:center">Equation</th><th>Parameters</th><th>Use Case &amp; Notes</th></tr></thead>
     <tbody>
       <tr><td><strong>Linear</strong></td><td>$y = a\,x + b$</td><td>a (slope), b (intercept)</td><td>Calibration curves, proportional relationships.</td></tr>
       <tr><td><strong>Power Law</strong></td><td>$y = a\,|x|^b$</td><td>a (amplitude), b (exponent)</td><td>Allometric scaling ($b \approx 0.75$ in metabolic rate), fractal geometry, material hardness. Initial guess via log-linear regression.</td></tr>
