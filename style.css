@@ -800,6 +800,9 @@ body.dark-mode .modal-close-btn:hover{color:#7a90ae!important}
 body.dark-mode .dt-table th{background:#0a1628!important;border-color:#1c3050!important;color:#3d5470!important}
 body.dark-mode .dt-table td{border-color:#1c3050!important;color:#7a90ae!important}
 body.dark-mode .dt-table tr:hover td{background:#0f1f38!important}
+.pp-spec-view{border:none!important}
+.pp-spec-view.pp-sv-on{background:var(--teal)!important;color:#fff!important}
+body.dark-mode .pp-spec-view.pp-sv-on{background:var(--teal)!important;color:#fff!important}
 body.dark-mode .pp-section{border-color:#1c3050!important}
 body.dark-mode .pp-section-hd{color:#3d5470!important}
 body.dark-mode .pp-desc{color:#3d5470!important}

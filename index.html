@@ -596,13 +596,19 @@
             <button class="btn btn-primary" id="pp-fft-apply">Apply Fourier Filter</button>
           </div>
           <div id="pp-fft-spectrum-wrap" style="display:none;margin-top:10px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-              <span style="font-size:.74em;color:var(--dim)">Power spectrum — dashed line = cutoff position</span>
-              <label style="font-size:.74em;color:var(--dim);display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;margin-left:8px">
-                <input type="checkbox" id="pp-fft-db-scale" checked> dB scale
-              </label>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:6px">
+              <span id="pp-spec-label" style="font-size:.74em;color:var(--dim)">Power spectrum — red ▾ = detected peaks · dashed = cutoff</span>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                <div style="display:flex;border:1px solid var(--border);border-radius:5px;overflow:hidden">
+                  <button id="pp-spec-btn-spectrum" class="btn pp-spec-view pp-sv-on" style="font-size:.67em;padding:2px 8px;border-radius:0">Spectrum</button>
+                  <button id="pp-spec-btn-stft" class="btn pp-spec-view" style="font-size:.67em;padding:2px 8px;border-radius:0">Spectrogram</button>
+                </div>
+                <label style="font-size:.74em;color:var(--dim);display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap">
+                  <input type="checkbox" id="pp-fft-db-scale" checked> dB
+                </label>
+              </div>
             </div>
-            <div id="pp-fft-spectrum-plot" style="width:100%;height:200px"></div>
+            <div id="pp-fft-spectrum-plot" style="width:100%;height:230px"></div>
           </div>
         </div>
 

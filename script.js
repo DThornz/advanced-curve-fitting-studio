@@ -2756,6 +2756,50 @@ function _ifftInPlace(re, im) {
   for (let i = 0; i < n; i++) { re[i] /= n; im[i] = -im[i] / n; }
 }
 
+let _ppSpecView = 'spectrum';
+
+function _detectSpectrumPeaks(freqPct, yData, useDb) {
+  const n = freqPct.length;
+  if (n < 5) return [];
+  // Noise floor = median of non-DC bins
+  const vals = yData.slice(1).slice().sort((a, b) => a - b);
+  const floor = vals[Math.floor(vals.length * 0.5)];
+  const thr   = useDb ? floor + 10 : floor * 5;
+  const peaks = [];
+  for (let i = 2; i < n - 1; i++) {
+    if (yData[i] > yData[i - 1] && yData[i] > yData[i + 1] && yData[i] > thr) {
+      peaks.push({ freq: freqPct[i], val: yData[i] });
+    }
+  }
+  return peaks.sort((a, b) => b.val - a.val).slice(0, 5);
+}
+
+function _computeSTFT(y, useDb) {
+  const n      = y.length;
+  const winLen = Math.max(8, Math.min(Math.floor(n / 4), 64));
+  const hop    = Math.max(1, Math.floor(winLen / 4));
+  const N      = _nextPow2(winLen);
+  const halfN  = N >> 1;
+  const z = [], timeLabels = [];
+  for (let start = 0; start + winLen <= n; start += hop) {
+    const re = new Float64Array(N), im = new Float64Array(N);
+    for (let i = 0; i < winLen; i++) {
+      const w = 0.5 * (1 - Math.cos(2 * Math.PI * i / (winLen - 1)));
+      re[i] = y[start + i] * w;
+    }
+    _fftInPlace(re, im);
+    const frame = [];
+    for (let k = 0; k <= halfN; k++) {
+      const m = Math.sqrt(re[k] * re[k] + im[k] * im[k]) / N;
+      frame.push(useDb ? (m > 1e-14 ? 20 * Math.log10(m) : -140) : m);
+    }
+    z.push(frame);
+    timeLabels.push(start + Math.floor(winLen / 2));
+  }
+  const freqPct = Array.from({ length: halfN + 1 }, (_, k) => k / halfN * 100);
+  return { z, freqPct, timeLabels, winLen };
+}
+
 function _ppCutoffShapes() {
   const t      = document.getElementById('pp-fft-type')?.value || 'lowpass';
   const single = t === 'lowpass' || t === 'highpass';
@@ -2772,52 +2816,78 @@ function renderFFTSpectrum() {
   const plotEl = document.getElementById('pp-fft-spectrum-plot');
   if (!plotEl) return;
   if (!ds || ds.y.length < 8) {
+    Plotly.purge(plotEl);
     plotEl.innerHTML = '<p style="font-size:.78em;color:var(--dim);text-align:center;padding:32px 0">No active dataset or fewer than 8 points.</p>';
     return;
   }
-
-  const n  = ds.y.length;
-  const N  = _nextPow2(n);
-  const re = new Float64Array(N), im = new Float64Array(N);
-  for (let i = 0; i < n; i++) re[i] = ds.y[i];
-  _fftInPlace(re, im);
-
-  const halfN = N >> 1;
-  const freqPct = [], mag = [];
-  for (let k = 0; k <= halfN; k++) {
-    freqPct.push(k / halfN * 100);
-    mag.push(Math.sqrt(re[k] * re[k] + im[k] * im[k]) / N);
-  }
-
-  const useDb = document.getElementById('pp-fft-db-scale')?.checked ?? true;
-  const yData = useDb ? mag.map(m => m > 1e-14 ? 20 * Math.log10(m) : -140) : mag;
 
   const dark  = document.body.classList.contains('dark-mode');
   const textC = dark ? '#8fa3c0' : '#4b5563';
   const gridC = dark ? '#1c3050' : '#e5e7eb';
   const bgC   = dark ? '#0a1628' : '#f9fafb';
-
-  Plotly.react(plotEl, [{
-    x: freqPct, y: yData,
-    type: 'scatter', mode: 'lines',
-    line: { color: '#0b7a6e', width: 1.2 },
-    hovertemplate: '%{x:.1f}% Nyq<br>%{y:.2f}<extra></extra>'
-  }], {
+  const useDb = document.getElementById('pp-fft-db-scale')?.checked ?? true;
+  const cfg   = { responsive: true, displayModeBar: false, scrollZoom: true };
+  const base  = {
     margin: { t: 4, r: 8, b: 36, l: 50 },
     paper_bgcolor: bgC, plot_bgcolor: bgC,
-    xaxis: {
-      title: { text: '% Nyquist', font: { size: 9 } },
-      color: textC, gridcolor: gridC, tickfont: { size: 8 },
-      range: [0, 100], fixedrange: false
-    },
-    yaxis: {
-      title: { text: useDb ? 'dB' : 'Magnitude', font: { size: 9 } },
-      color: textC, gridcolor: gridC, tickfont: { size: 8 }
-    },
-    shapes: _ppCutoffShapes(),
-    showlegend: false,
-    font: { size: 9, color: textC }
-  }, { responsive: true, displayModeBar: false });
+    showlegend: false, font: { size: 9, color: textC },
+    dragmode: 'pan'
+  };
+
+  if (_ppSpecView === 'stft') {
+    const { z, freqPct, timeLabels } = _computeSTFT(ds.y, useDb);
+    if (z.length < 2) {
+      Plotly.purge(plotEl);
+      plotEl.innerHTML = '<p style="font-size:.78em;color:var(--dim);text-align:center;padding:32px 0">Not enough points for spectrogram (need ≥ 32 points).</p>';
+      return;
+    }
+    Plotly.react(plotEl, [{
+      type: 'heatmap', x: freqPct, y: timeLabels, z,
+      colorscale: 'Viridis', showscale: false, zsmooth: 'best',
+      hovertemplate: '%{x:.1f}% Nyq<br>pos %{y}<br>%{z:.2f}<extra></extra>'
+    }], {
+      ...base,
+      xaxis: { title: { text: '% Nyquist', font: { size: 9 } }, color: textC, gridcolor: gridC, tickfont: { size: 8 }, range: [0, 100] },
+      yaxis: { title: { text: 'Sample pos.', font: { size: 9 } }, color: textC, gridcolor: gridC, tickfont: { size: 8 } },
+      shapes: _ppCutoffShapes()
+    }, cfg);
+  } else {
+    const n  = ds.y.length;
+    const N  = _nextPow2(n);
+    const re = new Float64Array(N), im = new Float64Array(N);
+    for (let i = 0; i < n; i++) re[i] = ds.y[i];
+    _fftInPlace(re, im);
+    const halfN = N >> 1;
+    const freqPct = [], mag = [];
+    for (let k = 0; k <= halfN; k++) {
+      freqPct.push(k / halfN * 100);
+      mag.push(Math.sqrt(re[k] * re[k] + im[k] * im[k]) / N);
+    }
+    const yData  = useDb ? mag.map(m => m > 1e-14 ? 20 * Math.log10(m) : -140) : mag;
+    const peaks  = _detectSpectrumPeaks(freqPct, yData, useDb);
+    const traces = [{
+      x: freqPct, y: yData, type: 'scatter', mode: 'lines',
+      line: { color: '#0b7a6e', width: 1.2 },
+      hovertemplate: '%{x:.1f}% Nyq<br>%{y:.2f}<extra></extra>'
+    }];
+    if (peaks.length) {
+      traces.push({
+        x: peaks.map(p => p.freq), y: peaks.map(p => p.val),
+        type: 'scatter', mode: 'markers+text',
+        marker: { color: '#dc2626', size: 7, symbol: 'triangle-down' },
+        text: peaks.map(p => `${p.freq.toFixed(1)}%`),
+        textposition: 'top center', textfont: { size: 8, color: '#dc2626' },
+        hovertemplate: 'Peak: %{x:.1f}% Nyquist<br>%{y:.2f}<extra></extra>',
+        showlegend: false
+      });
+    }
+    Plotly.react(plotEl, traces, {
+      ...base,
+      xaxis: { title: { text: '% Nyquist', font: { size: 9 } }, color: textC, gridcolor: gridC, tickfont: { size: 8 }, range: [0, 100], fixedrange: false },
+      yaxis: { title: { text: useDb ? 'dB' : 'Magnitude', font: { size: 9 } }, color: textC, gridcolor: gridC, tickfont: { size: 8 } },
+      shapes: _ppCutoffShapes()
+    }, cfg);
+  }
 }
 
 function applyFourierFilter(type, cutoffLo, cutoffHi, rolloff) {
@@ -6285,6 +6355,19 @@ function initEvents() {
 
     document.getElementById('pp-fft-db-scale').addEventListener('change', () => {
       if (_specVisible) renderFFTSpectrum();
+    });
+
+    // View toggle: Spectrum ↔ Spectrogram
+    ['spectrum', 'stft'].forEach(view => {
+      document.getElementById(`pp-spec-btn-${view}`).addEventListener('click', () => {
+        _ppSpecView = view;
+        document.getElementById('pp-spec-btn-spectrum').classList.toggle('pp-sv-on', view === 'spectrum');
+        document.getElementById('pp-spec-btn-stft').classList.toggle('pp-sv-on', view === 'stft');
+        document.getElementById('pp-spec-label').textContent = view === 'stft'
+          ? 'Spectrogram (STFT) — x: % Nyquist, y: sample pos., color: amplitude'
+          : 'Power spectrum — red ▾ = detected peaks · dashed = cutoff';
+        if (_specVisible) renderFFTSpectrum();
+      });
     });
 
     // Reactive cutoff marker lines while typing
