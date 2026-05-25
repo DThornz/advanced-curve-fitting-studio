@@ -7197,9 +7197,15 @@ const PANEL_TIPS = {
     const html = PANEL_TIPS[el.dataset.tip] || el.dataset.tip;
     tt.innerHTML = html;
     tt.style.display = 'block';
-    const r = el.getBoundingClientRect();
-    tt.style.left = Math.min(r.left, window.innerWidth - 270) + 'px';
-    tt.style.top = (r.bottom + 6) + 'px';
+    const r   = el.getBoundingClientRect();
+    const ttW = tt.offsetWidth;
+    const ttH = tt.offsetHeight;
+    const left = Math.min(Math.max(4, r.left), window.innerWidth  - ttW - 8);
+    const top  = (window.innerHeight - r.bottom - 6 >= ttH)
+      ? r.bottom + 6
+      : Math.max(4, r.top - ttH - 6);
+    tt.style.left = left + 'px';
+    tt.style.top  = top  + 'px';
   });
   document.addEventListener('mouseout', e => {
     if (e.target.closest('.panel-tip')) tt.style.display = 'none';
