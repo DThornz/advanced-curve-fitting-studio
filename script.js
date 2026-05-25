@@ -37,7 +37,7 @@ document.querySelectorAll('[data-font]').forEach(b => b.addEventListener('click'
 /* ═══════════════════════════════════════════════════════════
    MATH UTILITIES
 ═══════════════════════════════════════════════════════════ */
-function mean(arr) { return arr.reduce((s, v) => s + v, 0) / arr.length; }
+function mean(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
 function sumArr(arr) { return arr.reduce((s, v) => s + v, 0); }
 function linspace(a, b, n) {
   if (n < 2) return [a];
@@ -1793,13 +1793,26 @@ function openColumnPicker(name, rows) {
   const xSel  = document.getElementById('col-picker-x');
   const ySel  = document.getElementById('col-picker-y');
   const sigSel = document.getElementById('col-picker-sig');
-  xSel.innerHTML  = headers.map((h, i) => `<option value="${i}">${h}</option>`).join('');
-  ySel.innerHTML  = headers.map((h, i) => `<option value="${i}"${i === 1 ? ' selected' : ''}>${h}</option>`).join('');
   // Auto-select σ column when header looks like an uncertainty column
   const sigKeywords = /^(sig|sigma|err|error|uncertainty|sd|std|stdev|s\.?e\.?)$/i;
   const autoSigIdx = headers.findIndex(h => sigKeywords.test(h.trim()));
-  sigSel.innerHTML = `<option value="">— None (X, Y only) —</option>` +
-    headers.map((h, i) => `<option value="${i}"${i === autoSigIdx && autoSigIdx >= 0 ? ' selected' : ''}>${h}</option>`).join('');
+  // Use DOM methods to prevent XSS from malicious CSV header names
+  [xSel, ySel, sigSel].forEach(sel => { while (sel.options.length) sel.remove(0); });
+  const noneOpt = document.createElement('option');
+  noneOpt.value = '';
+  noneOpt.textContent = '— None (X, Y only) —';
+  sigSel.appendChild(noneOpt);
+  headers.forEach((h, i) => {
+    [xSel, ySel, sigSel].forEach((sel, si) => {
+      const opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = h;
+      if (si === 0 && i === 0) opt.selected = true;
+      if (si === 1 && i === 1) opt.selected = true;
+      if (si === 2 && i === autoSigIdx && autoSigIdx >= 0) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
   updateColPickerPreview();
   document.getElementById('col-picker-modal').style.display = 'flex';
 }
@@ -3073,6 +3086,10 @@ function renderDatasetList() {
       state.fits = state.fits.filter(f => f.dsId !== id);
       // Remove annotations that referenced any of the deleted fits
       if (deletedFitIds.size) state.annotations = state.annotations.filter(a => !deletedFitIds.has(a.fitId));
+      // Clear stale undo/redo history for the deleted dataset
+      state.editHistory.undo = state.editHistory.undo.filter(h => h.dsId !== id);
+      state.editHistory.redo = state.editHistory.redo.filter(h => h.dsId !== id);
+      syncUndoRedoButtons();
       if (state.selection.dsId === id) state.selection = { dsId: null, indices: new Set() };
       if (state.activeDatasetId === id) {
         state.activeDatasetId = state.datasets.length ? state.datasets[state.datasets.length - 1].id : null;
@@ -4361,6 +4378,7 @@ function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, 
 }
 
 function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory }) {
+  if (!state.datasets.find(d => d.id === dsId)) { setConsole('Dataset was removed during fitting.', 'warn'); return; }
   const m = MODELS[model];
   const fitColor = state.fits.some(f => f.dsId === dsId) ? nextColor() : ds.color;
   const algoNames = { lm: 'LM', gn: 'GN', nm: 'NM', bfgs: 'BFGS' };
@@ -5720,6 +5738,9 @@ function restoreSessionPayload(payload) {
   state.annotations = (payload.annotations || []).map(a => ({ ...createDefaultAnnotation(a.type || 'hline'), ...a }));
   state.graphStyle = Object.assign({}, DEFAULT_GRAPH_STYLE, payload.graphStyle || {});
   state.activeDatasetId = payload.activeDatasetId;
+  if (state.activeDatasetId && !state.datasets.find(d => d.id === state.activeDatasetId)) {
+    state.activeDatasetId = state.datasets.length ? state.datasets[0].id : null;
+  }
   state.activeFitId = payload.activeFitId;
 
   // Restore paramRows before syncModelCustomSection so renderParamTable picks them up
@@ -5861,7 +5882,7 @@ function performSave(tabIds) {
       activeTabId: tabIds.includes(activeTabId) ? activeTabId : selectedTabs[0].id,
     };
     const json = JSON.stringify(payload, null, 2);
-    localStorage.setItem('cfs_session', json);
+    try { localStorage.setItem('cfs_session', json); } catch (_) { /* QuotaExceededError: session too large, skip autosave */ }
     const blob = new Blob([json], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -6473,8 +6494,12 @@ function initEvents() {
   });
 
   /* ── Plot label live update ───────────────────────────── */
+  let _labelDebounce;
   ['plot-xlabel','plot-ylabel','plot-title'].forEach(id => {
-    document.getElementById(id).addEventListener('input', () => { if (state.datasets.length) updatePlots(); });
+    document.getElementById(id).addEventListener('input', () => {
+      clearTimeout(_labelDebounce);
+      _labelDebounce = setTimeout(() => { if (state.datasets.length) updatePlots(); }, 300);
+    });
   });
 
   /* ── Export ───────────────────────────────────────────── */
