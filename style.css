@@ -88,6 +88,7 @@ body.dark-mode .katex{color:inherit}
 .param-table td:first-child{font-family:var(--mono);color:var(--text);font-weight:500}
 .param-table td:nth-child(2){color:var(--teal);font-family:var(--mono)}
 .param-table tr:hover td{background:var(--bg3)}
+.ref-group-hdr{background:var(--bg2);color:var(--muted);font-size:.75em;letter-spacing:.06em;font-weight:600;padding:6px 10px}
 
 /* ─── References ─────────────────────────────────────────── */
 .ref-list{list-style:none;margin:0;padding:0}
@@ -177,6 +178,7 @@ body.dark-mode .param-table td{border-color:#1c3050!important;color:#7a90ae!impo
 body.dark-mode .param-table td:first-child{color:#e2e8f0!important}
 body.dark-mode .param-table td:nth-child(2){color:#2dd4bf!important}
 body.dark-mode .param-table tr:hover td{background:#0f1f38!important}
+body.dark-mode .ref-group-hdr{background:#0f1f38!important;color:#3d5470!important}
 body.dark-mode .ref-item{border-color:#1c3050!important;color:#7a90ae!important}
 body.dark-mode footer{border-color:#1c3050!important;color:#3d5470!important}
 
