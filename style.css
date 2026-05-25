@@ -400,7 +400,7 @@ body.dark-mode .ds-delete:hover{color:#ef4444!important}
 
 /* ── Right panel ─────────────────────────────────────────── */
 .app-right{
-  width:300px;flex-shrink:0;
+  width:340px;flex-shrink:0;
   overflow-y:auto;display:flex;flex-direction:column;
   scrollbar-gutter:stable
 }
@@ -724,7 +724,7 @@ body.dark-mode .panel-resize::after{background:#2dd4bf}
 /* ── Responsive ──────────────────────────────────────────── */
 @media(max-width:900px){
   .app-left{width:160px}
-  .app-right{width:230px}
+  .app-right{width:260px}
 }
 @media(max-width:680px){
   .app-left{display:none}
@@ -933,3 +933,10 @@ body.dark-mode .ann-check-label{color:#3d5470!important}
 .pp-desc{color:var(--dim);font-size:.77em;font-style:italic;margin:2px 0 10px;line-height:1.4}
 .pp-warn{font-size:.77em;margin:4px 0 10px;line-height:1.4;color:#966f1a}
 body.dark-mode .pp-warn{color:#c09840}
+
+/* ── Example modal – extra noise section ────────────────── */
+.ex-noise-section{border-top:1px solid var(--border);margin-top:8px;padding-top:10px}
+.ex-noise-hd{font-weight:600;font-size:.74em;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:0 0 8px}
+.ex-freq-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;align-items:center;margin-bottom:5px}
+.ex-freq-grid .ctrl-input{font-size:.78em;padding:3px 5px}
+.ex-freq-hdr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;font-size:.72em;color:var(--dimmer);margin-bottom:3px;text-align:center}

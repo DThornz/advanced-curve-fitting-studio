@@ -1168,6 +1168,30 @@ function gauss() {
   return u * Math.sqrt(-2 * Math.log(u * u + v * v) / (u * u + v * v));
 }
 function noisyGauss(arr, sigma) { return arr.map(v => v + gauss() * sigma); }
+
+function addExtraNoise(y, type, sigma) {
+  if (sigma <= 0 || type === 'none') return y;
+  if (type === 'gaussian')  return y.map(v => v + gauss() * sigma);
+  if (type === 'uniform')   return y.map(v => v + (Math.random() - 0.5) * 2 * 1.7321 * sigma); // √3·σ half-range → same variance
+  if (type === 'laplacian') {
+    const b = sigma * 0.7071; // b = σ/√2 → variance = 2b² = σ²
+    return y.map(v => { const u = Math.random() - 0.5; return v - b * Math.sign(u) * Math.log(1 - 2 * Math.abs(u)); });
+  }
+  return y;
+}
+
+function addFreqNoise(y, x, components) {
+  if (!components.length) return y;
+  const x0 = x[0], xRange = x[x.length - 1] - x0 || 1;
+  return y.map((v, i) => {
+    let s = v;
+    for (const c of components) {
+      if (c.amp > 0) s += c.amp * Math.sin(2 * Math.PI * c.freq * (x[i] - x0) / xRange + c.phase * 2 * Math.PI);
+    }
+    return s;
+  });
+}
+
 function injectOutliers(arr, count, scale) {
   if (!count || count <= 0) return arr;
   if (!scale || scale <= 0) scale = 4;
@@ -4765,6 +4789,35 @@ function openExampleEditor(key) {
       <label class="ex-param-label">Outlier scale</label>
       <input class="ctrl-input ex-param-input" type="number"
         data-key="outlierScale" value="4" min="0.5" max="20" step="0.5">
+    </div>
+
+    <div class="ex-noise-section">
+      <p class="ex-noise-hd">Additional Background Noise</p>
+      <div class="ex-param-row">
+        <label class="ex-param-label">Noise type</label>
+        <select class="ctrl-select" id="ex-extra-noise-type" style="flex:1">
+          <option value="none">None</option>
+          <option value="gaussian">Gaussian</option>
+          <option value="uniform">Uniform (white)</option>
+          <option value="laplacian">Laplacian (heavy-tail)</option>
+        </select>
+      </div>
+      <div class="ex-param-row">
+        <label class="ex-param-label">Amplitude (σ, y-units)</label>
+        <input class="ctrl-input" type="number" id="ex-extra-noise-amp" value="0" min="0" step="any" style="flex:1">
+      </div>
+    </div>
+
+    <div class="ex-noise-section">
+      <p class="ex-noise-hd">Sinusoidal Interference (up to 3)</p>
+      <p style="font-size:.75em;color:var(--dimmer);margin:0 0 8px;line-height:1.4">Frequency in cycles per x-range. Set Amplitude = 0 to skip a component.</p>
+      <div class="ex-freq-hdr"><span>Amplitude</span><span>Freq (cyc/range)</span><span>Phase (0–1)</span></div>
+      ${[1, 2, 3].map(i => `
+      <div class="ex-freq-grid">
+        <input class="ctrl-input" type="number" id="ex-freq${i}-amp"   placeholder="0"   value="0" min="0"   step="any" title="Amplitude of component ${i}">
+        <input class="ctrl-input" type="number" id="ex-freq${i}-freq"  placeholder="freq" value="${i}" min="0.1" step="0.5" title="Frequency in cycles per x-range">
+        <input class="ctrl-input" type="number" id="ex-freq${i}-phase" placeholder="0"   value="0" min="0" max="1" step="0.05" title="Phase offset 0–1 (fraction of 2π)">
+      </div>`).join('')}
     </div>`;
   document.getElementById('example-modal').style.display = 'flex';
 }
@@ -4788,6 +4841,22 @@ function loadExampleFromModal() {
 
   const data = ex.generate(p);
   if (p.outliers > 0) data.y = injectOutliers(data.y, Math.round(p.outliers), p.outlierScale || 4);
+
+  // Additional background noise
+  const extraType = (document.getElementById('ex-extra-noise-type') || {}).value || 'none';
+  const extraAmp  = parseFloat((document.getElementById('ex-extra-noise-amp') || {}).value) || 0;
+  if (extraType !== 'none' && extraAmp > 0) data.y = addExtraNoise(data.y, extraType, extraAmp);
+
+  // Sinusoidal frequency components
+  const freqComps = [];
+  for (let i = 1; i <= 3; i++) {
+    const amp   = parseFloat((document.getElementById(`ex-freq${i}-amp`)   || {}).value) || 0;
+    const freq  = parseFloat((document.getElementById(`ex-freq${i}-freq`)  || {}).value) || i;
+    const phase = parseFloat((document.getElementById(`ex-freq${i}-phase`) || {}).value) || 0;
+    if (amp > 0) freqComps.push({ amp, freq, phase });
+  }
+  if (freqComps.length) data.y = addFreqNoise(data.y, data.x, freqComps);
+
   closeExampleModal();
   const ds = importDataset(data.name, data.x, data.y);
   if (!ds) return;
@@ -5632,7 +5701,7 @@ function initResizablePanels() {
     if (drag.type === 'left') {
       leftPanel.style.width = Math.max(120, Math.min(400, drag.size + (x - drag.x))) + 'px';
     } else if (drag.type === 'right') {
-      rightPanel.style.width = Math.max(180, Math.min(460, drag.size - (x - drag.x))) + 'px';
+      rightPanel.style.width = Math.max(180, Math.min(520, drag.size - (x - drag.x))) + 'px';
     } else if (drag.type === 'residual') {
       residualEl.style.height = Math.max(60, Math.min(360, drag.size - (y - drag.y))) + 'px';
     } else if (drag.type === 'stats') {
