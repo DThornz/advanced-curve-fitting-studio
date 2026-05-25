@@ -3523,6 +3523,197 @@ function exportReport() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${exportFilename()}-report.txt`; a.click();
 }
 
+function exportPython() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
+  const ds = state.datasets.find(d => d.id === fit.dsId);
+  const r = fit.result;
+  const excl = ds ? (ds.excludedIndices || new Set()) : new Set();
+  const xData = ds ? ds.x.filter((_, i) => !excl.has(i)) : [];
+  const yData = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
+
+  const paramStr = fit.paramNames.join(', ');
+  const p0Str = r.params.map(v => v.toPrecision(6)).join(', ');
+  const xArr = '[' + xData.map(v => v.toPrecision(8)).join(', ') + ']';
+  const yArr = '[' + yData.map(v => v.toPrecision(8)).join(', ') + ']';
+
+  let fnBody = '';
+  const modelDefs = {
+    'Linear':           `return ${fit.paramNames[0]} * x + ${fit.paramNames[1]}`,
+    'Power':            `return ${fit.paramNames[0]} * np.abs(x)**${fit.paramNames[1]}`,
+    'Exponential':      `return ${fit.paramNames[0]} * np.exp(${fit.paramNames[1]} * x)`,
+    'Exp-Decay-Offset': `return ${fit.paramNames[0]} * np.exp(-${fit.paramNames[1]} * x) + ${fit.paramNames[2]}`,
+    'Logistic':         `return ${fit.paramNames[0]} / (1 + np.exp(-${fit.paramNames[1]} * (x - ${fit.paramNames[2]})))`,
+    'Gaussian':         `return ${fit.paramNames[0]} * np.exp(-0.5 * ((x - ${fit.paramNames[1]}) / ${fit.paramNames[2]})**2) + ${fit.paramNames[3]}`,
+    'Lorentzian':       `return ${fit.paramNames[0]} * ${fit.paramNames[2]}**2 / ((x - ${fit.paramNames[1]})**2 + ${fit.paramNames[2]}**2) + ${fit.paramNames[3]}`,
+    'Michaelis-Menten': `return ${fit.paramNames[0]} * x / (${fit.paramNames[1]} + x)`,
+    'Hill':             `return ${fit.paramNames[0]} * x**${fit.paramNames[2]} / (${fit.paramNames[1]}**${fit.paramNames[2]} + x**${fit.paramNames[2]})`,
+    'Sine':             `return ${fit.paramNames[0]} * np.sin(${fit.paramNames[1]} * x + ${fit.paramNames[2]}) + ${fit.paramNames[3]}`,
+    'Damped-Sine':      `return ${fit.paramNames[0]} * np.exp(-${fit.paramNames[1]} * x) * np.sin(${fit.paramNames[2]} * x + ${fit.paramNames[3]}) + ${fit.paramNames[4]}`,
+    'Weibull':          `return 1 - np.exp(-(np.maximum(x, 1e-12) / ${fit.paramNames[0]})**${fit.paramNames[1]})`,
+    'Double-Gaussian':  `return (${fit.paramNames[0]} * np.exp(-0.5 * ((x - ${fit.paramNames[1]}) / ${fit.paramNames[2]})**2) +\n           ${fit.paramNames[3]} * np.exp(-0.5 * ((x - ${fit.paramNames[4]}) / ${fit.paramNames[5]})**2) + ${fit.paramNames[6]})`,
+    'Biexponential':    `return ${fit.paramNames[0]} * np.exp(-np.abs(${fit.paramNames[1]}) * x) + ${fit.paramNames[2]} * np.exp(-np.abs(${fit.paramNames[3]}) * x) + ${fit.paramNames[4]}`,
+    'Rational':         `return (${fit.paramNames[0]} + ${fit.paramNames[1]} * x) / np.maximum(1 + ${fit.paramNames[2]} * x, 1e-10)`,
+    'Power-Offset':     `return ${fit.paramNames[0]} * np.abs(x)**${fit.paramNames[1]} + ${fit.paramNames[2]}`,
+  };
+  fnBody = modelDefs[fit.model] || `# Custom model: ${fit.model}\n    raise NotImplementedError("Define your model here")`;
+
+  const lines = [
+    `import numpy as np`,
+    `from scipy.optimize import curve_fit`,
+    `import matplotlib.pyplot as plt`,
+    ``,
+    `# Data`,
+    `x_data = np.array(${xArr})`,
+    `y_data = np.array(${yArr})`,
+    ``,
+    `# Model: ${fit.model}`,
+    `def model(x, ${paramStr}):`,
+    `    ${fnBody}`,
+    ``,
+    `# Initial parameters from fit`,
+    `p0 = [${p0Str}]`,
+    ``,
+    `# Fit`,
+    `popt, pcov = curve_fit(model, x_data, y_data, p0=p0, maxfev=10000)`,
+    `perr = np.sqrt(np.diag(pcov))`,
+    ``,
+    `# Results`,
+    `param_names = [${fit.paramNames.map(n => `'${n}'`).join(', ')}]`,
+    `for name, val, err in zip(param_names, popt, perr):`,
+    `    print(f"{name} = {val:.6g} ± {err:.6g}")`,
+    ``,
+    `# Plot`,
+    `x_fit = np.linspace(x_data.min(), x_data.max(), 300)`,
+    `y_fit = model(x_fit, *popt)`,
+    `plt.scatter(x_data, y_data, label='Data')`,
+    `plt.plot(x_fit, y_fit, label=f'${fit.model} fit')`,
+    `plt.legend()`,
+    `plt.tight_layout()`,
+    `plt.show()`,
+  ];
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `${exportFilename()}-fit.py`; a.click();
+  setConsole('Python script downloaded.', '');
+}
+
+function exportR() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
+  const ds = state.datasets.find(d => d.id === fit.dsId);
+  const r = fit.result;
+  const excl = ds ? (ds.excludedIndices || new Set()) : new Set();
+  const xData = ds ? ds.x.filter((_, i) => !excl.has(i)) : [];
+  const yData = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
+
+  const paramStr = fit.paramNames.join(', ');
+  const startStr = fit.paramNames.map((n, i) => `${n}=${r.params[i].toPrecision(6)}`).join(', ');
+  const xArr = 'c(' + xData.map(v => v.toPrecision(8)).join(', ') + ')';
+  const yArr = 'c(' + yData.map(v => v.toPrecision(8)).join(', ') + ')';
+
+  const modelDefs = {
+    'Linear':           `${fit.paramNames[0]} * x + ${fit.paramNames[1]}`,
+    'Power':            `${fit.paramNames[0]} * abs(x)^${fit.paramNames[1]}`,
+    'Exponential':      `${fit.paramNames[0]} * exp(${fit.paramNames[1]} * x)`,
+    'Exp-Decay-Offset': `${fit.paramNames[0]} * exp(-${fit.paramNames[1]} * x) + ${fit.paramNames[2]}`,
+    'Logistic':         `${fit.paramNames[0]} / (1 + exp(-${fit.paramNames[1]} * (x - ${fit.paramNames[2]})))`,
+    'Gaussian':         `${fit.paramNames[0]} * exp(-0.5 * ((x - ${fit.paramNames[1]}) / ${fit.paramNames[2]})^2) + ${fit.paramNames[3]}`,
+    'Lorentzian':       `${fit.paramNames[0]} * ${fit.paramNames[2]}^2 / ((x - ${fit.paramNames[1]})^2 + ${fit.paramNames[2]}^2) + ${fit.paramNames[3]}`,
+    'Michaelis-Menten': `${fit.paramNames[0]} * x / (${fit.paramNames[1]} + x)`,
+    'Hill':             `${fit.paramNames[0]} * x^${fit.paramNames[2]} / (${fit.paramNames[1]}^${fit.paramNames[2]} + x^${fit.paramNames[2]})`,
+    'Sine':             `${fit.paramNames[0]} * sin(${fit.paramNames[1]} * x + ${fit.paramNames[2]}) + ${fit.paramNames[3]}`,
+    'Damped-Sine':      `${fit.paramNames[0]} * exp(-${fit.paramNames[1]} * x) * sin(${fit.paramNames[2]} * x + ${fit.paramNames[3]}) + ${fit.paramNames[4]}`,
+    'Double-Gaussian':  `${fit.paramNames[0]} * exp(-0.5*((x-${fit.paramNames[1]})/${fit.paramNames[2]})^2) + ${fit.paramNames[3]} * exp(-0.5*((x-${fit.paramNames[4]})/${fit.paramNames[5]})^2) + ${fit.paramNames[6]}`,
+    'Biexponential':    `${fit.paramNames[0]} * exp(-abs(${fit.paramNames[1]}) * x) + ${fit.paramNames[2]} * exp(-abs(${fit.paramNames[3]}) * x) + ${fit.paramNames[4]}`,
+    'Rational':         `(${fit.paramNames[0]} + ${fit.paramNames[1]} * x) / (1 + ${fit.paramNames[2]} * x)`,
+    'Power-Offset':     `${fit.paramNames[0]} * abs(x)^${fit.paramNames[1]} + ${fit.paramNames[2]}`,
+  };
+  const formula = modelDefs[fit.model] || `# Define formula for ${fit.model}`;
+
+  const lines = [
+    `# Advanced Curve Fitting Studio — R export`,
+    `# Model: ${fit.model}`,
+    ``,
+    `# Data`,
+    `x_data <- ${xArr}`,
+    `y_data <- ${yArr}`,
+    `df <- data.frame(x = x_data, y = y_data)`,
+    ``,
+    `# Fit with nls()`,
+    `fit <- nls(y ~ ${formula},`,
+    `           data = df,`,
+    `           start = list(${startStr}),`,
+    `           control = nls.control(maxiter = 500))`,
+    ``,
+    `# Results`,
+    `print(summary(fit))`,
+    ``,
+    `# Plot`,
+    `plot(df$x, df$y, pch = 16, xlab = "x", ylab = "y", main = "${fit.model} fit")`,
+    `x_seq <- seq(min(df$x), max(df$x), length.out = 300)`,
+    `lines(x_seq, predict(fit, newdata = data.frame(x = x_seq)), col = "red", lwd = 2)`,
+  ];
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `${exportFilename()}-fit.R`; a.click();
+  setConsole('R script downloaded.', '');
+}
+
+function exportLatex() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
+  const r = fit.result;
+  const p = r.params;
+  const fmtL = v => {
+    if (!isFinite(v)) return '?';
+    const abs = Math.abs(v);
+    if (abs >= 1e4 || (abs < 1e-3 && abs !== 0)) {
+      const exp = Math.floor(Math.log10(abs));
+      const mant = v / Math.pow(10, exp);
+      return `${mant.toFixed(3)} \\times 10^{${exp}}`;
+    }
+    return v.toPrecision(4).replace(/\.?0+$/, '');
+  };
+
+  const latexDefs = {
+    'Linear':           `y = ${fmtL(p[0])}x + ${fmtL(p[1])}`,
+    'Power':            `y = ${fmtL(p[0])} x^{${fmtL(p[1])}}`,
+    'Exponential':      `y = ${fmtL(p[0])} e^{${fmtL(p[1])} x}`,
+    'Exp-Decay-Offset': `y = ${fmtL(p[0])} e^{-${fmtL(p[1])} x} + ${fmtL(p[2])}`,
+    'Logistic':         `y = \\frac{${fmtL(p[0])}}{1 + e^{-${fmtL(p[1])}(x - ${fmtL(p[2])})}}`,
+    'Gaussian':         `y = ${fmtL(p[0])} e^{-\\frac{(x - ${fmtL(p[1])})^2}{2 \\cdot ${fmtL(p[2])}^2}} + ${fmtL(p[3])}`,
+    'Lorentzian':       `y = \\frac{${fmtL(p[0])} \\cdot ${fmtL(p[2])}^2}{(x - ${fmtL(p[1])})^2 + ${fmtL(p[2])}^2} + ${fmtL(p[3])}`,
+    'Michaelis-Menten': `y = \\frac{${fmtL(p[0])} x}{${fmtL(p[1])} + x}`,
+    'Hill':             `y = \\frac{${fmtL(p[0])} x^{${fmtL(p[2])}}}{${fmtL(p[1])}^{${fmtL(p[2])}} + x^{${fmtL(p[2])}}}`,
+    'Sine':             `y = ${fmtL(p[0])} \\sin(${fmtL(p[1])} x + ${fmtL(p[2])}) + ${fmtL(p[3])}`,
+    'Damped-Sine':      `y = ${fmtL(p[0])} e^{-${fmtL(p[1])} x} \\sin(${fmtL(p[2])} x + ${fmtL(p[3])}) + ${fmtL(p[4])}`,
+    'Weibull':          `y = 1 - e^{-(x / ${fmtL(p[0])})^{${fmtL(p[1])}}}`,
+    'Double-Gaussian':  `y = ${fmtL(p[0])} e^{-(x-${fmtL(p[1])})^2/(2\\cdot${fmtL(p[2])}^2)} + ${fmtL(p[3])} e^{-(x-${fmtL(p[4])})^2/(2\\cdot${fmtL(p[5])}^2)} + ${fmtL(p[6])}`,
+    'Biexponential':    `y = ${fmtL(p[0])} e^{-${fmtL(p[1])} x} + ${fmtL(p[2])} e^{-${fmtL(p[3])} x} + ${fmtL(p[4])}`,
+    'Rational':         `y = \\frac{${fmtL(p[0])} + ${fmtL(p[1])} x}{1 + ${fmtL(p[2])} x}`,
+    'Power-Offset':     `y = ${fmtL(p[0])} x^{${fmtL(p[1])}} + ${fmtL(p[2])}`,
+    'Boltzmann':        `y = \\frac{${fmtL(p[0])}}{1 + e^{-(x - ${fmtL(p[1])})/${fmtL(p[2])}}}`,
+  };
+
+  let latex = latexDefs[fit.model];
+  if (!latex) {
+    latex = `y = f(x; ${fit.paramNames.map((n, i) => `${n}=${fmtL(p[i])}`).join(', ')})`;
+  }
+  const full = `$${latex}$`;
+
+  navigator.clipboard.writeText(full)
+    .then(() => setConsole('LaTeX equation copied to clipboard.', ''))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = full; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      setConsole('LaTeX equation copied.', '');
+    });
+}
+
 /* ═══════════════════════════════════════════════════════════
    EXAMPLE GENERATOR MODAL
 ═══════════════════════════════════════════════════════════ */
@@ -4799,6 +4990,9 @@ function initEvents() {
   document.getElementById('exp-svg').addEventListener('click', () => { exportSVG(); document.getElementById('export-menu').classList.remove('open'); });
   document.getElementById('exp-csv').addEventListener('click', () => { exportCSV(); document.getElementById('export-menu').classList.remove('open'); });
   document.getElementById('exp-report').addEventListener('click', () => { exportReport(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-python').addEventListener('click', () => { exportPython(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-r').addEventListener('click', () => { exportR(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-latex').addEventListener('click', () => { exportLatex(); document.getElementById('export-menu').classList.remove('open'); });
 
   /* ── Session ──────────────────────────────────────────── */
   document.getElementById('btn-save').addEventListener('click', saveSession);
