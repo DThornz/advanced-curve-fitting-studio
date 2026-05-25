@@ -2243,6 +2243,7 @@ function smoothDataset(windowSize) {
   const ds = state.datasets.find(d => d.id === state.activeDatasetId);
   if (!ds) { setConsole('No active dataset to smooth.', 'warn'); return; }
   const n = ds.y.length;
+  if (n < 2) { setConsole('Need at least 2 points to smooth.', 'warn'); return; }
   const w = Math.max(2, Math.min(Math.floor(windowSize), n - 1));
   const half = Math.floor(w / 2);
   state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice() });
@@ -3388,7 +3389,7 @@ function runFit() {
 
   const maxIter    = parseInt(document.getElementById('opt-max-iter').value) || 20;
   const tol        = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
-  const curvePts   = parseInt(document.getElementById('opt-curve-pts').value) || 300;
+  const curvePts   = Math.max(10, parseInt(document.getElementById('opt-curve-pts').value) || 300);
   const algoKey    = document.getElementById('opt-algo').value;
   const nStarts    = parseInt(document.getElementById('opt-n-starts').value)  || 1;
   const weightMode = document.getElementById('opt-weights').value;
@@ -3439,7 +3440,7 @@ function runFit() {
     const algoKey2 = document.getElementById('opt-algo').value;
     const maxIter2 = parseInt(document.getElementById('opt-max-iter').value) || 1000;
     const tol2 = parseFloat(document.getElementById('opt-tol').value) || 1e-8;
-    const curvePts2 = parseInt(document.getElementById('opt-curve-pts').value) || 300;
+    const curvePts2 = Math.max(10, parseInt(document.getElementById('opt-curve-pts').value) || 300);
     const nStarts2 = parseInt(document.getElementById('opt-n-starts').value) || 1;
     const SOLVERS2 = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
     const solve2 = SOLVERS2[algoKey2] || levenbergMarquardt;
