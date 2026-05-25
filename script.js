@@ -2888,6 +2888,7 @@ function renderDatasetList() {
       <span class="ds-label" title="${ds.name}">${ds.name}</span>
       <span class="ds-count">${ds.x.length}pt</span>
       <button class="ds-toggle${off ? ' ds-off' : ''}" data-toggleid="${ds.id}" title="${off ? 'Enable dataset' : 'Disable dataset'}">${off ? '○' : '●'}</button>
+      ${ds._exKey ? `<button class="ds-edit" data-editid="${ds.id}" title="Re-open example generator with saved parameters">✏</button>` : ''}
       <button class="ds-delete" data-delid="${ds.id}" title="Remove dataset">×</button>
     </div>`;
   }).join('');
@@ -2948,6 +2949,12 @@ function renderDatasetList() {
       updatePlots();
       const active = state.fits.find(f => f.id === state.activeFitId);
       if (active) renderStats(active); else setConsole('Dataset removed.', '');
+    });
+  });
+  el.querySelectorAll('.ds-edit').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      editGeneratedDataset(parseInt(btn.dataset.editid));
     });
   });
   renderMaskCount();
@@ -4771,14 +4778,20 @@ function exportMATLAB() {
    EXAMPLE GENERATOR MODAL
 ═══════════════════════════════════════════════════════════ */
 let currentExampleKey = null;
+let currentExampleDsId = null;
 
-function openExampleEditor(key) {
+function openExampleEditor(key, savedState = null) {
   const ex = EXAMPLES[key];
   if (!ex) return;
   currentExampleKey = key;
   document.getElementById('example-modal-title').textContent = ex.title;
   const body = document.getElementById('example-modal-body');
-  body.innerHTML = ex.params.map(p => `
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <span style="font-weight:600;font-size:.8em;flex:1">Model Parameters</span>
+      <span class="panel-tip" data-tip="ex-model-params">?</span>
+    </div>` +
+    ex.params.map(p => `
     <div class="ex-param-row">
       <label class="ex-param-label">${p.label}</label>
       <input class="ctrl-input ex-param-input" type="number"
@@ -4792,7 +4805,10 @@ function openExampleEditor(key) {
     </div>
 
     <div class="ex-noise-section">
-      <p class="ex-noise-hd">Additional Background Noise</p>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span class="ex-noise-hd" style="margin:0;flex:1">Additional Background Noise</span>
+        <span class="panel-tip" data-tip="ex-extra-noise">?</span>
+      </div>
       <div class="ex-param-row">
         <label class="ex-param-label">Noise type</label>
         <select class="ctrl-select" id="ex-extra-noise-type" style="flex:1">
@@ -4809,22 +4825,66 @@ function openExampleEditor(key) {
     </div>
 
     <div class="ex-noise-section">
-      <p class="ex-noise-hd">Sinusoidal Interference (up to 3)</p>
-      <p style="font-size:.75em;color:var(--dimmer);margin:0 0 8px;line-height:1.4">Frequency in cycles per x-range. Set Amplitude = 0 to skip a component.</p>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span class="ex-noise-hd" style="margin:0;flex:1">Sinusoidal Interference (up to 3)</span>
+        <span class="panel-tip" data-tip="ex-freq-noise">?</span>
+      </div>
       <div class="ex-freq-hdr"><span>Amplitude</span><span>Freq (cyc/range)</span><span>Phase (0–1)</span></div>
       ${[1, 2, 3].map(i => `
       <div class="ex-freq-grid">
-        <input class="ctrl-input" type="number" id="ex-freq${i}-amp"   placeholder="0"   value="0" min="0"   step="any" title="Amplitude of component ${i}">
-        <input class="ctrl-input" type="number" id="ex-freq${i}-freq"  placeholder="freq" value="${i}" min="0.1" step="0.5" title="Frequency in cycles per x-range">
-        <input class="ctrl-input" type="number" id="ex-freq${i}-phase" placeholder="0"   value="0" min="0" max="1" step="0.05" title="Phase offset 0–1 (fraction of 2π)">
+        <input class="ctrl-input" type="number" id="ex-freq${i}-amp"   value="0"  min="0"   step="any"  title="Amplitude — set 0 to skip">
+        <input class="ctrl-input" type="number" id="ex-freq${i}-freq"  value="${i}" min="0.1" step="0.5" title="Cycles per x-range">
+        <input class="ctrl-input" type="number" id="ex-freq${i}-phase" value="0"  min="0" max="1" step="0.05" title="Phase 0–1 (fraction of 2π)">
       </div>`).join('')}
     </div>`;
+
+  // Restore saved values when re-editing a generated dataset
+  if (savedState) {
+    body.querySelectorAll('.ex-param-input').forEach(inp => {
+      if (inp.dataset.key && savedState.params?.[inp.dataset.key] !== undefined)
+        inp.value = savedState.params[inp.dataset.key];
+    });
+    const nte = document.getElementById('ex-extra-noise-type');
+    const nae = document.getElementById('ex-extra-noise-amp');
+    if (nte) nte.value = savedState.extraNoise?.type || 'none';
+    if (nae) nae.value = savedState.extraNoise?.amp  || 0;
+    savedState.freqRows?.forEach((r, i) => {
+      const ae = document.getElementById(`ex-freq${i + 1}-amp`);
+      const fe = document.getElementById(`ex-freq${i + 1}-freq`);
+      const pe = document.getElementById(`ex-freq${i + 1}-phase`);
+      if (ae) ae.value = r.amp;
+      if (fe) fe.value = r.freq;
+      if (pe) pe.value = r.phase;
+    });
+  }
+
+  const loadBtn = document.getElementById('example-modal-load');
+  const footerNote = document.querySelector('#example-modal .modal-footer > span');
+  if (savedState) {
+    if (loadBtn) loadBtn.textContent = 'Regenerate';
+    if (footerNote) footerNote.textContent = 'Regenerates data in place — existing fits are preserved but should be re-run.';
+  } else {
+    if (loadBtn) loadBtn.textContent = 'Load Dataset';
+    if (footerNote) footerNote.textContent = 'Noise is re-randomised each time you load.';
+  }
   document.getElementById('example-modal').style.display = 'flex';
+}
+
+function editGeneratedDataset(dsId) {
+  const ds = state.datasets.find(d => d.id === dsId);
+  if (!ds?._exKey) return;
+  currentExampleDsId = dsId;
+  openExampleEditor(ds._exKey, ds._exSavedState);
 }
 
 function closeExampleModal() {
   document.getElementById('example-modal').style.display = 'none';
   currentExampleKey = null;
+  currentExampleDsId = null;
+  const loadBtn = document.getElementById('example-modal-load');
+  if (loadBtn) loadBtn.textContent = 'Load Dataset';
+  const footerNote = document.querySelector('#example-modal .modal-footer > span');
+  if (footerNote) footerNote.textContent = 'Noise is re-randomised each time you load.';
 }
 
 function loadExampleFromModal() {
@@ -4847,29 +4907,64 @@ function loadExampleFromModal() {
   const extraAmp  = parseFloat((document.getElementById('ex-extra-noise-amp') || {}).value) || 0;
   if (extraType !== 'none' && extraAmp > 0) data.y = addExtraNoise(data.y, extraType, extraAmp);
 
-  // Sinusoidal frequency components
-  const freqComps = [];
-  for (let i = 1; i <= 3; i++) {
-    const amp   = parseFloat((document.getElementById(`ex-freq${i}-amp`)   || {}).value) || 0;
-    const freq  = parseFloat((document.getElementById(`ex-freq${i}-freq`)  || {}).value) || i;
-    const phase = parseFloat((document.getElementById(`ex-freq${i}-phase`) || {}).value) || 0;
-    if (amp > 0) freqComps.push({ amp, freq, phase });
-  }
-  if (freqComps.length) data.y = addFreqNoise(data.y, data.x, freqComps);
+  // Sinusoidal frequency components — collect all 3 rows (including disabled ones for save)
+  const freqRows = [1, 2, 3].map(i => ({
+    amp:   parseFloat((document.getElementById(`ex-freq${i}-amp`)   || {}).value) || 0,
+    freq:  parseFloat((document.getElementById(`ex-freq${i}-freq`)  || {}).value) || i,
+    phase: parseFloat((document.getElementById(`ex-freq${i}-phase`) || {}).value) || 0
+  }));
+  const activeFreqComps = freqRows.filter(r => r.amp > 0);
+  if (activeFreqComps.length) data.y = addFreqNoise(data.y, data.x, activeFreqComps);
 
+  // Snapshot of all form state for re-editing later
+  const savedState = {
+    params:      { ...p },
+    extraNoise:  { type: extraType, amp: extraAmp },
+    freqRows
+  };
+
+  const editDsId = currentExampleDsId;
+  const exKey    = currentExampleKey;
   closeExampleModal();
-  const ds = importDataset(data.name, data.x, data.y);
-  if (!ds) return;
-  applyParsedMeta({ xlabel: data.xlabel, ylabel: data.ylabel, title: null });
-  if (data.suggestModel) {
-    document.getElementById('model-select').value = data.suggestModel;
-    syncModelCustomSection();
+
+  if (editDsId) {
+    // Update existing generated dataset in place
+    const editDs = state.datasets.find(d => d.id === editDsId);
+    if (!editDs) return;
+    editDs.x         = data.x;
+    editDs.y         = data.y;
+    editDs.originalY = data.y.slice();
+    editDs.name      = data.name;
+    editDs._exKey        = exKey || editDs._exKey;
+    editDs._exSavedState = savedState;
+    // Drop stale undo history for this dataset
+    state.editHistory.undo = state.editHistory.undo.filter(h => h.dsId !== editDs.id);
+    state.editHistory.redo = [];
+    syncUndoRedoButtons();
+    if (state.activeDatasetId !== editDs.id) {
+      state.activeDatasetId = editDs.id;
+      syncFitDatasetSelect();
+    }
+    renderDatasetList();
+    updatePlots();
+    setConsole(`Regenerated: ${data.name} (${data.x.length} points). Re-run fits to update results.`, '');
+  } else {
+    // Create a new dataset
+    const ds = importDataset(data.name, data.x, data.y);
+    if (!ds) return;
+    ds._exKey        = exKey;
+    ds._exSavedState = savedState;
+    applyParsedMeta({ xlabel: data.xlabel, ylabel: data.ylabel, title: null });
+    if (data.suggestModel) {
+      document.getElementById('model-select').value = data.suggestModel;
+      syncModelCustomSection();
+    }
+    syncFitDatasetSelect();
+    renderDatasetList();
+    updatePlots();
+    autoInitParams();
+    setConsole(`Loaded: ${data.name} (${data.x.length} points).  Press ▶ Fit to fit.`, '');
   }
-  syncFitDatasetSelect();
-  renderDatasetList();
-  updatePlots();
-  autoInitParams();
-  setConsole(`Loaded: ${data.name} (${data.x.length} points).  Press ▶ Fit to fit.`, '');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -7062,6 +7157,26 @@ const PANEL_TIPS = {
     `Select fit A and fit B — the simpler model (fewer parameters) is automatically the null hypothesis.<br><br>` +
     `<b>p &lt; 0.05</b> — extra parameters are statistically justified at α = 0.05.<br>` +
     `<b>p ≥ 0.05</b> — simpler model is adequate; prefer it by parsimony.`,
+
+  'ex-model-params':
+    `<b>Model Parameters</b><br>Controls the shape and scale of the generated signal — these match the physical parameters of the chosen example model (e.g. amplitude, time constant, EC50).<br><br>` +
+    `<b>Noise (σ)</b> — standard deviation of the per-point Gaussian noise added to the clean signal.<br>` +
+    `<b>Outlier count</b> — number of random outlier points injected.<br>` +
+    `<b>Outlier scale</b> — how many σ the outliers deviate from the curve.`,
+
+  'ex-extra-noise':
+    `<b>Additional Background Noise</b><br>Layers an extra independent noise distribution on top of the per-example Gaussian noise. All types share the same σ convention (same variance for the given Amplitude).<br><br>` +
+    `<b>None</b> — no extra noise added.<br>` +
+    `<b>Gaussian</b> — bell-curve noise; Amplitude = σ.<br>` +
+    `<b>Uniform (white)</b> — equal probability across [−A√3, +A√3] — same variance as Gaussian with the same amplitude.<br>` +
+    `<b>Laplacian (heavy-tail)</b> — symmetric exponential distribution; heavier tails than Gaussian, common in natural images, audio, and impulsive interference.<br><br>` +
+    `Set <b>Amplitude = 0</b> to disable.`,
+
+  'ex-freq-noise':
+    `<b>Sinusoidal Interference</b><br>Adds up to 3 independent periodic components — useful for simulating powerline hum, mechanical vibration, carrier bleed-through, or any periodic artefact.<br><br>` +
+    `<b>Amplitude</b> — peak height of the sine wave in y-axis units. Set to 0 to skip that component.<br>` +
+    `<b>Freq (cyc/range)</b> — frequency expressed as cycles per full x-span: 1 = one complete sine wave across the dataset, 5 = five cycles, 0.5 = half a cycle.<br>` +
+    `<b>Phase (0–1)</b> — starting phase as a fraction of 2π: 0 = sine (starts at 0), 0.25 = cosine (starts at peak), 0.5 = inverted sine.`,
 
   'corr-matrix':
     `<b>Pearson correlation between each pair of parameters</b>, derived from the covariance matrix.<br><br>` +
