@@ -2752,6 +2752,70 @@ function _ifftInPlace(re, im) {
   for (let i = 0; i < n; i++) { re[i] /= n; im[i] = -im[i] / n; }
 }
 
+function _ppCutoffShapes() {
+  const t      = document.getElementById('pp-fft-type')?.value || 'lowpass';
+  const single = t === 'lowpass' || t === 'highpass';
+  const cutoff = parseFloat(document.getElementById('pp-fft-cutoff')?.value) || 20;
+  const lo     = single ? cutoff : parseFloat(document.getElementById('pp-fft-lo')?.value) || 10;
+  const hi     = single ? cutoff : parseFloat(document.getElementById('pp-fft-hi')?.value) || 30;
+  const line   = { color: 'rgba(220,38,38,0.8)', width: 1.5, dash: 'dash' };
+  const vline  = x => ({ type: 'line', x0: x, x1: x, y0: 0, y1: 1, yref: 'paper', line });
+  return single ? [vline(cutoff)] : [vline(lo), vline(hi)];
+}
+
+function renderFFTSpectrum() {
+  const ds     = state.datasets.find(d => d.id === state.activeDatasetId);
+  const plotEl = document.getElementById('pp-fft-spectrum-plot');
+  if (!plotEl) return;
+  if (!ds || ds.y.length < 8) {
+    plotEl.innerHTML = '<p style="font-size:.78em;color:var(--dim);text-align:center;padding:32px 0">No active dataset or fewer than 8 points.</p>';
+    return;
+  }
+
+  const n  = ds.y.length;
+  const N  = _nextPow2(n);
+  const re = new Float64Array(N), im = new Float64Array(N);
+  for (let i = 0; i < n; i++) re[i] = ds.y[i];
+  _fftInPlace(re, im);
+
+  const halfN = N >> 1;
+  const freqPct = [], mag = [];
+  for (let k = 0; k <= halfN; k++) {
+    freqPct.push(k / halfN * 100);
+    mag.push(Math.sqrt(re[k] * re[k] + im[k] * im[k]) / N);
+  }
+
+  const useDb = document.getElementById('pp-fft-db-scale')?.checked ?? true;
+  const yData = useDb ? mag.map(m => m > 1e-14 ? 20 * Math.log10(m) : -140) : mag;
+
+  const dark  = document.body.classList.contains('dark-mode');
+  const textC = dark ? '#8fa3c0' : '#4b5563';
+  const gridC = dark ? '#1c3050' : '#e5e7eb';
+  const bgC   = dark ? '#101c2c' : '#f9fafb';
+
+  Plotly.react(plotEl, [{
+    x: freqPct, y: yData,
+    type: 'scatter', mode: 'lines',
+    line: { color: '#0b7a6e', width: 1.2 },
+    hovertemplate: '%{x:.1f}% Nyq<br>%{y:.2f}<extra></extra>'
+  }], {
+    margin: { t: 4, r: 8, b: 36, l: 50 },
+    paper_bgcolor: bgC, plot_bgcolor: bgC,
+    xaxis: {
+      title: { text: '% Nyquist', font: { size: 9 } },
+      color: textC, gridcolor: gridC, tickfont: { size: 8 },
+      range: [0, 100], fixedrange: false
+    },
+    yaxis: {
+      title: { text: useDb ? 'dB' : 'Magnitude', font: { size: 9 } },
+      color: textC, gridcolor: gridC, tickfont: { size: 8 }
+    },
+    shapes: _ppCutoffShapes(),
+    showlegend: false,
+    font: { size: 9, color: textC }
+  }, { responsive: true, displayModeBar: false });
+}
+
 function applyFourierFilter(type, cutoffLo, cutoffHi, rolloff) {
   const ds = state.datasets.find(d => d.id === state.activeDatasetId);
   if (!ds) { setConsole('No active dataset.', 'warn'); return; }
@@ -6181,20 +6245,51 @@ function initEvents() {
       document.getElementById('pp-fft-lo-row').style.display     = single ? 'none' : 'flex';
       document.getElementById('pp-fft-hi-row').style.display     = single ? 'none' : 'flex';
       document.getElementById('pp-fft-desc').textContent = fftDescs[t] || '';
+      // Update cutoff lines reactively
+      if (_specVisible) {
+        const el = document.getElementById('pp-fft-spectrum-plot');
+        if (el?.data) Plotly.relayout(el, { shapes: _ppCutoffShapes() });
+      }
     });
 
     document.getElementById('pp-fft-apply').addEventListener('click', () => {
-      const t      = fftType.value;
+      const t       = fftType.value;
       const rolloff = document.getElementById('pp-fft-rolloff').value;
-      const single = t === 'lowpass' || t === 'highpass';
+      const single  = t === 'lowpass' || t === 'highpass';
       let lo = single ? parseFloat(document.getElementById('pp-fft-cutoff').value) || 20
                       : parseFloat(document.getElementById('pp-fft-lo').value) || 10;
       let hi = single ? lo : parseFloat(document.getElementById('pp-fft-hi').value) || 30;
       if (hi < lo) [lo, hi] = [hi, lo];
       applyFourierFilter(t, lo, hi, rolloff);
+      if (_specVisible) renderFFTSpectrum(); // re-render with filtered data
     });
 
     document.getElementById('pp-restore').addEventListener('click', () => { closePP(); restoreOriginalData(); });
+
+    // ── Spectrum preview ──────────────────────────────────────
+    let _specVisible = false;
+    const specBtn  = document.getElementById('pp-fft-spectrum-btn');
+    const specWrap = document.getElementById('pp-fft-spectrum-wrap');
+
+    specBtn.addEventListener('click', () => {
+      _specVisible = !_specVisible;
+      specWrap.style.display = _specVisible ? 'block' : 'none';
+      specBtn.textContent = _specVisible ? '▤ Hide Spectrum' : '▤ Show Spectrum';
+      if (_specVisible) renderFFTSpectrum();
+    });
+
+    document.getElementById('pp-fft-db-scale').addEventListener('change', () => {
+      if (_specVisible) renderFFTSpectrum();
+    });
+
+    // Reactive cutoff marker lines while typing
+    ['pp-fft-cutoff', 'pp-fft-lo', 'pp-fft-hi'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        if (!_specVisible) return;
+        const el = document.getElementById('pp-fft-spectrum-plot');
+        if (el?.data) Plotly.relayout(el, { shapes: _ppCutoffShapes() });
+      });
+    });
   })();
   document.getElementById('btn-data-table').addEventListener('click', openDataTable);
   document.getElementById('data-table-close').addEventListener('click', () => {

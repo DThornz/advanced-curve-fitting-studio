@@ -591,8 +591,18 @@
           </div>
           <p class="pp-desc" id="pp-fft-desc">Passes low-frequency components; removes rapid fluctuations. Good for denoising signals with a smooth trend.</p>
           <p class="pp-warn">⚠ Assumes uniform x-axis spacing. Operates on all data points; masked-point status is preserved.</p>
-          <div style="display:flex;justify-content:flex-end">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+            <button class="btn" id="pp-fft-spectrum-btn" style="font-size:.76em;padding:3px 9px">▤ Show Spectrum</button>
             <button class="btn btn-primary" id="pp-fft-apply">Apply Fourier Filter</button>
+          </div>
+          <div id="pp-fft-spectrum-wrap" style="display:none;margin-top:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+              <span style="font-size:.74em;color:var(--dim)">Power spectrum — dashed line = cutoff position</span>
+              <label style="font-size:.74em;color:var(--dim);display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;margin-left:8px">
+                <input type="checkbox" id="pp-fft-db-scale" checked> dB scale
+              </label>
+            </div>
+            <div id="pp-fft-spectrum-plot" style="width:100%;height:200px"></div>
           </div>
         </div>
 
