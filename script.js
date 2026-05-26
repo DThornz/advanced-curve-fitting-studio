@@ -6777,9 +6777,8 @@ function initEvents() {
         appEverOpened = true;
         if (localStorage.getItem(TUT_KEY) !== '1') setTimeout(tutShow, 320);
       } else {
-        Plotly.Plots.resize('main-plot');
-        const resEl = document.getElementById('residual-plot');
-        if (resEl && !resEl.classList.contains('hidden')) Plotly.Plots.resize(resEl);
+        // Re-open: theme may have changed while app was closed — re-render with current colors
+        updatePlots();
       }
     });
   }
