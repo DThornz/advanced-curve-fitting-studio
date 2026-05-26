@@ -5721,7 +5721,7 @@ function saveCurrentTab() {
 }
 
 function closeAllModals() {
-  ['gs-modal', 'ann-modal', 'col-picker-modal', 'save-modal'].forEach(id => {
+  ['gs-modal', 'ann-modal', 'col-picker-modal', 'save-modal', 'relnotes-modal'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -6736,6 +6736,24 @@ function initEvents() {
     document.getElementById('shortcuts-modal').style.display = 'flex';
     const m = document.getElementById('session-menu');
     m.classList.remove('open'); m.style.cssText = '';
+  });
+  function openReleaseNotes() {
+    document.getElementById('relnotes-modal').style.display = 'flex';
+    const m = document.getElementById('session-menu');
+    if (m) { m.classList.remove('open'); m.style.cssText = ''; }
+  }
+  document.getElementById('sess-relnotes').addEventListener('click', openReleaseNotes);
+  document.getElementById('btn-relnotes').addEventListener('click', openReleaseNotes);
+  const heroReln = document.getElementById('hero-relnotes');
+  if (heroReln) heroReln.addEventListener('click', openReleaseNotes);
+  document.getElementById('relnotes-modal-close').addEventListener('click', () => {
+    document.getElementById('relnotes-modal').style.display = 'none';
+  });
+  document.getElementById('relnotes-modal-close-btn').addEventListener('click', () => {
+    document.getElementById('relnotes-modal').style.display = 'none';
+  });
+  document.getElementById('relnotes-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('relnotes-modal')) document.getElementById('relnotes-modal').style.display = 'none';
   });
   document.getElementById('sess-auto-restore').addEventListener('click', () => {
     document.getElementById('btn-auto-restore').click();

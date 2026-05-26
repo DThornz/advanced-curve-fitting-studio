@@ -45,6 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Advanced Curve Fitting Studio</h1>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.1.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -215,6 +216,8 @@
             <div class="app-dropdown-item" id="sess-auto-restore">○&nbsp; Auto-restore</div>
             <div class="app-dropdown-sep"></div>
             <div class="app-dropdown-item" id="sess-shortcuts">⌨&nbsp; Shortcuts</div>
+            <div class="app-dropdown-sep"></div>
+            <div class="app-dropdown-item" id="sess-relnotes">📋&nbsp; Release Notes</div>
           </div>
         </div>
         <!-- Hidden: keep IDs in DOM so existing JS event bindings remain valid -->
@@ -225,6 +228,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.1.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1557,6 +1561,190 @@
     <div class="modal-footer">
       <button class="btn" id="ann-modal-cancel">Cancel</button>
       <button class="btn btn-primary" id="ann-modal-save">Save Annotation</button>
+    </div>
+  </div>
+</div>
+
+<!-- Release Notes Modal -->
+<div class="modal-backdrop" id="relnotes-modal" style="display:none;align-items:flex-start;justify-content:center;padding-top:30px">
+  <div class="modal" style="width:600px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <span class="modal-title">Release Notes</span>
+      <button class="modal-close" id="relnotes-modal-close">✕</button>
+    </div>
+    <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.1.0</span>
+          <span class="relnotes-ver-date">2026-05-26</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>KaTeX-rendered equation displayed below the Fit Model dropdown, updating on every selection change</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Equation display (display-mode KaTeX) at the top of each example dataset generator modal</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Edit as Custom…</strong> button — pre-fills the Custom Equation editor with a Math.js translation of any built-in model</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Plain-English correlation suggestions below the parameter correlation heatmap (strong / high / moderate thresholds with actionable advice)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Renamed toolbar button from "Residuals" to "Diagnostics" to reflect all four panel tabs</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Updated README and in-app documentation for all new features</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.0.0</span>
+          <span class="relnotes-ver-date">2026-05-25</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Visual Equation Editor popup with categorised operator palette and 30+ example equations</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>10 new built-in models (now 39 total): Van't Hoff, KWW Stretched Exponential, Voigt Profile, Pseudo-Voigt, Fano Resonance, Stern-Volmer, Double Gaussian, Biexponential, Rational (1,1), Power Law + Offset</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>10 new example datasets (now 26 total) spanning spectral physics, biology, pharmacology, and materials</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Mobile and vertical-screen responsive layout</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Click-to-expand parameter detail panel in stats bar with full confidence intervals and t-statistics</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Session controls grouped into collapsible Session ▾ dropdown</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Comprehensive QA audit: security, reliability, and accessibility issues resolved</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Dark mode fixes across Pre-Process modal, Data Table modal, and all tooltips</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Tooltip clipping: widened to 310 px, flips above trigger when viewport space is insufficient</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.9.0</span>
+          <span class="relnotes-ver-date">2026-05-24 – 2026-05-25</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Pre-Process panel with four smoothing filters: Moving Average, Gaussian (σ-weighted), Savitzky-Golay (polynomial), Median</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Fourier filter (Low-pass, High-pass, Band-pass, Notch) with Brick-wall / Cosine / Hann rolloff shapes</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>FFT spectrum preview with automatic peak detection (≥10 dB above noise floor, red ▾ markers)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>STFT spectrogram view (Hann-windowed, Viridis colormap, scroll-zoom and click-drag-pan)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Restore Original button; all Pre-Process actions pushed to undo/redo stack</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Noise type and sinusoidal interference controls added to example dataset generator</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Masked points skipped in smoothing window calculations</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.8.0</span>
+          <span class="relnotes-ver-date">2026-05-24</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Huber IRLS robust fitting (MAD/0.6745 scale, 5 reweighting iterations, c = 1.345σ threshold)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Point Data Table with per-point exclusion checkboxes and bulk Exclude 2.5σ / Include All controls</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Python (<code>scipy.optimize.curve_fit</code>), R (<code>nls</code>), and MATLAB (<code>lsqcurvefit</code>) code export</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Keyboard shortcuts: Ctrl+Z/Y undo/redo, arrow nudge, Ctrl+Enter to fit</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Parameter locking — freeze individual parameters at their Init value for a fit</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Prediction interval (PI) bands (adds per-observation RMSE² to CI uncertainty)</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.7.0</span>
+          <span class="relnotes-ver-date">2026-05-24</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>7 electrophysiology models: Boltzmann G-V, Double Boltzmann, HH Activation I-V, HH Na Channel I-V, Kir Inward Rectifier, GHK Current, τ-V Gaussian</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>4 electrophysiology example datasets (G-V curve, Kir I-V, HH Na I-V, τ-V bell curve)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Parameter bounds (box-constrained fitting) enforced across all four solvers</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>? tooltips on all panel section headers; hover tooltip on the parameter correlation heatmap</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.6.0</span>
+          <span class="relnotes-ver-date">2026-05-23 – 2026-05-24</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Plot annotations: horizontal/vertical reference lines and text callouts with full style control (font, color, dash, arrowhead)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Graph Style editor (plot font, colors, grid, axis style, tick format, background)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>First-run tutorial overlay with 6 illustrated slides, light/dark adapted</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Full-screen overlay app mode launched from landing page</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Disabling a dataset fully hides its fits from the plot and all residual panels</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Complete UI state reset when opening a new tab</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.5.0</span>
+          <span class="relnotes-ver-date">2026-05-23</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Web Worker background fitting — UI stays fully responsive during solver iterations</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Convergence chart tab (SSE vs. iteration, Log/Linear axis toggles)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Q-Q plot tab (Blom approximation, theoretical normal quantiles)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Residual histogram tab (Sturges binning, fitted normal density overlay)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Log-scale suggestion banner for data spanning more than two decades on X or Y</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Cancel button for in-progress fits; plain-language input validation errors</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.4.0</span>
+          <span class="relnotes-ver-date">2026-05-23</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Try All Models — fits every built-in model and ranks by R², RMSE, AIC, BIC with one-click Apply</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Y → X calibration and X → Y prediction panel with 95% CI via Jacobian propagation</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>F-test for nested model comparison (F-statistic, exact p-value, plain-English verdict)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Error bars / 1/σ²-weighted fitting from uncertainty columns in imported data</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Parameter sweep sliders — preview model curve in real time before fitting</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Extrapolation range control and Copy Parameters to clipboard</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.3.0</span>
+          <span class="relnotes-ver-date">2026-05-23</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>95% confidence interval (CI) bands via Jacobian propagation through covariance matrix</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Parameter correlation matrix displayed as a colour-coded heatmap</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Normalized residuals mode — display residuals in RMSE units (σ)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Weighted fitting: 1/y², 1/|y|, and 1/σ² (from imported uncertainty columns)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Outlier flagging — highlights points where |residual| > 2.5 × RMSE, updates live</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Multi-column CSV picker for files with more than two data columns</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.2.0</span>
+          <span class="relnotes-ver-date">2026-05-22 – 2026-05-23</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Multi-tab workspace — each tab is a fully independent fitting environment</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>All-fits stats table at bottom of workspace (R², Adj-R², RMSE, SSE, AIC, BIC, χ²ᵣ)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Dataset enable/disable toggles; auto-restore session on page reload</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Three additional solvers: Gauss-Newton, Nelder-Mead (derivative-free), BFGS</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Multi-start fitting — 8 log-uniform pilot runs, best result polished automatically</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Interactive point editing: click to select, drag to move, undo/redo, arrow nudge</span></li>
+        </ul>
+      </div>
+
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v0.1.0</span>
+          <span class="relnotes-ver-date">2026-05-22</span>
+          <span class="relnotes-ver-tag">Initial release</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Levenberg-Marquardt nonlinear least-squares fitting engine (Jacobian-based, with λ damping)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>16 built-in models: Linear, Exponential, Exp Decay + Offset, Logistic, Gaussian, Lorentzian, Sinusoidal, Power Law, Polynomial (2–5), Michaelis-Menten, Hill, Weibull CDF, Gompertz, Double Exponential</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>CSV/TSV import with smart auto-detection of headers, axis labels, and data columns</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Custom equation editor with Math.js expression parsing and auto-detected parameters</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Session save/load (JSON), resizable panels, movable legend, dark/light theme</span></li>
+        </ul>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end">
+      <button class="btn btn-primary" id="relnotes-modal-close-btn">Close</button>
     </div>
   </div>
 </div>
