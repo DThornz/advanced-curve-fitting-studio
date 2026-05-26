@@ -127,7 +127,7 @@ function invertMatrix(M) {
 
 function fmt(v, precision) {
   if (!isFinite(v)) return '—';
-  const p = precision == null ? 5 : precision;
+  const p = precision == null ? (CFS_SETTINGS ? CFS_SETTINGS.displayDecimals : 5) : precision;
   if (v === 0) return '0';
   const abs = Math.abs(v);
   if (abs >= 1e4 || (abs < 1e-3 && abs > 0)) return v.toExponential(3);
@@ -261,6 +261,49 @@ function jacobianConditionNumber(covMatrix) {
   if (!isFinite(lamMin) || lamMin < 1e-12) return null;
   return Math.sqrt(lamMax / lamMin); // cond(J) = sqrt(cond(J'J)) = sqrt(cond(C))
 }
+
+/* ═══════════════════════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════════════════════ */
+const SETT_KEY = 'cfs_ui_settings';
+const SETT_DEFAULTS = {
+  uiFontSize: 15, uiFontFamily: "'DM Sans',system-ui,sans-serif",
+  monoFont: "'DM Mono',monospace", animSpeed: 'normal',
+  defaultAlgo: 'lm', defaultPilots: 8, defaultWeights: 'none',
+  displayDecimals: 5, fitLineWidth: 2, markerSize: 6,
+  defaultCI: false, defaultLegend: true,
+};
+let CFS_SETTINGS = { ...SETT_DEFAULTS };
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETT_KEY);
+    if (raw) CFS_SETTINGS = { ...SETT_DEFAULTS, ...JSON.parse(raw) };
+  } catch {}
+}
+
+function saveSettings() {
+  localStorage.setItem(SETT_KEY, JSON.stringify(CFS_SETTINGS));
+}
+
+function applySettings(s) {
+  s = s || CFS_SETTINGS;
+  document.documentElement.style.fontSize = s.uiFontSize + 'px';
+  document.documentElement.style.setProperty('--sans', s.uiFontFamily);
+  document.documentElement.style.setProperty('--mono', s.monoFont);
+  // Animation speed
+  const dur = s.animSpeed === 'none' ? '0s' : s.animSpeed === 'fast' ? '0.08s' : '0.18s';
+  document.documentElement.style.setProperty('--anim-dur', dur);
+  if (s.animSpeed === 'none') {
+    document.documentElement.style.setProperty('--transition-override', '0s');
+  } else {
+    document.documentElement.style.removeProperty('--transition-override');
+  }
+}
+
+// Apply persisted settings at startup
+loadSettings();
+applySettings();
 
 function hexToRgba(hex, alpha) {
   const r = parseInt(hex.slice(1,3), 16);
@@ -3303,6 +3346,8 @@ function renderFitList() {
     el.innerHTML = '<div class="panel-empty-hint">Press <strong>▶ Fit</strong><br>after loading data.</div>';
     const corrEl = document.getElementById('corr-matrix-container');
     if (corrEl) corrEl.innerHTML = '';
+    const sidePanel = document.getElementById('statsbar-corr');
+    if (sidePanel) sidePanel.classList.add('corr-empty');
     return;
   }
   el.innerHTML = state.fits.map(fit => {
@@ -3937,10 +3982,16 @@ function renderParamResults(fit) {
 
 function renderCorrMatrix(fit) {
   const el = document.getElementById('corr-matrix-container');
+  const sidePanel = document.getElementById('statsbar-corr');
   if (!el) return;
-  const { covMatrix, params } = fit.result || {};
-  const names = fit.paramNames || [];
-  if (!covMatrix || names.length < 2) { el.innerHTML = ''; return; }
+  const { covMatrix } = fit ? (fit.result || {}) : {};
+  const names = fit ? (fit.paramNames || []) : [];
+  if (!covMatrix || names.length < 2) {
+    el.innerHTML = '';
+    if (sidePanel) sidePanel.classList.add('corr-empty');
+    return;
+  }
+  if (sidePanel) sidePanel.classList.remove('corr-empty');
   const m = names.length;
   const corr = Array.from({ length: m }, (_, i) =>
     Array.from({ length: m }, (_, j) => {
@@ -3952,18 +4003,16 @@ function renderCorrMatrix(fit) {
     const c = Math.max(-1, Math.min(1, v));
     if (c >= 0) {
       const t = c;
-      const r = Math.round(255 - t * (255 - 29)), g = Math.round(255 - t * (255 - 78)), b = Math.round(255 - t * (255 - 216));
-      return `rgb(${r},${g},${b})`;
+      return `rgb(${Math.round(255-t*(255-29))},${Math.round(255-t*(255-78))},${Math.round(255-t*(255-216))})`;
     } else {
       const t = -c;
-      const r = Math.round(255 - t * (255 - 220)), g = Math.round(255 - t * (255 - 38)), b = Math.round(255 - t * (255 - 38));
-      return `rgb(${r},${g},${b})`;
+      return `rgb(${Math.round(255-t*(255-220))},${Math.round(255-t*(255-38))},${Math.round(255-t*(255-38))})`;
     }
   }
   const isDk = document.body.classList.contains('dark-mode');
-  const header = `<tr><th></th>${names.map(n => `<th title="${n}">${n.length > 4 ? n.slice(0,4) : n}</th>`).join('')}</tr>`;
+  const header = `<tr><th></th>${names.map(n => `<th title="${n}">${n.length>4?n.slice(0,4):n}</th>`).join('')}</tr>`;
   const bodyRows = corr.map((row, i) =>
-    `<tr><td>${names[i].length > 4 ? names[i].slice(0,4) : names[i]}</td>` +
+    `<tr><td>${names[i].length>4?names[i].slice(0,4):names[i]}</td>` +
     row.map((v, j) => {
       const bg = corrColor(v);
       const txtClr = Math.abs(v) > 0.55 ? '#fff' : (isDk ? '#e2e8f0' : '#1a202c');
@@ -3971,42 +4020,48 @@ function renderCorrMatrix(fit) {
     }).join('') + '</tr>'
   ).join('');
 
-  // Build correlation suggestions
-  const pairs = [];
-  for (let i = 0; i < m; i++) {
-    for (let j = i + 1; j < m; j++) {
-      const r = corr[i][j];
-      const ar = Math.abs(r);
-      if (ar >= 0.70) pairs.push({ i, j, r, ar });
-    }
-  }
-  pairs.sort((a, b) => b.ar - a.ar);
+  // All pairwise values for the scrollable list
+  const allPairs = [];
+  for (let i = 0; i < m; i++)
+    for (let j = i+1; j < m; j++)
+      allPairs.push({ i, j, v: corr[i][j] });
+  allPairs.sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
+  const listHtml = allPairs.map(({ i, j, v }) => {
+    const av = Math.abs(v);
+    const barColor = v > 0 ? corrColor(av) : corrColor(-av < 0 ? -av : av);
+    const valCls = av >= 0.95 ? 'style="color:var(--red)"' : av >= 0.70 ? 'style="color:var(--amber)"' : '';
+    return `<div class="corr-list-row">
+      <span class="corr-list-pair" title="${names[i]} ↔ ${names[j]}">${names[i]} ↔ ${names[j]}</span>
+      <span class="corr-list-bar" style="background:${barColor}"></span>
+      <span class="corr-list-val" ${valCls}>${v.toFixed(3)}</span>
+    </div>`;
+  }).join('');
+
+  // Suggestions (up to 3, most severe)
+  const pairs = allPairs.filter(p => Math.abs(p.v) >= 0.70);
   let suggHtml = '';
   if (pairs.length === 0) {
-    suggHtml = `<div class="corr-suggestion corr-ok">✓ All parameters appear well-determined — no strong pairwise correlations detected.</div>`;
+    suggHtml = `<div class="corr-suggestion corr-ok">✓ All parameters well-determined.</div>`;
   } else {
-    const shown = pairs.slice(0, 4);
-    const hidden = pairs.length - shown.length;
-    suggHtml = shown.map(({ i, j, r, ar }) => {
-      const dir = r > 0 ? 'positively' : 'negatively';
+    suggHtml = pairs.slice(0,3).map(({ i, j, v }) => {
+      const ar = Math.abs(v), dir = v > 0 ? 'positively' : 'negatively';
       let advice, cls;
-      if (ar >= 0.95) {
-        cls = 'corr-strong';
-        advice = r > 0
-          ? `These parameters move together — the fit cannot distinguish them independently. Fix one if physically known, collect data over a wider x-range, or reparameterize.`
-          : `As <b>${names[i]}</b> increases, <b>${names[j]}</b> decreases to compensate. A linear combination may be better constrained. Consider fixing one or reparameterizing.`;
-      } else if (ar >= 0.85) {
-        cls = 'corr-high';
-        advice = `Partially dependent — adding more data points across a wider x-range typically improves separation of these parameters.`;
-      } else {
-        cls = 'corr-moderate';
-        advice = `Mild dependency. Usually acceptable, but more varied data can further improve independence.`;
-      }
-      return `<div class="corr-suggestion ${cls}"><span class="corr-pair"><b>${names[i]}</b> ↔ <b>${names[j]}</b> (r = ${r.toFixed(2)}, ${dir})</span> ${advice}</div>`;
-    }).join('') + (hidden > 0 ? `<div class="corr-suggestion corr-more">+ ${hidden} more correlated pair${hidden > 1 ? 's' : ''} not shown.</div>` : '');
+      if (ar >= 0.95) { cls = 'corr-strong'; advice = 'Near-redundant — fix one or reparameterise.'; }
+      else if (ar >= 0.85) { cls = 'corr-high'; advice = 'Partially dependent — widen x-range.'; }
+      else { cls = 'corr-moderate'; advice = 'Mild dependency.'; }
+      return `<div class="corr-suggestion ${cls}"><span class="corr-pair"><b>${names[i]}</b> ↔ <b>${names[j]}</b> r=${v.toFixed(2)}</span> ${advice}</div>`;
+    }).join('');
   }
 
-  el.innerHTML = `<div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" data-tip="corr-matrix">?</span></div><table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table><div class="corr-suggestions">${suggHtml}</div>`;
+  el.innerHTML = `
+    <div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" data-tip="corr-matrix">?</span></div>
+    <div class="corr-panel-cols">
+      <div class="corr-panel-heatmap">
+        <table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>
+      </div>
+      <div class="corr-panel-list">${listHtml || '<span style="color:var(--dimmer);font-size:.72em">—</span>'}</div>
+    </div>
+    <div class="corr-suggestions" style="margin-top:6px">${suggHtml}</div>`;
 }
 
 let _consoleMsg = { text: '', type: '', timer: null };
@@ -5898,7 +5953,7 @@ function saveCurrentTab() {
 }
 
 function closeAllModals() {
-  ['gs-modal', 'ann-modal', 'col-picker-modal', 'save-modal', 'relnotes-modal', 'tut-overlay'].forEach(id => {
+  ['gs-modal', 'ann-modal', 'col-picker-modal', 'save-modal', 'relnotes-modal', 'tut-overlay', 'settings-modal'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -6953,6 +7008,66 @@ function initEvents() {
     const m = document.getElementById('session-menu');
     m.classList.remove('open'); m.style.cssText = '';
   });
+  document.getElementById('sess-settings').addEventListener('click', () => openSettings());
+
+  // Settings modal controls
+  document.getElementById('settings-modal-close')?.addEventListener('click', () => { document.getElementById('settings-modal').style.display = 'none'; });
+  document.getElementById('settings-modal-close-btn')?.addEventListener('click', () => { document.getElementById('settings-modal').style.display = 'none'; });
+
+  function settChanged() {
+    CFS_SETTINGS.uiFontSize    = parseFloat(document.getElementById('sett-font-size').value) || 15;
+    CFS_SETTINGS.uiFontFamily  = document.getElementById('sett-font-family').value;
+    CFS_SETTINGS.monoFont      = document.getElementById('sett-mono-font').value;
+    CFS_SETTINGS.animSpeed     = document.getElementById('sett-anim-speed').value;
+    CFS_SETTINGS.defaultAlgo   = document.getElementById('sett-algo').value;
+    CFS_SETTINGS.defaultPilots = parseInt(document.getElementById('sett-pilots').value) || 8;
+    CFS_SETTINGS.defaultWeights= document.getElementById('sett-weights').value;
+    CFS_SETTINGS.displayDecimals = parseInt(document.getElementById('sett-decimals').value) || 5;
+    CFS_SETTINGS.fitLineWidth  = parseFloat(document.getElementById('sett-line-width').value) || 2;
+    CFS_SETTINGS.markerSize    = parseInt(document.getElementById('sett-marker-size').value) || 6;
+    CFS_SETTINGS.defaultCI     = document.getElementById('sett-default-ci').checked;
+    CFS_SETTINGS.defaultLegend = document.getElementById('sett-default-legend').checked;
+    applySettings(CFS_SETTINGS);
+    saveSettings();
+    if (CFS_SETTINGS.fitLineWidth || CFS_SETTINGS.markerSize) updatePlots();
+    document.getElementById('sett-font-size-val').textContent = CFS_SETTINGS.uiFontSize + 'px';
+    document.getElementById('sett-line-width-val').textContent = CFS_SETTINGS.fitLineWidth + 'px';
+    document.getElementById('sett-marker-size-val').textContent = CFS_SETTINGS.markerSize + 'px';
+  }
+
+  ['sett-font-size','sett-font-family','sett-mono-font','sett-anim-speed','sett-algo','sett-pilots','sett-weights','sett-decimals','sett-line-width','sett-marker-size','sett-default-ci','sett-default-legend'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', settChanged);
+    document.getElementById(id)?.addEventListener('input', settChanged);
+  });
+
+  document.getElementById('sett-theme-light')?.addEventListener('click', () => {
+    document.body.classList.remove('dark-mode');
+    const dt = document.getElementById('dark-toggle');
+    if (dt) dt.checked = false;
+    localStorage.setItem('dark', '0');
+    document.getElementById('sett-theme-dark')?.classList.remove('active');
+    document.getElementById('sett-theme-light')?.classList.add('active');
+    updatePlots();
+  });
+
+  document.getElementById('sett-theme-dark')?.addEventListener('click', () => {
+    document.body.classList.add('dark-mode');
+    const dt = document.getElementById('dark-toggle');
+    if (dt) dt.checked = true;
+    localStorage.setItem('dark', '1');
+    document.getElementById('sett-theme-light')?.classList.remove('active');
+    document.getElementById('sett-theme-dark')?.classList.add('active');
+    updatePlots();
+  });
+
+  document.getElementById('sett-reset-btn')?.addEventListener('click', () => {
+    CFS_SETTINGS = { ...SETT_DEFAULTS };
+    saveSettings();
+    applySettings(CFS_SETTINGS);
+    openSettings(); // repopulate
+    updatePlots();
+  });
+
   document.getElementById('sess-tutorial').addEventListener('click', () => {
     const m = document.getElementById('session-menu');
     m.classList.remove('open'); m.style.cssText = '';
@@ -6964,6 +7079,44 @@ function initEvents() {
     const m = document.getElementById('session-menu');
     if (m) { m.classList.remove('open'); m.style.cssText = ''; }
   }
+  function openSettings() {
+    const m = document.getElementById('session-menu');
+    if (m) { m.classList.remove('open'); m.style.cssText = ''; }
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    // Populate controls from CFS_SETTINGS
+    const s = CFS_SETTINGS;
+    const fontSize = document.getElementById('sett-font-size');
+    if (fontSize) { fontSize.value = s.uiFontSize; document.getElementById('sett-font-size-val').textContent = s.uiFontSize + 'px'; }
+    const ff = document.getElementById('sett-font-family');
+    if (ff) ff.value = s.uiFontFamily;
+    const mf = document.getElementById('sett-mono-font');
+    if (mf) mf.value = s.monoFont;
+    const as = document.getElementById('sett-anim-speed');
+    if (as) as.value = s.animSpeed;
+    const algo = document.getElementById('sett-algo');
+    if (algo) algo.value = s.defaultAlgo;
+    const pilots = document.getElementById('sett-pilots');
+    if (pilots) pilots.value = String(s.defaultPilots);
+    const weights = document.getElementById('sett-weights');
+    if (weights) weights.value = s.defaultWeights;
+    const dec = document.getElementById('sett-decimals');
+    if (dec) dec.value = String(s.displayDecimals);
+    const lw = document.getElementById('sett-line-width');
+    if (lw) { lw.value = s.fitLineWidth; document.getElementById('sett-line-width-val').textContent = s.fitLineWidth + 'px'; }
+    const ms = document.getElementById('sett-marker-size');
+    if (ms) { ms.value = s.markerSize; document.getElementById('sett-marker-size-val').textContent = s.markerSize + 'px'; }
+    const ci = document.getElementById('sett-default-ci');
+    if (ci) ci.checked = s.defaultCI;
+    const leg = document.getElementById('sett-default-legend');
+    if (leg) leg.checked = s.defaultLegend;
+    // Theme buttons
+    const isDark = document.body.classList.contains('dark-mode');
+    document.getElementById('sett-theme-dark')?.classList.toggle('active', isDark);
+    document.getElementById('sett-theme-light')?.classList.toggle('active', !isDark);
+    modal.style.display = 'flex';
+  }
+
   document.getElementById('sess-relnotes').addEventListener('click', openReleaseNotes);
   document.getElementById('btn-relnotes').addEventListener('click', openReleaseNotes);
   const heroReln = document.getElementById('hero-relnotes');

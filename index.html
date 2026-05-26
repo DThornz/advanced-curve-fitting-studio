@@ -216,6 +216,8 @@
             <div class="app-dropdown-sep"></div>
             <div class="app-dropdown-item" id="sess-shortcuts">⌨&nbsp; Shortcuts</div>
             <div class="app-dropdown-sep"></div>
+            <div class="app-dropdown-item" id="sess-settings">⚙&nbsp; Settings</div>
+            <div class="app-dropdown-sep"></div>
             <div class="app-dropdown-item" id="sess-tutorial">🎓&nbsp; View Tutorial</div>
             <div class="app-dropdown-item" id="sess-relnotes">📋&nbsp; Release Notes</div>
           </div>
@@ -408,7 +410,6 @@
           <div id="param-table-container">
             <div class="panel-empty-hint">Select a model.</div>
           </div>
-          <div id="corr-matrix-container"></div>
         </div>
 
         <!-- Algorithm options -->
@@ -541,8 +542,15 @@
 
     <!-- STATS BAR -->
     <div class="app-statsbar">
-      <div id="app-console">
-        <span class="console-hint">Load a dataset and press <strong>▶ Fit</strong> to begin.</span>
+      <div class="statsbar-main" id="statsbar-main">
+        <div id="app-console">
+          <span class="console-hint">Load a dataset and press <strong>▶ Fit</strong> to begin.</span>
+        </div>
+      </div>
+      <div class="statsbar-corr" id="statsbar-corr">
+        <div class="statsbar-corr-inner">
+          <div id="corr-matrix-container"></div>
+        </div>
       </div>
     </div>
 
@@ -1829,6 +1837,132 @@
     </div>
     <div class="modal-footer" style="justify-content:flex-end">
       <button class="btn btn-primary" id="relnotes-modal-close-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="settings-modal" style="display:none;align-items:flex-start;justify-content:center;padding-top:40px">
+  <div class="modal" style="width:520px;max-width:96vw;max-height:86vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <span class="modal-title">Settings</span>
+      <button class="modal-close" id="settings-modal-close">✕</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:18px">
+
+      <!-- Appearance -->
+      <div class="sett-section">
+        <div class="sett-section-title">Appearance</div>
+        <div class="sett-row">
+          <label class="sett-lbl">Theme</label>
+          <div class="sett-theme-btns">
+            <button class="btn sett-theme-btn" id="sett-theme-light">☀ Light</button>
+            <button class="btn sett-theme-btn" id="sett-theme-dark">☽ Dark</button>
+          </div>
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-font-size">UI Font Size <span class="sett-val-display" id="sett-font-size-val"></span></label>
+          <input type="range" id="sett-font-size" class="sett-range" min="12" max="18" step="0.5">
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-font-family">UI Font</label>
+          <select class="ctrl-input sett-select" id="sett-font-family">
+            <option value="'DM Sans',system-ui,sans-serif">DM Sans (default)</option>
+            <option value="Inter,system-ui,sans-serif">Inter</option>
+            <option value="Arial,sans-serif">Arial</option>
+            <option value="Helvetica,sans-serif">Helvetica</option>
+            <option value="Georgia,serif">Georgia</option>
+            <option value="'Trebuchet MS',sans-serif">Trebuchet MS</option>
+          </select>
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-mono-font">Monospace Font</label>
+          <select class="ctrl-input sett-select" id="sett-mono-font">
+            <option value="'DM Mono',monospace">DM Mono (default)</option>
+            <option value="'Fira Code',monospace">Fira Code</option>
+            <option value="Consolas,monospace">Consolas</option>
+            <option value="'Courier New',monospace">Courier New</option>
+            <option value="Monaco,monospace">Monaco</option>
+            <option value="'JetBrains Mono',monospace">JetBrains Mono</option>
+          </select>
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-anim-speed">Animations</label>
+          <select class="ctrl-input sett-select" id="sett-anim-speed">
+            <option value="normal">Normal</option>
+            <option value="fast">Fast</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fitting Defaults -->
+      <div class="sett-section">
+        <div class="sett-section-title">Fitting Defaults</div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-algo">Default Solver</label>
+          <select class="ctrl-input sett-select" id="sett-algo">
+            <option value="lm">Levenberg-Marquardt</option>
+            <option value="gn">Gauss-Newton</option>
+            <option value="nm">Nelder-Mead Simplex</option>
+            <option value="bfgs">BFGS</option>
+          </select>
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-pilots">Multi-start Pilots</label>
+          <select class="ctrl-input sett-select" id="sett-pilots">
+            <option value="0">Off</option>
+            <option value="4">4</option>
+            <option value="8">8 (default)</option>
+            <option value="16">16</option>
+            <option value="32">32</option>
+          </select>
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-weights">Default Weights</label>
+          <select class="ctrl-input sett-select" id="sett-weights">
+            <option value="none">None (OLS)</option>
+            <option value="y2">1/y²</option>
+            <option value="y">1/|y|</option>
+            <option value="huber">Huber IRLS</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Display -->
+      <div class="sett-section">
+        <div class="sett-section-title">Display</div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-decimals">Numeric Precision</label>
+          <select class="ctrl-input sett-select" id="sett-decimals">
+            <option value="3">3 significant figures</option>
+            <option value="4">4 significant figures</option>
+            <option value="5">5 significant figures (default)</option>
+            <option value="6">6 significant figures</option>
+          </select>
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-line-width">Fit Line Width <span class="sett-val-display" id="sett-line-width-val"></span></label>
+          <input type="range" id="sett-line-width" class="sett-range" min="1" max="4" step="0.5">
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl" for="sett-marker-size">Scatter Marker Size <span class="sett-val-display" id="sett-marker-size-val"></span></label>
+          <input type="range" id="sett-marker-size" class="sett-range" min="3" max="14" step="1">
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl">Default CI Bands</label>
+          <label class="sett-toggle"><input type="checkbox" id="sett-default-ci"><span class="sett-toggle-track"></span></label>
+        </div>
+        <div class="sett-row">
+          <label class="sett-lbl">Default Legend</label>
+          <label class="sett-toggle"><input type="checkbox" id="sett-default-legend"><span class="sett-toggle-track"></span></label>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" id="sett-reset-btn">Reset to Defaults</button>
+      <button class="btn btn-primary" id="settings-modal-close-btn">Done</button>
     </div>
   </div>
 </div>
