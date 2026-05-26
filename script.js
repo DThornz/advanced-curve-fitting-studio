@@ -1202,44 +1202,44 @@ const MODEL_EQ_JS = {
 };
 
 const MODEL_EQ = {
-  'Linear':           'y = a·x + b',
-  'Power':            'y = a·xᵇ',
-  'Power-Offset':     'y = a·xᵇ + c',
-  'Polynomial-2':     'y = c₂x² + c₁x + c₀',
-  'Polynomial-3':     'y = c₃x³ + c₂x² + c₁x + c₀',
-  'Polynomial-4':     'y = c₄x⁴ + c₃x³ + c₂x² + c₁x + c₀',
-  'Polynomial-5':     'y = c₅x⁵ + c₄x⁴ + c₃x³ + c₂x² + c₁x + c₀',
-  'Polynomial-6':     'y = c₆x⁶ + c₅x⁵ + c₄x⁴ + c₃x³ + c₂x² + c₁x + c₀',
-  'Exponential':      'y = a·eᵇˣ',
-  'Exp-Decay-Offset': 'y = a·e⁻ᵇˣ + c',
-  'Biexponential':    'y = A₁·e⁻ᵇ¹ˣ + A₂·e⁻ᵇ²ˣ + C',
-  'Logistic':         'y = L / (1 + e^(−k·(x−x₀)))',
-  'Gompertz':         'y = A·exp(−exp(−k·(x−x₀)))',
-  'KWW':              'y = A·exp(−(x/τ)^β) + C',
-  'Gaussian':         'y = A·exp(−½·((x−μ)/σ)²) + C',
-  'Lorentzian':       'y = A·γ²/((x−x₀)² + γ²) + C',
-  'Double-Gaussian':  'y = A₁·exp(−½((x−μ₁)/σ₁)²) + A₂·exp(−½((x−μ₂)/σ₂)²) + C',
-  'Pseudo-Voigt':     'y = A·[η·L + (1−η)·G] + C,  L = γ²/((x−x₀)²+γ²),  G = exp(−½((x−x₀)/σ)²)',
-  'Fano':             'y = A·(q+ε)²/(1+ε²) + C,  ε = (x−x₀)/Γ',
-  'Michaelis-Menten': 'y = Vmax·x / (Km + x)',
-  'Hill':             'y = Vmax·xⁿ / (Kdⁿ + xⁿ)',
-  '4PL':              'y = D + (A−D) / (1 + (x/C)^B)',
-  'Oral-PK':          'y = Amp·ka/(ka−ke)·(e^(−ke·x) − e^(−ka·x))',
-  'Stern-Volmer':     'y = F₀ / ((1+KD·x)·(1+KS·x))',
-  'Rational':         'y = (a + b·x) / (1 + c·x)',
-  'Sine':             'y = A·sin(ω·x + φ) + C',
-  'Damped-Sine':      'y = A·e^(−γ·x)·sin(ω·x + φ) + C',
-  'Weibull':          'y = 1 − exp(−(x/λ)^k)',
-  'Langevin':         'y = A·(coth(B·x) − 1/(B·x))',
-  'Van-t-Hoff':       'y = exp(−ΔH/(R·x) + ΔS/R)',
-  'Ramberg-Osgood':   'y = x/E + (x/K)^(1/n)',
-  'Boltzmann':        'y = A / (1 + e^(−(x−Vh)/k))',
-  'Double-Boltzmann': 'y = A₁/(1+e^(−(x−Vh₁)/k₁)) + A₂/(1+e^(−(x−Vh₂)/k₂))',
-  'HH-Activation':    'm = 1/(1+e^(−(x−Vm)/km)),  y = g·mᵖ·(x−Erev)',
-  'HH-Na-IV':         'm = 1/(1+e^(−(x−Vm)/km)),  h = 1/(1+e^((x−Vh)/kh)),  y = g·m³h·(x−Erev)',
-  'Kir':              'y = g·(x−EK) / (1 + e^((x−Vh)/k))',
-  'GHK':              'y = A·x·(1 − r·e^(−x/Vt)) / (1 − e^(−x/Vt))',
-  'Tau-Gaussian':     'y = τmax·exp(−½·((x−Vpeak)/k)²) + τmin',
+  'Linear':           'y = ax + b',
+  'Power':            'y = ax^{b}',
+  'Power-Offset':     'y = ax^{b} + c',
+  'Polynomial-2':     'y = c_{2}x^2 + c_{1}x + c_{0}',
+  'Polynomial-3':     'y = c_{3}x^3 + c_{2}x^2 + c_{1}x + c_{0}',
+  'Polynomial-4':     'y = c_{4}x^4 + c_{3}x^3 + c_{2}x^2 + c_{1}x + c_{0}',
+  'Polynomial-5':     'y = c_{5}x^5 + c_{4}x^4 + c_{3}x^3 + c_{2}x^2 + c_{1}x + c_{0}',
+  'Polynomial-6':     'y = c_{6}x^6 + c_{5}x^5 + c_{4}x^4 + c_{3}x^3 + c_{2}x^2 + c_{1}x + c_{0}',
+  'Exponential':      'y = a\\,e^{bx}',
+  'Exp-Decay-Offset': 'y = a\\,e^{-bx} + c',
+  'Biexponential':    'y = A_{1}e^{-b_{1}x} + A_{2}e^{-b_{2}x} + C',
+  'Logistic':         'y = \\dfrac{L}{1+e^{-k(x-x_{0})}}',
+  'Gompertz':         'y = A\\exp\\!\\left(-e^{-k(x-x_{0})}\\right)',
+  'KWW':              'y = A\\exp\\!\\left(-\\left(\\tfrac{x}{\\tau}\\right)^{\\!\\beta}\\right)+C',
+  'Gaussian':         'y = A\\exp\\!\\left(-\\dfrac{(x-\\mu)^{2}}{2\\sigma^{2}}\\right)+C',
+  'Lorentzian':       'y = \\dfrac{A\\gamma^{2}}{(x-x_{0})^{2}+\\gamma^{2}}+C',
+  'Double-Gaussian':  'y = A_{1}e^{-(x-\\mu_{1})^{2}\\!/2\\sigma_{1}^{2}}+A_{2}e^{-(x-\\mu_{2})^{2}\\!/2\\sigma_{2}^{2}}+C',
+  'Pseudo-Voigt':     'y = A[\\eta L+(1-\\eta)G]+C,\\quad L=\\dfrac{\\gamma^{2}}{(x-x_{0})^{2}+\\gamma^{2}},\\;G=e^{-(x-x_{0})^{2}\\!/2\\sigma^{2}}',
+  'Fano':             'y = A\\dfrac{(q+\\varepsilon)^{2}}{1+\\varepsilon^{2}}+C,\\quad\\varepsilon=\\dfrac{x-x_{0}}{\\Gamma}',
+  'Michaelis-Menten': 'y = \\dfrac{V_{\\!\\max}x}{K_{m}+x}',
+  'Hill':             'y = \\dfrac{V_{\\!\\max}x^{n}}{K_{d}^{n}+x^{n}}',
+  '4PL':              'y = D+\\dfrac{A-D}{1+(x/C)^{B}}',
+  'Oral-PK':          'y = \\dfrac{A_{\\!mp}\\,k_{a}}{k_{a}-k_{e}}\\!\\left(e^{-k_{e}x}-e^{-k_{a}x}\\right)',
+  'Stern-Volmer':     'y = \\dfrac{F_{0}}{(1+K_{D}x)(1+K_{S}x)}',
+  'Rational':         'y = \\dfrac{a+bx}{1+cx}',
+  'Sine':             'y = A\\sin(\\omega x+\\varphi)+C',
+  'Damped-Sine':      'y = A\\,e^{-\\gamma x}\\sin(\\omega x+\\varphi)+C',
+  'Weibull':          'y = 1-\\exp\\!\\left(-(x/\\lambda)^{k}\\right)',
+  'Langevin':         'y = A\\!\\left(\\coth(Bx)-\\dfrac{1}{Bx}\\right)',
+  'Van-t-Hoff':       'y = \\exp\\!\\left(\\dfrac{\\Delta S}{R}-\\dfrac{\\Delta H}{Rx}\\right)',
+  'Ramberg-Osgood':   'y = \\dfrac{x}{E}+\\left(\\dfrac{x}{K}\\right)^{\\!1/n}',
+  'Boltzmann':        'y = \\dfrac{A}{1+e^{-(x-V_{h})/k}}',
+  'Double-Boltzmann': 'y = \\dfrac{A_{1}}{1+e^{-(x-V_{h1})/k_{1}}}+\\dfrac{A_{2}}{1+e^{-(x-V_{h2})/k_{2}}}',
+  'HH-Activation':    'm=\\dfrac{1}{1+e^{-(x-V_{m})/k_{m}}},\\quad y=g\\,m^{p}(x-E_{\\mathrm{rev}})',
+  'HH-Na-IV':         'm=\\dfrac{1}{1+e^{-(x-V_{m})/k_{m}}},\\;h=\\dfrac{1}{1+e^{(x-V_{h})/k_{h}}},\\;y=g\\,m^{3}h\\,(x-E_{\\mathrm{rev}})',
+  'Kir':              'y=\\dfrac{g(x-E_{K})}{1+e^{(x-V_{h})/k}}',
+  'GHK':              'y=\\dfrac{Ax\\left(1-r\\,e^{-x/V_{t}}\\right)}{1-e^{-x/V_{t}}}',
+  'Tau-Gaussian':     'y=\\tau_{\\max}\\exp\\!\\left(-\\dfrac{(x-V_{\\mathrm{peak}})^{2}}{2k^{2}}\\right)+\\tau_{\\min}',
   'Custom':           '',
 };
 
@@ -1736,32 +1736,32 @@ const EXAMPLES = {
 };
 
 const EXAMPLE_EQ = {
-  'exponential-decay':      'y = A·e^(−b·x) + C',
-  'gaussian-peak':          'y = A·exp(−½·((x−μ)/σ)²) + C',
-  'logistic-growth':        'y = L / (1 + e^(−k·(x−x₀)))',
-  'michaelis-menten':       'y = Vmax·x / (Km + x)',
-  'damped-oscillation':     'y = A·e^(−γ·x)·sin(ω·x + φ)',
-  'linear-calibration':     'y = m·x + b',
-  'hill-equation':          'y = Vmax·xⁿ / (Kdⁿ + xⁿ)',
-  'power-law':              'y = a·xᵇ',
-  'lorentzian-peak':        'y = A·γ²/((x−x₀)² + γ²) + C',
-  'weibull-survival':       'y = 1 − exp(−(x/λ)^k)',
-  'polynomial-calibration': 'y = a₃x³ + a₂x² + a₁x + a₀',
-  'sinusoidal':             'y = A·sin(ω·x + φ) + C',
-  'gv-boltzmann':           'y = A / (1 + e^(−(V−Vh)/k))',
-  'kir-iv':                 'y = g·(V−EK) / (1 + e^((V−Vh)/k))',
-  'hhna-iv':                'm = 1/(1+e^(−(V−Vm)/km)),  h = 1/(1+e^((V−Vh)/kh)),  y = g·m³h·(V−Erev)',
-  'tau-voltage':            'y = τmax·exp(−½·((V−Vpeak)/k)²) + τmin',
-  'elisa-4pl':              'y = D + (A−D) / (1 + (x/C)^B)',
-  'gompertz-growth':        'y = A·exp(−exp(−k·(x−x₀)))',
-  'xrd-peak':               'L = γ²/((x−x₀)²+γ²),  G = exp(−½·((x−x₀)/σ)²),  y = A·(η·L+(1−η)·G)+C',
-  'fano-resonance':         'y = A·(q+ε)²/(1+ε²) + C,  ε = (x−x₀)/Γ',
-  'oral-pk':                'y = Amp·ka/(ka−ke)·(e^(−ke·t) − e^(−ka·t))',
-  'polymer-kww':            'y = A·exp(−(t/τ)^β) + C',
-  'langevin-mh':            'y = A·(coth(B·H) − 1/(B·H))',
-  'stern-volmer':           'y = F₀ / ((1+KD·[Q])·(1+KS·[Q]))',
-  'vant-hoff':              'y = exp(−ΔH/(R·T) + ΔS/R)',
-  'stress-strain':          'ε = σ/E + (σ/K)^(1/n)',
+  'exponential-decay':      'y = A\\,e^{-bx}+C',
+  'gaussian-peak':          'y = A\\exp\\!\\left(-\\dfrac{(x-\\mu)^{2}}{2\\sigma^{2}}\\right)+C',
+  'logistic-growth':        'y = \\dfrac{L}{1+e^{-k(x-x_{0})}}',
+  'michaelis-menten':       'y = \\dfrac{V_{\\!\\max}x}{K_{m}+x}',
+  'damped-oscillation':     'y = A\\,e^{-\\gamma x}\\sin(\\omega x+\\varphi)',
+  'linear-calibration':     'y = mx+b',
+  'hill-equation':          'y = \\dfrac{V_{\\!\\max}x^{n}}{K_{d}^{n}+x^{n}}',
+  'power-law':              'y = ax^{b}',
+  'lorentzian-peak':        'y = \\dfrac{A\\gamma^{2}}{(x-x_{0})^{2}+\\gamma^{2}}+C',
+  'weibull-survival':       'y = 1-\\exp\\!\\left(-(x/\\lambda)^{k}\\right)',
+  'polynomial-calibration': 'y = a_{3}x^{3}+a_{2}x^{2}+a_{1}x+a_{0}',
+  'sinusoidal':             'y = A\\sin(\\omega x+\\varphi)+C',
+  'gv-boltzmann':           'y = \\dfrac{A}{1+e^{-(V-V_{h})/k}}',
+  'kir-iv':                 'y = \\dfrac{g(V-E_{K})}{1+e^{(V-V_{h})/k}}',
+  'hhna-iv':                'm=\\dfrac{1}{1+e^{-(V-V_{m})/k_{m}}},\\;h=\\dfrac{1}{1+e^{(V-V_{h})/k_{h}}},\\;y=g\\,m^{3}h\\,(V-E_{\\mathrm{rev}})',
+  'tau-voltage':            'y=\\tau_{\\max}\\exp\\!\\left(-\\dfrac{(V-V_{\\mathrm{peak}})^{2}}{2k^{2}}\\right)+\\tau_{\\min}',
+  'elisa-4pl':              'y = D+\\dfrac{A-D}{1+(x/C)^{B}}',
+  'gompertz-growth':        'y = A\\exp\\!\\left(-e^{-k(x-x_{0})}\\right)',
+  'xrd-peak':               'L=\\dfrac{\\gamma^{2}}{(x-x_{0})^{2}+\\gamma^{2}},\\;G=e^{-(x-x_{0})^{2}\\!/2\\sigma^{2}},\\;y=A(\\eta L+(1-\\eta)G)+C',
+  'fano-resonance':         'y=A\\dfrac{(q+\\varepsilon)^{2}}{1+\\varepsilon^{2}}+C,\\quad\\varepsilon=\\dfrac{x-x_{0}}{\\Gamma}',
+  'oral-pk':                'y=\\dfrac{A_{\\!mp}\\,k_{a}}{k_{a}-k_{e}}\\!\\left(e^{-k_{e}t}-e^{-k_{a}t}\\right)',
+  'polymer-kww':            'y=A\\exp\\!\\left(-(t/\\tau)^{\\beta}\\right)+C',
+  'langevin-mh':            'y=A\\!\\left(\\coth(BH)-\\dfrac{1}{BH}\\right)',
+  'stern-volmer':           'y=\\dfrac{F_{0}}{(1+K_{D}[Q])(1+K_{S}[Q])}',
+  'vant-hoff':              'y=\\exp\\!\\left(\\dfrac{\\Delta S}{R}-\\dfrac{\\Delta H}{RT}\\right)',
+  'stress-strain':          '\\varepsilon=\\dfrac{\\sigma}{E}+\\left(\\dfrac{\\sigma}{K}\\right)^{\\!1/n}',
 };
 
 function generateExample(key, overrides) {
@@ -4146,7 +4146,10 @@ function syncModelCustomSection() {
   state.fitConfig.model = model;
   document.getElementById('custom-eq-section').style.display = model === 'Custom' ? '' : 'none';
   const eqEl = document.getElementById('model-eq-display');
-  if (eqEl) eqEl.textContent = MODEL_EQ[model] || '';
+  if (eqEl) {
+    const latex = MODEL_EQ[model];
+    eqEl.innerHTML = latex ? katex.renderToString(latex, { throwOnError: false, displayMode: false }) : '';
+  }
   const editBtn = document.getElementById('model-edit-as-custom');
   if (editBtn) editBtn.style.display = (model !== 'Custom' && MODEL_EQ_JS[model]) ? '' : 'none';
   if (model === 'Custom') {
@@ -5102,9 +5105,10 @@ function openExampleEditor(key, savedState = null) {
   currentExampleKey = key;
   document.getElementById('example-modal-title').textContent = ex.title;
   const body = document.getElementById('example-modal-body');
-  const exEqStr = EXAMPLE_EQ[key] || '';
+  const exLatex = EXAMPLE_EQ[key] || '';
+  const exEqHtml = exLatex ? katex.renderToString(exLatex, { throwOnError: false, displayMode: true }) : '';
   body.innerHTML =
-    (exEqStr ? `<div style="font-family:var(--mono);font-size:.77em;color:var(--teal);background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:5px 9px;margin-bottom:10px;line-height:1.6;word-break:break-word">${exEqStr}</div>` : '') + `
+    (exEqHtml ? `<div style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:10px;overflow-x:auto;text-align:center">${exEqHtml}</div>` : '') + `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
       <span style="font-weight:600;font-size:.8em;flex:1">Model Parameters</span>
       <span class="panel-tip" data-tip="ex-model-params">?</span>

@@ -173,7 +173,7 @@
       <button class="btn btn-danger" id="btn-clear-fit" title="Remove the selected fit">✕  Remove Fit</button>
       <div style="flex:1"></div>
       <div class="app-toolbar-group">
-        <button class="btn btn-toggle" id="btn-toggle-residuals" title="Show / hide residual plot">Residuals</button>
+        <button class="btn btn-toggle" id="btn-toggle-residuals" title="Show / hide diagnostic plots (residuals, Q-Q, convergence)">Diagnostics</button>
         <button class="btn btn-toggle" id="btn-ci-bands" title="Show 95% confidence bands around each fit curve">CI Bands</button>
         <button class="btn btn-toggle" id="btn-pi-bands" title="Show 95% prediction interval (wider than CI: includes observation scatter)">PI Bands</button>
         <button class="btn btn-toggle" id="btn-norm-resid" title="Normalize residuals by RMSE (show σ units)">Norm. Res.</button>
@@ -372,7 +372,7 @@
               <option value="Custom">Custom Equation…</option>
             </optgroup>
           </select>
-          <div id="model-eq-display" style="margin-top:5px;font-family:var(--mono);font-size:.72em;color:var(--teal);line-height:1.5;min-height:1.1em;word-break:break-word"></div>
+          <div id="model-eq-display" style="margin-top:6px;font-size:.82em;line-height:1.6;min-height:1.4em;overflow-x:auto;color:var(--text)"></div>
           <button id="model-edit-as-custom" class="btn" style="display:none;width:100%;margin-top:5px;font-size:.72em" title="Load this model's equation into the Custom editor so you can modify it">Edit as Custom…</button>
         </div>
 
@@ -1828,6 +1828,6 @@
 </div>
 
 <div id="ui-tooltip" class="ui-tooltip" style="display:none"></div>
-<script src="script.js"></script>
+<script defer src="script.js"></script>
 </body>
 </html>
