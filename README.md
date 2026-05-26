@@ -16,8 +16,8 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
 | **Parameter bounds** | Optional min/max per parameter; all four solvers enforce box constraints via projection at every iteration; init is auto-clamped before dispatch; blank = unconstrained |
-| **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^`. **Visual Equation Editor** popup (⊞ button) provides a click-to-insert operator/function palette (trig, hyperbolic, rounding, constants), 30+ categorised example equations, and live Math.js validation with parameter detection. |
-| **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix, convergence status, final λ (LM), gradient norm (BFGS) |
+| **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^`. **Visual Equation Editor** popup (⊞ button) provides a click-to-insert operator/function palette (trig, hyperbolic, rounding, constants), 30+ categorised example equations, and live Math.js validation with parameter detection. **Edit as Custom…** button appears below every built-in model — pre-fills the custom editor with a Math.js translation of the selected model's equation for use as a starting point. |
+| **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, parameter correlation matrix with plain-English suggestions (flags strongly correlated pairs with targeted advice — fix a parameter, widen x-range, or reparameterize; confirms well-determined fits), convergence status, final λ (LM), gradient norm (BFGS) |
 | **Expandable stats bar** | Click any row in the bottom stats table to expand it: shows per-parameter fitted value, std error, 95% CI (t-distribution at correct dof), and t-statistic (green = significant); right column shows full suite of summary stats at larger size; click again to collapse |
 | **CI bands** | 95% confidence interval ribbon around each fit curve (toggle per session) |
 | **Prediction interval bands** | 95% PI ribbon — wider than CI, adds per-observation scatter (RMSE²) to parameter uncertainty; toggle independently of CI bands |
@@ -48,7 +48,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Axis range & tick control** | Set X/Y min, max, and tick spacing (Δ) from the ⚙ Style modal; blank = Plotly autorange |
 | **Graph style editor** | Full control over global font (family, size, color), plot/paper background, grid lines (color, width, dash per axis), zero lines, axis spines, tick labels, and legend appearance; ⚙ Style button in the Plot Labels section |
 | **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker with optional σ column for files with more than two columns |
-| **26 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration, **Gompertz tumor growth**, **XRD Pseudo-Voigt peak**, **Fano resonance**, **superparamagnetic M-H (Langevin)**, **stress-strain Ramberg-Osgood**, **ELISA 4PL dose-response**, **oral drug PK**, **polymer KWW relaxation**, **fluorescence quenching (Stern-Volmer)**, **Van't Hoff equilibrium vs temperature** · **Electrophysiology:** G-V Boltzmann, Kir I-V, HH Na I-V, voltage-dependent τ — each with adjustable noise and optional outlier injection (count + scale). Dropdown is a 3-column grouped layout |
+| **26 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration, **Gompertz tumor growth**, **XRD Pseudo-Voigt peak**, **Fano resonance**, **superparamagnetic M-H (Langevin)**, **stress-strain Ramberg-Osgood**, **ELISA 4PL dose-response**, **oral drug PK**, **polymer KWW relaxation**, **fluorescence quenching (Stern-Volmer)**, **Van't Hoff equilibrium vs temperature** · **Electrophysiology:** G-V Boltzmann, Kir I-V, HH Na I-V, voltage-dependent τ — each with adjustable noise and optional outlier injection (count + scale). The generator modal shows the generating equation rendered in KaTeX. Dropdown is a 3-column grouped layout |
 | **Dataset enable/disable** | Toggle datasets on/off; disabled datasets and all their fits are fully hidden from the plot, residual panels, stats table, and F-test — re-enabling instantly restores them |
 | **Blank startup** | App opens with an empty workspace — no example data pre-loaded; start from a clean slate every time |
 | **First-run tutorial** | 6-slide modal on first launch with SVG illustrations of the real app UI that automatically adapt to light/dark mode; forward/back navigation, keyboard support (arrow keys, Escape), and a "Don't show this again" option stored in localStorage |
@@ -165,6 +165,10 @@ The parameter table has four columns per row: **Init** (starting guess), **Min**
 
 All four solvers (LM, Gauss-Newton, Nelder-Mead, BFGS) enforce bounds by projecting each candidate parameter vector back into the feasible box after every iteration. The initial guess is also auto-clamped to bounds before the fit is dispatched.
 
+### Equation display
+
+Every built-in model shows its full equation (rendered by KaTeX) directly below the Fit Model dropdown — updated instantly on every selection. The 26 example dataset generators also show the generating equation (in display-mode KaTeX) at the top of the generator modal.
+
 ### Custom equations
 
 1. Select **Custom Equation** from the model dropdown.
@@ -174,8 +178,9 @@ All four solvers (LM, Gauss-Newton, Nelder-Mead, BFGS) enforce bounds by project
    - **Example equations** — 30+ categorised examples (exponential, sigmoidal, peak shapes, oscillatory, biochemistry, rational) that load into the editor on click.
    - **Live validation** — equation is parsed by Math.js in real time; detected parameters shown in teal; errors shown in red.
    - Press `Ctrl+Enter` to apply or click **Apply Equation**; `Escape` cancels.
-4. Parameters are detected automatically (any symbol other than `x` and standard math functions).
-5. Set initial values, then press **Fit**.
+4. To start from a built-in model and modify it, select any model then click **Edit as Custom…** below the equation display. The custom editor is pre-filled with a Math.js translation of that model's equation — edit it freely and refit.
+5. Parameters are detected automatically (any symbol other than `x` and standard math functions).
+6. Set initial values, then press **Fit**.
 
 ### Electrophysiology models
 
@@ -193,9 +198,9 @@ Seven models are provided under the **Electrophysiology** group for fitting ion 
 
 Example datasets for G-V (Boltzmann), Kir I-V, HH Na I-V, and voltage-dependent τ are available from the **Examples** menu with adjustable noise.
 
-### Residual analysis tabs
+### Diagnostics panel
 
-Four tabs sit below the main plot:
+Click **Diagnostics** in the toolbar to show/hide the panel below the main plot. It contains four tabs:
 
 | Tab | What it shows |
 |---|---|
@@ -204,7 +209,7 @@ Four tabs sit below the main plot:
 | **Histogram** | Residual distribution with Sturges binning and a fitted normal density overlay |
 | **Convergence** | SSE vs. iteration; default Log Y / Linear X; in-chart buttons toggle each axis independently (Log X · Linear X · Log Y · Linear Y); for multi-start fits the pilot-selection phase and polish share a monotonic x-axis |
 
-The whole panel dims while a fit is running. Fits on disabled datasets are excluded from all residual sub-panels.
+The whole panel dims while a fit is running. Fits on disabled datasets are excluded from all sub-panels.
 
 ### Prediction and calibration lookup
 
