@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Advanced Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.1.0</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.2.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -229,7 +229,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.1.0</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.2.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1575,12 +1575,31 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.2.0 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.2.0</span>
+          <span class="relnotes-ver-date">2026-05-26</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Extended diagnostics stats</strong> — nine additional statistics added to the expanded fit stats panel: MAE, Max |residual|, CV%, Degrees of Freedom (explicit), Log-likelihood, overall F-statistic with p-value, Durbin-Watson autocorrelation statistic, Wald-Wolfowitz Runs test p-value, and Jacobian condition number</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Color-coded annotation badges on three of the new statistics — Durbin-Watson shows "no autocorr." (green), "pos. autocorr." or "neg. autocorr." (amber); Runs test shows "random" (green) or "pattern!" (amber); Cond(J) shows "well-cond." (green), "moderate" (amber), or "ill-cond." (red)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Inline ⓘ tooltip on every new stat label with a full plain-English definition including the formula, valid range, and interpretation guidance</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>normalCDF</strong> utility (Abramowitz & Stegun polynomial, max error 7.5×10⁻⁸) added for runs-test Z-score conversion to p-values without any external dependency</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Jacobian condition number estimated via power iteration on the parameter correlation matrix — identifies near-linear parameter dependencies that inflate standard errors</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Extended stats arranged in a compact 3-column CSS grid below the existing parameter table — zero layout disruption to existing stats when collapsed</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>New stats gracefully degrade — each statistic shows "—" when the fit lacks sufficient data (e.g. Durbin-Watson requires N ≥ 4, Runs test requires N ≥ 10 with ≥ 3 of each sign, condition number requires ≥ 2 parameters)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Updated in-app §5 documentation and README with descriptions of all nine new statistics and their interpretation</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Version bumped to <strong>v1.2.0</strong> in topbar chip and landing page hero badge</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.1.0 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.1.0</span>
+          <span class="relnotes-ver-num">v1.1.0</span>
           <span class="relnotes-ver-date">2026-05-26</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>KaTeX-rendered equation displayed below the Fit Model dropdown — proper LaTeX typesetting for every built-in model, updating instantly on each selection change</span></li>
@@ -1883,6 +1902,21 @@
         <tr><td>AIC / BIC</td><td>Model quality penalised for complexity — allows fair comparison across models</td><td>Lower is better; difference &gt; 10 is decisive</td></tr>
         <tr><td>N</td><td>Number of non-masked data points used in the fit</td><td>Higher gives more reliable statistics</td></tr>
         <tr><td>Status</td><td>✓ = converged; ⚠ = hit iteration limit. Hover the ⓘ marker for solver diagnostics: final λ damping (LM) or gradient norm |∇| (BFGS)</td><td>Always aim for ✓; λ → 0 or small |∇| confirms a tight minimum</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Extended diagnostics</strong> — click any row in the stats bar to expand it, then scroll down past the parameter table to see nine additional statistics arranged in a compact three-column grid:</p>
+    <table class="param-table" style="margin:10px 0;font-size:.8em">
+      <thead><tr><th>Statistic</th><th>Formula / Method</th><th>Interpretation</th></tr></thead>
+      <tbody>
+        <tr><td>MAE</td><td>Σ|eᵢ|/N</td><td>Mean Absolute Error — less sensitive to outliers than RMSE because errors are not squared</td></tr>
+        <tr><td>Max |e|</td><td>max(|eᵢ|)</td><td>Single worst-case residual; identifies the point the model handles least well</td></tr>
+        <tr><td>CV%</td><td>RMSE / |ȳ| × 100</td><td>Coefficient of Variation — scale-free fit quality; useful for comparing fits across datasets with different y magnitudes</td></tr>
+        <tr><td>df</td><td>N − p</td><td>Degrees of freedom; displayed explicitly so you can verify that confidence intervals and hypothesis tests are using the correct value</td></tr>
+        <tr><td>Log-likelihood</td><td>−N/2·(ln(2πSSE/N)+1)</td><td>Gaussian MLE log-likelihood; the foundation for AIC and BIC. Higher (less negative) is better</td></tr>
+        <tr><td>F-statistic</td><td>(SSR/p)/(SSE/df)</td><td>Overall model significance test (approximate for nonlinear models). Low p-value means the model explains significantly more variance than the mean alone</td></tr>
+        <tr><td>Durbin-Watson</td><td>Σ(eᵢ−eᵢ₋₁)²/Σeᵢ²</td><td>Range 0–4; ≈ 2 = no autocorrelation (green); &lt; 1.5 = positive autocorrelation (amber); &gt; 2.5 = negative autocorrelation (amber)</td></tr>
+        <tr><td>Runs test p</td><td>Wald-Wolfowitz Z-score</td><td>Tests whether the sign pattern of residuals is random. p &lt; 0.05 (amber "pattern!") suggests the model is systematically misfit</td></tr>
+        <tr><td>Cond(J)</td><td>√(λmax/λmin) of corr. matrix</td><td>&lt; 100 = well-conditioned (green); 100–1000 = moderate (amber); &gt; 1000 = ill-conditioned (red) — high values warn of near-linear parameter dependence</td></tr>
       </tbody>
     </table>
     <p><strong>Nonlinear fits</strong> run in a background Web Worker — the UI remains fully responsive while the solver iterates. Live progress (iteration count and current SSE) appears in the status bar. A red ✕ Cancel button is visible next to the Fit button while a fit is running; clicking it terminates the worker instantly. On browsers that block Workers (e.g. opening the file directly from disk), fitting falls back transparently to the main thread. The app validates your data before dispatching any fit: it checks for sufficient points, non-finite values, constant Y, and whether the model produces finite outputs at the initial parameters — plain-language errors are shown in the status bar so you know exactly what to fix.</p>

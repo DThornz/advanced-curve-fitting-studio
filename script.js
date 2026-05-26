@@ -194,6 +194,73 @@ function fDistPValue(F, d1, d2) {
   return regularizedBeta(d2 / (d2 + d1 * F), d2 / 2, d1 / 2);
 }
 
+// Abramowitz & Stegun approximation, max error 7.5e-8
+function normalCDF(z) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const poly = t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  const p = 1 - 0.3989422804 * Math.exp(-0.5 * z * z) * poly;
+  return z >= 0 ? p : 1 - p;
+}
+
+function durbinWatson(residuals) {
+  if (!residuals || residuals.length < 4) return null;
+  let num = 0, den = 0;
+  for (let i = 1; i < residuals.length; i++) num += (residuals[i] - residuals[i - 1]) ** 2;
+  for (const e of residuals) den += e * e;
+  return den > 0 ? num / den : null;
+}
+
+function runsTestP(residuals) {
+  if (!residuals || residuals.length < 10) return null;
+  const signs = residuals.map(e => (e >= 0 ? 1 : -1));
+  const nPos = signs.filter(s => s > 0).length;
+  const nNeg = signs.filter(s => s < 0).length;
+  if (nPos < 3 || nNeg < 3) return null;
+  const n = nPos + nNeg;
+  let runs = 1;
+  for (let i = 1; i < signs.length; i++) if (signs[i] !== signs[i - 1]) runs++;
+  const eR  = 1 + (2 * nPos * nNeg) / n;
+  const varR = (2 * nPos * nNeg * (2 * nPos * nNeg - n)) / (n * n * (n - 1));
+  if (varR <= 0) return null;
+  const z = (runs - eR) / Math.sqrt(varR);
+  return 2 * (1 - normalCDF(Math.abs(z)));
+}
+
+// Condition number of J estimated as sqrt(λmax/λmin) of parameter correlation matrix.
+// Uses power iteration + deflation shift on the correlation matrix derived from covMatrix.
+function jacobianConditionNumber(covMatrix) {
+  if (!covMatrix || covMatrix.length < 2) return null;
+  const m = covMatrix.length;
+  const d = covMatrix.map((row, i) => Math.sqrt(Math.abs(row[i])));
+  if (d.some(v => !v || !isFinite(v))) return null;
+  // Build correlation matrix R
+  const R = covMatrix.map((row, i) => row.map((v, j) => v / (d[i] * d[j])));
+  // Power iteration for dominant eigenvalue
+  function powerMax(mat, nIter) {
+    let v = Array(m).fill(1 / Math.sqrt(m));
+    let lam = 0;
+    for (let k = 0; k < nIter; k++) {
+      const w  = mat.map(row => row.reduce((s, a, j) => s + a * v[j], 0));
+      const norm = Math.sqrt(w.reduce((s, a) => s + a * a, 0));
+      if (!norm || !isFinite(norm)) return null;
+      const lamNew = v.reduce((s, vj, j) => s + vj * w[j], 0);
+      if (Math.abs(lamNew - lam) < 1e-10 * (Math.abs(lam) + 1)) { lam = lamNew; break; }
+      v = w.map(a => a / norm);
+      lam = lamNew;
+    }
+    return lam > 0 ? lam : null;
+  }
+  const lamMax = powerMax(R, 100);
+  if (!lamMax) return null;
+  // Smallest eigenvalue via shift-invert: lam_min(R) = lamMax − lam_max(lamMax·I − R)
+  const Rsh = R.map((row, i) => row.map((v, j) => (i === j ? lamMax : 0) - v));
+  const lamShift = powerMax(Rsh, 100);
+  if (lamShift == null) return null;
+  const lamMin = lamMax - lamShift;
+  if (!isFinite(lamMin) || lamMin < 1e-12) return null;
+  return Math.sqrt(lamMax / lamMin); // cond(J) = sqrt(cond(J'J)) = sqrt(cond(C))
+}
+
 function hexToRgba(hex, alpha) {
   const r = parseInt(hex.slice(1,3), 16);
   const g = parseInt(hex.slice(3,5), 16);
@@ -4091,6 +4158,104 @@ function buildStatExpandRow(fit, r, colSpan) {
     `<div class="sep-sum-row"><span class="sep-sum-lbl">${lbl}</span><span class="sep-sum-val">${val}</span></div>`
   ).join('');
 
+  // ── Extended statistics ──────────────────────────────────
+  const ds = state.datasets.find(d => d.id === fit.dsId);
+  const excl = state.maskedPoints.get(fit.dsId) || new Set();
+  const yVals = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
+  const nP = fit.paramNames ? fit.paramNames.length : 0;
+  const resids = r.residuals || [];
+
+  // MAE
+  const mae = resids.length ? resids.reduce((s, e) => s + Math.abs(e), 0) / resids.length : null;
+
+  // Max |residual|
+  const maxE = resids.length ? Math.max(...resids.map(Math.abs)) : null;
+
+  // CV% = RMSE / |ȳ| × 100
+  const yMean = yVals.length ? yVals.reduce((s, y) => s + y, 0) / yVals.length : 0;
+  const cvPct = (r.rmse != null && isFinite(r.rmse) && Math.abs(yMean) > 1e-12)
+    ? (r.rmse / Math.abs(yMean)) * 100 : null;
+
+  // Log-likelihood (Gaussian MLE): LL = −n/2·(ln(2π·SSE/n)+1)
+  const logLik = (r.n > 0 && r.sse > 0)
+    ? -r.n / 2 * (Math.log(2 * Math.PI * r.sse / r.n) + 1) : null;
+
+  // Overall F-statistic: F = (SSR/nP) / (SSE/dof), SSR = SST − SSE
+  let fStat = null, fPVal = null;
+  if (yVals.length >= 2 && nP > 0 && r.sse != null && dof > 0) {
+    const sst = yVals.reduce((s, y) => s + (y - yMean) ** 2, 0);
+    const ssr = sst - r.sse;
+    if (ssr > 0 && nP > 0) {
+      fStat = (ssr / nP) / (r.sse / dof);
+      fPVal = fDistPValue(fStat, nP, dof);
+    }
+  }
+
+  // Durbin-Watson
+  const dw = durbinWatson(resids);
+
+  // Runs test
+  const runsP = runsTestP(resids);
+
+  // Condition number of J (from covariance matrix)
+  const condJ = jacobianConditionNumber(r.covMatrix);
+
+  // ── Helper: one ext-stat row ──────────────────────────────
+  const tip = (lbl, tooltip) =>
+    `<span class="stats-ext-lbl">${lbl}<span class="stats-ext-tip" title="${tooltip}">ⓘ</span></span>`;
+  const row = (lbl, tooltip, valHtml) =>
+    `<div class="stats-ext-row">${tip(lbl, tooltip)}<span class="stats-ext-val">${valHtml}</span></div>`;
+  const na = `<span class="sep-na">—</span>`;
+
+  // DW interpretation annotation
+  let dwHtml = na;
+  if (dw != null) {
+    const dwCls = dw < 1.5 || dw > 2.5 ? 'stats-ext-warn' : 'stats-ext-good';
+    const dwLbl = dw < 1.5 ? 'pos. autocorr.' : dw > 2.5 ? 'neg. autocorr.' : 'no autocorr.';
+    dwHtml = `${dw.toFixed(3)} <span class="${dwCls} stats-ext-annot">${dwLbl}</span>`;
+  }
+
+  // Runs test annotation
+  let runsPHtml = na;
+  if (runsP != null) {
+    const rpCls = runsP < 0.05 ? 'stats-ext-warn' : 'stats-ext-good';
+    const rpLbl = runsP < 0.05 ? 'pattern!' : 'random';
+    runsPHtml = `${runsP < 0.001 ? '< 0.001' : runsP.toFixed(3)} <span class="${rpCls} stats-ext-annot">${rpLbl}</span>`;
+  }
+
+  // Cond(J) annotation
+  let condHtml = na;
+  if (condJ != null) {
+    const condCls = condJ > 1000 ? 'stats-ext-bad' : condJ > 100 ? 'stats-ext-warn' : 'stats-ext-good';
+    const condLbl = condJ > 1000 ? 'ill-cond.' : condJ > 100 ? 'moderate' : 'well-cond.';
+    condHtml = `${condJ > 9999 ? condJ.toExponential(2) : condJ.toFixed(1)} <span class="${condCls} stats-ext-annot">${condLbl}</span>`;
+  }
+
+  // F-stat + p row
+  const fPStr = fPVal == null ? '' : fPVal < 0.001 ? ' (p < 0.001)' : ` (p = ${fPVal.toFixed(3)})`;
+  const fHtml = fStat != null ? `${fmt(fStat, 4)}${fPStr}` : na;
+
+  const extHtml = `
+    <div class="stats-ext-section">
+      <div class="stats-ext-grid">
+        <div>
+          ${row('MAE', 'Mean Absolute Error — average of |residuals|; less sensitive to outliers than RMSE because errors are not squared.', mae != null ? fmt(mae) : na)}
+          ${row('Max |e|', 'Largest absolute residual in the fit — the single worst-case data point.', maxE != null ? fmt(maxE) : na)}
+          ${row('CV%', 'Coefficient of Variation — RMSE expressed as a percentage of |ȳ|; scale-free measure of fit quality useful for comparing fits across datasets with different y magnitudes.', cvPct != null ? cvPct.toFixed(2) + '%' : na)}
+          ${row('df', 'Degrees of freedom = N − p, where p is the number of fitted parameters. Required for correct confidence-interval and hypothesis-test calculations.', dof)}
+        </div>
+        <div>
+          ${row('Log-likelihood', 'Log-likelihood under a Gaussian noise assumption: LL = −N/2·(ln(2π·SSE/N)+1). The basis for AIC and BIC; higher (less negative) is better.', logLik != null ? logLik.toFixed(3) : na)}
+          ${row('F-statistic', 'Overall model F-test: F = (SSR/p)/(SSE/df), where SSR = SST−SSE. Tests whether the model explains significantly more variance than the mean alone. Approximate for nonlinear models.', fHtml)}
+          ${row('Durbin-Watson', 'Tests for first-order autocorrelation in residuals ordered by x: d = Σ(eᵢ−eᵢ₋₁)²/Σeᵢ². Range 0–4; d ≈ 2 means no autocorrelation, d < 1.5 indicates positive autocorrelation (residuals trend together), d > 2.5 indicates negative autocorrelation (residuals alternate signs).', dwHtml)}
+        </div>
+        <div>
+          ${row('Runs test p', 'Wald-Wolfowitz runs test: tests whether the signs of residuals (+ / −) alternate randomly or show a systematic pattern. Low p (< 0.05) indicates a systematic trend — the model may be misspecified.', runsPHtml)}
+          ${row('Cond(J)', 'Condition number of the Jacobian, estimated as √(λmax/λmin) of the parameter correlation matrix. Values < 100 are well-conditioned; 100–1000 may cause slow convergence or inflated standard errors; > 1000 indicates near-linear dependence between parameters.', condHtml)}
+        </div>
+      </div>
+    </div>`;
+
   return `<tr class="stats-expand-row">
     <td colspan="${colSpan}">
       <div class="stats-expand-body">
@@ -4107,6 +4272,7 @@ function buildStatExpandRow(fit, r, colSpan) {
           </div>
           <div class="stats-expand-summary">${sumHtml}</div>
         </div>
+        ${extHtml}
       </div>
     </td>
   </tr>`;
