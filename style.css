@@ -415,10 +415,11 @@ body.dark-mode .ds-edit:hover{color:#fbbf24!important}
 
 /* ── Residual tab bar ────────────────────────────────────── */
 #residual-tab-bar{
-  display:flex;align-items:flex-end;gap:0;
+  display:flex;align-items:center;gap:0;
   background:var(--bg);border-bottom:1px solid var(--border);
   flex-shrink:0;padding:0 8px;height:26px
 }
+.resid-norm-btn{font-size:.62em!important;padding:1px 7px!important;height:18px;margin-left:auto;align-self:center;line-height:1.2;border-radius:4px}
 #residual-tab-bar.hidden{display:none}
 #residual-tab-bar,#residual-plot{transition:opacity .18s}
 #residual-tab-bar.resid-dim,#residual-plot.resid-dim{opacity:.28}

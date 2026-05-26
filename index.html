@@ -177,7 +177,6 @@
         <button class="btn btn-toggle" id="btn-toggle-residuals" title="Show / hide diagnostic plots (residuals, Q-Q, convergence)">Diagnostics</button>
         <button class="btn btn-toggle" id="btn-ci-bands" title="Show 95% confidence bands around each fit curve">CI Bands</button>
         <button class="btn btn-toggle" id="btn-pi-bands" title="Show 95% prediction interval (wider than CI: includes observation scatter)">PI Bands</button>
-        <button class="btn btn-toggle" id="btn-norm-resid" title="Normalize residuals by RMSE (show σ units)">Norm. Res.</button>
         <button class="btn btn-toggle" id="btn-show-outliers" title="Highlight points where |residual| > 2.5σ for the active fit">Outliers</button>
         <button class="btn btn-toggle" id="btn-edit-mode" title="Show/hide edit controls. Point editing is always active: click a point to select, drag to move, click empty space or Escape to deselect.">✏ Edit</button>
       </div>
@@ -285,6 +284,7 @@
           <button class="resid-tab" data-tab="qq">Q-Q Plot</button>
           <button class="resid-tab" data-tab="hist">Histogram</button>
           <button class="resid-tab" data-tab="convergence">Convergence</button>
+          <button class="btn btn-toggle resid-norm-btn" id="btn-norm-resid" title="Normalize residuals by RMSE (show σ units)">Norm. Res.</button>
         </div>
         <div id="residual-plot" class="plot-div-residual"></div>
       </div>

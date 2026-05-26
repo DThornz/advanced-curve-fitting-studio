@@ -4160,7 +4160,7 @@ function buildStatExpandRow(fit, r, colSpan) {
 
   // ── Extended statistics ──────────────────────────────────
   const ds = state.datasets.find(d => d.id === fit.dsId);
-  const excl = state.maskedPoints.get(fit.dsId) || new Set();
+  const excl = (ds && ds.excludedIndices) || new Set();
   const yVals = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
   const nP = fit.paramNames ? fit.paramNames.length : 0;
   const resids = r.residuals || [];
