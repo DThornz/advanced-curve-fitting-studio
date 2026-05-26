@@ -1160,6 +1160,89 @@ const MODELS = {
   }
 };
 
+const MODEL_EQ_JS = {
+  'Linear':           'a * x + b',
+  'Power':            'a * x^b',
+  'Power-Offset':     'a * x^b + c',
+  'Polynomial-2':     'c2 * x^2 + c1 * x + c0',
+  'Polynomial-3':     'c3 * x^3 + c2 * x^2 + c1 * x + c0',
+  'Polynomial-4':     'c4 * x^4 + c3 * x^3 + c2 * x^2 + c1 * x + c0',
+  'Polynomial-5':     'c5 * x^5 + c4 * x^4 + c3 * x^3 + c2 * x^2 + c1 * x + c0',
+  'Polynomial-6':     'c6 * x^6 + c5 * x^5 + c4 * x^4 + c3 * x^3 + c2 * x^2 + c1 * x + c0',
+  'Exponential':      'a * exp(b * x)',
+  'Exp-Decay-Offset': 'a * exp(-b * x) + c',
+  'Biexponential':    'A1 * exp(-b1 * x) + A2 * exp(-b2 * x) + C',
+  'Logistic':         'L / (1 + exp(-k * (x - x0)))',
+  'Gompertz':         'A * exp(-exp(-k * (x - x0)))',
+  'KWW':              'A * exp(-(x / tau)^beta) + C',
+  'Gaussian':         'A * exp(-0.5 * ((x - mu) / sig)^2) + C',
+  'Lorentzian':       'A * g^2 / ((x - x0)^2 + g^2) + C',
+  'Double-Gaussian':  'A1 * exp(-0.5 * ((x - mu1) / s1)^2) + A2 * exp(-0.5 * ((x - mu2) / s2)^2) + C',
+  'Pseudo-Voigt':     'A * (eta * g^2 / ((x - x0)^2 + g^2) + (1 - eta) * exp(-0.5 * ((x - x0) / s)^2)) + C',
+  'Fano':             'A * (q + (x - x0) / G)^2 / (1 + ((x - x0) / G)^2) + C',
+  'Michaelis-Menten': 'Vmax * x / (Km + x)',
+  'Hill':             'Vmax * x^n / (Kd^n + x^n)',
+  '4PL':              'D + (A - D) / (1 + (x / EC50)^B)',
+  'Oral-PK':          'Amp * ka / (ka - ke) * (exp(-ke * x) - exp(-ka * x))',
+  'Stern-Volmer':     'F0 / ((1 + KD * x) * (1 + KS * x))',
+  'Rational':         '(a + b * x) / (1 + c * x)',
+  'Sine':             'A * sin(omega * x + phi) + C',
+  'Damped-Sine':      'A * exp(-gamma * x) * sin(omega * x + phi) + C',
+  'Weibull':          '1 - exp(-(x / lambda)^k)',
+  'Langevin':         'A * (1 / tanh(B * x) - 1 / (B * x))',
+  'Van-t-Hoff':       'exp(dSR - dHR / x)',
+  'Ramberg-Osgood':   'x / E + (x / K)^(1 / n)',
+  'Boltzmann':        'A / (1 + exp(-(x - Vh) / k))',
+  'Double-Boltzmann': 'A1 / (1 + exp(-(x - Vh1) / k1)) + A2 / (1 + exp(-(x - Vh2) / k2))',
+  'HH-Activation':    'g * (1 / (1 + exp(-(x - Vm) / km)))^p * (x - Erev)',
+  'HH-Na-IV':         'g * (1/(1+exp(-(x-Vm)/km)))^3 * (1/(1+exp((x-Vh)/kh))) * (x - Erev)',
+  'Kir':              'g * (x - EK) / (1 + exp((x - Vh) / k))',
+  'GHK':              'A * x * (1 - r * exp(-x / Vt)) / (1 - exp(-x / Vt))',
+  'Tau-Gaussian':     'taumax * exp(-0.5 * ((x - Vpeak) / k)^2) + taumin',
+};
+
+const MODEL_EQ = {
+  'Linear':           'y = a·x + b',
+  'Power':            'y = a·xᵇ',
+  'Power-Offset':     'y = a·xᵇ + c',
+  'Polynomial-2':     'y = c₂x² + c₁x + c₀',
+  'Polynomial-3':     'y = c₃x³ + c₂x² + c₁x + c₀',
+  'Polynomial-4':     'y = c₄x⁴ + c₃x³ + c₂x² + c₁x + c₀',
+  'Polynomial-5':     'y = c₅x⁵ + c₄x⁴ + c₃x³ + c₂x² + c₁x + c₀',
+  'Polynomial-6':     'y = c₆x⁶ + c₅x⁵ + c₄x⁴ + c₃x³ + c₂x² + c₁x + c₀',
+  'Exponential':      'y = a·eᵇˣ',
+  'Exp-Decay-Offset': 'y = a·e⁻ᵇˣ + c',
+  'Biexponential':    'y = A₁·e⁻ᵇ¹ˣ + A₂·e⁻ᵇ²ˣ + C',
+  'Logistic':         'y = L / (1 + e^(−k·(x−x₀)))',
+  'Gompertz':         'y = A·exp(−exp(−k·(x−x₀)))',
+  'KWW':              'y = A·exp(−(x/τ)^β) + C',
+  'Gaussian':         'y = A·exp(−½·((x−μ)/σ)²) + C',
+  'Lorentzian':       'y = A·γ²/((x−x₀)² + γ²) + C',
+  'Double-Gaussian':  'y = A₁·exp(−½((x−μ₁)/σ₁)²) + A₂·exp(−½((x−μ₂)/σ₂)²) + C',
+  'Pseudo-Voigt':     'y = A·[η·L + (1−η)·G] + C,  L = γ²/((x−x₀)²+γ²),  G = exp(−½((x−x₀)/σ)²)',
+  'Fano':             'y = A·(q+ε)²/(1+ε²) + C,  ε = (x−x₀)/Γ',
+  'Michaelis-Menten': 'y = Vmax·x / (Km + x)',
+  'Hill':             'y = Vmax·xⁿ / (Kdⁿ + xⁿ)',
+  '4PL':              'y = D + (A−D) / (1 + (x/C)^B)',
+  'Oral-PK':          'y = Amp·ka/(ka−ke)·(e^(−ke·x) − e^(−ka·x))',
+  'Stern-Volmer':     'y = F₀ / ((1+KD·x)·(1+KS·x))',
+  'Rational':         'y = (a + b·x) / (1 + c·x)',
+  'Sine':             'y = A·sin(ω·x + φ) + C',
+  'Damped-Sine':      'y = A·e^(−γ·x)·sin(ω·x + φ) + C',
+  'Weibull':          'y = 1 − exp(−(x/λ)^k)',
+  'Langevin':         'y = A·(coth(B·x) − 1/(B·x))',
+  'Van-t-Hoff':       'y = exp(−ΔH/(R·x) + ΔS/R)',
+  'Ramberg-Osgood':   'y = x/E + (x/K)^(1/n)',
+  'Boltzmann':        'y = A / (1 + e^(−(x−Vh)/k))',
+  'Double-Boltzmann': 'y = A₁/(1+e^(−(x−Vh₁)/k₁)) + A₂/(1+e^(−(x−Vh₂)/k₂))',
+  'HH-Activation':    'm = 1/(1+e^(−(x−Vm)/km)),  y = g·mᵖ·(x−Erev)',
+  'HH-Na-IV':         'm = 1/(1+e^(−(x−Vm)/km)),  h = 1/(1+e^((x−Vh)/kh)),  y = g·m³h·(x−Erev)',
+  'Kir':              'y = g·(x−EK) / (1 + e^((x−Vh)/k))',
+  'GHK':              'y = A·x·(1 − r·e^(−x/Vt)) / (1 − e^(−x/Vt))',
+  'Tau-Gaussian':     'y = τmax·exp(−½·((x−Vpeak)/k)²) + τmin',
+  'Custom':           '',
+};
+
 /* ═══════════════════════════════════════════════════════════
    EXAMPLE DATASETS
 ═══════════════════════════════════════════════════════════ */
@@ -1650,6 +1733,35 @@ const EXAMPLES = {
       return { name: 'Stress-Strain Curve', x: sigma, y: noisyGauss(eps, p.noise), xlabel: 'Stress σ (MPa)', ylabel: 'Strain ε', suggestModel: 'Ramberg-Osgood' };
     }
   }
+};
+
+const EXAMPLE_EQ = {
+  'exponential-decay':      'y = A·e^(−b·x) + C',
+  'gaussian-peak':          'y = A·exp(−½·((x−μ)/σ)²) + C',
+  'logistic-growth':        'y = L / (1 + e^(−k·(x−x₀)))',
+  'michaelis-menten':       'y = Vmax·x / (Km + x)',
+  'damped-oscillation':     'y = A·e^(−γ·x)·sin(ω·x + φ)',
+  'linear-calibration':     'y = m·x + b',
+  'hill-equation':          'y = Vmax·xⁿ / (Kdⁿ + xⁿ)',
+  'power-law':              'y = a·xᵇ',
+  'lorentzian-peak':        'y = A·γ²/((x−x₀)² + γ²) + C',
+  'weibull-survival':       'y = 1 − exp(−(x/λ)^k)',
+  'polynomial-calibration': 'y = a₃x³ + a₂x² + a₁x + a₀',
+  'sinusoidal':             'y = A·sin(ω·x + φ) + C',
+  'gv-boltzmann':           'y = A / (1 + e^(−(V−Vh)/k))',
+  'kir-iv':                 'y = g·(V−EK) / (1 + e^((V−Vh)/k))',
+  'hhna-iv':                'm = 1/(1+e^(−(V−Vm)/km)),  h = 1/(1+e^((V−Vh)/kh)),  y = g·m³h·(V−Erev)',
+  'tau-voltage':            'y = τmax·exp(−½·((V−Vpeak)/k)²) + τmin',
+  'elisa-4pl':              'y = D + (A−D) / (1 + (x/C)^B)',
+  'gompertz-growth':        'y = A·exp(−exp(−k·(x−x₀)))',
+  'xrd-peak':               'L = γ²/((x−x₀)²+γ²),  G = exp(−½·((x−x₀)/σ)²),  y = A·(η·L+(1−η)·G)+C',
+  'fano-resonance':         'y = A·(q+ε)²/(1+ε²) + C,  ε = (x−x₀)/Γ',
+  'oral-pk':                'y = Amp·ka/(ka−ke)·(e^(−ke·t) − e^(−ka·t))',
+  'polymer-kww':            'y = A·exp(−(t/τ)^β) + C',
+  'langevin-mh':            'y = A·(coth(B·H) − 1/(B·H))',
+  'stern-volmer':           'y = F₀ / ((1+KD·[Q])·(1+KS·[Q]))',
+  'vant-hoff':              'y = exp(−ΔH/(R·T) + ΔS/R)',
+  'stress-strain':          'ε = σ/E + (σ/K)^(1/n)',
 };
 
 function generateExample(key, overrides) {
@@ -3790,7 +3902,43 @@ function renderCorrMatrix(fit) {
       return `<td style="background:${bg};color:${txtClr}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
     }).join('') + '</tr>'
   ).join('');
-  el.innerHTML = `<div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" data-tip="corr-matrix">?</span></div><table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
+
+  // Build correlation suggestions
+  const pairs = [];
+  for (let i = 0; i < m; i++) {
+    for (let j = i + 1; j < m; j++) {
+      const r = corr[i][j];
+      const ar = Math.abs(r);
+      if (ar >= 0.70) pairs.push({ i, j, r, ar });
+    }
+  }
+  pairs.sort((a, b) => b.ar - a.ar);
+  let suggHtml = '';
+  if (pairs.length === 0) {
+    suggHtml = `<div class="corr-suggestion corr-ok">✓ All parameters appear well-determined — no strong pairwise correlations detected.</div>`;
+  } else {
+    const shown = pairs.slice(0, 4);
+    const hidden = pairs.length - shown.length;
+    suggHtml = shown.map(({ i, j, r, ar }) => {
+      const dir = r > 0 ? 'positively' : 'negatively';
+      let advice, cls;
+      if (ar >= 0.95) {
+        cls = 'corr-strong';
+        advice = r > 0
+          ? `These parameters move together — the fit cannot distinguish them independently. Fix one if physically known, collect data over a wider x-range, or reparameterize.`
+          : `As <b>${names[i]}</b> increases, <b>${names[j]}</b> decreases to compensate. A linear combination may be better constrained. Consider fixing one or reparameterizing.`;
+      } else if (ar >= 0.85) {
+        cls = 'corr-high';
+        advice = `Partially dependent — adding more data points across a wider x-range typically improves separation of these parameters.`;
+      } else {
+        cls = 'corr-moderate';
+        advice = `Mild dependency. Usually acceptable, but more varied data can further improve independence.`;
+      }
+      return `<div class="corr-suggestion ${cls}"><span class="corr-pair"><b>${names[i]}</b> ↔ <b>${names[j]}</b> (r = ${r.toFixed(2)}, ${dir})</span> ${advice}</div>`;
+    }).join('') + (hidden > 0 ? `<div class="corr-suggestion corr-more">+ ${hidden} more correlated pair${hidden > 1 ? 's' : ''} not shown.</div>` : '');
+  }
+
+  el.innerHTML = `<div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" data-tip="corr-matrix">?</span></div><table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table><div class="corr-suggestions">${suggHtml}</div>`;
 }
 
 let _consoleMsg = { text: '', type: '', timer: null };
@@ -3997,6 +4145,10 @@ function syncModelCustomSection() {
   const model = document.getElementById('model-select').value;
   state.fitConfig.model = model;
   document.getElementById('custom-eq-section').style.display = model === 'Custom' ? '' : 'none';
+  const eqEl = document.getElementById('model-eq-display');
+  if (eqEl) eqEl.textContent = MODEL_EQ[model] || '';
+  const editBtn = document.getElementById('model-edit-as-custom');
+  if (editBtn) editBtn.style.display = (model !== 'Custom' && MODEL_EQ_JS[model]) ? '' : 'none';
   if (model === 'Custom') {
     // Auto-parse the current equation value immediately on model change
     const eqInput = document.getElementById('custom-eq-input');
@@ -4950,7 +5102,9 @@ function openExampleEditor(key, savedState = null) {
   currentExampleKey = key;
   document.getElementById('example-modal-title').textContent = ex.title;
   const body = document.getElementById('example-modal-body');
-  body.innerHTML = `
+  const exEqStr = EXAMPLE_EQ[key] || '';
+  body.innerHTML =
+    (exEqStr ? `<div style="font-family:var(--mono);font-size:.77em;color:var(--teal);background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:5px 9px;margin-bottom:10px;line-height:1.6;word-break:break-word">${exEqStr}</div>` : '') + `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
       <span style="font-weight:600;font-size:.8em;flex:1">Model Parameters</span>
       <span class="panel-tip" data-tip="ex-model-params">?</span>
@@ -6200,6 +6354,17 @@ function initEvents() {
 
   /* ── Model select ─────────────────────────────────────── */
   document.getElementById('model-select').addEventListener('change', syncModelCustomSection);
+
+  /* ── Edit as Custom button ────────────────────────────── */
+  document.getElementById('model-edit-as-custom').addEventListener('click', () => {
+    const model = document.getElementById('model-select').value;
+    const jsEq = MODEL_EQ_JS[model];
+    if (!jsEq) return;
+    const eqInput = document.getElementById('custom-eq-input');
+    eqInput.value = jsEq;
+    document.getElementById('model-select').value = 'Custom';
+    syncModelCustomSection();
+  });
 
   /* ── Custom equation input ────────────────────────────── */
   let eqDebounce;
