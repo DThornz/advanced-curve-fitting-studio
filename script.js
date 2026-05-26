@@ -4200,59 +4200,58 @@ function buildStatExpandRow(fit, r, colSpan) {
   // Condition number of J (from covariance matrix)
   const condJ = jacobianConditionNumber(r.covMatrix);
 
-  // ── Helper: one ext-stat row ──────────────────────────────
-  const tip = (lbl, tooltip) =>
-    `<span class="stats-ext-lbl">${lbl}<span class="stats-ext-tip" title="${tooltip}">ⓘ</span></span>`;
-  const row = (lbl, tooltip, valHtml) =>
-    `<div class="stats-ext-row">${tip(lbl, tooltip)}<span class="stats-ext-val">${valHtml}</span></div>`;
+  // ── Helper: one ext-stat chip ─────────────────────────────
+  const chip = (lbl, tooltip, valHtml, chipCls = '') =>
+    `<div class="stats-ext-chip${chipCls ? ' ' + chipCls : ''}">` +
+    `<span class="stats-ext-chip-lbl">${lbl}<span class="stats-ext-tip" title="${tooltip}">ⓘ</span></span>` +
+    `<span class="stats-ext-chip-val">${valHtml}</span>` +
+    `</div>`;
   const na = `<span class="sep-na">—</span>`;
 
-  // DW interpretation annotation
-  let dwHtml = na;
+  // Durbin-Watson chip
+  let dwChipCls = '', dwValHtml = na;
   if (dw != null) {
-    const dwCls = dw < 1.5 || dw > 2.5 ? 'stats-ext-warn' : 'stats-ext-good';
-    const dwLbl = dw < 1.5 ? 'pos. autocorr.' : dw > 2.5 ? 'neg. autocorr.' : 'no autocorr.';
-    dwHtml = `${dw.toFixed(3)} <span class="${dwCls} stats-ext-annot">${dwLbl}</span>`;
+    const dwGood = dw >= 1.5 && dw <= 2.5;
+    dwChipCls = dwGood ? 'chip-good' : 'chip-warn';
+    const dwA = dwGood ? 'stats-ext-good' : 'stats-ext-warn';
+    const dwTxt = dw < 1.5 ? 'pos. autocorr.' : dw > 2.5 ? 'neg. autocorr.' : 'no autocorr.';
+    dwValHtml = `${dw.toFixed(3)}<span class="${dwA} stats-ext-annot"> ${dwTxt}</span>`;
   }
 
-  // Runs test annotation
-  let runsPHtml = na;
+  // Runs test chip
+  let runsChipCls = '', runsPValHtml = na;
   if (runsP != null) {
-    const rpCls = runsP < 0.05 ? 'stats-ext-warn' : 'stats-ext-good';
-    const rpLbl = runsP < 0.05 ? 'pattern!' : 'random';
-    runsPHtml = `${runsP < 0.001 ? '< 0.001' : runsP.toFixed(3)} <span class="${rpCls} stats-ext-annot">${rpLbl}</span>`;
+    runsChipCls = runsP < 0.05 ? 'chip-warn' : 'chip-good';
+    const runsA = runsP < 0.05 ? 'stats-ext-warn' : 'stats-ext-good';
+    const runsTxt = runsP < 0.05 ? 'pattern!' : 'random';
+    runsPValHtml = `${runsP < 0.001 ? '< 0.001' : runsP.toFixed(3)}<span class="${runsA} stats-ext-annot"> ${runsTxt}</span>`;
   }
 
-  // Cond(J) annotation
-  let condHtml = na;
+  // Cond(J) chip
+  let condChipCls = '', condValHtml = na;
   if (condJ != null) {
-    const condCls = condJ > 1000 ? 'stats-ext-bad' : condJ > 100 ? 'stats-ext-warn' : 'stats-ext-good';
-    const condLbl = condJ > 1000 ? 'ill-cond.' : condJ > 100 ? 'moderate' : 'well-cond.';
-    condHtml = `${condJ > 9999 ? condJ.toExponential(2) : condJ.toFixed(1)} <span class="${condCls} stats-ext-annot">${condLbl}</span>`;
+    condChipCls = condJ > 1000 ? 'chip-bad' : condJ > 100 ? 'chip-warn' : 'chip-good';
+    const condA = condJ > 1000 ? 'stats-ext-bad' : condJ > 100 ? 'stats-ext-warn' : 'stats-ext-good';
+    const condTxt = condJ > 1000 ? 'ill-cond.' : condJ > 100 ? 'moderate' : 'well-cond.';
+    condValHtml = `${condJ > 9999 ? condJ.toExponential(2) : condJ.toFixed(1)}<span class="${condA} stats-ext-annot"> ${condTxt}</span>`;
   }
 
-  // F-stat + p row
-  const fPStr = fPVal == null ? '' : fPVal < 0.001 ? ' (p < 0.001)' : ` (p = ${fPVal.toFixed(3)})`;
+  // F-stat chip
+  const fPStr = fPVal == null ? '' : fPVal < 0.001 ? ' (p<0.001)' : ` (p=${fPVal.toFixed(3)})`;
   const fHtml = fStat != null ? `${fmt(fStat, 4)}${fPStr}` : na;
 
   const extHtml = `
     <div class="stats-ext-section">
-      <div class="stats-ext-grid">
-        <div>
-          ${row('MAE', 'Mean Absolute Error — average of |residuals|; less sensitive to outliers than RMSE because errors are not squared.', mae != null ? fmt(mae) : na)}
-          ${row('Max |e|', 'Largest absolute residual in the fit — the single worst-case data point.', maxE != null ? fmt(maxE) : na)}
-          ${row('CV%', 'Coefficient of Variation — RMSE expressed as a percentage of |ȳ|; scale-free measure of fit quality useful for comparing fits across datasets with different y magnitudes.', cvPct != null ? cvPct.toFixed(2) + '%' : na)}
-          ${row('df', 'Degrees of freedom = N − p, where p is the number of fitted parameters. Required for correct confidence-interval and hypothesis-test calculations.', dof)}
-        </div>
-        <div>
-          ${row('Log-likelihood', 'Log-likelihood under a Gaussian noise assumption: LL = −N/2·(ln(2π·SSE/N)+1). The basis for AIC and BIC; higher (less negative) is better.', logLik != null ? logLik.toFixed(3) : na)}
-          ${row('F-statistic', 'Overall model F-test: F = (SSR/p)/(SSE/df), where SSR = SST−SSE. Tests whether the model explains significantly more variance than the mean alone. Approximate for nonlinear models.', fHtml)}
-          ${row('Durbin-Watson', 'Tests for first-order autocorrelation in residuals ordered by x: d = Σ(eᵢ−eᵢ₋₁)²/Σeᵢ². Range 0–4; d ≈ 2 means no autocorrelation, d < 1.5 indicates positive autocorrelation (residuals trend together), d > 2.5 indicates negative autocorrelation (residuals alternate signs).', dwHtml)}
-        </div>
-        <div>
-          ${row('Runs test p', 'Wald-Wolfowitz runs test: tests whether the signs of residuals (+ / −) alternate randomly or show a systematic pattern. Low p (< 0.05) indicates a systematic trend — the model may be misspecified.', runsPHtml)}
-          ${row('Cond(J)', 'Condition number of the Jacobian, estimated as √(λmax/λmin) of the parameter correlation matrix. Values < 100 are well-conditioned; 100–1000 may cause slow convergence or inflated standard errors; > 1000 indicates near-linear dependence between parameters.', condHtml)}
-        </div>
+      <div class="stats-ext-chips">
+        ${chip('MAE', 'Mean Absolute Error — average of |residuals|; less sensitive to outliers than RMSE because errors are not squared.', mae != null ? fmt(mae) : na)}
+        ${chip('Max |e|', 'Largest absolute residual — the single worst-case data point.', maxE != null ? fmt(maxE) : na)}
+        ${chip('CV%', 'Coefficient of Variation — RMSE as a percentage of |ȳ|; scale-free fit quality useful for comparing fits across datasets with different y magnitudes.', cvPct != null ? cvPct.toFixed(2) + '%' : na)}
+        ${chip('df', 'Degrees of freedom = N − p, where p is the number of fitted parameters. Required for confidence intervals and hypothesis tests.', String(dof))}
+        ${chip('Log-likelihood', 'Gaussian MLE: LL = −N/2·(ln(2π·SSE/N)+1). Higher (less negative) is better; the basis for AIC and BIC.', logLik != null ? logLik.toFixed(3) : na)}
+        ${chip('F-statistic', 'Overall model F-test: F = (SSR/p)/(SSE/df). Tests whether the model explains significantly more variance than the mean alone. Approximate for nonlinear models.', fHtml)}
+        ${chip('Durbin-Watson', 'First-order autocorrelation: d = Σ(eᵢ−eᵢ₋₁)²/Σeᵢ². Range 0–4; ≈ 2 is ideal. < 1.5 = pos. autocorr., > 2.5 = neg. autocorr.', dwValHtml, dwChipCls)}
+        ${chip('Runs test p', 'Wald-Wolfowitz test: checks whether residual signs are random. p < 0.05 suggests a systematic pattern — the model may be misspecified.', runsPValHtml, runsChipCls)}
+        ${chip('Cond(J)', 'Jacobian condition number ≈ √(λmax/λmin) of parameter correlation matrix. < 100: well-conditioned; 100–1000: moderate; > 1000: ill-conditioned (inflated std errors).', condValHtml, condChipCls)}
       </div>
     </div>`;
 
@@ -6612,7 +6611,10 @@ function initEvents() {
     this.classList.toggle('active', state.plotConfig.showResiduals);
     document.getElementById('residual-tab-bar').classList.toggle('hidden', !state.plotConfig.showResiduals);
     document.getElementById('residual-plot').classList.toggle('hidden', !state.plotConfig.showResiduals);
-    if (state.plotConfig.showResiduals) Plotly.Plots.resize('residual-plot');
+    requestAnimationFrame(() => {
+      Plotly.Plots.resize('main-plot');
+      if (state.plotConfig.showResiduals) Plotly.Plots.resize('residual-plot');
+    });
   });
   document.getElementById('btn-ci-bands').addEventListener('click', function () {
     state.plotConfig.showCI = !state.plotConfig.showCI;
