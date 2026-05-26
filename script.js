@@ -6737,6 +6737,12 @@ function initEvents() {
     const m = document.getElementById('session-menu');
     m.classList.remove('open'); m.style.cssText = '';
   });
+  document.getElementById('sess-tutorial').addEventListener('click', () => {
+    const m = document.getElementById('session-menu');
+    m.classList.remove('open'); m.style.cssText = '';
+    localStorage.removeItem(TUT_KEY);
+    tutShow();
+  });
   function openReleaseNotes() {
     document.getElementById('relnotes-modal').style.display = 'flex';
     const m = document.getElementById('session-menu');
