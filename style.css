@@ -564,20 +564,26 @@ body.dark-mode .ds-edit:hover{color:#fbbf24!important}
 /* ── Stats expand rows ───────────────────────────────────── */
 .stats-chevron{display:inline-block;font-size:.75em;margin-right:4px;opacity:.55;vertical-align:middle;line-height:1;user-select:none}
 .stats-expand-row>td{padding:0!important;border-bottom:2px solid var(--border)}
-.stats-expand-body{padding:9px 16px 11px 14px;background:var(--bg3);border-top:1px solid var(--border);width:100%;box-sizing:border-box}
-.stats-expand-meta{font-size:.88em;color:var(--dimmer);font-family:var(--mono);margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.stats-expand-body{padding:12px 18px 14px 16px;background:var(--bg3);border-top:1px solid var(--border);width:100%;box-sizing:border-box}
+.stats-expand-meta{font-size:.9em;color:var(--dimmer);font-family:var(--mono);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.stats-param-detail{width:100%;border-collapse:collapse;font-size:.97em;font-family:var(--mono);margin-bottom:12px}
+.stats-param-detail th{padding:5px 18px 5px 0;font-size:.78em;text-transform:uppercase;letter-spacing:.06em;color:var(--dimmer);text-align:right;font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap}
+.stats-param-detail th.sth-left{text-align:left;padding-right:24px}
+.sth-sub{font-size:.8em;font-weight:400;letter-spacing:0;text-transform:none;margin-left:3px;opacity:.75}
+.stats-param-detail td{padding:5px 18px 5px 0;text-align:right;color:var(--text);border-bottom:1px solid var(--border)}
+.stats-param-detail tbody tr:last-child td{border-bottom:none}
+.stats-param-detail td:first-child{text-align:left;padding-right:24px}
+.sep-name{color:var(--teal);font-weight:600}
+.sep-na{color:var(--dimmer);opacity:.6}
+.sep-sig{color:var(--green);font-weight:600}
+.sep-insig{color:var(--amber)}
+.stats-chips-section{display:flex;flex-direction:column;gap:10px}
+.stats-chips-group{display:flex;flex-direction:column;gap:5px}
+.stats-chips-label{font-size:.72em;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--dimmer);font-weight:600}
+/* legacy — kept for any path still generating these */
 .stats-expand-cols{display:flex;gap:0;align-items:flex-start;width:100%}
 .stats-expand-params{flex:1;min-width:0}
 .stats-expand-summary{flex:0 0 auto;min-width:160px;border-left:1px solid var(--border);padding-left:18px;margin-left:18px}
-.stats-param-detail{width:100%;border-collapse:collapse;font-size:.92em;font-family:var(--mono)}
-.stats-param-detail th{padding:4px 16px 4px 0;font-size:.76em;text-transform:uppercase;letter-spacing:.07em;color:var(--dimmer);text-align:right;font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap}
-.stats-param-detail th:first-child{text-align:left;padding-right:22px}
-.stats-param-detail td{padding:4px 16px 4px 0;text-align:right;color:var(--text);white-space:nowrap}
-.stats-param-detail td:first-child{text-align:left;padding-right:22px}
-.sep-name{color:var(--teal);font-weight:600}
-.sep-na{color:var(--dimmer);opacity:.6}
-.sep-sig{color:var(--green)}
-.sep-insig{color:var(--amber)}
 .sep-sum-row{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:3px 0}
 .sep-sum-lbl{font-size:.78em;text-transform:uppercase;letter-spacing:.07em;color:var(--dimmer);font-family:var(--mono);white-space:nowrap}
 .sep-sum-val{font-size:.94em;color:var(--text);font-family:var(--mono);font-weight:500}
@@ -854,8 +860,10 @@ body.dark-mode .stats-expand-body{background:#0a1628!important;border-color:#1c3
 body.dark-mode .stats-expand-meta{color:#3d5470!important;border-color:#1c3050!important}
 body.dark-mode .stats-expand-summary{border-color:#1c3050!important}
 body.dark-mode .stats-param-detail th{color:#3d5470!important;border-color:#1c3050!important}
-body.dark-mode .stats-param-detail td{color:#e2e8f0!important}
+body.dark-mode .stats-param-detail td{color:#e2e8f0!important;border-color:#1c3050!important}
 body.dark-mode .sep-name{color:#2dd4bf!important}
+body.dark-mode .sep-sig{color:#34d399!important}
+body.dark-mode .stats-chips-label{color:#3d5470!important}
 body.dark-mode .sep-sum-lbl{color:#3d5470!important}
 body.dark-mode .sep-sum-val{color:#e2e8f0!important}
 body.dark-mode .app-toolbar-sep{background:#1c3050!important}

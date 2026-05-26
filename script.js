@@ -4125,12 +4125,14 @@ function buildStatExpandRow(fit, r, colSpan) {
     r.finalLambda != null ? `λ = ${r.finalLambda.toExponential(2)}` : null,
   ].filter(Boolean).join('  ·  ');
 
+  const pna = '<span class="sep-na">—</span>';
   let paramRows = '';
   if (r.params && fit.paramNames) {
     paramRows = fit.paramNames.map((name, i) => {
       const val = r.params[i];
       const rawErr = r.paramErrors && r.paramErrors[i];
       const err = rawErr && isFinite(rawErr) && rawErr > 0 ? rawErr : null;
+      const sem = (err && r.n > 0) ? err / Math.sqrt(r.n) : null;
       const ciLo = err ? val - tc * err : null;
       const ciHi = err ? val + tc * err : null;
       const tStat = err ? val / err : null;
@@ -4138,25 +4140,29 @@ function buildStatExpandRow(fit, r, colSpan) {
       return `<tr>
         <td class="sep-name">${name}</td>
         <td>${fmt(val, 6)}</td>
-        <td>${err ? '± ' + fmt(err, 4) : '<span class="sep-na">—</span>'}</td>
-        <td>${ciLo != null ? fmt(ciLo, 5) + '&nbsp; to &nbsp;' + fmt(ciHi, 5) : '<span class="sep-na">—</span>'}</td>
-        <td class="${tCls}">${tStat != null ? fmt(tStat, 3) : '<span class="sep-na">—</span>'}</td>
+        <td>${err ? fmt(err, 4) : pna}</td>
+        <td>${sem ? fmt(sem, 4) : pna}</td>
+        <td>${ciLo != null ? fmt(ciLo, 5) + ' &ndash; ' + fmt(ciHi, 5) : pna}</td>
+        <td class="${tCls}">${tStat != null ? fmt(tStat, 3) : pna}</td>
       </tr>`;
     }).join('');
   }
 
-  const sumStats = [
-    ['R²',     isFinite(r.rSq)    ? r.rSq.toFixed(6)    : '—'],
-    ['Adj-R²', isFinite(r.adjRSq) ? r.adjRSq.toFixed(6) : '—'],
-    ['RMSE',   fmt(r.rmse)],
-    ['SSE',    fmt(r.sse)],
-    ['AIC',    fmt(r.aic)],
-    ['BIC',    fmt(r.bic)],
-    ...(r.chiSqRed != null ? [['χ²ᵣ', fmt(r.chiSqRed)]] : []),
-  ];
-  const sumHtml = sumStats.map(([lbl, val]) =>
-    `<div class="sep-sum-row"><span class="sep-sum-lbl">${lbl}</span><span class="sep-sum-val">${val}</span></div>`
-  ).join('');
+  // Summary stat chips (model quality)
+  const sqChip = (lbl, val, tip) =>
+    `<div class="stats-ext-chip">` +
+    `<span class="stats-ext-chip-lbl">${lbl}<span class="stats-ext-tip" title="${tip}">ⓘ</span></span>` +
+    `<span class="stats-ext-chip-val">${val}</span></div>`;
+  const sumChipsHtml = [
+    sqChip('R²',     isFinite(r.rSq)    ? r.rSq.toFixed(6)    : '—', 'Coefficient of determination — fraction of variance in y explained by the model. Closer to 1 is better.'),
+    sqChip('Adj-R²', isFinite(r.adjRSq) ? r.adjRSq.toFixed(6) : '—', 'R² penalised for the number of fitted parameters — use this when comparing models of different complexity.'),
+    sqChip('RMSE',   fmt(r.rmse),   'Root Mean Square Error — typical residual magnitude in the same units as y. Should be comparable to your measurement noise.'),
+    sqChip('SSE',    fmt(r.sse),    'Sum of Squared Errors — the raw objective minimised by the solver.'),
+    sqChip('AIC',    fmt(r.aic),    'Akaike Information Criterion — model quality penalised for complexity. Lower is better; differences > 10 are decisive.'),
+    sqChip('BIC',    fmt(r.bic),    'Bayesian Information Criterion — like AIC but with a stronger penalty for parameter count. Lower is better.'),
+    sqChip('N',      String(r.n),   'Number of non-masked data points used in the fit.'),
+    ...(r.chiSqRed != null ? [sqChip('χ²ᵣ', fmt(r.chiSqRed), 'Reduced chi-square = Σ(rᵢ/σᵢ)²/dof; shown only for 1/σ² weighted fits. ≈ 1 means well-calibrated noise model.')] : []),
+  ].join('');
 
   // ── Extended statistics ──────────────────────────────────
   const ds = state.datasets.find(d => d.id === fit.dsId);
@@ -4240,38 +4246,43 @@ function buildStatExpandRow(fit, r, colSpan) {
   const fPStr = fPVal == null ? '' : fPVal < 0.001 ? ' (p<0.001)' : ` (p=${fPVal.toFixed(3)})`;
   const fHtml = fStat != null ? `${fmt(fStat, 4)}${fPStr}` : na;
 
-  const extHtml = `
-    <div class="stats-ext-section">
-      <div class="stats-ext-chips">
-        ${chip('MAE', 'Mean Absolute Error — average of |residuals|; less sensitive to outliers than RMSE because errors are not squared.', mae != null ? fmt(mae) : na)}
-        ${chip('Max |e|', 'Largest absolute residual — the single worst-case data point.', maxE != null ? fmt(maxE) : na)}
-        ${chip('CV%', 'Coefficient of Variation — RMSE as a percentage of |ȳ|; scale-free fit quality useful for comparing fits across datasets with different y magnitudes.', cvPct != null ? cvPct.toFixed(2) + '%' : na)}
-        ${chip('df', 'Degrees of freedom = N − p, where p is the number of fitted parameters. Required for confidence intervals and hypothesis tests.', String(dof))}
-        ${chip('Log-likelihood', 'Gaussian MLE: LL = −N/2·(ln(2π·SSE/N)+1). Higher (less negative) is better; the basis for AIC and BIC.', logLik != null ? logLik.toFixed(3) : na)}
-        ${chip('F-statistic', 'Overall model F-test: F = (SSR/p)/(SSE/df). Tests whether the model explains significantly more variance than the mean alone. Approximate for nonlinear models.', fHtml)}
-        ${chip('Durbin-Watson', 'First-order autocorrelation: d = Σ(eᵢ−eᵢ₋₁)²/Σeᵢ². Range 0–4; ≈ 2 is ideal. < 1.5 = pos. autocorr., > 2.5 = neg. autocorr.', dwValHtml, dwChipCls)}
-        ${chip('Runs test p', 'Wald-Wolfowitz test: checks whether residual signs are random. p < 0.05 suggests a systematic pattern — the model may be misspecified.', runsPValHtml, runsChipCls)}
-        ${chip('Cond(J)', 'Jacobian condition number ≈ √(λmax/λmin) of parameter correlation matrix. < 100: well-conditioned; 100–1000: moderate; > 1000: ill-conditioned (inflated std errors).', condValHtml, condChipCls)}
-      </div>
-    </div>`;
+  const extChipsHtml = [
+    chip('MAE',          'Mean Absolute Error — average of |residuals|; less sensitive to outliers than RMSE because errors are not squared.',                                                                           mae    != null ? fmt(mae)              : na),
+    chip('Max |e|',      'Largest absolute residual — the single worst-case data point.',                                                                                                                               maxE   != null ? fmt(maxE)             : na),
+    chip('CV%',          'Coefficient of Variation — RMSE as a percentage of |ȳ|; scale-free fit quality useful for comparing fits across datasets with different y magnitudes.',                                       cvPct  != null ? cvPct.toFixed(2) + '%': na),
+    chip('df',           'Degrees of freedom = N − p, where p is the number of fitted parameters. Required for confidence intervals and hypothesis tests.',                                                             String(dof)),
+    chip('Log-lik',      'Gaussian MLE: LL = −N/2·(ln(2π·SSE/N)+1). Higher (less negative) is better; the basis for AIC and BIC.',                                                                                    logLik != null ? logLik.toFixed(3)     : na),
+    chip('F-statistic',  'Overall model F-test: F = (SSR/p)/(SSE/df). Tests whether the model explains significantly more variance than the mean alone. Approximate for nonlinear models.',                            fHtml),
+    chip('Durbin-Watson','First-order autocorrelation: d = Σ(eᵢ−eᵢ₋₁)²/Σeᵢ². Range 0–4; ≈ 2 is ideal. < 1.5 = pos. autocorr., > 2.5 = neg. autocorr.',                                                             dwValHtml,   dwChipCls),
+    chip('Runs test p',  'Wald-Wolfowitz test: checks whether residual signs are random. p < 0.05 suggests a systematic pattern — the model may be misspecified.',                                                     runsPValHtml, runsChipCls),
+    chip('Cond(J)',      'Jacobian condition number ≈ √(λmax/λmin) of parameter correlation matrix. < 100: well-conditioned; 100–1000: moderate; > 1000: ill-conditioned (inflated std errors).',                     condValHtml,  condChipCls),
+  ].join('');
 
   return `<tr class="stats-expand-row">
     <td colspan="${colSpan}">
       <div class="stats-expand-body">
         <div class="stats-expand-meta">${metaStr}</div>
-        <div class="stats-expand-cols">
-          <div class="stats-expand-params">
-            <table class="stats-param-detail">
-              <thead><tr>
-                <th>Parameter</th><th>Fitted Value</th><th>Std Error</th>
-                <th>95% CI &nbsp;(t<sub>${dof}</sub> = ${fmt(tc, 3)})</th><th>t-stat</th>
-              </tr></thead>
-              <tbody>${paramRows}</tbody>
-            </table>
+        <table class="stats-param-detail">
+          <thead><tr>
+            <th class="sth-left">Parameter</th>
+            <th>Value</th>
+            <th>SE <span class="sth-sub">std error</span></th>
+            <th>SEM <span class="sth-sub">SE/√N</span></th>
+            <th>95% CI <span class="sth-sub">t<sub>${dof}</sub> = ${fmt(tc, 3)}</span></th>
+            <th>t-stat</th>
+          </tr></thead>
+          <tbody>${paramRows}</tbody>
+        </table>
+        <div class="stats-chips-section">
+          <div class="stats-chips-group">
+            <span class="stats-chips-label">Model Quality</span>
+            <div class="stats-ext-chips">${sumChipsHtml}</div>
           </div>
-          <div class="stats-expand-summary">${sumHtml}</div>
+          <div class="stats-chips-group">
+            <span class="stats-chips-label">Diagnostics</span>
+            <div class="stats-ext-chips">${extChipsHtml}</div>
+          </div>
         </div>
-        ${extHtml}
       </div>
     </td>
   </tr>`;
