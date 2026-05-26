@@ -233,8 +233,9 @@ function jacobianConditionNumber(covMatrix) {
   const m = covMatrix.length;
   const d = covMatrix.map((row, i) => Math.sqrt(Math.abs(row[i])));
   if (d.some(v => !v || !isFinite(v))) return null;
-  // Build correlation matrix R
+  // Build correlation matrix R; bail if any entry is non-finite
   const R = covMatrix.map((row, i) => row.map((v, j) => v / (d[i] * d[j])));
+  if (R.some(row => row.some(v => !isFinite(v)))) return null;
   // Power iteration for dominant eigenvalue
   function powerMax(mat, nIter) {
     let v = Array(m).fill(1 / Math.sqrt(m));
@@ -5897,7 +5898,7 @@ function saveCurrentTab() {
 }
 
 function closeAllModals() {
-  ['gs-modal', 'ann-modal', 'col-picker-modal', 'save-modal', 'relnotes-modal'].forEach(id => {
+  ['gs-modal', 'ann-modal', 'col-picker-modal', 'save-modal', 'relnotes-modal', 'tut-overlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -6593,6 +6594,42 @@ function initEvents() {
     if (r.chiSqRed != null) lines.push(`  χ²ᵣ      = ${fmt(r.chiSqRed)}`);
     lines.push(`  N        = ${r.n}`);
     lines.push(`  Status   = ${r.converged ? 'Converged' : 'Not converged'} (${r.iter} iter)`);
+    // Extended diagnostics
+    const _ds2 = state.datasets.find(d => d.id === fit.dsId);
+    const _excl2 = (_ds2 && _ds2.excludedIndices) || new Set();
+    const _yv2 = _ds2 ? _ds2.y.filter((_, i) => !_excl2.has(i)) : [];
+    const _res2 = r.residuals || [];
+    if (_res2.length) {
+      const _mae = _res2.reduce((s, e) => s + Math.abs(e), 0) / _res2.length;
+      const _maxE = Math.max(..._res2.map(Math.abs));
+      const _ym = _yv2.length ? _yv2.reduce((s, y) => s + y, 0) / _yv2.length : 0;
+      lines.push('');
+      lines.push('Diagnostics');
+      lines.push(`  MAE      = ${fmt(_mae)}`);
+      lines.push(`  Max|e|   = ${fmt(_maxE)}`);
+      if (isFinite(r.rmse) && Math.abs(_ym) > 1e-12)
+        lines.push(`  CV%      = ${(r.rmse / Math.abs(_ym) * 100).toFixed(2)}%`);
+      const _dof2 = r.dof || 1;
+      lines.push(`  df       = ${_dof2}`);
+      if (r.n > 0 && r.sse > 0)
+        lines.push(`  Log-lik  = ${(-r.n / 2 * (Math.log(2 * Math.PI * r.sse / r.n) + 1)).toFixed(3)}`);
+      const _nP2 = fit.paramNames ? fit.paramNames.length : 0;
+      if (_yv2.length >= 2 && _nP2 > 0 && r.sse != null && _dof2 > 0) {
+        const _sst = _yv2.reduce((s, y) => s + (y - _ym) ** 2, 0);
+        const _ssr = _sst - r.sse;
+        if (_ssr > 0) {
+          const _fS = (_ssr / _nP2) / (r.sse / _dof2);
+          const _fP = fDistPValue(_fS, _nP2, _dof2);
+          lines.push(`  F-stat   = ${fmt(_fS, 4)}${_fP < 0.001 ? ' (p<0.001)' : ` (p=${_fP.toFixed(3)})`}`);
+        }
+      }
+      const _dw = durbinWatson(_res2);
+      if (_dw != null) lines.push(`  DW       = ${_dw.toFixed(3)}`);
+      const _rp = runsTestP(_res2);
+      if (_rp != null) lines.push(`  Runs p   = ${_rp < 0.001 ? '< 0.001' : _rp.toFixed(3)}`);
+      const _cj = jacobianConditionNumber(r.covMatrix);
+      if (_cj != null) lines.push(`  Cond(J)  = ${_cj > 9999 ? _cj.toExponential(2) : _cj.toFixed(1)}`);
+    }
     navigator.clipboard.writeText(lines.join('\n'))
       .then(() => setConsole('Parameters and stats copied to clipboard.', ''))
       .catch(() => setConsole('Clipboard access denied.', 'error'));
