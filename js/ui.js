@@ -10,6 +10,7 @@ function renderFitList() {
     if (corrEl) corrEl.innerHTML = '';
     const sidePanel = document.getElementById('statsbar-corr');
     if (sidePanel) sidePanel.classList.add('corr-empty');
+    document.querySelector('.app-statsbar')?.classList.add('corr-empty');
     return;
   }
   el.innerHTML = state.fits.map(fit => {
@@ -651,9 +652,11 @@ function renderCorrMatrix(fit) {
   if (!covMatrix || names.length < 2) {
     el.innerHTML = '';
     if (sidePanel) sidePanel.classList.add('corr-empty');
+    document.querySelector('.app-statsbar')?.classList.add('corr-empty');
     return;
   }
   if (sidePanel) sidePanel.classList.remove('corr-empty');
+  document.querySelector('.app-statsbar')?.classList.remove('corr-empty');
   const m = names.length;
   const corr = Array.from({ length: m }, (_, i) =>
     Array.from({ length: m }, (_, j) => {

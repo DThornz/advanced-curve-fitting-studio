@@ -12,6 +12,8 @@ function initResizablePanels() {
   const rhRight    = document.getElementById('rh-right');
   const rhResidual = document.getElementById('rh-residual');
   const rhStats    = document.getElementById('rh-stats');
+  const rhCorr     = document.getElementById('rh-corr');
+  const corrPanel  = document.getElementById('statsbar-corr');
 
   let drag = null;
 
@@ -45,6 +47,8 @@ function initResizablePanels() {
       residualEl.style.height = Math.max(60, Math.min(360, drag.size - (y - drag.y))) + 'px';
     } else if (drag.type === 'stats') {
       statsBar.style.height = Math.max(28, Math.min(480, drag.size - (y - drag.y))) + 'px';
+    } else if (drag.type === 'corr') {
+      corrPanel.style.flexBasis = Math.max(150, Math.min(560, drag.size - (x - drag.x))) + 'px';
     }
     schedulePlotResize();
     if (e.cancelable) e.preventDefault();
@@ -64,11 +68,12 @@ function initResizablePanels() {
     const size = type === 'left'     ? leftPanel.offsetWidth
                : type === 'right'    ? rightPanel.offsetWidth
                : type === 'stats'    ? statsBar.offsetHeight
+               : type === 'corr'     ? corrPanel.offsetWidth
                :                       residualEl.offsetHeight;
     drag = { type, x, y, size };
     handle.classList.add('dragging');
     document.body.style.userSelect = 'none';
-    document.body.style.cursor = (type === 'residual' || type === 'stats') ? 'row-resize' : 'col-resize';
+    document.body.style.cursor = (type === 'residual' || type === 'stats') ? 'ns-resize' : 'col-resize';
     e.preventDefault();
   }
 
@@ -76,10 +81,12 @@ function initResizablePanels() {
   rhRight.addEventListener('mousedown',    e => startDrag('right',    rhRight,    e));
   rhResidual.addEventListener('mousedown', e => startDrag('residual', rhResidual, e));
   rhStats.addEventListener('mousedown',    e => startDrag('stats',    rhStats,    e));
+  rhCorr.addEventListener('mousedown',     e => startDrag('corr',     rhCorr,     e));
   rhLeft.addEventListener('touchstart',     e => startDrag('left',     rhLeft,     e), { passive: false });
   rhRight.addEventListener('touchstart',    e => startDrag('right',    rhRight,    e), { passive: false });
   rhResidual.addEventListener('touchstart', e => startDrag('residual', rhResidual, e), { passive: false });
   rhStats.addEventListener('touchstart',    e => startDrag('stats',    rhStats,    e), { passive: false });
+  rhCorr.addEventListener('touchstart',     e => startDrag('corr',     rhCorr,     e), { passive: false });
 
   document.addEventListener('mousemove', onMove);
   document.addEventListener('mouseup',   onUp);
