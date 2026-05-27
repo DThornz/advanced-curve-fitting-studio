@@ -225,9 +225,11 @@ function runFit() {
     const IRLS_ITERS = 5, HUBER_C = 1.345;
     for (let iter = 0; iter < IRLS_ITERS; iter++) {
       const resid = result2.residuals || xArr.map((x, i) => yArr[i] - modelFn(x, result2.params));
-      const absResid = resid.map(r => Math.abs(r));
-      const sortedAbs = absResid.slice().sort((a, b) => a - b);
-      const mad = sortedAbs[Math.floor(sortedAbs.length / 2)];
+      const sortedResid = resid.slice().sort((a, b) => a - b);
+      const medR = sortedResid[Math.floor(sortedResid.length / 2)];
+      const centeredAbs = resid.map(r => Math.abs(r - medR));
+      centeredAbs.sort((a, b) => a - b);
+      const mad = centeredAbs[Math.floor(centeredAbs.length / 2)];
       const s = mad / 0.6745;
       if (!isFinite(s) || s === 0) break;
       const thresh = HUBER_C * s;

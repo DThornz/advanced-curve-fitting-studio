@@ -426,7 +426,7 @@
           </div>
           <div class="ctrl-row" style="margin-top:5px">
             <label class="ctrl-label" style="margin:0;min-width:72px">Max Iter.</label>
-            <input class="ctrl-input" id="opt-max-iter" type="number" value="20" min="10" max="50000">
+            <input class="ctrl-input" id="opt-max-iter" type="number" value="200" min="10" max="50000">
           </div>
           <div class="ctrl-row" style="margin-top:5px">
             <label class="ctrl-label" style="margin:0;min-width:72px">Tolerance</label>
@@ -559,7 +559,7 @@
 
   <!-- Unsaved-data guard modal -->
   <div class="modal-backdrop" id="unsaved-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="unsaved-modal-title">
-    <div class="modal" style="width:400px">
+    <div class="modal" style="width:400px;max-width:96vw">
       <div class="modal-header">
         <span class="modal-title" id="unsaved-modal-title">Unsaved Session</span>
       </div>
@@ -1681,7 +1681,7 @@
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Visual Equation Editor</strong> popup (⊞ Equation Editor…) — a click-to-insert operator and function palette covering common functions, trig, hyperbolic, rounding, and constants π and e; cursor placed between parentheses automatically</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>30+ categorised example equations in the editor (Exponential, Sigmoidal, Peak shapes, Oscillatory, Biochemistry, Rational) — click any row to load it instantly into the editor</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>10 new built-in models (39 total): Van't Hoff Equilibrium, KWW Stretched Exponential, Voigt Profile, Pseudo-Voigt, Fano Resonance, Stern-Volmer (combined), Double-Gaussian Peak, Biexponential, Rational (1,1), Power Law + Offset</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>9 new built-in models (38 non-Custom total): Van't Hoff Equilibrium, KWW Stretched Exponential, Pseudo-Voigt, Fano Resonance, Stern-Volmer (combined), Double-Gaussian Peak, Biexponential, Rational (1,1), Power Law + Offset</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>10 new example datasets (26 total): XRD Diffraction Peak, Fano Resonance, Superparamagnetic M-H (Langevin), Stress-Strain (Ramberg-Osgood), ELISA Dose-Response (4PL), Oral Drug PK, Polymer Relaxation (KWW), Fluorescence Quenching, Van't Hoff Equilibrium, Voltage-Dependent τ</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>20 downloadable sample CSV files added to the repository across 5 categories (General, Spectral/Physics, Calibration, Biology, Electrophysiology)</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Mobile and vertical-screen responsive layout — collapsible panel drawers with backdrop, touch-friendly controls, compressed topbar</span></li>
@@ -2035,7 +2035,7 @@
     </ul>
     <p><strong>Multiple datasets</strong> can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled using the toggle button that appears on hover. Disabling a dataset hides it and all its associated fits from the plot, residual panels, stats table, and F-test — they are restored instantly when re-enabled.</p>
 
-    <p>The right panel lists 39 built-in models across 9 groups. A guide to choosing:</p>
+    <p>The right panel lists 38 built-in models across 10 groups. A guide to choosing:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>If your data looks like…</th><th>Try</th></tr></thead>
       <tbody>

@@ -9,10 +9,33 @@ function detectDelimiter(text) {
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
 }
 
+function _parseCSVLine(line, delim) {
+  if (!line.includes('"')) return line.split(delim).map(s => s.trim());
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === delim && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
 function parseDelimited(text, delim) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip UTF-8 BOM
   if (delim === 'auto' || !delim) delim = detectDelimiter(text);
-  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
-  const rows = lines.map(l => l.split(delim).map(s => s.trim()));
+  const lines = text.trim().split(/\r?\n/)
+    .filter(l => l.trim() && !l.trim().startsWith('#'));
+  const rows = lines.map(l => _parseCSVLine(l, delim));
   return rows;
 }
 

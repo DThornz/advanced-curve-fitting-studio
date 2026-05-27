@@ -122,7 +122,7 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
   const yMean = mean(yArr);
   const sst = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
   const rSq = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
-  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m - 1, 1);
+  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1);
   const rmse = Math.sqrt(sseVal / Math.max(n - m, 1));
   const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
   const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
@@ -372,7 +372,7 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
   const yMean  = mean(yArr);
   const sst    = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
   const rSq    = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
-  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m - 1, 1);
+  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1);
   const rmse   = Math.sqrt(sseVal / Math.max(n - m, 1));
   const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
   const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);

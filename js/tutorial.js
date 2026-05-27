@@ -9,7 +9,7 @@ let _tutStep = 0;
 const TUT_SLIDES = [
   {
     title: 'Welcome to Curve Fitting Studio',
-    body: 'A fully offline, browser-native platform for scientific curve fitting and nonlinear regression. Load data, choose from <strong>24 built-in models</strong>, and fit with Levenberg-Marquardt, Gauss-Newton, Nelder-Mead, or BFGS — no installation or internet required.',
+    body: 'A fully offline, browser-native platform for scientific curve fitting and nonlinear regression. Load data, choose from <strong>38 built-in models</strong>, and fit with Levenberg-Marquardt, Gauss-Newton, Nelder-Mead, or BFGS — no installation or internet required.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- full app shell overview -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -161,7 +161,7 @@ const TUT_SLIDES = [
   },
   {
     title: 'Select a Model and Fit',
-    body: 'Choose from <strong>24 built-in models</strong> across 7 groups — or write a <strong>Custom Equation</strong> in x. Click <strong>Auto Init</strong> for data-driven starting guesses, then press <strong>▶ Fit</strong> (or Ctrl+Enter). Set optional Min/Max bounds on any parameter. Drag the sweep slider for a live preview without fitting.',
+    body: 'Choose from <strong>38 built-in models</strong> across 10 groups — or write a <strong>Custom Equation</strong> in x. Click <strong>Auto Init</strong> for data-driven starting guesses, then press <strong>▶ Fit</strong> (or Ctrl+Enter). Set optional Min/Max bounds on any parameter. Drag the sweep slider for a live preview without fitting.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- left: plot with data + fit; right: fit model panel + toolbar Fit button -->
       <rect width="500" height="160" fill="#060e1c"/>

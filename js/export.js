@@ -184,8 +184,8 @@ function exportR() {
 
   const paramStr = fit.paramNames.join(', ');
   const startStr = fit.paramNames.map((n, i) => `${n}=${r.params[i].toPrecision(6)}`).join(', ');
-  const xArr = 'c(' + xData.map(v => v.toPrecision(8)).join(', ') + ')';
-  const yArr = 'c(' + yData.map(v => v.toPrecision(8)).join(', ') + ')';
+  const xArr = 'c(' + xData.map(v => v.toPrecision(15)).join(', ') + ')';
+  const yArr = 'c(' + yData.map(v => v.toPrecision(15)).join(', ') + ')';
 
   const modelDefs = {
     'Linear':           `${fit.paramNames[0]} * x + ${fit.paramNames[1]}`,
@@ -331,8 +331,8 @@ function exportMATLAB() {
   const yData = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
 
   const p0Str = r.params.map(v => v.toPrecision(6)).join(', ');
-  const xArr = xData.map(v => v.toPrecision(8)).join('; ');
-  const yArr = yData.map(v => v.toPrecision(8)).join('; ');
+  const xArr = xData.map(v => v.toPrecision(15)).join('; ');
+  const yArr = yData.map(v => v.toPrecision(15)).join('; ');
   const namesComment = fit.paramNames.map((n, i) => `%   p(${i+1}) = ${n}`).join('\n');
 
   const modelDefs = {

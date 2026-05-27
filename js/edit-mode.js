@@ -173,7 +173,10 @@ function clearRadiusOverlay() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+let _editModeInitialized = false;
 function initEditMode() {
+  if (_editModeInitialized) return;
+  _editModeInitialized = true;
   const mainEl = document.getElementById('main-plot');
   let nearPoint = null;       // { ds, clickIdx } captured on mousedown near a point
   let dragStartClientY = 0;
