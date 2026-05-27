@@ -1,15 +1,15 @@
-﻿// First-run tutorial: TUT_KEY, TUT_SLIDES, tutShow, tutClose, tutThemeIllus, tutRender, tutInit
+// First-run tutorial: TUT_KEY, TUT_SLIDES, tutShow, tutClose, tutThemeIllus, tutRender, tutInit
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ═══════════════════════════════════════════════════════════
    FIRST-RUN TUTORIAL
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════════════════════ */
 const TUT_KEY = 'cfs_tutorial_done';
 let _tutStep = 0;
 
 const TUT_SLIDES = [
   {
     title: 'Welcome to Curve Fitting Studio',
-    body: 'A fully offline, browser-native platform for scientific curve fitting and nonlinear regression. Load data, choose from <strong>24 built-in models</strong>, and fit with Levenberg-Marquardt, Gauss-Newton, Nelder-Mead, or BFGS â€” no installation or internet required.',
+    body: 'A fully offline, browser-native platform for scientific curve fitting and nonlinear regression. Load data, choose from <strong>24 built-in models</strong>, and fit with Levenberg-Marquardt, Gauss-Newton, Nelder-Mead, or BFGS — no installation or internet required.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- full app shell overview -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -17,29 +17,29 @@ const TUT_SLIDES = [
       <rect width="500" height="18" fill="#060e1c"/>
       <rect x="5" y="2" width="82" height="15" rx="3" fill="#0d2040" stroke="#0b9e8a" stroke-width="1"/>
       <text x="40" y="13" font-size="7.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif">Workspace 1</text>
-      <text x="80" y="13" font-size="7" fill="#2a4060" font-family="sans-serif">Ã—</text>
+      <text x="80" y="13" font-size="7" fill="#2a4060" font-family="sans-serif">×</text>
       <rect x="93" y="2" width="58" height="15" rx="3" fill="#07111e" stroke="#1c3050"/>
       <text x="116" y="13" font-size="7.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">Tab 2</text>
-      <text x="144" y="13" font-size="7" fill="#1e2e40" font-family="sans-serif">Ã—</text>
+      <text x="144" y="13" font-size="7" fill="#1e2e40" font-family="sans-serif">×</text>
       <rect x="158" y="4" width="16" height="11" rx="3" fill="#07111e" stroke="#1c3050"/>
       <text x="166" y="13" font-size="10" fill="#2a4060" text-anchor="middle" font-family="sans-serif">+</text>
       <line x1="0" y1="18" x2="500" y2="18" stroke="#1c3050"/>
       <!-- toolbar -->
       <rect x="0" y="18" width="500" height="18" fill="#07111e"/>
       <rect x="3" y="21" width="50" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="28" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Examples â–¾</text>
+      <text x="28" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Examples ▾</text>
       <rect x="56" y="21" width="48" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="80" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Import Data</text>
       <rect x="107" y="21" width="44" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="129" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Paste Data</text>
       <line x1="155" y1="22" x2="155" y2="34" stroke="#1c3050"/>
       <rect x="159" y="21" width="34" height="12" rx="3" fill="#0b2c44" stroke="#0b9e8a" stroke-width="0.8"/>
-      <text x="176" y="30" font-size="6.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif">â–¶ Fit</text>
+      <text x="176" y="30" font-size="6.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif">▶ Fit</text>
       <rect x="196" y="21" width="32" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="212" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Try All</text>
       <line x1="232" y1="22" x2="232" y2="34" stroke="#1c3050"/>
       <rect x="348" y="21" width="38" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="367" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Export â–¾</text>
+      <text x="367" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Export ▾</text>
       <rect x="389" y="21" width="48" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="413" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Save Session</text>
       <rect x="440" y="21" width="56" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
@@ -85,26 +85,26 @@ const TUT_SLIDES = [
       <text x="356" y="58" font-size="6" fill="#7a90ae" font-family="sans-serif">Dataset 1</text>
       <text x="355" y="71" font-size="6.5" fill="#4a6080" font-family="sans-serif" font-weight="600">FIT MODEL</text>
       <rect x="351" y="74" width="144" height="10" rx="2" fill="#0d2040" stroke="#0b9e8a" stroke-width="0.8"/>
-      <text x="356" y="82" font-size="6" fill="#e2e8f0" font-family="sans-serif">Exponential  y = aÂ·eáµ‡Ë£</text>
+      <text x="356" y="82" font-size="6" fill="#e2e8f0" font-family="sans-serif">Exponential  y = a·eᵇˣ</text>
       <text x="355" y="95" font-size="6.5" fill="#4a6080" font-family="sans-serif" font-weight="600">PARAMETERS</text>
       <rect x="351" y="98" width="144" height="34" rx="2" fill="#0d2040" stroke="#1c3050"/>
-      <text x="356" y="108" font-size="6" fill="#7a90ae" font-family="monospace">a   95.0  â†’  94.82 Â±0.91</text>
-      <text x="356" y="118" font-size="6" fill="#7a90ae" font-family="monospace">b   0.18  â†’  0.179 Â±0.003</text>
-      <text x="356" y="128" font-size="6" fill="#7a90ae" font-family="monospace">c   2.00  â†’  2.11  Â±0.29</text>
+      <text x="356" y="108" font-size="6" fill="#7a90ae" font-family="monospace">a   95.0  →  94.82 ±0.91</text>
+      <text x="356" y="118" font-size="6" fill="#7a90ae" font-family="monospace">b   0.18  →  0.179 ±0.003</text>
+      <text x="356" y="128" font-size="6" fill="#7a90ae" font-family="monospace">c   2.00  →  2.11  ±0.29</text>
       <!-- stats bar -->
       <rect x="0" y="144" width="500" height="16" fill="#07111e"/>
       <line x1="0" y1="144" x2="500" y2="144" stroke="#1c3050"/>
-      <text x="6" y="155" font-size="7" fill="#0b9e8a" font-family="monospace" font-weight="600">RÂ² 0.9984</text>
-      <text x="68" y="155" font-size="7" fill="#7a90ae" font-family="monospace">Adj-RÂ² 0.998</text>
+      <text x="6" y="155" font-size="7" fill="#0b9e8a" font-family="monospace" font-weight="600">R² 0.9984</text>
+      <text x="68" y="155" font-size="7" fill="#7a90ae" font-family="monospace">Adj-R² 0.998</text>
       <text x="148" y="155" font-size="7" fill="#7a90ae" font-family="monospace">RMSE 1.23</text>
-      <text x="216" y="155" font-size="7" fill="#7a90ae" font-family="monospace">AIC âˆ’32.4</text>
-      <text x="276" y="155" font-size="7" fill="#7a90ae" font-family="monospace">BIC âˆ’28.1</text>
+      <text x="216" y="155" font-size="7" fill="#7a90ae" font-family="monospace">AIC −32.4</text>
+      <text x="276" y="155" font-size="7" fill="#7a90ae" font-family="monospace">BIC −28.1</text>
       <text x="336" y="155" font-size="7" fill="#7a90ae" font-family="monospace">N 24</text>
     </svg>`
   },
   {
     title: 'Load Your Data',
-    body: 'Click <strong>Examples</strong> for built-in synthetic datasets, <strong>Import Data</strong> to upload a CSV/TSV/TXT file, or <strong>Paste Data</strong> to paste from a spreadsheet. Drag-and-drop onto the plot also works. Three-column files (X, Y, Ïƒ) unlock error-weighted fitting.',
+    body: 'Click <strong>Examples</strong> for built-in synthetic datasets, <strong>Import Data</strong> to upload a CSV/TSV/TXT file, or <strong>Paste Data</strong> to paste from a spreadsheet. Drag-and-drop onto the plot also works. Three-column files (X, Y, σ) unlock error-weighted fitting.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- toolbar focused on load buttons + open examples dropdown -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -113,7 +113,7 @@ const TUT_SLIDES = [
       <line x1="0" y1="22" x2="500" y2="22" stroke="#1c3050"/>
       <!-- Examples active/highlighted -->
       <rect x="4" y="3" width="66" height="16" rx="4" fill="#0b2c44" stroke="#0b9e8a" stroke-width="1.2"/>
-      <text x="37" y="14.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Examples â–¾</text>
+      <text x="37" y="14.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Examples ▾</text>
       <!-- Import Data highlighted -->
       <rect x="74" y="3" width="68" height="16" rx="4" fill="#0d2040" stroke="#0b9e8a" stroke-width="1.2"/>
       <text x="108" y="14.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Import Data</text>
@@ -123,7 +123,7 @@ const TUT_SLIDES = [
       <!-- separator and dimmed remaining toolbar -->
       <line x1="213" y1="4" x2="213" y2="18" stroke="#1c3050"/>
       <rect x="217" y="3" width="34" height="16" rx="4" fill="#0d2040" stroke="#1c3050"/>
-      <text x="234" y="14.5" font-size="7.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">â–¶ Fit</text>
+      <text x="234" y="14.5" font-size="7.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">▶ Fit</text>
       <rect x="254" y="3" width="34" height="16" rx="4" fill="#0d2040" stroke="#1c3050"/>
       <text x="271" y="14.5" font-size="7.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">Try All</text>
       <!-- 2-column examples dropdown open below Examples button -->
@@ -150,18 +150,18 @@ const TUT_SLIDES = [
       <text x="161" y="115" font-size="7.5" fill="#7a90ae" font-family="sans-serif">G-V Curve (Boltzmann)</text>
       <text x="161" y="127" font-size="7.5" fill="#7a90ae" font-family="sans-serif">Kir Channel I-V</text>
       <text x="161" y="139" font-size="7.5" fill="#7a90ae" font-family="sans-serif">HH Na Channel I-V</text>
-      <text x="161" y="151" font-size="7.5" fill="#7a90ae" font-family="sans-serif">Voltage-Dep. Ï„</text>
+      <text x="161" y="151" font-size="7.5" fill="#7a90ae" font-family="sans-serif">Voltage-Dep. τ</text>
       <!-- drag-and-drop zone (right side of illustration) -->
       <rect x="312" y="24" width="184" height="132" rx="5" fill="#07111e" stroke="#1c3050" stroke-dasharray="4 3"/>
       <path d="M404,66 L404,98 M388,82 L420,82 M388,82 L395,75 M420,82 L413,75" stroke="#1c3050" stroke-width="2" stroke-linecap="round"/>
       <text x="404" y="116" font-size="8.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">drag &amp; drop</text>
-      <text x="404" y="129" font-size="7.5" fill="#253448" text-anchor="middle" font-family="sans-serif">.csv  Â·  .tsv  Â·  .txt</text>
-      <text x="404" y="142" font-size="7" fill="#1e2e3c" text-anchor="middle" font-family="sans-serif">3-col: X Â· Y Â· Ïƒ for weighted fit</text>
+      <text x="404" y="129" font-size="7.5" fill="#253448" text-anchor="middle" font-family="sans-serif">.csv  ·  .tsv  ·  .txt</text>
+      <text x="404" y="142" font-size="7" fill="#1e2e3c" text-anchor="middle" font-family="sans-serif">3-col: X · Y · σ for weighted fit</text>
     </svg>`
   },
   {
     title: 'Select a Model and Fit',
-    body: 'Choose from <strong>24 built-in models</strong> across 7 groups â€” or write a <strong>Custom Equation</strong> in x. Click <strong>Auto Init</strong> for data-driven starting guesses, then press <strong>â–¶ Fit</strong> (or Ctrl+Enter). Set optional Min/Max bounds on any parameter. Drag the sweep slider for a live preview without fitting.',
+    body: 'Choose from <strong>24 built-in models</strong> across 7 groups — or write a <strong>Custom Equation</strong> in x. Click <strong>Auto Init</strong> for data-driven starting guesses, then press <strong>▶ Fit</strong> (or Ctrl+Enter). Set optional Min/Max bounds on any parameter. Drag the sweep slider for a live preview without fitting.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- left: plot with data + fit; right: fit model panel + toolbar Fit button -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -180,18 +180,18 @@ const TUT_SLIDES = [
       <rect x="244" y="7" width="54" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="271" y="16.5" font-size="7" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Auto Init</text>
       <rect x="302" y="7" width="52" height="12" rx="3" fill="#0b2c44" stroke="#0b9e8a" stroke-width="1"/>
-      <text x="328" y="16.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">â–¶ Fit</text>
+      <text x="328" y="16.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">▶ Fit</text>
       <rect x="358" y="7" width="50" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="383" y="16.5" font-size="7" fill="#5a7090" text-anchor="middle" font-family="sans-serif">Try All</text>
       <rect x="412" y="7" width="78" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="451" y="16.5" font-size="7" fill="#5a7090" text-anchor="middle" font-family="sans-serif">âœ• Remove Fit</text>
+      <text x="451" y="16.5" font-size="7" fill="#5a7090" text-anchor="middle" font-family="sans-serif">✕ Remove Fit</text>
       <!-- right panel body -->
       <rect x="238" y="26" width="258" height="130" rx="3" fill="#07111e" stroke="#1c3050" stroke-width="0.5"/>
       <!-- FIT MODEL -->
       <text x="246" y="40" font-size="7" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">FIT MODEL</text>
       <rect x="242" y="43" width="250" height="14" rx="3" fill="#0d2040" stroke="#0b9e8a" stroke-width="1"/>
-      <text x="249" y="53.5" font-size="8.5" fill="#e2e8f0" font-family="sans-serif">Exponential  y = aÂ·eáµ‡Ë£ + c</text>
-      <text x="482" y="53.5" font-size="8" fill="#4a6080" font-family="sans-serif">â–¾</text>
+      <text x="249" y="53.5" font-size="8.5" fill="#e2e8f0" font-family="sans-serif">Exponential  y = a·eᵇˣ + c</text>
+      <text x="482" y="53.5" font-size="8" fill="#4a6080" font-family="sans-serif">▾</text>
       <!-- PARAMETERS header + Auto Init / Copy buttons -->
       <text x="246" y="69" font-size="7" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">PARAMETERS</text>
       <rect x="346" y="62" width="64" height="11" rx="3" fill="#0d2040" stroke="#1c3050"/>
@@ -202,17 +202,17 @@ const TUT_SLIDES = [
       <rect x="242" y="73" width="250" height="72" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="249" y="83" font-size="6.5" fill="#3d5470" font-family="monospace">PARAM</text>
       <text x="304" y="83" font-size="6.5" fill="#3d5470" font-family="monospace">INITIAL</text>
-      <text x="368" y="83" font-size="6.5" fill="#3d5470" font-family="monospace">FITTED Â± SE</text>
+      <text x="368" y="83" font-size="6.5" fill="#3d5470" font-family="monospace">FITTED ± SE</text>
       <line x1="242" y1="86" x2="492" y2="86" stroke="#1c3050"/>
       <text x="249" y="97" font-size="7.5" fill="#94a3b8" font-family="monospace">a</text>
       <text x="304" y="97" font-size="7.5" fill="#7a90ae" font-family="monospace">95.00</text>
-      <text x="368" y="97" font-size="7.5" fill="#0b9e8a" font-family="monospace">94.82 Â±0.91</text>
+      <text x="368" y="97" font-size="7.5" fill="#0b9e8a" font-family="monospace">94.82 ±0.91</text>
       <text x="249" y="111" font-size="7.5" fill="#94a3b8" font-family="monospace">b</text>
       <text x="304" y="111" font-size="7.5" fill="#7a90ae" font-family="monospace">0.180</text>
-      <text x="368" y="111" font-size="7.5" fill="#0b9e8a" font-family="monospace">0.179 Â±0.003</text>
+      <text x="368" y="111" font-size="7.5" fill="#0b9e8a" font-family="monospace">0.179 ±0.003</text>
       <text x="249" y="125" font-size="7.5" fill="#94a3b8" font-family="monospace">c</text>
       <text x="304" y="125" font-size="7.5" fill="#7a90ae" font-family="monospace">2.000</text>
-      <text x="368" y="125" font-size="7.5" fill="#0b9e8a" font-family="monospace">2.11 Â±0.29</text>
+      <text x="368" y="125" font-size="7.5" fill="#0b9e8a" font-family="monospace">2.11 ±0.29</text>
       <!-- sweep slider -->
       <rect x="249" y="131" width="116" height="8" rx="3" fill="#1c3050"/>
       <rect x="249" y="131" width="68" height="8" rx="3" fill="#0b9e8a" opacity=".4"/>
@@ -224,18 +224,18 @@ const TUT_SLIDES = [
   },
   {
     title: 'Analyse Results',
-    body: 'Converged parameters appear with <strong>Â± standard errors</strong>. The stats bar shows <strong>RÂ², Adj-RÂ², RMSE, SSE, AIC, BIC, and N</strong>. Four diagnostic tabs â€” Residuals, Q-Q Plot, Histogram, and Convergence â€” help assess fit quality. Click <strong>Try All</strong> to rank every model by RÂ² in one shot.',
+    body: 'Converged parameters appear with <strong>± standard errors</strong>. The stats bar shows <strong>R², Adj-R², RMSE, SSE, AIC, BIC, and N</strong>. Four diagnostic tabs — Residuals, Q-Q Plot, Histogram, and Convergence — help assess fit quality. Click <strong>Try All</strong> to rank every model by R² in one shot.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- stats bar at top + plot + residual tabs + residual plot + Try All panel -->
       <rect width="500" height="160" fill="#060e1c"/>
       <!-- stats bar (prominent at top) -->
       <rect x="0" y="0" width="500" height="20" fill="#07111e"/>
       <line x1="0" y1="20" x2="500" y2="20" stroke="#1c3050"/>
-      <text x="7" y="14" font-size="9.5" fill="#0b9e8a" font-family="monospace" font-weight="600">RÂ² 0.9984</text>
-      <text x="88" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">Adj-RÂ² 0.998</text>
+      <text x="7" y="14" font-size="9.5" fill="#0b9e8a" font-family="monospace" font-weight="600">R² 0.9984</text>
+      <text x="88" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">Adj-R² 0.998</text>
       <text x="194" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">RMSE 1.23</text>
-      <text x="278" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">AIC âˆ’32.4</text>
-      <text x="354" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">BIC âˆ’28.1</text>
+      <text x="278" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">AIC −32.4</text>
+      <text x="354" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">BIC −28.1</text>
       <text x="430" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">N 24</text>
       <!-- main plot -->
       <rect x="4" y="24" width="296" height="64" rx="3" fill="#07111e" stroke="#1c3050"/>
@@ -260,26 +260,26 @@ const TUT_SLIDES = [
       <circle cx="90" cy="125" r="2.2" fill="#3b82f6"/><circle cx="128" cy="133" r="2.2" fill="#3b82f6"/>
       <circle cx="170" cy="127" r="2.2" fill="#3b82f6"/><circle cx="216" cy="131" r="2.2" fill="#3b82f6"/>
       <circle cx="258" cy="126" r="2.2" fill="#3b82f6"/><circle cx="288" cy="132" r="2.2" fill="#3b82f6"/>
-      <text x="10" y="149" font-size="7" fill="#3b4f6b" font-family="monospace">SSE 33.5  Â·  df 21  Â·  converged</text>
+      <text x="10" y="149" font-size="7" fill="#3b4f6b" font-family="monospace">SSE 33.5  ·  df 21  ·  converged</text>
       <!-- Try All ranking panel (right side) -->
       <rect x="308" y="24" width="188" height="132" rx="4" fill="#07111e" stroke="#1c3050"/>
-      <text x="316" y="38" font-size="8" fill="#4a6080" font-family="sans-serif" font-weight="600">TRY ALL â€” RANKED BY RÂ²</text>
+      <text x="316" y="38" font-size="8" fill="#4a6080" font-family="sans-serif" font-weight="600">TRY ALL — RANKED BY R²</text>
       <line x1="308" y1="42" x2="496" y2="42" stroke="#1c3050"/>
       <rect x="314" y="46" width="176" height="14" rx="3" fill="#0b2640" stroke="#0b9e8a" stroke-width="0.7"/>
       <text x="320" y="56.5" font-size="7.5" fill="#0b9e8a" font-family="monospace">Exp-Decay-Offset  0.9984</text>
-      <text x="468" y="56.5" font-size="7.5" fill="#0b9e8a" font-family="sans-serif">â†µ</text>
+      <text x="468" y="56.5" font-size="7.5" fill="#0b9e8a" font-family="sans-serif">↵</text>
       <text x="320" y="72" font-size="7.5" fill="#5a7090" font-family="monospace">Exponential       0.9921</text>
       <text x="320" y="87" font-size="7.5" fill="#3d5070" font-family="monospace">Gaussian          0.9401</text>
       <text x="320" y="102" font-size="7.5" fill="#2a3e58" font-family="monospace">Logistic          0.8873</text>
       <text x="320" y="117" font-size="7.5" fill="#1e2e40" font-family="monospace">Power Law         0.7120</text>
       <line x1="308" y1="125" x2="496" y2="125" stroke="#1c3050" stroke-width="0.5"/>
       <text x="316" y="138" font-size="7" fill="#4a6080" font-family="sans-serif" font-weight="600">FITTED PARAMETERS</text>
-      <text x="316" y="149" font-size="7" fill="#94a3b8" font-family="monospace">a 94.82 Â±0.91  b 0.179 Â±0.003</text>
+      <text x="316" y="149" font-size="7" fill="#94a3b8" font-family="monospace">a 94.82 ±0.91  b 0.179 ±0.003</text>
     </svg>`
   },
   {
     title: 'Multiple Independent Workspaces',
-    body: 'Click <strong>+</strong> in the tab bar to open a new workspace. Every tab is completely independent â€” its own datasets, fits, annotations, graph style, and settings. Double-click a tab name to rename it. Use <strong>Save Session</strong> to export all tabs to JSON, and reload them anytime.',
+    body: 'Click <strong>+</strong> in the tab bar to open a new workspace. Every tab is completely independent — its own datasets, fits, annotations, graph style, and settings. Double-click a tab name to rename it. Use <strong>Save Session</strong> to export all tabs to JSON, and reload them anytime.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- tab bar + left panel datasets/fits + plot showing active tab -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -289,15 +289,15 @@ const TUT_SLIDES = [
       <!-- active tab -->
       <rect x="6" y="3" width="106" height="21" rx="4" fill="#0d2040" stroke="#0b9e8a" stroke-width="1.2"/>
       <text x="50" y="17.5" font-size="9.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Exp Decay</text>
-      <text x="104" y="17.5" font-size="9" fill="#2a4060" font-family="sans-serif">Ã—</text>
+      <text x="104" y="17.5" font-size="9" fill="#2a4060" font-family="sans-serif">×</text>
       <!-- inactive tab 2 -->
       <rect x="118" y="3" width="94" height="21" rx="4" fill="#07111e" stroke="#1c3050"/>
       <text x="157" y="17.5" font-size="9.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">G-V Curve</text>
-      <text x="204" y="17.5" font-size="9" fill="#1e2e40" font-family="sans-serif">Ã—</text>
+      <text x="204" y="17.5" font-size="9" fill="#1e2e40" font-family="sans-serif">×</text>
       <!-- inactive tab 3 -->
       <rect x="218" y="3" width="78" height="21" rx="4" fill="#07111e" stroke="#1c3050"/>
       <text x="251" y="17.5" font-size="9.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">Kir I-V</text>
-      <text x="289" y="17.5" font-size="9" fill="#1e2e40" font-family="sans-serif">Ã—</text>
+      <text x="289" y="17.5" font-size="9" fill="#1e2e40" font-family="sans-serif">×</text>
       <!-- + button -->
       <rect x="304" y="6" width="22" height="15" rx="4" fill="#07111e" stroke="#1c3050"/>
       <text x="315" y="18" font-size="13" fill="#2a4060" text-anchor="middle" font-family="sans-serif">+</text>
@@ -317,10 +317,10 @@ const TUT_SLIDES = [
       <text x="8" y="100" font-size="7.5" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">ACTIVE FITS</text>
       <rect x="4" y="103" width="144" height="17" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <circle cx="14" cy="111.5" r="3.5" fill="#0b9e8a"/>
-      <text x="22" y="115" font-size="8.5" fill="#7a90ae" font-family="sans-serif">Exp-Decay  RÂ²=0.998</text>
+      <text x="22" y="115" font-size="8.5" fill="#7a90ae" font-family="sans-serif">Exp-Decay  R²=0.998</text>
       <rect x="4" y="123" width="144" height="17" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <circle cx="14" cy="131.5" r="3.5" fill="#8b5cf6"/>
-      <text x="22" y="135" font-size="8.5" fill="#7a90ae" font-family="sans-serif">Gaussian   RÂ²=0.941</text>
+      <text x="22" y="135" font-size="8.5" fill="#7a90ae" font-family="sans-serif">Gaussian   R²=0.941</text>
       <!-- save/load session buttons at bottom -->
       <rect x="4" y="144" width="66" height="14" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="37" y="154" font-size="7" fill="#5a7090" text-anchor="middle" font-family="sans-serif">Save Session</text>
@@ -338,12 +338,12 @@ const TUT_SLIDES = [
       <rect x="162" y="32" width="158" height="38" rx="4" fill="#0d2040" stroke="#1c3050" opacity=".95"/>
       <text x="170" y="46" font-size="8" fill="#0b9e8a" font-family="sans-serif" font-weight="600">Independent Workspaces</text>
       <text x="170" y="58" font-size="7" fill="#5a7090" font-family="sans-serif">Each tab has its own data, fits,</text>
-      <text x="170" y="68" font-size="7" fill="#5a7090" font-family="sans-serif">style &amp; annotations â€” no shared state</text>
+      <text x="170" y="68" font-size="7" fill="#5a7090" font-family="sans-serif">style &amp; annotations — no shared state</text>
     </svg>`
   },
   {
     title: 'Annotate, Style, and Export',
-    body: 'Add <strong>reference lines, text callouts, and auto-peak markers</strong> from the Annotations panel. Click <strong>âš™ Style</strong> to adjust fonts, colours, grid, axis range, and log scale. <strong>Export</strong> saves the plot as PNG or SVG. <strong>Copy Params</strong> copies all fit results to the clipboard.',
+    body: 'Add <strong>reference lines, text callouts, and auto-peak markers</strong> from the Annotations panel. Click <strong>⚙ Style</strong> to adjust fonts, colours, grid, axis range, and log scale. <strong>Export</strong> saves the plot as PNG or SVG. <strong>Copy Params</strong> copies all fit results to the clipboard.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- annotated plot (left) + right panel: Plot Labels/Style + Annotations + Export -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -361,13 +361,13 @@ const TUT_SLIDES = [
       <!-- horizontal reference line (EC50) -->
       <line x1="18" y1="90" x2="234" y2="90" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="4 3" opacity=".9"/>
       <rect x="168" y="82" width="62" height="12" rx="3" fill="#1a0808" opacity=".9"/>
-      <text x="199" y="91.5" font-size="8" fill="#dc2626" text-anchor="middle" font-family="sans-serif">ECâ‚…â‚€ = 2.4</text>
+      <text x="199" y="91.5" font-size="8" fill="#dc2626" text-anchor="middle" font-family="sans-serif">EC₅₀ = 2.4</text>
       <!-- peak annotation -->
       <circle cx="124" cy="33" r="4" fill="#f59e0b" stroke="#07111e" stroke-width="1.5"/>
       <line x1="124" y1="28" x2="124" y2="18" stroke="#f59e0b" stroke-width="1.2"/>
       <polygon points="120,18 128,18 124,12" fill="#f59e0b"/>
       <rect x="82" y="8" width="88" height="12" rx="3" fill="#1c1200" opacity=".9"/>
-      <text x="126" y="17.5" font-size="7.5" fill="#f59e0b" text-anchor="middle" font-family="sans-serif">peak  x = âˆ’39 mV</text>
+      <text x="126" y="17.5" font-size="7.5" fill="#f59e0b" text-anchor="middle" font-family="sans-serif">peak  x = −39 mV</text>
       <!-- text callout -->
       <rect x="22" y="54" width="56" height="12" rx="3" fill="#0a1628" stroke="#1c3050" opacity=".9"/>
       <text x="50" y="63" font-size="7.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Gaussian fit</text>
@@ -376,13 +376,13 @@ const TUT_SLIDES = [
       <!-- PLOT LABELS section -->
       <text x="258" y="18" font-size="7.5" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">PLOT LABELS</text>
       <rect x="398" y="10" width="92" height="13" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="444" y="19.5" font-size="7.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">âš™ Style</text>
+      <text x="444" y="19.5" font-size="7.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">⚙ Style</text>
       <rect x="254" y="21" width="230" height="10" rx="2" fill="#0d2040" stroke="#1c3050"/>
-      <text x="258" y="29" font-size="6.5" fill="#7a90ae" font-family="sans-serif">Title Â· X-axis label Â· Y-axis label</text>
+      <text x="258" y="29" font-size="6.5" fill="#7a90ae" font-family="sans-serif">Title · X-axis label · Y-axis label</text>
       <!-- style options -->
       <rect x="254" y="35" width="230" height="28" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="260" y="46" font-size="7" fill="#3d5470" font-family="sans-serif">Fonts Â· Background Â· Grid Â· Zero lines</text>
-      <text x="260" y="57" font-size="7" fill="#3d5470" font-family="sans-serif">Axis range Â· Log scale Â· Tick spacing</text>
+      <text x="260" y="46" font-size="7" fill="#3d5470" font-family="sans-serif">Fonts · Background · Grid · Zero lines</text>
+      <text x="260" y="57" font-size="7" fill="#3d5470" font-family="sans-serif">Axis range · Log scale · Tick spacing</text>
       <!-- ANNOTATIONS section -->
       <text x="258" y="76" font-size="7.5" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">ANNOTATIONS</text>
       <rect x="330" y="68" width="72" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
@@ -390,9 +390,9 @@ const TUT_SLIDES = [
       <rect x="406" y="68" width="72" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="442" y="77" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">+ Add Annotation</text>
       <rect x="254" y="82" width="230" height="12" rx="2" fill="#0d2040" stroke="#1c3050"/>
-      <text x="258" y="91" font-size="7" fill="#f59e0b" font-family="sans-serif">â–² peak  x = âˆ’39 mV  (auto-peak)</text>
+      <text x="258" y="91" font-size="7" fill="#f59e0b" font-family="sans-serif">▲ peak  x = −39 mV  (auto-peak)</text>
       <rect x="254" y="97" width="230" height="12" rx="2" fill="#0d2040" stroke="#1c3050"/>
-      <text x="258" y="106" font-size="7" fill="#dc2626" font-family="sans-serif">â€” ECâ‚…â‚€ = 2.4  (h-line)</text>
+      <text x="258" y="106" font-size="7" fill="#dc2626" font-family="sans-serif">— EC₅₀ = 2.4  (h-line)</text>
       <rect x="254" y="112" width="230" height="12" rx="2" fill="#0d2040" stroke="#1c3050"/>
       <text x="258" y="121" font-size="7" fill="#7a90ae" font-family="sans-serif">T Gaussian fit  (text callout)</text>
       <!-- EXPORT section -->
@@ -458,7 +458,7 @@ function tutRender() {
   document.getElementById('tut-body').innerHTML = s.body;
   document.getElementById('tut-count').textContent = `${_tutStep + 1} / ${n}`;
   document.getElementById('tut-prev').disabled = _tutStep === 0;
-  document.getElementById('tut-next').textContent = _tutStep === n - 1 ? 'Get Started!' : 'Next â†’';
+  document.getElementById('tut-next').textContent = _tutStep === n - 1 ? 'Get Started!' : 'Next →';
   const dots = document.getElementById('tut-dots');
   dots.innerHTML = '';
   for (let i = 0; i < n; i++) {

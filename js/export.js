@@ -1,8 +1,8 @@
-﻿// Export functions: PNG, SVG, CSV, report text, Python, R, LaTeX, MATLAB
+// Export functions: PNG, SVG, CSV, report text, Python, R, LaTeX, MATLAB
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ═══════════════════════════════════════════════════════════
    EXPORT
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════════════════════ */
 function exportFilename() {
   const title = document.getElementById('plot-title').value.trim();
   return (title || 'curve-fit').replace(/[^\w\s\-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'curve-fit';
@@ -18,7 +18,7 @@ function exportCSV() {
   const fit = state.fits.find(f => f.id === state.activeFitId);
   if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
   const ds = state.datasets.find(d => d.id === fit.dsId);
-  let csv = `Curve Fitting Studio â€” Fit Results\nModel: ${fit.model}\nDataset: ${ds ? ds.name : 'unknown'}\n\n`;
+  let csv = `Curve Fitting Studio — Fit Results\nModel: ${fit.model}\nDataset: ${ds ? ds.name : 'unknown'}\n\n`;
   csv += 'Parameter,Value,StdError\n';
   fit.paramNames.forEach((n, i) => {
     csv += `${n},${fit.result.params[i]},${isFinite(fit.result.paramErrors[i]) ? fit.result.paramErrors[i] : 'NaN'}\n`;
@@ -47,32 +47,32 @@ function exportReport() {
   const rptYlabel = document.getElementById('plot-ylabel').value.trim();
   const rptTitle  = document.getElementById('plot-title').value.trim();
   let txt = `=======================================================\n`;
-  txt += `  Curve Fitting Studio â€” Fit Report\n`;
+  txt += `  Curve Fitting Studio — Fit Report\n`;
   txt += `  Generated: ${new Date().toISOString()}\n`;
   txt += `=======================================================\n\n`;
   if (rptTitle)  txt += `Title    : ${rptTitle}\n`;
-  txt += `Dataset  : ${ds ? ds.name : 'â€”'}  (${r.n} points)\n`;
+  txt += `Dataset  : ${ds ? ds.name : '—'}  (${r.n} points)\n`;
   if (rptXlabel) txt += `X label  : ${rptXlabel}\n`;
   if (rptYlabel) txt += `Y label  : ${rptYlabel}\n`;
   txt += `Model    : ${fit.model}\n\n`;
-  txt += `â”€â”€â”€ Parameters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n`;
+  txt += `─── Parameters ───────────────────────────────────────\n`;
   txt += `${'Name'.padEnd(12)}  ${'Value'.padEnd(16)}  ${'Std. Error'.padEnd(16)}\n`;
   txt += `${'-'.repeat(46)}\n`;
   fit.paramNames.forEach((n, i) => {
     const v  = fmt(r.params[i]);
-    const se = isFinite(r.paramErrors[i]) ? fmt(r.paramErrors[i]) : 'â€”';
+    const se = isFinite(r.paramErrors[i]) ? fmt(r.paramErrors[i]) : '—';
     txt += `${n.padEnd(12)}  ${v.padEnd(16)}  ${se}\n`;
   });
-  txt += `\nâ”€â”€â”€ Goodness of Fit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n`;
-  txt += `RÂ²        : ${r.rSq.toFixed(8)}\n`;
-  txt += `Adj. RÂ²   : ${r.adjRSq.toFixed(8)}\n`;
+  txt += `\n─── Goodness of Fit ──────────────────────────────────\n`;
+  txt += `R²        : ${r.rSq.toFixed(8)}\n`;
+  txt += `Adj. R²   : ${r.adjRSq.toFixed(8)}\n`;
   txt += `RMSE      : ${r.rmse.toExponential(4)}\n`;
   txt += `SSE       : ${r.sse.toExponential(4)}\n`;
   txt += `AIC       : ${r.aic.toFixed(4)}\n`;
   txt += `BIC       : ${r.bic.toFixed(4)}\n`;
-  if (r.chiSqRed != null) txt += `Ï‡Â²áµ£       : ${r.chiSqRed.toExponential(4)}\n`;
+  if (r.chiSqRed != null) txt += `χ²ᵣ       : ${r.chiSqRed.toExponential(4)}\n`;
   txt += `\n`;
-  txt += `â”€â”€â”€ Algorithm â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n`;
+  txt += `─── Algorithm ────────────────────────────────────────\n`;
   txt += `Status    : ${r.converged ? 'Converged' : 'Max iterations reached'}\n`;
   txt += `Iterations: ${r.iter}\n`;
   txt += `=======================================================\n`;
@@ -155,7 +155,7 @@ function exportPython() {
     `# Results`,
     `param_names = [${fit.paramNames.map(n => `'${n}'`).join(', ')}]`,
     `for name, val, err in zip(param_names, popt, perr):`,
-    `    print(f"{name} = {val:.6g} Â± {err:.6g}")`,
+    `    print(f"{name} = {val:.6g} ± {err:.6g}")`,
     ``,
     `# Plot`,
     `x_fit = np.linspace(x_data.min(), x_data.max(), 300)`,
@@ -224,7 +224,7 @@ function exportR() {
   const formula = modelDefs[fit.model] || `# Define formula for ${fit.model}`;
 
   const lines = [
-    `# Curve Fitting Studio â€” R export`,
+    `# Curve Fitting Studio — R export`,
     `# Model: ${fit.model}`,
     ``,
     `# Data`,
@@ -373,7 +373,7 @@ function exportMATLAB() {
   const fnExpr = modelDefs[fit.model] || `% Define model for ${fit.model} here`;
 
   const lines = [
-    `% Curve Fitting Studio â€” MATLAB export`,
+    `% Curve Fitting Studio — MATLAB export`,
     `% Model: ${fit.model}`,
     `% Parameter map:`,
     namesComment,
@@ -382,7 +382,7 @@ function exportMATLAB() {
     `x_data = [${xArr}]';`,
     `y_data = [${yArr}]';`,
     ``,
-    `% Model (Optimization Toolbox â€” lsqcurvefit)`,
+    `% Model (Optimization Toolbox — lsqcurvefit)`,
     `model = @(p, x) ${fnExpr};`,
     ``,
     `% Initial parameters from fit`,
