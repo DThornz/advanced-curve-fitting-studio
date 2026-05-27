@@ -1,9 +1,9 @@
-(function () {
+﻿(function () {
 'use strict';
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ACCESSIBILITY PANEL
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const accBtn    = document.getElementById('accBtn');
 const accPanel  = document.getElementById('accPanel');
 const darkToggle = document.getElementById('darkToggle');
@@ -34,9 +34,9 @@ darkToggle.addEventListener('change', () => {
 document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { localStorage.setItem('size', b.dataset.size); applyPrefs(); }));
 document.querySelectorAll('[data-font]').forEach(b => b.addEventListener('click', () => { localStorage.setItem('font', b.dataset.font); applyPrefs(); }));
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MATH UTILITIES
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function mean(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
 function sumArr(arr) { return arr.reduce((s, v) => s + v, 0); }
 function linspace(a, b, n) {
@@ -126,7 +126,7 @@ function invertMatrix(M) {
 }
 
 function fmt(v, precision) {
-  if (!isFinite(v)) return '—';
+  if (!isFinite(v)) return 'â€”';
   const p = precision == null ? (CFS_SETTINGS ? CFS_SETTINGS.displayDecimals : 5) : precision;
   if (v === 0) return '0';
   const abs = Math.abs(v);
@@ -226,7 +226,7 @@ function runsTestP(residuals) {
   return 2 * (1 - normalCDF(Math.abs(z)));
 }
 
-// Condition number of J estimated as sqrt(λmax/λmin) of parameter correlation matrix.
+// Condition number of J estimated as sqrt(Î»max/Î»min) of parameter correlation matrix.
 // Uses power iteration + deflation shift on the correlation matrix derived from covMatrix.
 function jacobianConditionNumber(covMatrix) {
   if (!covMatrix || covMatrix.length < 2) return null;
@@ -253,7 +253,7 @@ function jacobianConditionNumber(covMatrix) {
   }
   const lamMax = powerMax(R, 100);
   if (!lamMax) return null;
-  // Smallest eigenvalue via shift-invert: lam_min(R) = lamMax − lam_max(lamMax·I − R)
+  // Smallest eigenvalue via shift-invert: lam_min(R) = lamMax âˆ’ lam_max(lamMaxÂ·I âˆ’ R)
   const Rsh = R.map((row, i) => row.map((v, j) => (i === j ? lamMax : 0) - v));
   const lamShift = powerMax(Rsh, 100);
   if (lamShift == null) return null;
@@ -262,9 +262,9 @@ function jacobianConditionNumber(covMatrix) {
   return Math.sqrt(lamMax / lamMin); // cond(J) = sqrt(cond(J'J)) = sqrt(cond(C))
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    SETTINGS
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const SETT_KEY = 'cfs_ui_settings';
 const SETT_DEFAULTS = {
   uiFontSize: 15, uiFontFamily: "'DM Sans',system-ui,sans-serif",
@@ -312,9 +312,9 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    BOUNDS HELPER
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function clampToBounds(p, lo, hi) {
   if (!lo || !lo.length) return;
   for (let i = 0; i < p.length; i++) {
@@ -330,9 +330,9 @@ function boundsFromOpts(opts) {
   return { lo, hi };
 }
 
-/* ═══════════════════════════════════════════════════════════
-   FITTING ENGINE — LEVENBERG-MARQUARDT
-═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   FITTING ENGINE â€” LEVENBERG-MARQUARDT
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
   opts = opts || {};
   const maxIter = opts.maxIter || 1000;
@@ -380,14 +380,14 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
 
     const J = jacobian(p, r);
 
-    // JtJ[a][b] = Σ J[a][i]*J[b][i]
+    // JtJ[a][b] = Î£ J[a][i]*J[b][i]
     const JtJ = Array.from({ length: m }, (_, a) =>
       Array.from({ length: m }, (_, b) =>
         J[a].reduce((s, _, i) => s + J[a][i] * J[b][i], 0)
       )
     );
-    // β = −J_r^T r  (right-hand side of normal equations: drives p toward lower SSE)
-    // Gauss-Newton step: solve (J_r^T J_r + λD) δ = −J_r^T r, then p_new = p + δ
+    // Î² = âˆ’J_r^T r  (right-hand side of normal equations: drives p toward lower SSE)
+    // Gauss-Newton step: solve (J_r^T J_r + Î»D) Î´ = âˆ’J_r^T r, then p_new = p + Î´
     const beta = J.map(col => col.reduce((s, v, i) => s - v * r[i], 0));
 
     // Augment diagonal
@@ -417,7 +417,7 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
 
-/* ── Analytic polynomial ─────────────────────────────────── */
+/* â”€â”€ Analytic polynomial â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function fitPolynomialAnalytic(degree, xArr, yArr) {
   const n = xArr.length;
   const m = degree + 1;
@@ -457,7 +457,7 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
   };
 }
 
-/* ── Gauss-Newton with backtracking line search ──────────── */
+/* â”€â”€ Gauss-Newton with backtracking line search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function gaussNewton(fn, xArr, yArr, p0, opts) {
   opts = opts || {};
   const maxIter = opts.maxIter || 1000;
@@ -521,7 +521,7 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
 
-/* ── Nelder-Mead Simplex ─────────────────────────────────── */
+/* â”€â”€ Nelder-Mead Simplex â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function nelderMead(fn, xArr, yArr, p0, opts) {
   opts = opts || {};
   const maxIter = opts.maxIter || 2000;
@@ -550,7 +550,7 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
   let converged = false, iter = 0;
 
   for (iter = 0; iter < maxIter; iter++) {
-    // Sort vertices best → worst
+    // Sort vertices best â†’ worst
     const ord = Array.from({ length: m + 1 }, (_, i) => i).sort((a, b) => fval[a] - fval[b]);
     simplex = ord.map(i => simplex[i]);
     fval    = ord.map(i => fval[i]);
@@ -594,7 +594,7 @@ function nelderMead(fn, xArr, yArr, p0, opts) {
   return finaliseFit(fn, xArr, yArr, simplex[0], { converged, iter, weights: opts.weights });
 }
 
-/* ── BFGS (quasi-Newton, inverse-Hessian form) ───────────── */
+/* â”€â”€ BFGS (quasi-Newton, inverse-Hessian form) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function bfgs(fn, xArr, yArr, p0, opts) {
   opts = opts || {};
   const maxIter = opts.maxIter || 1000;
@@ -636,7 +636,7 @@ function bfgs(fn, xArr, yArr, p0, opts) {
     const d = Array(m).fill(0).map((_, i) => -H[i].reduce((s, hij, j) => s + hij * g[j], 0));
     const dg = d.reduce((s, di, i) => s + di * g[i], 0);
     if (dg >= 0) {
-      // Curvature condition violated — restart with identity
+      // Curvature condition violated â€” restart with identity
       H = Array.from({ length: m }, (_, i) => Array.from({ length: m }, (_, j) => i === j ? 1 : 0));
       continue;
     }
@@ -676,7 +676,7 @@ function bfgs(fn, xArr, yArr, p0, opts) {
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
 
-/* ── Shared finalisation (stats + param errors) ─────────── */
+/* â”€â”€ Shared finalisation (stats + param errors) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function finaliseFit(fn, xArr, yArr, p, meta) {
   const EPS = 1e-7;
   const n = xArr.length, m = p.length;
@@ -721,9 +721,9 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
            converged: meta.converged, iter: meta.iter, n, residuals: r };
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MODELS LIBRARY
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const MODELS = {
   'Linear': {
     params: ['a', 'b'],
@@ -753,11 +753,11 @@ const MODELS = {
       return [isFinite(a) ? a : 1, isFinite(b) ? b : 1];
     }
   },
-  'Polynomial-2': { params: ['c₂','c₁','c₀'], analytic: true, degree: 2 },
-  'Polynomial-3': { params: ['c₃','c₂','c₁','c₀'], analytic: true, degree: 3 },
-  'Polynomial-4': { params: ['c₄','c₃','c₂','c₁','c₀'], analytic: true, degree: 4 },
-  'Polynomial-5': { params: ['c₅','c₄','c₃','c₂','c₁','c₀'], analytic: true, degree: 5 },
-  'Polynomial-6': { params: ['c₆','c₅','c₄','c₃','c₂','c₁','c₀'], analytic: true, degree: 6 },
+  'Polynomial-2': { params: ['câ‚‚','câ‚','câ‚€'], analytic: true, degree: 2 },
+  'Polynomial-3': { params: ['câ‚ƒ','câ‚‚','câ‚','câ‚€'], analytic: true, degree: 3 },
+  'Polynomial-4': { params: ['câ‚„','câ‚ƒ','câ‚‚','câ‚','câ‚€'], analytic: true, degree: 4 },
+  'Polynomial-5': { params: ['câ‚…','câ‚„','câ‚ƒ','câ‚‚','câ‚','câ‚€'], analytic: true, degree: 5 },
+  'Polynomial-6': { params: ['câ‚†','câ‚…','câ‚„','câ‚ƒ','câ‚‚','câ‚','câ‚€'], analytic: true, degree: 6 },
   'Exponential': {
     params: ['a', 'b'],
     fn: (x, [a, b]) => a * Math.exp(b * x),
@@ -788,7 +788,7 @@ const MODELS = {
     }
   },
   'Logistic': {
-    params: ['L', 'k', 'x₀'],
+    params: ['L', 'k', 'xâ‚€'],
     fn: (x, [L, k, x0]) => L / (1 + Math.exp(-k * (x - x0))),
     analytic: false,
     autoInit(x, y) {
@@ -796,7 +796,7 @@ const MODELS = {
       const half = L / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       const x0 = x[idx];
-      // Estimate k from local slope at midpoint: dy/dx|x0 ≈ L*k/4
+      // Estimate k from local slope at midpoint: dy/dx|x0 â‰ˆ L*k/4
       const i1 = Math.max(idx - 2, 0), i2 = Math.min(idx + 2, x.length - 1);
       const slope = i2 > i1 ? (y[i2] - y[i1]) / (x[i2] - x[i1] || 1) : 1;
       const k = Math.max(4 * slope / L, 0.01);
@@ -804,7 +804,7 @@ const MODELS = {
     }
   },
   'Gaussian': {
-    params: ['A', 'μ', 'σ', 'C'],
+    params: ['A', 'Î¼', 'Ïƒ', 'C'],
     fn: (x, [A, mu, sig, C]) => A * Math.exp(-0.5 * ((x - mu) / (sig || 1e-10)) ** 2) + C,
     analytic: false,
     autoInit(x, y) {
@@ -825,7 +825,7 @@ const MODELS = {
     }
   },
   'Lorentzian': {
-    params: ['A', 'x₀', 'γ', 'C'],
+    params: ['A', 'xâ‚€', 'Î³', 'C'],
     fn: (x, [A, x0, g, C]) => A * g * g / ((x - x0) ** 2 + g * g) + C,
     analytic: false,
     autoInit(x, y) {
@@ -868,7 +868,7 @@ const MODELS = {
     }
   },
   'Sine': {
-    params: ['A', 'ω', 'φ', 'C'],
+    params: ['A', 'Ï‰', 'Ï†', 'C'],
     fn: (x, [A, w, phi, C]) => A * Math.sin(w * x + phi) + C,
     analytic: false,
     autoInit(x, y) {
@@ -884,7 +884,7 @@ const MODELS = {
     }
   },
   'Damped-Sine': {
-    params: ['A', 'γ', 'ω', 'φ', 'C'],
+    params: ['A', 'Î³', 'Ï‰', 'Ï†', 'C'],
     fn: (x, [A, g, w, phi, C]) => A * Math.exp(-g * x) * Math.sin(w * x + phi) + C,
     analytic: false,
     autoInit(x, y) {
@@ -904,14 +904,14 @@ const MODELS = {
     }
   },
   'Weibull': {
-    params: ['λ', 'k'],
+    params: ['Î»', 'k'],
     fn: (x, [lam, k]) => 1 - Math.exp(-Math.pow(Math.max(x, 1e-12) / (lam || 1e-10), k)),
     analytic: false,
     autoInit(x, y) {
-      // λ ≈ x where F ≈ 0.632 (= 1−1/e, the Weibull scale characteristic)
+      // Î» â‰ˆ x where F â‰ˆ 0.632 (= 1âˆ’1/e, the Weibull scale characteristic)
       const idx = y.reduce((b, yi, i) => Math.abs(yi - 0.632) < Math.abs(y[b] - 0.632) ? i : b, 0);
       const lam = Math.max(x[idx], x[0], 1e-6);
-      // Log-log linearisation: ln(−ln(1−F)) = k·ln(x) − k·ln(λ) → slope = k
+      // Log-log linearisation: ln(âˆ’ln(1âˆ’F)) = kÂ·ln(x) âˆ’ kÂ·ln(Î») â†’ slope = k
       const valid = x.map((xi, i) => [xi, y[i]]).filter(([xi, yi]) => xi > 0 && yi > 0 && yi < 1);
       let k = 2;
       if (valid.length >= 3) {
@@ -1038,7 +1038,7 @@ const MODELS = {
     }
   },
   'Double-Gaussian': {
-    params: ['A1', 'μ1', 'σ1', 'A2', 'μ2', 'σ2', 'C'],
+    params: ['A1', 'Î¼1', 'Ïƒ1', 'A2', 'Î¼2', 'Ïƒ2', 'C'],
     fn: (x, [A1, m1, s1, A2, m2, s2, C]) =>
       A1 * Math.exp(-0.5 * ((x - m1) / (s1 || 1e-10)) ** 2) +
       A2 * Math.exp(-0.5 * ((x - m2) / (s2 || 1e-10)) ** 2) + C,
@@ -1354,9 +1354,9 @@ const MODEL_EQ = {
   'Custom':           '',
 };
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    EXAMPLE DATASETS
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function addNoise(arr, sigma) {
   return arr.map(v => v + (Math.random() - 0.5) * 2 * sigma);
 }
@@ -1370,9 +1370,9 @@ function noisyGauss(arr, sigma) { return arr.map(v => v + gauss() * sigma); }
 function addExtraNoise(y, type, sigma) {
   if (sigma <= 0 || type === 'none') return y;
   if (type === 'gaussian')  return y.map(v => v + gauss() * sigma);
-  if (type === 'uniform')   return y.map(v => v + (Math.random() - 0.5) * 2 * 1.7321 * sigma); // √3·σ half-range → same variance
+  if (type === 'uniform')   return y.map(v => v + (Math.random() - 0.5) * 2 * 1.7321 * sigma); // âˆš3Â·Ïƒ half-range â†’ same variance
   if (type === 'laplacian') {
-    const b = sigma * 0.7071; // b = σ/√2 → variance = 2b² = σ²
+    const b = sigma * 0.7071; // b = Ïƒ/âˆš2 â†’ variance = 2bÂ² = ÏƒÂ²
     return y.map(v => { const u = Math.random() - 0.5; return v - b * Math.sign(u) * Math.log(1 - 2 * Math.abs(u)); });
   }
   return y;
@@ -1415,7 +1415,7 @@ const EXAMPLES = {
       { key: 'A',    label: 'Amplitude (A)',  value: 95,   min: 1,    max: 500,  step: 1    },
       { key: 'b',    label: 'Decay rate (b)', value: 0.18, min: 0.01, max: 5,    step: 0.01 },
       { key: 'C',    label: 'Offset (C)',      value: 2,    min: -100, max: 200,  step: 0.5  },
-      { key: 'noise',   label: 'Noise (σ)',       value: 1.5,  min: 0,    max: 30,   step: 0.1  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',       value: 1.5,  min: 0,    max: 30,   step: 0.1  },
       { key: 'N',       label: 'Points (N)',      value: 24,   min: 5,    max: 200,  step: 1    },
       { key: 'xmax',    label: 'x max',           value: 20,   min: 1,    max: 200,  step: 1    },
       { key: 'outliers',label: 'Outliers',         value: 0,    min: 0,    max: 8,    step: 1    },
@@ -1429,10 +1429,10 @@ const EXAMPLES = {
     title: 'Gaussian Peak (Spectroscopy)',
     params: [
       { key: 'A',    label: 'Amplitude (A)', value: 120,  min: 1,    max: 1000, step: 1    },
-      { key: 'mu',   label: 'Center (μ)',     value: 0.5,  min: -20,  max: 20,   step: 0.1  },
-      { key: 'sig',  label: 'Width (σ)',      value: 1.2,  min: 0.05, max: 20,   step: 0.05 },
+      { key: 'mu',   label: 'Center (Î¼)',     value: 0.5,  min: -20,  max: 20,   step: 0.1  },
+      { key: 'sig',  label: 'Width (Ïƒ)',      value: 1.2,  min: 0.05, max: 20,   step: 0.05 },
       { key: 'C',    label: 'Baseline (C)',   value: 5,    min: -50,  max: 200,  step: 1    },
-      { key: 'noise',   label: 'Noise (σ)',      value: 3,    min: 0,    max: 50,   step: 0.5  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',      value: 3,    min: 0,    max: 50,   step: 0.5  },
       { key: 'N',       label: 'Points (N)',     value: 40,   min: 5,    max: 200,  step: 1    },
       { key: 'xmin',    label: 'x min',          value: -6,   min: -50,  max: 0,    step: 0.5  },
       { key: 'xmax',    label: 'x max',          value: 6,    min: 0,    max: 50,   step: 0.5  },
@@ -1440,7 +1440,7 @@ const EXAMPLES = {
     ],
     generate(p) {
       const x = linspace(p.xmin, p.xmax, p.N);
-      return { name: 'Gaussian Peak (Spectroscopy)', x, y: noisyGauss(x.map(xi => p.A * Math.exp(-0.5 * ((xi - p.mu) / p.sig) ** 2) + p.C), p.noise), xlabel: 'Wavenumber (cm⁻¹)', ylabel: 'Absorbance', suggestModel: 'Gaussian' };
+      return { name: 'Gaussian Peak (Spectroscopy)', x, y: noisyGauss(x.map(xi => p.A * Math.exp(-0.5 * ((xi - p.mu) / p.sig) ** 2) + p.C), p.noise), xlabel: 'Wavenumber (cmâ»Â¹)', ylabel: 'Absorbance', suggestModel: 'Gaussian' };
     }
   },
   'logistic-growth': {
@@ -1448,8 +1448,8 @@ const EXAMPLES = {
     params: [
       { key: 'L',    label: 'Capacity (L)',    value: 1e6,  min: 100,  max: 1e9,  step: 1e4  },
       { key: 'k',    label: 'Growth rate (k)', value: 0.18, min: 0.01, max: 2,    step: 0.01 },
-      { key: 'x0',   label: 'Midpoint (x₀)',   value: 20,   min: 1,    max: 100,  step: 0.5  },
-      { key: 'noise',   label: 'Noise (σ)',        value: 1.5e4,min: 0,    max: 5e5,  step: 1e3  },
+      { key: 'x0',   label: 'Midpoint (xâ‚€)',   value: 20,   min: 1,    max: 100,  step: 0.5  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',        value: 1.5e4,min: 0,    max: 5e5,  step: 1e3  },
       { key: 'N',       label: 'Points (N)',       value: 32,   min: 5,    max: 200,  step: 1    },
       { key: 'xmax',    label: 'x max',            value: 48,   min: 5,    max: 200,  step: 1    },
       { key: 'outliers',label: 'Outliers',          value: 0,    min: 0,    max: 8,    step: 1    },
@@ -1464,22 +1464,22 @@ const EXAMPLES = {
     params: [
       { key: 'Vmax', label: 'Vmax',          value: 450,  min: 1,    max: 5000, step: 10   },
       { key: 'Km',      label: 'Km',            value: 12,   min: 0.01, max: 500,  step: 0.5  },
-      { key: 'noise',   label: 'Noise (σ)',      value: 8,    min: 0,    max: 100,  step: 0.5  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',      value: 8,    min: 0,    max: 100,  step: 0.5  },
       { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,    max: 6,    step: 1    },
     ],
     generate(p) {
       const S = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 40, 80, 150, 250];
-      return { name: 'Michaelis-Menten (Enzyme Kinetics)', x: S, y: noisyGauss(S.map(s => p.Vmax * s / (p.Km + s)), p.noise), xlabel: '[S] (mM)', ylabel: 'v (μmol·min⁻¹)', suggestModel: 'Michaelis-Menten' };
+      return { name: 'Michaelis-Menten (Enzyme Kinetics)', x: S, y: noisyGauss(S.map(s => p.Vmax * s / (p.Km + s)), p.noise), xlabel: '[S] (mM)', ylabel: 'v (Î¼molÂ·minâ»Â¹)', suggestModel: 'Michaelis-Menten' };
     }
   },
   'damped-oscillation': {
     title: 'Damped Oscillation (Vibration)',
     params: [
       { key: 'A',     label: 'Amplitude (A)', value: 8,    min: 0.1,   max: 100,  step: 0.5  },
-      { key: 'gamma', label: 'Damping (γ)',    value: 0.3,  min: 0,     max: 5,    step: 0.05 },
-      { key: 'omega', label: 'Frequency (ω)', value: 3.2,  min: 0.1,   max: 20,   step: 0.1  },
-      { key: 'phi',   label: 'Phase (φ)',      value: 0.5,  min: -3.14, max: 3.14, step: 0.1  },
-      { key: 'noise',   label: 'Noise (σ)',      value: 0.3,  min: 0,     max: 10,   step: 0.05 },
+      { key: 'gamma', label: 'Damping (Î³)',    value: 0.3,  min: 0,     max: 5,    step: 0.05 },
+      { key: 'omega', label: 'Frequency (Ï‰)', value: 3.2,  min: 0.1,   max: 20,   step: 0.1  },
+      { key: 'phi',   label: 'Phase (Ï†)',      value: 0.5,  min: -3.14, max: 3.14, step: 0.1  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',      value: 0.3,  min: 0,     max: 10,   step: 0.05 },
       { key: 'N',       label: 'Points (N)',     value: 60,   min: 5,     max: 300,  step: 1    },
       { key: 'xmax',    label: 'x max',          value: 10,   min: 1,     max: 100,  step: 1    },
       { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,     max: 8,    step: 1    },
@@ -1494,7 +1494,7 @@ const EXAMPLES = {
     params: [
       { key: 'm',    label: 'Slope (m)',      value: 2.45, min: -100, max: 100,  step: 0.05 },
       { key: 'b',    label: 'Intercept (b)',  value: 0.12, min: -100, max: 100,  step: 0.05 },
-      { key: 'noise',   label: 'Noise (σ)',       value: 0.15, min: 0,    max: 20,   step: 0.05 },
+      { key: 'noise',   label: 'Noise (Ïƒ)',       value: 0.15, min: 0,    max: 20,   step: 0.05 },
       { key: 'N',       label: 'Points (N)',      value: 18,   min: 3,    max: 200,  step: 1    },
       { key: 'xmax',    label: 'x max',           value: 10,   min: 1,    max: 100,  step: 1    },
       { key: 'outliers',label: 'Outliers',         value: 0,    min: 0,    max: 8,    step: 1    },
@@ -1510,12 +1510,12 @@ const EXAMPLES = {
       { key: 'Vmax', label: 'Vmax',            value: 300,  min: 1,    max: 5000, step: 10   },
       { key: 'Kd',   label: 'Kd (EC50)',       value: 4,    min: 0.01, max: 200,  step: 0.1  },
       { key: 'n',       label: 'Hill coeff. (n)', value: 2.5,  min: 0.1,  max: 10,   step: 0.1  },
-      { key: 'noise',   label: 'Noise (σ)',        value: 6,    min: 0,    max: 100,  step: 1    },
+      { key: 'noise',   label: 'Noise (Ïƒ)',        value: 6,    min: 0,    max: 100,  step: 1    },
       { key: 'outliers',label: 'Outliers',          value: 0,    min: 0,    max: 6,    step: 1    },
     ],
     generate(p) {
       const S = [0.1,0.25,0.5,1,1.5,2,3,4,6,8,12,18,25,35,50,75,100];
-      return { name: 'Hill Equation (Dose-Response)', x: S, y: noisyGauss(S.map(x => p.Vmax * Math.pow(x, p.n) / (Math.pow(p.Kd, p.n) + Math.pow(x, p.n))), p.noise), xlabel: '[Ligand] (μM)', ylabel: 'Response (%)', suggestModel: 'Hill' };
+      return { name: 'Hill Equation (Dose-Response)', x: S, y: noisyGauss(S.map(x => p.Vmax * Math.pow(x, p.n) / (Math.pow(p.Kd, p.n) + Math.pow(x, p.n))), p.noise), xlabel: '[Ligand] (Î¼M)', ylabel: 'Response (%)', suggestModel: 'Hill' };
     }
   },
   'power-law': {
@@ -1523,7 +1523,7 @@ const EXAMPLES = {
     params: [
       { key: 'a',    label: 'Scale (a)',   value: 0.014, min: 0.001, max: 100,  step: 0.001 },
       { key: 'b',    label: 'Exponent (b)',value: 0.75,  min: 0.1,   max: 3,    step: 0.05  },
-      { key: 'noise',   label: 'Noise (σ%)',  value: 8,     min: 0,     max: 50,   step: 1     },
+      { key: 'noise',   label: 'Noise (Ïƒ%)',  value: 8,     min: 0,     max: 50,   step: 1     },
       { key: 'N',       label: 'Points (N)',  value: 24,    min: 4,     max: 100,  step: 1     },
       { key: 'outliers',label: 'Outliers',     value: 0,     min: 0,     max: 8,    step: 1     },
     ],
@@ -1539,10 +1539,10 @@ const EXAMPLES = {
     title: 'Lorentzian Peak (NMR)',
     params: [
       { key: 'A',    label: 'Amplitude (A)', value: 200,  min: 1,    max: 2000, step: 5    },
-      { key: 'x0',   label: 'Center (x₀)',   value: 3.6,  min: -50,  max: 50,   step: 0.1  },
-      { key: 'g',    label: 'Half-width (γ)', value: 0.4,  min: 0.01, max: 10,   step: 0.05 },
+      { key: 'x0',   label: 'Center (xâ‚€)',   value: 3.6,  min: -50,  max: 50,   step: 0.1  },
+      { key: 'g',    label: 'Half-width (Î³)', value: 0.4,  min: 0.01, max: 10,   step: 0.05 },
       { key: 'C',    label: 'Baseline (C)',   value: 4,    min: -50,  max: 200,  step: 1    },
-      { key: 'noise',   label: 'Noise (σ)',      value: 4,    min: 0,    max: 50,   step: 0.5  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',      value: 4,    min: 0,    max: 50,   step: 0.5  },
       { key: 'N',       label: 'Points (N)',     value: 50,   min: 5,    max: 200,  step: 1    },
       { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,    max: 8,    step: 1    },
     ],
@@ -1554,9 +1554,9 @@ const EXAMPLES = {
   'weibull-survival': {
     title: 'Weibull CDF (Reliability)',
     params: [
-      { key: 'lam',  label: 'Scale (λ)',      value: 500,  min: 10,   max: 10000, step: 10  },
+      { key: 'lam',  label: 'Scale (Î»)',      value: 500,  min: 10,   max: 10000, step: 10  },
       { key: 'k',    label: 'Shape (k)',       value: 2.2,  min: 0.5,  max: 10,    step: 0.1 },
-      { key: 'noise',   label: 'Noise (σ)',       value: 0.02, min: 0,    max: 0.2,   step: 0.005},
+      { key: 'noise',   label: 'Noise (Ïƒ)',       value: 0.02, min: 0,    max: 0.2,   step: 0.005},
       { key: 'N',       label: 'Points (N)',      value: 30,   min: 5,    max: 100,   step: 1   },
       { key: 'outliers',label: 'Outliers',         value: 0,    min: 0,    max: 8,     step: 1   },
     ],
@@ -1568,11 +1568,11 @@ const EXAMPLES = {
   'polynomial-calibration': {
     title: 'Polynomial Calibration Curve',
     params: [
-      { key: 'a3',   label: 'a₃ (cubic)',     value: -0.008, min: -1,   max: 1,    step: 0.001 },
-      { key: 'a2',   label: 'a₂ (quadratic)', value: 0.22,   min: -5,   max: 5,    step: 0.01  },
-      { key: 'a1',   label: 'a₁ (linear)',    value: 1.85,   min: -20,  max: 20,   step: 0.05  },
-      { key: 'a0',   label: 'a₀ (offset)',    value: 0.05,   min: -10,  max: 10,   step: 0.01  },
-      { key: 'noise',   label: 'Noise (σ)',       value: 0.4,    min: 0,    max: 5,    step: 0.05  },
+      { key: 'a3',   label: 'aâ‚ƒ (cubic)',     value: -0.008, min: -1,   max: 1,    step: 0.001 },
+      { key: 'a2',   label: 'aâ‚‚ (quadratic)', value: 0.22,   min: -5,   max: 5,    step: 0.01  },
+      { key: 'a1',   label: 'aâ‚ (linear)',    value: 1.85,   min: -20,  max: 20,   step: 0.05  },
+      { key: 'a0',   label: 'aâ‚€ (offset)',    value: 0.05,   min: -10,  max: 10,   step: 0.01  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',       value: 0.4,    min: 0,    max: 5,    step: 0.05  },
       { key: 'N',       label: 'Points (N)',      value: 22,     min: 5,    max: 100,  step: 1     },
       { key: 'xmax',    label: 'x max',           value: 20,     min: 1,    max: 100,  step: 1     },
       { key: 'outliers',label: 'Outliers',         value: 0,      min: 0,    max: 8,    step: 1     },
@@ -1586,10 +1586,10 @@ const EXAMPLES = {
     title: 'Sinusoidal Signal',
     params: [
       { key: 'A',    label: 'Amplitude (A)', value: 5,    min: 0.1,   max: 100,  step: 0.1  },
-      { key: 'omega',label: 'Frequency (ω)', value: 1.4,  min: 0.05,  max: 20,   step: 0.05 },
-      { key: 'phi',  label: 'Phase (φ)',      value: 0.8,  min: -3.14, max: 3.14, step: 0.05 },
+      { key: 'omega',label: 'Frequency (Ï‰)', value: 1.4,  min: 0.05,  max: 20,   step: 0.05 },
+      { key: 'phi',  label: 'Phase (Ï†)',      value: 0.8,  min: -3.14, max: 3.14, step: 0.05 },
       { key: 'C',    label: 'Offset (C)',     value: 1.2,  min: -50,   max: 50,   step: 0.1  },
-      { key: 'noise',   label: 'Noise (σ)',      value: 0.4,  min: 0,     max: 10,   step: 0.05 },
+      { key: 'noise',   label: 'Noise (Ïƒ)',      value: 0.4,  min: 0,     max: 10,   step: 0.05 },
       { key: 'N',       label: 'Points (N)',     value: 60,   min: 10,    max: 300,  step: 1    },
       { key: 'xmax',    label: 'x max (periods)',value: 8,    min: 1,     max: 50,   step: 0.5  },
       { key: 'outliers',label: 'Outliers',        value: 0,    min: 0,     max: 8,    step: 1    },
@@ -1606,7 +1606,7 @@ const EXAMPLES = {
       { key: 'A',    label: 'G max (nS)',            value: 1.0,  min: 0.01, max: 20,   step: 0.01  },
       { key: 'Vh',   label: 'Half-activation (mV)',  value: -30,  min: -120, max: 60,   step: 1     },
       { key: 'k',    label: 'Slope factor (mV)',     value: 8,    min: 1,    max: 30,   step: 0.5   },
-      { key: 'noise',label: 'Noise (σ)',              value: 0.02, min: 0,    max: 0.5,  step: 0.005 },
+      { key: 'noise',label: 'Noise (Ïƒ)',              value: 0.02, min: 0,    max: 0.5,  step: 0.005 },
       { key: 'N',    label: 'Points (N)',             value: 33,   min: 5,    max: 100,  step: 1     },
     ],
     generate(p) {
@@ -1622,7 +1622,7 @@ const EXAMPLES = {
       { key: 'EK',   label: 'Reversal E_K (mV)',  value: -80,  min: -120, max: 0,    step: 1    },
       { key: 'Vh',   label: 'Half-block V (mV)',  value: -60,  min: -120, max: 0,    step: 1    },
       { key: 'k',    label: 'Slope factor (mV)',  value: 12,   min: 1,    max: 30,   step: 0.5  },
-      { key: 'noise',label: 'Noise (σ, pA)',      value: 2,    min: 0,    max: 30,   step: 0.5  },
+      { key: 'noise',label: 'Noise (Ïƒ, pA)',      value: 2,    min: 0,    max: 30,   step: 0.5  },
       { key: 'N',    label: 'Points (N)',          value: 29,   min: 5,    max: 100,  step: 1    },
     ],
     generate(p) {
@@ -1635,12 +1635,12 @@ const EXAMPLES = {
     title: 'HH Na Channel I-V',
     params: [
       { key: 'g',    label: 'Max conductance (nS)', value: 50,   min: 1,    max: 500,  step: 1    },
-      { key: 'Vm',   label: 'Act. V½ (mV)',         value: -30,  min: -80,  max: 0,    step: 1    },
+      { key: 'Vm',   label: 'Act. VÂ½ (mV)',         value: -30,  min: -80,  max: 0,    step: 1    },
       { key: 'km',   label: 'Act. slope (mV)',      value: 7,    min: 1,    max: 20,   step: 0.5  },
-      { key: 'Vh',   label: 'Inact. V½ (mV)',       value: -55,  min: -100, max: 0,    step: 1    },
+      { key: 'Vh',   label: 'Inact. VÂ½ (mV)',       value: -55,  min: -100, max: 0,    step: 1    },
       { key: 'kh',   label: 'Inact. slope (mV)',    value: 7,    min: 1,    max: 20,   step: 0.5  },
       { key: 'Erev', label: 'Na reversal (mV)',      value: 50,   min: 0,    max: 120,  step: 1    },
-      { key: 'noise',label: 'Noise (σ, pA)',         value: 5,    min: 0,    max: 100,  step: 1    },
+      { key: 'noise',label: 'Noise (Ïƒ, pA)',         value: 5,    min: 0,    max: 100,  step: 1    },
       { key: 'N',    label: 'Points (N)',            value: 35,   min: 5,    max: 100,  step: 1    },
     ],
     generate(p) {
@@ -1654,19 +1654,19 @@ const EXAMPLES = {
     }
   },
   'tau-voltage': {
-    title: 'Voltage-Dependent τ',
+    title: 'Voltage-Dependent Ï„',
     params: [
-      { key: 'tau_max', label: 'τ max (ms)',        value: 5,    min: 0.1,  max: 50,   step: 0.1  },
+      { key: 'tau_max', label: 'Ï„ max (ms)',        value: 5,    min: 0.1,  max: 50,   step: 0.1  },
       { key: 'Vpeak',   label: 'Peak voltage (mV)', value: -40,  min: -100, max: 60,   step: 1    },
-      { key: 'k',       label: 'Width σ (mV)',       value: 15,   min: 2,    max: 60,   step: 0.5  },
-      { key: 'tau_min', label: 'τ min (ms)',         value: 0.5,  min: 0,    max: 10,   step: 0.1  },
-      { key: 'noise',   label: 'Noise (σ, ms)',      value: 0.1,  min: 0,    max: 2,    step: 0.05 },
+      { key: 'k',       label: 'Width Ïƒ (mV)',       value: 15,   min: 2,    max: 60,   step: 0.5  },
+      { key: 'tau_min', label: 'Ï„ min (ms)',         value: 0.5,  min: 0,    max: 10,   step: 0.1  },
+      { key: 'noise',   label: 'Noise (Ïƒ, ms)',      value: 0.1,  min: 0,    max: 2,    step: 0.05 },
       { key: 'N',       label: 'Points (N)',          value: 33,   min: 5,    max: 100,  step: 1    },
     ],
     generate(p) {
       const V = linspace(-100, 60, p.N);
       const tau = V.map(v => p.tau_max * Math.exp(-0.5 * ((v - p.Vpeak) / p.k) ** 2) + p.tau_min);
-      return { name: 'Voltage-Dependent τ', x: V, y: noisyGauss(tau, p.noise), xlabel: 'Voltage (mV)', ylabel: 'τ (ms)', suggestModel: 'Tau-Gaussian' };
+      return { name: 'Voltage-Dependent Ï„', x: V, y: noisyGauss(tau, p.noise), xlabel: 'Voltage (mV)', ylabel: 'Ï„ (ms)', suggestModel: 'Tau-Gaussian' };
     }
   },
   'elisa-4pl': {
@@ -1676,7 +1676,7 @@ const EXAMPLES = {
       { key: 'D',    label: 'Bottom (D)',       value: 0.05, min: 0,    max: 1,    step: 0.01 },
       { key: 'C',    label: 'EC50 (ng/mL)',     value: 5,    min: 0.1,  max: 100,  step: 0.1  },
       { key: 'B',    label: 'Hill slope (B)',   value: 1.8,  min: 0.5,  max: 5,    step: 0.1  },
-      { key: 'noise',   label: 'Noise (σ)',        value: 0.04, min: 0,    max: 0.5,  step: 0.005},
+      { key: 'noise',   label: 'Noise (Ïƒ)',        value: 0.04, min: 0,    max: 0.5,  step: 0.005},
       { key: 'outliers',label: 'Outliers',          value: 0,    min: 0,    max: 4,    step: 1    },
     ],
     generate(p) {
@@ -1688,29 +1688,29 @@ const EXAMPLES = {
   'gompertz-growth': {
     title: 'Gompertz Tumor Growth',
     params: [
-      { key: 'A',    label: 'Carrying cap. (mm³)', value: 2500, min: 100,  max: 10000,step: 100  },
+      { key: 'A',    label: 'Carrying cap. (mmÂ³)', value: 2500, min: 100,  max: 10000,step: 100  },
       { key: 'k',    label: 'Growth rate (k)',      value: 0.12, min: 0.01, max: 1,    step: 0.01 },
-      { key: 'x0',   label: 'Inflection (x₀, d)',  value: 18,   min: 1,    max: 100,  step: 1    },
-      { key: 'noise',   label: 'Noise (σ, mm³)',      value: 50,   min: 0,    max: 500,  step: 5    },
+      { key: 'x0',   label: 'Inflection (xâ‚€, d)',  value: 18,   min: 1,    max: 100,  step: 1    },
+      { key: 'noise',   label: 'Noise (Ïƒ, mmÂ³)',      value: 50,   min: 0,    max: 500,  step: 5    },
       { key: 'N',       label: 'Points (N)',           value: 28,   min: 5,    max: 100,  step: 1    },
       { key: 'outliers',label: 'Outliers',              value: 0,    min: 0,    max: 4,    step: 1    },
     ],
     generate(p) {
       const t = linspace(0, 50, p.N);
       const y = noisyGauss(t.map(ti => p.A * Math.exp(-Math.exp(-p.k * (ti - p.x0)))), p.noise);
-      return { name: 'Gompertz Tumor Growth', x: t, y: injectOutliers(y.map(v => Math.max(v, 0)), p.outliers, 3), xlabel: 'Time (days)', ylabel: 'Tumor Volume (mm³)', suggestModel: 'Gompertz' };
+      return { name: 'Gompertz Tumor Growth', x: t, y: injectOutliers(y.map(v => Math.max(v, 0)), p.outliers, 3), xlabel: 'Time (days)', ylabel: 'Tumor Volume (mmÂ³)', suggestModel: 'Gompertz' };
     }
   },
   'xrd-peak': {
     title: 'XRD Diffraction Peak (Pseudo-Voigt)',
     params: [
       { key: 'A',    label: 'Intensity (A)',    value: 5000, min: 100,  max: 50000,step: 100  },
-      { key: 'x0',   label: '2θ center (°)',    value: 28.4, min: 5,    max: 80,   step: 0.1  },
-      { key: 'g',    label: 'Lorentz HWHM (°)', value: 0.12, min: 0.01, max: 2,    step: 0.01 },
-      { key: 's',    label: 'Gauss σ (°)',       value: 0.14, min: 0.01, max: 2,    step: 0.01 },
-      { key: 'eta',  label: 'Mixing η (0–1)',    value: 0.55, min: 0,    max: 1,    step: 0.05 },
+      { key: 'x0',   label: '2Î¸ center (Â°)',    value: 28.4, min: 5,    max: 80,   step: 0.1  },
+      { key: 'g',    label: 'Lorentz HWHM (Â°)', value: 0.12, min: 0.01, max: 2,    step: 0.01 },
+      { key: 's',    label: 'Gauss Ïƒ (Â°)',       value: 0.14, min: 0.01, max: 2,    step: 0.01 },
+      { key: 'eta',  label: 'Mixing Î· (0â€“1)',    value: 0.55, min: 0,    max: 1,    step: 0.05 },
       { key: 'C',    label: 'Background (C)',    value: 120,  min: 0,    max: 2000, step: 10   },
-      { key: 'noise',   label: 'Noise (σ)',         value: 30,   min: 0,    max: 500,  step: 5    },
+      { key: 'noise',   label: 'Noise (Ïƒ)',         value: 30,   min: 0,    max: 500,  step: 5    },
       { key: 'N',       label: 'Points (N)',         value: 60,   min: 10,   max: 200,  step: 1    },
     ],
     generate(p) {
@@ -1721,18 +1721,18 @@ const EXAMPLES = {
         const G = Math.exp(-0.5 * ((xi - p.x0) / p.s) ** 2);
         return p.A * (etaC * L + (1 - etaC) * G) + p.C;
       });
-      return { name: 'XRD Diffraction Peak', x, y: noisyGauss(y, p.noise), xlabel: '2θ (°)', ylabel: 'Intensity (counts)', suggestModel: 'Pseudo-Voigt' };
+      return { name: 'XRD Diffraction Peak', x, y: noisyGauss(y, p.noise), xlabel: '2Î¸ (Â°)', ylabel: 'Intensity (counts)', suggestModel: 'Pseudo-Voigt' };
     }
   },
   'fano-resonance': {
     title: 'Fano Resonance (Nanophotonics)',
     params: [
       { key: 'A',    label: 'Amplitude (A)',    value: 1.0,  min: 0.01, max: 10,   step: 0.05 },
-      { key: 'x0',   label: 'Resonance (x₀)',   value: 800,  min: 400,  max: 1200, step: 5    },
-      { key: 'G',    label: 'Linewidth Γ (nm)', value: 30,   min: 1,    max: 200,  step: 1    },
+      { key: 'x0',   label: 'Resonance (xâ‚€)',   value: 800,  min: 400,  max: 1200, step: 5    },
+      { key: 'G',    label: 'Linewidth Î“ (nm)', value: 30,   min: 1,    max: 200,  step: 1    },
       { key: 'q',    label: 'Asymmetry (q)',     value: 2.5,  min: -10,  max: 10,   step: 0.1  },
       { key: 'C',    label: 'Background (C)',    value: 0.3,  min: 0,    max: 2,    step: 0.05 },
-      { key: 'noise',   label: 'Noise (σ)',         value: 0.02, min: 0,    max: 0.2,  step: 0.005},
+      { key: 'noise',   label: 'Noise (Ïƒ)',         value: 0.02, min: 0,    max: 0.2,  step: 0.005},
       { key: 'N',       label: 'Points (N)',         value: 80,   min: 10,   max: 300,  step: 1    },
     ],
     generate(p) {
@@ -1750,7 +1750,7 @@ const EXAMPLES = {
       { key: 'Amp',  label: 'Dose factor (Amp)', value: 12,   min: 0.1,  max: 500,  step: 0.5  },
       { key: 'ka',   label: 'Absorption ka (1/h)',value: 1.5,  min: 0.05, max: 10,   step: 0.05 },
       { key: 'ke',   label: 'Elimination ke (1/h)',value:0.18, min: 0.01, max: 5,    step: 0.01 },
-      { key: 'noise',   label: 'Noise (σ, ng/mL)', value: 0.4,  min: 0,    max: 10,   step: 0.1  },
+      { key: 'noise',   label: 'Noise (Ïƒ, ng/mL)', value: 0.4,  min: 0,    max: 10,   step: 0.1  },
       { key: 'N',       label: 'Points (N)',          value: 24,   min: 5,    max: 100,  step: 1    },
       { key: 'outliers',label: 'Outliers',              value: 0,    min: 0,    max: 4,    step: 1    },
     ],
@@ -1768,16 +1768,16 @@ const EXAMPLES = {
     title: 'Polymer Relaxation (KWW)',
     params: [
       { key: 'A',    label: 'Amplitude (A)',   value: 1.0,   min: 0.01, max: 10,   step: 0.05 },
-      { key: 'tau',  label: 'Relaxation τ (s)',value: 500,   min: 1,    max: 50000, step: 10  },
-      { key: 'beta', label: 'Stretch β',        value: 0.55,  min: 0.1,  max: 1,    step: 0.05 },
+      { key: 'tau',  label: 'Relaxation Ï„ (s)',value: 500,   min: 1,    max: 50000, step: 10  },
+      { key: 'beta', label: 'Stretch Î²',        value: 0.55,  min: 0.1,  max: 1,    step: 0.05 },
       { key: 'C',    label: 'Baseline (C)',     value: 0,     min: -1,   max: 1,    step: 0.01 },
-      { key: 'noise',   label: 'Noise (σ)',        value: 0.01,  min: 0,    max: 0.1,  step: 0.005},
+      { key: 'noise',   label: 'Noise (Ïƒ)',        value: 0.01,  min: 0,    max: 0.1,  step: 0.005},
       { key: 'N',       label: 'Points (N)',        value: 30,    min: 5,    max: 100,  step: 1    },
     ],
     generate(p) {
       const t = Array.from({ length: p.N }, (_, i) => Math.pow(10, -1 + i * 5 / (p.N - 1)));
       const y = t.map(ti => p.A * Math.exp(-Math.pow(ti / p.tau, p.beta)) + p.C);
-      return { name: 'Polymer Relaxation (KWW)', x: t, y: noisyGauss(y, p.noise), xlabel: 'Time (s)', ylabel: 'Modulus G(t) / G₀', suggestModel: 'KWW' };
+      return { name: 'Polymer Relaxation (KWW)', x: t, y: noisyGauss(y, p.noise), xlabel: 'Time (s)', ylabel: 'Modulus G(t) / Gâ‚€', suggestModel: 'KWW' };
     }
   },
   'langevin-mh': {
@@ -1785,7 +1785,7 @@ const EXAMPLES = {
     params: [
       { key: 'A',    label: 'Saturation Ms (A/m)', value: 400000, min: 1000, max: 2e6,  step: 1000 },
       { key: 'B',    label: 'Langevin B (m/A)',    value: 2e-5,   min: 1e-7, max: 1e-3, step: 1e-7 },
-      { key: 'noise',   label: 'Noise (σ)',             value: 3000,   min: 0,    max: 50000,step: 500  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',             value: 3000,   min: 0,    max: 50000,step: 500  },
       { key: 'N',       label: 'Points (N)',             value: 30,     min: 5,    max: 100,  step: 1    },
     ],
     generate(p) {
@@ -1801,10 +1801,10 @@ const EXAMPLES = {
   'stern-volmer': {
     title: 'Fluorescence Quenching (Stern-Volmer)',
     params: [
-      { key: 'F0',   label: 'F₀ (unquenched)',  value: 1000, min: 10,   max: 10000,step: 10   },
-      { key: 'KD',   label: 'K_D (dynamic, M⁻¹)',value: 8,   min: 0,    max: 200,  step: 0.5  },
-      { key: 'KS',   label: 'K_S (static, M⁻¹)', value: 3,   min: 0,    max: 100,  step: 0.5  },
-      { key: 'noise',   label: 'Noise (σ)',          value: 8,    min: 0,    max: 100,  step: 1    },
+      { key: 'F0',   label: 'Fâ‚€ (unquenched)',  value: 1000, min: 10,   max: 10000,step: 10   },
+      { key: 'KD',   label: 'K_D (dynamic, Mâ»Â¹)',value: 8,   min: 0,    max: 200,  step: 0.5  },
+      { key: 'KS',   label: 'K_S (static, Mâ»Â¹)', value: 3,   min: 0,    max: 100,  step: 0.5  },
+      { key: 'noise',   label: 'Noise (Ïƒ)',          value: 8,    min: 0,    max: 100,  step: 1    },
       { key: 'outliers',label: 'Outliers',             value: 0,    min: 0,    max: 4,    step: 1    },
     ],
     generate(p) {
@@ -1816,9 +1816,9 @@ const EXAMPLES = {
   'vant-hoff': {
     title: "Van't Hoff Equilibrium",
     params: [
-      { key: 'dH',   label: 'ΔH (kJ/mol)',      value: -45,  min: -300, max: 300,  step: 1    },
-      { key: 'dS',   label: 'ΔS (J/mol/K)',      value: -120, min: -500, max: 500,  step: 5    },
-      { key: 'noise',   label: 'Noise (σ, ln K)',   value: 0.05, min: 0,    max: 1,    step: 0.01 },
+      { key: 'dH',   label: 'Î”H (kJ/mol)',      value: -45,  min: -300, max: 300,  step: 1    },
+      { key: 'dS',   label: 'Î”S (J/mol/K)',      value: -120, min: -500, max: 500,  step: 5    },
+      { key: 'noise',   label: 'Noise (Ïƒ, ln K)',   value: 0.05, min: 0,    max: 1,    step: 0.01 },
       { key: 'N',       label: 'Points (N)',          value: 14,   min: 4,    max: 40,   step: 1    },
     ],
     generate(p) {
@@ -1835,13 +1835,13 @@ const EXAMPLES = {
       { key: 'E',    label: "Young's mod. E (MPa)",value: 200000, min: 10000, max: 500000, step: 1000},
       { key: 'K',    label: 'Strength coeff. K (MPa)',value: 700, min: 10,   max: 5000,  step: 10  },
       { key: 'n',    label: 'Hardening exp. n',    value: 8,      min: 1,    max: 30,    step: 0.5 },
-      { key: 'noise',   label: 'Noise (σ, strain)',   value: 5e-5,   min: 0,    max: 2e-3,  step: 1e-5},
+      { key: 'noise',   label: 'Noise (Ïƒ, strain)',   value: 5e-5,   min: 0,    max: 2e-3,  step: 1e-5},
       { key: 'N',       label: 'Points (N)',            value: 25,     min: 5,    max: 100,   step: 1   },
     ],
     generate(p) {
       const sigma = linspace(0, p.K * 1.3, p.N);
       const eps = sigma.map(s => s / p.E + Math.pow(s / p.K, 1 / p.n));
-      return { name: 'Stress-Strain Curve', x: sigma, y: noisyGauss(eps, p.noise), xlabel: 'Stress σ (MPa)', ylabel: 'Strain ε', suggestModel: 'Ramberg-Osgood' };
+      return { name: 'Stress-Strain Curve', x: sigma, y: noisyGauss(eps, p.noise), xlabel: 'Stress Ïƒ (MPa)', ylabel: 'Strain Îµ', suggestModel: 'Ramberg-Osgood' };
     }
   }
 };
@@ -1886,9 +1886,9 @@ function generateExample(key, overrides) {
   return ex.generate(p);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    APPLICATION STATE
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const DS_COLORS = ['#0b7a6e','#2563eb','#dc2626','#7c3aed','#f59e0b','#15803d','#c2410c','#db2777','#0891b2'];
 let colorIdx = 0;
 let idCounter = 0;
@@ -1923,7 +1923,7 @@ const state = {
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
   plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, showPI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false } },
-  paramRows: [],   // [{name, init, min, max}]  — live init guess state
+  paramRows: [],   // [{name, init, min, max}]  â€” live init guess state
   sweepParams: null,  // non-null while sweep slider is active
   selection: { dsId: null, indices: new Set() },
   editHistory: { undo: [], redo: [] },
@@ -1931,9 +1931,9 @@ const state = {
   currentWorker: null,
 };
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DATA PARSING
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function detectDelimiter(text) {
   const sample = text.slice(0, 500);
   const counts = { ',': 0, '\t': 0, ';': 0, ' ': 0 };
@@ -1958,11 +1958,11 @@ function rowsToXY(rows) {
   const isNum = v => v.trim() !== '' && isFinite(parseFloat(v.replace(',', '.')));
 
   if (firstRow.length === 1 && !isNum(firstRow[0])) {
-    // Single non-numeric cell → plot title
+    // Single non-numeric cell â†’ plot title
     title = firstRow[0].trim();
     startRow = 1;
   } else if (firstRow.length >= 2 && (!isNum(firstRow[0]) || !isNum(firstRow[1]))) {
-    // Two columns with at least one non-numeric → X / Y axis labels
+    // Two columns with at least one non-numeric â†’ X / Y axis labels
     xlabel = firstRow[0].trim();
     ylabel = firstRow[1].trim();
     startRow = 1;
@@ -2016,14 +2016,14 @@ function openColumnPicker(name, rows) {
   const xSel  = document.getElementById('col-picker-x');
   const ySel  = document.getElementById('col-picker-y');
   const sigSel = document.getElementById('col-picker-sig');
-  // Auto-select σ column when header looks like an uncertainty column
+  // Auto-select Ïƒ column when header looks like an uncertainty column
   const sigKeywords = /^(sig|sigma|err|error|uncertainty|sd|std|stdev|s\.?e\.?)$/i;
   const autoSigIdx = headers.findIndex(h => sigKeywords.test(h.trim()));
   // Use DOM methods to prevent XSS from malicious CSV header names
   [xSel, ySel, sigSel].forEach(sel => { while (sel.options.length) sel.remove(0); });
   const noneOpt = document.createElement('option');
   noneOpt.value = '';
-  noneOpt.textContent = '— None (X, Y only) —';
+  noneOpt.textContent = 'â€” None (X, Y only) â€”';
   sigSel.appendChild(noneOpt);
   headers.forEach((h, i) => {
     [xSel, ySel, sigSel].forEach((sel, si) => {
@@ -2049,21 +2049,21 @@ function updateColPickerPreview() {
   const sigCol = sigVal !== '' ? parseInt(sigVal) : null;
   const previewRows = rows.slice(startRow, startRow + 5);
   const hdr = sigCol != null
-    ? `${headers[xCol]}  →  ${headers[yCol]}  ±  ${headers[sigCol]}`
-    : `${headers[xCol]}  →  ${headers[yCol]}`;
+    ? `${headers[xCol]}  â†’  ${headers[yCol]}  Â±  ${headers[sigCol]}`
+    : `${headers[xCol]}  â†’  ${headers[yCol]}`;
   const lines = [hdr];
   for (const r of previewRows) {
-    const xv = r[xCol] != null ? r[xCol] : '—';
-    const yv = r[yCol] != null ? r[yCol] : '—';
+    const xv = r[xCol] != null ? r[xCol] : 'â€”';
+    const yv = r[yCol] != null ? r[yCol] : 'â€”';
     if (sigCol != null) {
-      const sv = r[sigCol] != null ? r[sigCol] : '—';
+      const sv = r[sigCol] != null ? r[sigCol] : 'â€”';
       lines.push(`  ${String(xv).padEnd(12)} ${String(yv).padEnd(12)} ${sv}`);
     } else {
       lines.push(`  ${String(xv).padEnd(14)} ${yv}`);
     }
   }
   const total = rows.length - startRow;
-  if (total > 5) lines.push(`  … (${total} rows total)`);
+  if (total > 5) lines.push(`  â€¦ (${total} rows total)`);
   document.getElementById('col-picker-preview').textContent = lines.join('\n');
 }
 
@@ -2076,11 +2076,11 @@ function importFromColumnPicker() {
   const sigCol = sigVal !== '' ? parseInt(sigVal) : null;
   const { x, y, sigY } = rowsToXYCols(rows, headers, startRow, xCol, yCol, sigCol);
   if (!x.length) { setConsole('No valid X,Y pairs in selected columns.', 'error'); return; }
-  const sigNote = sigY ? ` ± ${headers[sigCol]}` : '';
+  const sigNote = sigY ? ` Â± ${headers[sigCol]}` : '';
   const dsName = `${name} (${headers[xCol]} vs ${headers[yCol]}${sigNote})`;
   importDataset(dsName, x, y, sigY);
   syncFitDatasetSelect(); renderDatasetList(); updatePlots();
-  setConsole(`Imported: ${dsName} (${x.length} points${sigY ? ', σ loaded' : ''}).`, '');
+  setConsole(`Imported: ${dsName} (${x.length} points${sigY ? ', Ïƒ loaded' : ''}).`, '');
   document.getElementById('col-picker-modal').style.display = 'none';
   _pendingImport = null;
 }
@@ -2103,9 +2103,9 @@ function importDataset(name, x, y, sigY, color) {
   return ds;
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PLOT ENGINE
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 let plotsInitialised = false;
 
 function isDark() { return document.body.classList.contains('dark-mode'); }
@@ -2368,7 +2368,7 @@ function solveXfromY(fit, targetY, xMin, xMax) {
       if ((fitEval(fit, lo) - targetY) * fm < 0) hi = mid; else lo = mid;
     }
     const xSol = (lo + hi) / 2;
-    // CI via delta method: dx_CI ≈ CI_y / |df/dx|
+    // CI via delta method: dx_CI â‰ˆ CI_y / |df/dx|
     const h = Math.max(Math.abs(xSol) * 1e-6, 1e-8);
     const dfdx = (fitEval(fit, xSol + h) - fitEval(fit, xSol - h)) / (2 * h);
     let xCIHW = null;
@@ -2385,7 +2385,7 @@ function solveXfromY(fit, targetY, xMin, xMax) {
 function runFTest(fitA, fitB) {
   if (fitA.dsId !== fitB.dsId) return { error: 'Fits must use the same dataset.' };
   const pA = fitA.result.params.length, pB = fitB.result.params.length;
-  if (pA === pB) return { error: 'Models have the same number of parameters — not nested.' };
+  if (pA === pB) return { error: 'Models have the same number of parameters â€” not nested.' };
   const [simple, complex] = pA <= pB ? [fitA, fitB] : [fitB, fitA];
   const n = simple.result.n, p1 = simple.result.params.length, p2 = complex.result.params.length;
   const dof2 = n - p2;
@@ -2421,7 +2421,7 @@ function buildMainTraces() {
       opacity: 1, showlegend: true,
       customdata: activeOrigIdx,
     });
-    // Excluded (masked) points — shown as dim crosses
+    // Excluded (masked) points â€” shown as dim crosses
     if (excluded.size > 0) {
       const exX = ds.x.filter((_, i) => excluded.has(i));
       const exY = ds.y.filter((_, i) => excluded.has(i));
@@ -2477,7 +2477,7 @@ function buildMainTraces() {
       line: { color: fit.color || ds.color, width: 2, dash: 'solid' },
       showlegend: true,
     });
-    // Outlier rings for active fit when showOutliers is on — computed live so edit-mode moves update instantly
+    // Outlier rings for active fit when showOutliers is on â€” computed live so edit-mode moves update instantly
     if (state.plotConfig.showOutliers && fit.id === state.activeFitId && fit.fn) {
       const excl = ds.excludedIndices || new Set();
       const liveRes = [];
@@ -2584,7 +2584,7 @@ function buildResidualVsXPanel(xlabel, tc) {
   }
   const layout = baseLayout({
     margin: { l: 56, r: 20, t: 10, b: 36 },
-    yaxis: Object.assign(baseLayout().yaxis, { title: { text: normalize ? 'Norm. Residuals (σ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, type: 'linear', zeroline: true }),
+    yaxis: Object.assign(baseLayout().yaxis, { title: { text: normalize ? 'Norm. Residuals (Ïƒ)' : 'Residuals', font: { size: 10, color: tc.tickCol } }, type: 'linear', zeroline: true }),
     xaxis: Object.assign(baseLayout().xaxis, { title: { text: xlabel, font: { size: 10, color: tc.tickCol } } }),
     showlegend: false,
   });
@@ -2619,7 +2619,7 @@ function buildQQPanel(tc) {
     layout: baseLayout({
       margin: { l: 56, r: 20, t: 10, b: 36 },
       xaxis: Object.assign(baseLayout().xaxis, { title: { text: 'Theoretical Quantiles', font: { size: 10, color: tc.tickCol } } }),
-      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Sample Quantiles (σ)', font: { size: 10, color: tc.tickCol } }, type: 'linear', zeroline: false }),
+      yaxis: Object.assign(baseLayout().yaxis, { title: { text: 'Sample Quantiles (Ïƒ)', font: { size: 10, color: tc.tickCol } }, type: 'linear', zeroline: false }),
       showlegend: false,
     }),
   };
@@ -2673,19 +2673,19 @@ function buildConvergencePanel(tc) {
   const fit = state.fits.find(f => f.id === state.activeFitId);
   if (!fit) return makeEmpty('No active fit');
   if (!fit.sseHistory || fit.sseHistory.length < 2)
-    return makeEmpty(fit.sseHistory ? 'Not enough history — run the fit again' : 'Convergence data not available for this fit');
+    return makeEmpty(fit.sseHistory ? 'Not enough history â€” run the fit again' : 'Convergence data not available for this fit');
 
   // Filter out non-finite / non-positive SSE values that would break log scale
   const valid = fit.sseHistory.filter(p => isFinite(p[1]) && p[1] > 0);
-  if (valid.length < 2) return makeEmpty('SSE values are not positive — cannot plot convergence');
+  if (valid.length < 2) return makeEmpty('SSE values are not positive â€” cannot plot convergence');
   const iters = valid.map(p => p[0]);
   const sses  = valid.map(p => p[1]);
 
-  const convergedText = fit.result?.converged ? '✓ Converged' : '⚠ Not converged';
+  const convergedText = fit.result?.converged ? 'âœ“ Converged' : 'âš  Not converged';
   const iterText  = fit.result?.iter        != null ? `${fit.result.iter} iter`                          : '';
-  const lambdaText= fit.result?.finalLambda != null ? ` · λ=${fit.result.finalLambda.toExponential(2)}`  : '';
-  const gradText  = fit.result?.gradNorm    != null ? ` · |∇|=${fit.result.gradNorm.toExponential(2)}`   : '';
-  const subtitle  = [convergedText, iterText + lambdaText + gradText].filter(Boolean).join(' · ');
+  const lambdaText= fit.result?.finalLambda != null ? ` Â· Î»=${fit.result.finalLambda.toExponential(2)}`  : '';
+  const gradText  = fit.result?.gradNorm    != null ? ` Â· |âˆ‡|=${fit.result.gradNorm.toExponential(2)}`   : '';
+  const subtitle  = [convergedText, iterText + lambdaText + gradText].filter(Boolean).join(' Â· ');
 
   const btnStyle = {
     bgcolor: tc.paperBg, bordercolor: tc.gridCol,
@@ -2800,7 +2800,7 @@ function updatePlots() {
 
   // After every react() the browser layout may still be settling (e.g. stats bar
   // just grew). Schedule one resize pass so Plotly re-measures the real container
-  // dimensions instead of stale pre-reflow values — this prevents the tab bar from
+  // dimensions instead of stale pre-reflow values â€” this prevents the tab bar from
   // being obscured by an oversized SVG.
   requestAnimationFrame(() => {
     void mainEl.offsetWidth;
@@ -2828,7 +2828,7 @@ function checkLogSuggest() {
   const parts = [];
   if (suggestX) parts.push(`X spans ~${Math.round(Math.log10(xSpan))} decades`);
   if (suggestY) parts.push(`Y spans ~${Math.round(Math.log10(ySpan))} decades`);
-  document.getElementById('log-suggest-text').textContent = parts.join(' · ') + ' — consider log scale:';
+  document.getElementById('log-suggest-text').textContent = parts.join(' Â· ') + ' â€” consider log scale:';
   document.getElementById('log-suggest-apply-x').style.display = suggestX ? '' : 'none';
   document.getElementById('log-suggest-apply-y').style.display = suggestY ? '' : 'none';
   banner.style.display = 'flex';
@@ -2839,11 +2839,11 @@ function fitEval(fit, x) {
   try { return fit.fn(x, fit.result.params); } catch (_) { return NaN; }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    UI RENDERING
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ─── Pre-Process helpers ────────────────────────────────── */
+/* â”€â”€â”€ Pre-Process helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function _ppPushUndo(ds) {
   state.editHistory.undo.push({ dsId: ds.id, y: ds.y.slice(), excl: new Set(ds.excludedIndices) });
   if (state.editHistory.undo.length > 100) state.editHistory.undo.shift();
@@ -2957,7 +2957,7 @@ function _smSavGol(y, excl, w, _sig, polyOrd) {
   return result;
 }
 
-/* — FFT-based filtering — */
+/* â€” FFT-based filtering â€” */
 function _nextPow2(n) { let p = 1; while (p < n) p <<= 1; return p; }
 
 function _fftInPlace(re, im) {
@@ -3074,7 +3074,7 @@ function renderFFTSpectrum() {
     const { z, freqPct, timeLabels } = _computeSTFT(ds.y, useDb);
     if (z.length < 2) {
       Plotly.purge(plotEl);
-      plotEl.innerHTML = '<p style="font-size:.78em;color:var(--dim);text-align:center;padding:32px 0">Not enough points for spectrogram (need ≥ 32 points).</p>';
+      plotEl.innerHTML = '<p style="font-size:.78em;color:var(--dim);text-align:center;padding:32px 0">Not enough points for spectrogram (need â‰¥ 32 points).</p>';
       return;
     }
     Plotly.react(plotEl, [{
@@ -3200,14 +3200,14 @@ function openDataTable() {
     liveRmse = live.rmse;
   }
 
-  document.getElementById('data-table-title').textContent = `Data Table — ${ds.name}`;
+  document.getElementById('data-table-title').textContent = `Data Table â€” ${ds.name}`;
   document.getElementById('data-table-summary').textContent =
-    `${ds.x.length} points · ${excl.size} excluded` + (fit ? ` · Residuals from "${fit.label || fit.model}"` : ' · No active fit for residuals');
+    `${ds.x.length} points Â· ${excl.size} excluded` + (fit ? ` Â· Residuals from "${fit.label || fit.model}"` : ' Â· No active fit for residuals');
 
   const tbody = document.getElementById('dt-tbody');
   tbody.innerHTML = ds.x.map((x, i) => {
     const included = !excl.has(i);
-    const res = resMap.has(i) ? fmt(resMap.get(i)) : '—';
+    const res = resMap.has(i) ? fmt(resMap.get(i)) : 'â€”';
     const resClass = resMap.has(i) && Math.abs(resMap.get(i)) > 2.5 * liveRmse ? ' style="color:var(--red)"' : '';
     return `<tr class="${included ? '' : 'dt-row-excluded'}">
       <td><input type="checkbox" class="dt-check" data-idx="${i}" ${included ? 'checked' : ''}></td>
@@ -3226,7 +3226,7 @@ function openDataTable() {
       const row = cb.closest('tr');
       if (row) row.className = excl.has(idx) ? 'dt-row-excluded' : '';
       document.getElementById('data-table-summary').textContent =
-        `${ds.x.length} points · ${excl.size} excluded` + (fit ? ` · Residuals from "${fit.label || fit.model}"` : ' · No active fit for residuals');
+        `${ds.x.length} points Â· ${excl.size} excluded` + (fit ? ` Â· Residuals from "${fit.label || fit.model}"` : ' Â· No active fit for residuals');
       renderMaskCount();
       updatePlots();
     });
@@ -3261,9 +3261,9 @@ function renderDatasetList() {
       <span class="ds-swatch" style="background:${ds.color}"></span>
       <span class="ds-label" title="${ds.name}">${ds.name}</span>
       <span class="ds-count">${ds.x.length}pt</span>
-      <button class="ds-toggle${off ? ' ds-off' : ''}" data-toggleid="${ds.id}" title="${off ? 'Enable dataset' : 'Disable dataset'}">${off ? '○' : '●'}</button>
-      ${ds._exKey ? `<button class="ds-edit" data-editid="${ds.id}" title="Re-open example generator with saved parameters">✏</button>` : ''}
-      <button class="ds-delete" data-delid="${ds.id}" title="Remove dataset">×</button>
+      <button class="ds-toggle${off ? ' ds-off' : ''}" data-toggleid="${ds.id}" title="${off ? 'Enable dataset' : 'Disable dataset'}">${off ? 'â—‹' : 'â—'}</button>
+      ${ds._exKey ? `<button class="ds-edit" data-editid="${ds.id}" title="Re-open example generator with saved parameters">âœ</button>` : ''}
+      <button class="ds-delete" data-delid="${ds.id}" title="Remove dataset">Ã—</button>
     </div>`;
   }).join('');
   el.querySelectorAll('.ds-item').forEach(item => {
@@ -3343,7 +3343,7 @@ function renderFitList() {
   const cnt = document.getElementById('fit-count');
   cnt.textContent = state.fits.length;
   if (!state.fits.length) {
-    el.innerHTML = '<div class="panel-empty-hint">Press <strong>▶ Fit</strong><br>after loading data.</div>';
+    el.innerHTML = '<div class="panel-empty-hint">Press <strong>â–¶ Fit</strong><br>after loading data.</div>';
     const corrEl = document.getElementById('corr-matrix-container');
     if (corrEl) corrEl.innerHTML = '';
     const sidePanel = document.getElementById('statsbar-corr');
@@ -3360,7 +3360,7 @@ function renderFitList() {
         <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fit.label}</span>
         <span class="fit-item-eq">${fit.model}${dsOff ? ' (dataset off)' : ''}</span>
       </span>
-      <button class="ds-delete" data-delid="${fit.id}" title="Remove fit">×</button>
+      <button class="ds-delete" data-delid="${fit.id}" title="Remove fit">Ã—</button>
     </div>`;
   }).join('');
   el.querySelectorAll('.fit-item').forEach(item => {
@@ -3406,7 +3406,7 @@ function syncFTestSelects() {
     const ds = state.datasets.find(d => d.id === f.dsId);
     return ds && ds.enabled !== false;
   });
-  const empty = '<option value="">— no fits —</option>';
+  const empty = '<option value="">â€” no fits â€”</option>';
   const opts = fits.map(f => `<option value="${f.id}">${f.label || f.model}</option>`).join('');
   selA.innerHTML = opts || empty;
   selB.innerHTML = opts || empty;
@@ -3428,10 +3428,10 @@ function renderPredResult(result, mode) {
     const { y, lower, upper, hw } = result;
     const ciRow = hw != null
       ? `<tr><td>95% CI</td><td>[${fmt(lower)}, ${fmt(upper)}]</td></tr>
-         <tr><td>± hw</td><td>${fmt(hw)}</td></tr>`
-      : `<tr><td>95% CI</td><td>—</td></tr>`;
+         <tr><td>Â± hw</td><td>${fmt(hw)}</td></tr>`
+      : `<tr><td>95% CI</td><td>â€”</td></tr>`;
     el.innerHTML = `<table class="pred-table">
-      <tr><td>Ŷ</td><td class="pred-val-hi">${fmt(y)}</td></tr>
+      <tr><td>Å¶</td><td class="pred-val-hi">${fmt(y)}</td></tr>
       ${ciRow}
     </table>`;
   } else {
@@ -3440,11 +3440,11 @@ function renderPredResult(result, mode) {
     } else {
       const rows = result.map((r, i) =>
         `<tr><td>X${result.length > 1 ? (i + 1) : ''}</td><td class="pred-val-hi">${fmt(r.x)}</td></tr>` +
-        (r.xCIHW != null ? `<tr><td>± CI</td><td>${fmt(r.xCIHW)}</td></tr>` : '')
+        (r.xCIHW != null ? `<tr><td>Â± CI</td><td>${fmt(r.xCIHW)}</td></tr>` : '')
       ).join('');
       el.innerHTML = `<table class="pred-table">${rows}</table>`;
       if (result.length > 1)
-        el.innerHTML += `<div class="pred-note">${result.length} solutions found — verify on plot.</div>`;
+        el.innerHTML += `<div class="pred-note">${result.length} solutions found â€” verify on plot.</div>`;
     }
   }
   el.style.display = '';
@@ -3462,20 +3462,20 @@ function renderFTestResult(result) {
   const pStr = result.pVal < 0.001 ? result.pVal.toExponential(2) : result.pVal.toFixed(4);
   el.innerHTML = `<table class="pred-table">
     <tr><td>F statistic</td><td class="pred-val-hi">${fmt(result.F)}</td></tr>
-    <tr><td>df₁, df₂</td><td>${result.deltaP}, ${result.dof2}</td></tr>
+    <tr><td>dfâ‚, dfâ‚‚</td><td>${result.deltaP}, ${result.dof2}</td></tr>
     <tr><td>p-value</td><td class="${sig ? 'ftest-sig' : 'ftest-ns'}">${pStr}</td></tr>
     <tr><td>SSE (simple)</td><td>${fmt(result.sseSimple)}</td></tr>
     <tr><td>SSE (complex)</td><td>${fmt(result.sseComplex)}</td></tr>
   </table>
   <div class="pred-note">${sig
     ? `Significant (p&lt;0.05): <em>${result.complex.label || result.complex.model}</em> fits better.`
-    : `Not significant (p≥0.05): extra parameters not justified.`}</div>`;
+    : `Not significant (pâ‰¥0.05): extra parameters not justified.`}</div>`;
   el.style.display = '';
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ANNOTATION MANAGEMENT
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function renderAnnList() {
   const el = document.getElementById('ann-list');
   const cnt = document.getElementById('ann-count');
@@ -3485,15 +3485,15 @@ function renderAnnList() {
     el.innerHTML = '<div class="panel-empty-hint" style="font-size:.72em">No annotations. Use + Add or Peaks.</div>';
     return;
   }
-  const typeLabel = { hline: 'H—', vline: '|V', text: 'T', peak: '⌃' };
+  const typeLabel = { hline: 'Hâ€”', vline: '|V', text: 'T', peak: 'âŒƒ' };
   el.innerHTML = state.annotations.map(ann => {
     const disp = ann.label || (ann.type === 'hline' ? `y = ${fmt(ann.y)}` : ann.type === 'vline' ? `x = ${fmt(ann.x)}` : `(${fmt(ann.x)}, ${fmt(ann.y)})`);
     return `<div class="ann-item${ann.visible ? '' : ' ann-disabled'}" data-annid="${ann.id}">
       <span class="ann-item-type" title="${ann.type}">${typeLabel[ann.type] || '?'}</span>
       <span class="ann-item-label" title="${disp}">${disp}</span>
-      <button class="ann-item-btn" data-ann-toggle="${ann.id}" title="${ann.visible ? 'Hide' : 'Show'}">${ann.visible ? '●' : '○'}</button>
-      <button class="ann-item-btn" data-ann-edit="${ann.id}" title="Edit">✎</button>
-      <button class="ann-item-btn" data-ann-del="${ann.id}" title="Remove">×</button>
+      <button class="ann-item-btn" data-ann-toggle="${ann.id}" title="${ann.visible ? 'Hide' : 'Show'}">${ann.visible ? 'â—' : 'â—‹'}</button>
+      <button class="ann-item-btn" data-ann-edit="${ann.id}" title="Edit">âœŽ</button>
+      <button class="ann-item-btn" data-ann-del="${ann.id}" title="Remove">Ã—</button>
     </div>`;
   }).join('');
   el.querySelectorAll('[data-ann-toggle]').forEach(btn => {
@@ -3627,7 +3627,7 @@ function saveAnn() {
 }
 
 function autoAnnotatePeaks() {
-  const peakParams = new Set(['μ', 'mu', 'x₀', 'x0', 'xc', 'center', 'centre', 'peak']);
+  const peakParams = new Set(['Î¼', 'mu', 'xâ‚€', 'x0', 'xc', 'center', 'centre', 'peak']);
   const visible = state.fits.filter(f => {
     if (!f.result || !f.visible) return false;
     const ds = state.datasets.find(d => d.id === f.dsId);
@@ -3651,12 +3651,12 @@ function autoAnnotatePeaks() {
     added++;
   }
   if (added) { renderAnnList(); updatePlots(); setConsole(`Added ${added} peak annotation${added > 1 ? 's' : ''}.`, ''); }
-  else setConsole('No new peak centres found — Gaussian / Lorentzian fits needed, or already annotated.', 'warn');
+  else setConsole('No new peak centres found â€” Gaussian / Lorentzian fits needed, or already annotated.', 'warn');
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    GRAPH STYLE EDITOR
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function openGraphStyleEditor() {
   const gs = state.graphStyle;
   const tc = themeColors();
@@ -3823,7 +3823,7 @@ function renderParamTable() {
   // For Custom, params come from state.fitConfig.customParams
   const paramNames = model === 'Custom' ? state.fitConfig.customParams : (m ? m.params : []);
   if (m && m.analytic) {
-    container.innerHTML = `<div class="panel-empty-hint" style="text-align:left;padding:6px 0;font-size:.72em">Analytic fit — no initial values needed.</div>`;
+    container.innerHTML = `<div class="panel-empty-hint" style="text-align:left;padding:6px 0;font-size:.72em">Analytic fit â€” no initial values needed.</div>`;
     state.paramRows = paramNames.map(name => ({ name, init: 1, min: -Infinity, max: Infinity }));
     return;
   }
@@ -3855,15 +3855,15 @@ function renderParamTable() {
     <div class="param-row" data-pi="${i}">
       <span class="param-name">${row.name}</span>
       <input class="param-input" data-field="init" type="number" value="${fmt(row.init)}" step="any" title="Initial value">
-      <input class="param-input param-bound" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" placeholder="-∞" title="Lower bound (leave blank for -∞)">
-      <input class="param-input param-bound" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" placeholder="+∞" title="Upper bound (leave blank for +∞)">
-      <span class="param-fit-val" title="">—</span>
-      <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? '🔒' : '🔓'}</button>
+      <input class="param-input param-bound" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" placeholder="-âˆž" title="Lower bound (leave blank for -âˆž)">
+      <input class="param-input param-bound" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" placeholder="+âˆž" title="Upper bound (leave blank for +âˆž)">
+      <span class="param-fit-val" title="">â€”</span>
+      <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? 'ðŸ”’' : 'ðŸ”“'}</button>
     </div>
     <div class="param-sweep-row" data-si="${i}">
       <span style="font-size:.62em;color:var(--dimmer);font-family:var(--mono)">sweep</span>
       <input type="range" class="param-sweep-range" data-si="${i}" step="any">
-      <span class="param-sweep-val">—</span>
+      <span class="param-sweep-val">â€”</span>
     </div>`).join('');
 
   container.querySelectorAll('.param-row:not(.param-row-header)').forEach(row => {
@@ -3889,7 +3889,7 @@ function renderParamTable() {
       const i = parseInt(btn.dataset.pi);
       if (i >= 0 && i < state.paramRows.length) {
         state.paramRows[i].locked = !state.paramRows[i].locked;
-        btn.textContent = state.paramRows[i].locked ? '🔒' : '🔓';
+        btn.textContent = state.paramRows[i].locked ? 'ðŸ”’' : 'ðŸ”“';
         btn.title = state.paramRows[i].locked ? 'Unlock parameter (hold fixed)' : 'Lock parameter (hold fixed)';
         btn.classList.toggle('locked', state.paramRows[i].locked);
       }
@@ -3964,7 +3964,7 @@ function renderParamResults(fit) {
     const fitSpan = row.querySelector('.param-fit-val');
     if (fitSpan) {
       fitSpan.textContent = fmt(val);
-      fitSpan.title = err && isFinite(err) ? `${fit.paramNames[i]} = ${fmt(val)} ± ${fmt(err)}` : `${fit.paramNames[i]} = ${fmt(val)}`;
+      fitSpan.title = err && isFinite(err) ? `${fit.paramNames[i]} = ${fmt(val)} Â± ${fmt(err)}` : `${fit.paramNames[i]} = ${fmt(val)}`;
     }
     // Recalibrate sweep slider to new value
     const slider = container.querySelector(`.param-sweep-range[data-si="${i}"]`);
@@ -4016,7 +4016,7 @@ function renderCorrMatrix(fit) {
     row.map((v, j) => {
       const bg = corrColor(v);
       const txtClr = Math.abs(v) > 0.55 ? '#fff' : (isDk ? '#e2e8f0' : '#1a202c');
-      return `<td style="background:${bg};color:${txtClr}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
+      return `<td style="background:${bg};color:${txtClr}" title="${names[i]}â†”${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
     }).join('') + '</tr>'
   ).join('');
 
@@ -4031,7 +4031,7 @@ function renderCorrMatrix(fit) {
     const barColor = v > 0 ? corrColor(av) : corrColor(-av < 0 ? -av : av);
     const valCls = av >= 0.95 ? 'style="color:var(--red)"' : av >= 0.70 ? 'style="color:var(--amber)"' : '';
     return `<div class="corr-list-row">
-      <span class="corr-list-pair" title="${names[i]} ↔ ${names[j]}">${names[i]} ↔ ${names[j]}</span>
+      <span class="corr-list-pair" title="${names[i]} â†” ${names[j]}">${names[i]} â†” ${names[j]}</span>
       <span class="corr-list-bar" style="background:${barColor}"></span>
       <span class="corr-list-val" ${valCls}>${v.toFixed(3)}</span>
     </div>`;
@@ -4041,15 +4041,15 @@ function renderCorrMatrix(fit) {
   const pairs = allPairs.filter(p => Math.abs(p.v) >= 0.70);
   let suggHtml = '';
   if (pairs.length === 0) {
-    suggHtml = `<div class="corr-suggestion corr-ok">✓ All parameters well-determined.</div>`;
+    suggHtml = `<div class="corr-suggestion corr-ok">âœ“ All parameters well-determined.</div>`;
   } else {
     suggHtml = pairs.slice(0,3).map(({ i, j, v }) => {
       const ar = Math.abs(v), dir = v > 0 ? 'positively' : 'negatively';
       let advice, cls;
-      if (ar >= 0.95) { cls = 'corr-strong'; advice = 'Near-redundant — fix one or reparameterise.'; }
-      else if (ar >= 0.85) { cls = 'corr-high'; advice = 'Partially dependent — widen x-range.'; }
+      if (ar >= 0.95) { cls = 'corr-strong'; advice = 'Near-redundant â€” fix one or reparameterise.'; }
+      else if (ar >= 0.85) { cls = 'corr-high'; advice = 'Partially dependent â€” widen x-range.'; }
       else { cls = 'corr-moderate'; advice = 'Mild dependency.'; }
-      return `<div class="corr-suggestion ${cls}"><span class="corr-pair"><b>${names[i]}</b> ↔ <b>${names[j]}</b> r=${v.toFixed(2)}</span> ${advice}</div>`;
+      return `<div class="corr-suggestion ${cls}"><span class="corr-pair"><b>${names[i]}</b> â†” <b>${names[j]}</b> r=${v.toFixed(2)}</span> ${advice}</div>`;
     }).join('');
   }
 
@@ -4059,7 +4059,7 @@ function renderCorrMatrix(fit) {
       <div class="corr-panel-heatmap">
         <table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>
       </div>
-      <div class="corr-panel-list">${listHtml || '<span style="color:var(--dimmer);font-size:.72em">—</span>'}</div>
+      <div class="corr-panel-list">${listHtml || '<span style="color:var(--dimmer);font-size:.72em">â€”</span>'}</div>
     </div>
     <div class="corr-suggestions" style="margin-top:6px">${suggHtml}</div>`;
 }
@@ -4098,7 +4098,7 @@ function renderStatsTable() {
   }
 
   if (!state.fits.length) {
-    el.innerHTML = msgHtml || '<span class="console-hint">Load a dataset and press <strong>▶ Fit</strong> to begin.</span>';
+    el.innerHTML = msgHtml || '<span class="console-hint">Load a dataset and press <strong>â–¶ Fit</strong> to begin.</span>';
     return;
   }
 
@@ -4107,7 +4107,7 @@ function renderStatsTable() {
     return ds && ds.enabled !== false;
   });
   if (!visibleFits.length) {
-    el.innerHTML = msgHtml || '<span class="console-hint">All datasets are disabled — enable a dataset to see fit statistics.</span>';
+    el.innerHTML = msgHtml || '<span class="console-hint">All datasets are disabled â€” enable a dataset to see fit statistics.</span>';
     return;
   }
 
@@ -4117,35 +4117,35 @@ function renderStatsTable() {
     const isActive = fit.id === state.activeFitId;
     const isExpanded = _expandedFitIds.has(fit.id);
     const ds = state.datasets.find(d => d.id === fit.dsId);
-    const dsName = ds ? ds.name : '—';
-    const lambdaTip  = r?.finalLambda != null ? ` λ=${r.finalLambda.toExponential(2)}` : '';
-    const gradTip    = r?.gradNorm    != null ? ` |∇|=${r.gradNorm.toExponential(2)}`   : '';
+    const dsName = ds ? ds.name : 'â€”';
+    const lambdaTip  = r?.finalLambda != null ? ` Î»=${r.finalLambda.toExponential(2)}` : '';
+    const gradTip    = r?.gradNorm    != null ? ` |âˆ‡|=${r.gradNorm.toExponential(2)}`   : '';
     const diagTip    = lambdaTip + gradTip;
-    const statusText = !r ? '—' : r.converged ? `✓ ${r.iter}` : `⚠ ${r.iter}`;
+    const statusText = !r ? 'â€”' : r.converged ? `âœ“ ${r.iter}` : `âš  ${r.iter}`;
     const statusCls  = !r ? '' : r.converged ? 'stat-status-ok' : 'stat-status-warn';
     const label = (fit.label || fit.model).replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const chevron = `<span class="stats-chevron">${isExpanded ? '▾' : '▸'}</span>`;
+    const chevron = `<span class="stats-chevron">${isExpanded ? 'â–¾' : 'â–¸'}</span>`;
     const expandHtml = (isExpanded && r) ? buildStatExpandRow(fit, r, NCOLS) : '';
     return `<tr class="stats-row${isActive ? ' active' : ''}" data-fit-id="${fit.id}">
       <td><span class="stats-color-dot" style="background:${fit.color}"></span></td>
       <td title="${label}">${chevron}${label}</td>
       <td title="${dsName}">${dsName}</td>
-      <td>${r ? fmt(r.rSq, 5) : '—'}</td>
-      <td>${r ? fmt(r.adjRSq, 5) : '—'}</td>
-      <td>${r ? fmt(r.rmse) : '—'}</td>
-      <td>${r ? fmt(r.sse) : '—'}</td>
-      <td>${r?.chiSqRed != null ? fmt(r.chiSqRed) : '—'}</td>
-      <td>${r ? fmt(r.aic) : '—'}</td>
-      <td>${r ? fmt(r.bic) : '—'}</td>
-      <td>${r ? r.n : '—'}</td>
-      <td class="${statusCls}" title="${diagTip.trim()}">${statusText}${diagTip ? ' ⓘ' : ''}</td>
+      <td>${r ? fmt(r.rSq, 5) : 'â€”'}</td>
+      <td>${r ? fmt(r.adjRSq, 5) : 'â€”'}</td>
+      <td>${r ? fmt(r.rmse) : 'â€”'}</td>
+      <td>${r ? fmt(r.sse) : 'â€”'}</td>
+      <td>${r?.chiSqRed != null ? fmt(r.chiSqRed) : 'â€”'}</td>
+      <td>${r ? fmt(r.aic) : 'â€”'}</td>
+      <td>${r ? fmt(r.bic) : 'â€”'}</td>
+      <td>${r ? r.n : 'â€”'}</td>
+      <td class="${statusCls}" title="${diagTip.trim()}">${statusText}${diagTip ? ' â“˜' : ''}</td>
     </tr>${expandHtml}`;
   }).join('');
 
   el.innerHTML = msgHtml + `<div class="stats-table-wrap"><table class="stats-table">
     <thead><tr>
       <th></th><th>Fit</th><th>Dataset</th>
-      <th>R²</th><th>Adj-R²</th><th>RMSE</th><th>SSE</th><th title="Reduced chi-square (σ-weighted fits only)">χ²ᵣ</th><th>AIC</th><th>BIC</th><th>N</th><th>Status</th>
+      <th>RÂ²</th><th>Adj-RÂ²</th><th>RMSE</th><th>SSE</th><th title="Reduced chi-square (Ïƒ-weighted fits only)">Ï‡Â²áµ£</th><th>AIC</th><th>BIC</th><th>N</th><th>Status</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
@@ -4169,19 +4169,19 @@ function buildStatExpandRow(fit, r, colSpan) {
   const dof = r.dof || 1;
   const tc = tCritical95(dof);
   const algoNames = { lm: 'Levenberg-Marquardt', gn: 'Gauss-Newton', nm: 'Nelder-Mead', bfgs: 'BFGS' };
-  const weightNames = { sigma: '1/σ²', huber: 'Huber IRLS', y2: '1/y²', y: '1/y', none: 'none' };
-  const statusStr = r.converged ? '✓ Converged' : '⚠ Did not converge';
+  const weightNames = { sigma: '1/ÏƒÂ²', huber: 'Huber IRLS', y2: '1/yÂ²', y: '1/y', none: 'none' };
+  const statusStr = r.converged ? 'âœ“ Converged' : 'âš  Did not converge';
   const iterStr = r.iter != null ? ` (${r.iter} iter)` : '';
   const metaStr = [
     statusStr + iterStr,
-    algoNames[fit.algoKey] || fit.algoKey || '—',
+    algoNames[fit.algoKey] || fit.algoKey || 'â€”',
     `N = ${r.n}`,
     `dof = ${dof}`,
     `Weights: ${weightNames[fit.weightMode] || fit.weightMode || 'none'}`,
-    r.finalLambda != null ? `λ = ${r.finalLambda.toExponential(2)}` : null,
-  ].filter(Boolean).join('  ·  ');
+    r.finalLambda != null ? `Î» = ${r.finalLambda.toExponential(2)}` : null,
+  ].filter(Boolean).join('  Â·  ');
 
-  const pna = '<span class="sep-na">—</span>';
+  const pna = '<span class="sep-na">â€”</span>';
   let paramRows = '';
   if (r.params && fit.paramNames) {
     paramRows = fit.paramNames.map((name, i) => {
@@ -4207,20 +4207,20 @@ function buildStatExpandRow(fit, r, colSpan) {
   // Summary stat chips (model quality)
   const sqChip = (lbl, val, tip) =>
     `<div class="stats-ext-chip">` +
-    `<span class="stats-ext-chip-lbl">${lbl}<span class="stats-ext-tip" title="${tip}">ⓘ</span></span>` +
+    `<span class="stats-ext-chip-lbl">${lbl}<span class="stats-ext-tip" title="${tip}">â“˜</span></span>` +
     `<span class="stats-ext-chip-val">${val}</span></div>`;
   const sumChipsHtml = [
-    sqChip('R²',     isFinite(r.rSq)    ? r.rSq.toFixed(6)    : '—', 'Coefficient of determination — fraction of variance in y explained by the model. Closer to 1 is better.'),
-    sqChip('Adj-R²', isFinite(r.adjRSq) ? r.adjRSq.toFixed(6) : '—', 'R² penalised for the number of fitted parameters — use this when comparing models of different complexity.'),
-    sqChip('RMSE',   fmt(r.rmse),   'Root Mean Square Error — typical residual magnitude in the same units as y. Should be comparable to your measurement noise.'),
-    sqChip('SSE',    fmt(r.sse),    'Sum of Squared Errors — the raw objective minimised by the solver.'),
-    sqChip('AIC',    fmt(r.aic),    'Akaike Information Criterion — model quality penalised for complexity. Lower is better; differences > 10 are decisive.'),
-    sqChip('BIC',    fmt(r.bic),    'Bayesian Information Criterion — like AIC but with a stronger penalty for parameter count. Lower is better.'),
+    sqChip('RÂ²',     isFinite(r.rSq)    ? r.rSq.toFixed(6)    : 'â€”', 'Coefficient of determination â€” fraction of variance in y explained by the model. Closer to 1 is better.'),
+    sqChip('Adj-RÂ²', isFinite(r.adjRSq) ? r.adjRSq.toFixed(6) : 'â€”', 'RÂ² penalised for the number of fitted parameters â€” use this when comparing models of different complexity.'),
+    sqChip('RMSE',   fmt(r.rmse),   'Root Mean Square Error â€” typical residual magnitude in the same units as y. Should be comparable to your measurement noise.'),
+    sqChip('SSE',    fmt(r.sse),    'Sum of Squared Errors â€” the raw objective minimised by the solver.'),
+    sqChip('AIC',    fmt(r.aic),    'Akaike Information Criterion â€” model quality penalised for complexity. Lower is better; differences > 10 are decisive.'),
+    sqChip('BIC',    fmt(r.bic),    'Bayesian Information Criterion â€” like AIC but with a stronger penalty for parameter count. Lower is better.'),
     sqChip('N',      String(r.n),   'Number of non-masked data points used in the fit.'),
-    ...(r.chiSqRed != null ? [sqChip('χ²ᵣ', fmt(r.chiSqRed), 'Reduced chi-square = Σ(rᵢ/σᵢ)²/dof; shown only for 1/σ² weighted fits. ≈ 1 means well-calibrated noise model.')] : []),
+    ...(r.chiSqRed != null ? [sqChip('Ï‡Â²áµ£', fmt(r.chiSqRed), 'Reduced chi-square = Î£(ráµ¢/Ïƒáµ¢)Â²/dof; shown only for 1/ÏƒÂ² weighted fits. â‰ˆ 1 means well-calibrated noise model.')] : []),
   ].join('');
 
-  // ── Extended statistics ──────────────────────────────────
+  // â”€â”€ Extended statistics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const ds = state.datasets.find(d => d.id === fit.dsId);
   const excl = (ds && ds.excludedIndices) || new Set();
   const yVals = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
@@ -4233,16 +4233,16 @@ function buildStatExpandRow(fit, r, colSpan) {
   // Max |residual|
   const maxE = resids.length ? Math.max(...resids.map(Math.abs)) : null;
 
-  // CV% = RMSE / |ȳ| × 100
+  // CV% = RMSE / |È³| Ã— 100
   const yMean = yVals.length ? yVals.reduce((s, y) => s + y, 0) / yVals.length : 0;
   const cvPct = (r.rmse != null && isFinite(r.rmse) && Math.abs(yMean) > 1e-12)
     ? (r.rmse / Math.abs(yMean)) * 100 : null;
 
-  // Log-likelihood (Gaussian MLE): LL = −n/2·(ln(2π·SSE/n)+1)
+  // Log-likelihood (Gaussian MLE): LL = âˆ’n/2Â·(ln(2Ï€Â·SSE/n)+1)
   const logLik = (r.n > 0 && r.sse > 0)
     ? -r.n / 2 * (Math.log(2 * Math.PI * r.sse / r.n) + 1) : null;
 
-  // Overall F-statistic: F = (SSR/nP) / (SSE/dof), SSR = SST − SSE
+  // Overall F-statistic: F = (SSR/nP) / (SSE/dof), SSR = SST âˆ’ SSE
   let fStat = null, fPVal = null;
   if (yVals.length >= 2 && nP > 0 && r.sse != null && dof > 0) {
     const sst = yVals.reduce((s, y) => s + (y - yMean) ** 2, 0);
@@ -4262,13 +4262,13 @@ function buildStatExpandRow(fit, r, colSpan) {
   // Condition number of J (from covariance matrix)
   const condJ = jacobianConditionNumber(r.covMatrix);
 
-  // ── Helper: one ext-stat chip ─────────────────────────────
+  // â”€â”€ Helper: one ext-stat chip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const chip = (lbl, tooltip, valHtml, chipCls = '') =>
     `<div class="stats-ext-chip${chipCls ? ' ' + chipCls : ''}">` +
-    `<span class="stats-ext-chip-lbl">${lbl}<span class="stats-ext-tip" title="${tooltip}">ⓘ</span></span>` +
+    `<span class="stats-ext-chip-lbl">${lbl}<span class="stats-ext-tip" title="${tooltip}">â“˜</span></span>` +
     `<span class="stats-ext-chip-val">${valHtml}</span>` +
     `</div>`;
-  const na = `<span class="sep-na">—</span>`;
+  const na = `<span class="sep-na">â€”</span>`;
 
   // Durbin-Watson chip
   let dwChipCls = '', dwValHtml = na;
@@ -4303,15 +4303,15 @@ function buildStatExpandRow(fit, r, colSpan) {
   const fHtml = fStat != null ? `${fmt(fStat, 4)}${fPStr}` : na;
 
   const extChipsHtml = [
-    chip('MAE',          'Mean Absolute Error — average of |residuals|; less sensitive to outliers than RMSE because errors are not squared.',                                                                           mae    != null ? fmt(mae)              : na),
-    chip('Max |e|',      'Largest absolute residual — the single worst-case data point.',                                                                                                                               maxE   != null ? fmt(maxE)             : na),
-    chip('CV%',          'Coefficient of Variation — RMSE as a percentage of |ȳ|; scale-free fit quality useful for comparing fits across datasets with different y magnitudes.',                                       cvPct  != null ? cvPct.toFixed(2) + '%': na),
-    chip('df',           'Degrees of freedom = N − p, where p is the number of fitted parameters. Required for confidence intervals and hypothesis tests.',                                                             String(dof)),
-    chip('Log-lik',      'Gaussian MLE: LL = −N/2·(ln(2π·SSE/N)+1). Higher (less negative) is better; the basis for AIC and BIC.',                                                                                    logLik != null ? logLik.toFixed(3)     : na),
+    chip('MAE',          'Mean Absolute Error â€” average of |residuals|; less sensitive to outliers than RMSE because errors are not squared.',                                                                           mae    != null ? fmt(mae)              : na),
+    chip('Max |e|',      'Largest absolute residual â€” the single worst-case data point.',                                                                                                                               maxE   != null ? fmt(maxE)             : na),
+    chip('CV%',          'Coefficient of Variation â€” RMSE as a percentage of |È³|; scale-free fit quality useful for comparing fits across datasets with different y magnitudes.',                                       cvPct  != null ? cvPct.toFixed(2) + '%': na),
+    chip('df',           'Degrees of freedom = N âˆ’ p, where p is the number of fitted parameters. Required for confidence intervals and hypothesis tests.',                                                             String(dof)),
+    chip('Log-lik',      'Gaussian MLE: LL = âˆ’N/2Â·(ln(2Ï€Â·SSE/N)+1). Higher (less negative) is better; the basis for AIC and BIC.',                                                                                    logLik != null ? logLik.toFixed(3)     : na),
     chip('F-statistic',  'Overall model F-test: F = (SSR/p)/(SSE/df). Tests whether the model explains significantly more variance than the mean alone. Approximate for nonlinear models.',                            fHtml),
-    chip('Durbin-Watson','First-order autocorrelation: d = Σ(eᵢ−eᵢ₋₁)²/Σeᵢ². Range 0–4; ≈ 2 is ideal. < 1.5 = pos. autocorr., > 2.5 = neg. autocorr.',                                                             dwValHtml,   dwChipCls),
-    chip('Runs test p',  'Wald-Wolfowitz test: checks whether residual signs are random. p < 0.05 suggests a systematic pattern — the model may be misspecified.',                                                     runsPValHtml, runsChipCls),
-    chip('Cond(J)',      'Jacobian condition number ≈ √(λmax/λmin) of parameter correlation matrix. < 100: well-conditioned; 100–1000: moderate; > 1000: ill-conditioned (inflated std errors).',                     condValHtml,  condChipCls),
+    chip('Durbin-Watson','First-order autocorrelation: d = Î£(eáµ¢âˆ’eáµ¢â‚‹â‚)Â²/Î£eáµ¢Â². Range 0â€“4; â‰ˆ 2 is ideal. < 1.5 = pos. autocorr., > 2.5 = neg. autocorr.',                                                             dwValHtml,   dwChipCls),
+    chip('Runs test p',  'Wald-Wolfowitz test: checks whether residual signs are random. p < 0.05 suggests a systematic pattern â€” the model may be misspecified.',                                                     runsPValHtml, runsChipCls),
+    chip('Cond(J)',      'Jacobian condition number â‰ˆ âˆš(Î»max/Î»min) of parameter correlation matrix. < 100: well-conditioned; 100â€“1000: moderate; > 1000: ill-conditioned (inflated std errors).',                     condValHtml,  condChipCls),
   ].join('');
 
   return `<tr class="stats-expand-row">
@@ -4323,7 +4323,7 @@ function buildStatExpandRow(fit, r, colSpan) {
             <th class="sth-left">Parameter</th>
             <th>Value</th>
             <th>SE <span class="sth-sub">std error</span></th>
-            <th>SEM <span class="sth-sub">SE/√N</span></th>
+            <th>SEM <span class="sth-sub">SE/âˆšN</span></th>
             <th>95% CI <span class="sth-sub">t<sub>${dof}</sub> = ${fmt(tc, 3)}</span></th>
             <th>t-stat</th>
           </tr></thead>
@@ -4350,7 +4350,7 @@ function syncFitDatasetSelect() {
   const fittable = state.datasets.filter(d => d.enabled !== false);
   sel.innerHTML = fittable.length
     ? fittable.map(ds => `<option value="${ds.id}">${ds.name}</option>`).join('')
-    : '<option value="">— no enabled dataset —</option>';
+    : '<option value="">â€” no enabled dataset â€”</option>';
   const activeEnabled = fittable.find(d => d.id === state.activeDatasetId);
   if (activeEnabled) sel.value = state.activeDatasetId;
   else if (cur) sel.value = cur;
@@ -4365,10 +4365,10 @@ function syncWeightOptions() {
   if (!sigOpt) return;
   if (ds?.sigY) {
     sigOpt.disabled = false;
-    sigOpt.textContent = '1/σ² (data σ)';
+    sigOpt.textContent = '1/ÏƒÂ² (data Ïƒ)';
   } else {
     sigOpt.disabled = true;
-    sigOpt.textContent = '1/σ² (no σ data)';
+    sigOpt.textContent = '1/ÏƒÂ² (no Ïƒ data)';
     if (wSel.value === 'sigma') wSel.value = 'none';
   }
 }
@@ -4393,9 +4393,9 @@ function syncModelCustomSection() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CUSTOM EQUATION PARSING
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 let customCompiled = null;
 
 // Shared set used by parseCustomEquation and the Equation Editor validator
@@ -4423,10 +4423,10 @@ function parseCustomEquation(expr) {
     const params = [...syms].sort();
     if (!params.length) {
       statusEl.style.color = 'var(--amber)';
-      statusEl.textContent = '⚠ No free parameters detected (only x found)';
+      statusEl.textContent = 'âš  No free parameters detected (only x found)';
     } else {
       statusEl.style.color = 'var(--teal)';
-      statusEl.textContent = `✓ Parameters: ${params.join(', ')}`;
+      statusEl.textContent = `âœ“ Parameters: ${params.join(', ')}`;
     }
     customCompiled = math.compile(expr);
     state.fitConfig.customExpr = expr;
@@ -4435,15 +4435,15 @@ function parseCustomEquation(expr) {
     return true;
   } catch (err) {
     statusEl.style.color = 'var(--red)';
-    statusEl.textContent = `✗ Parse error: ${err.message}`;
+    statusEl.textContent = `âœ— Parse error: ${err.message}`;
     customCompiled = null;
     return false;
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    AUTO INITIAL GUESS
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function autoInitParams() {
   const model = state.fitConfig.model;
   const dsId  = parseInt(document.getElementById('fit-dataset-select').value);
@@ -4451,7 +4451,7 @@ function autoInitParams() {
   if (!ds) { setConsole('No dataset selected for auto-init.', 'warn'); return; }
 
   const m = MODELS[model];
-  if (!m || m.analytic) { setConsole('Analytic model — no init needed.', ''); return; }
+  if (!m || m.analytic) { setConsole('Analytic model â€” no init needed.', ''); return; }
   if (!m.autoInit) return;
 
   const initVals = m.autoInit(ds.x, ds.y);
@@ -4462,11 +4462,11 @@ function autoInitParams() {
   setConsole('Auto initial values applied.', '');
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MULTI-START WRAPPER
    Runs nStarts pilot fits from randomly perturbed starting
    points, then polishes the best with full iterations.
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
   const pilotOpts = { ...opts, maxIter: Math.max(150, Math.ceil(opts.maxIter / 4)) };
 
@@ -4505,15 +4505,15 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
   return polished.sse <= best.sse ? polished : best;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   FIT ENGINE — INPUT VALIDATION
-═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   FIT ENGINE â€” INPUT VALIDATION
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function validateFitInput(xArr, yArr, model, p0) {
   if (xArr.length < 3) return 'Need at least 3 non-masked points to fit.';
   if (xArr.some(v => !isFinite(v)) || yArr.some(v => !isFinite(v))) return 'Data contains non-finite values (NaN or Infinity).';
   const yMean = yArr.reduce((s, v) => s + v, 0) / yArr.length;
   const yVar  = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
-  if (yVar === 0) return 'Y values are all identical — no variation to fit.';
+  if (yVar === 0) return 'Y values are all identical â€” no variation to fit.';
   const m = MODELS[model];
   if (m && m.fn && p0) {
     let anyFinite = false;
@@ -4521,14 +4521,14 @@ function validateFitInput(xArr, yArr, model, p0) {
       const v = m.fn(xArr[i], p0);
       if (isFinite(v)) { anyFinite = true; break; }
     }
-    if (!anyFinite) return 'Model returns non-finite values at initial parameters — try Auto Init or adjust manually.';
+    if (!anyFinite) return 'Model returns non-finite values at initial parameters â€” try Auto Init or adjust manually.';
   }
   return null;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   FIT ENGINE — DISPATCH
-═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   FIT ENGINE â€” DISPATCH
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function setResidualDim(dim) {
   document.getElementById('residual-tab-bar')?.classList.toggle('resid-dim', dim);
   document.getElementById('residual-plot')?.classList.toggle('resid-dim', dim);
@@ -4575,7 +4575,7 @@ function runFit() {
     weights = yArr.map(y => 1 / Math.max(Math.abs(y), 1e-10));
   } else if (weightMode === 'sigma') {
     if (!ds.sigY) {
-      setConsole('No σ data on this dataset — fitting unweighted.', 'warn');
+      setConsole('No Ïƒ data on this dataset â€” fitting unweighted.', 'warn');
     } else {
       const sigArr = ds.sigY.filter((_, i) => !excluded.has(i));
       weights = sigArr.map(s => (isFinite(s) && s > 0) ? 1 / (s * s) : 1e-40);
@@ -4613,7 +4613,7 @@ function runFit() {
     const SOLVERS2 = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
     const solve2 = SOLVERS2[algoKey2] || levenbergMarquardt;
     const paramRows2 = state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max }));
-    setConsole('IRLS fitting (Huber)…', '');
+    setConsole('IRLS fitting (Huber)â€¦', '');
     let result2 = solve2(modelFn, xArr, yArr, p02, { maxIter: maxIter2, tol: tol2, paramRows: paramRows2 });
     const IRLS_ITERS = 5, HUBER_C = 1.345;
     for (let iter = 0; iter < IRLS_ITERS; iter++) {
@@ -4664,7 +4664,7 @@ function runFit() {
     setConsole('Unknown model.', 'error'); return;
   }
 
-  // Validate and apply parameter bounds — use local lo/hi for locked params to avoid mutating state
+  // Validate and apply parameter bounds â€” use local lo/hi for locked params to avoid mutating state
   for (let i = 0; i < state.paramRows.length; i++) {
     const row = state.paramRows[i];
     const lo = row.locked ? row.init : row.min;
@@ -4690,21 +4690,21 @@ function runFit() {
   try {
     worker = new Worker('fitting-worker.js');
   } catch (e) {
-    // Web Workers may be blocked (e.g. file:// protocol) — fall back to synchronous fit
+    // Web Workers may be blocked (e.g. file:// protocol) â€” fall back to synchronous fit
     _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows: state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max })) });
     return;
   }
 
   state.currentWorker = worker;
   setFitting(true);
-  setConsole('Fitting… (0 iter)', '');
+  setConsole('Fittingâ€¦ (0 iter)', '');
 
   worker.onmessage = (e) => {
     const msg = e.data;
     if (msg.jobId !== jobId) return;
 
     if (msg.type === 'progress') {
-      setConsole(`Fitting… (${msg.iter} iter, SSE=${msg.sse.toExponential(3)})`, '');
+      setConsole(`Fittingâ€¦ (${msg.iter} iter, SSE=${msg.sse.toExponential(3)})`, '');
       return;
     }
 
@@ -4753,7 +4753,7 @@ function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, 
   const solve = SOLVERS[algoKey] || levenbergMarquardt;
   const opts  = { maxIter, tol, weights, paramRows };
   const m = MODELS[model];
-  setConsole('Fitting (sync)…', '');
+  setConsole('Fitting (sync)â€¦', '');
   let result, modelFn;
   if (model === 'Custom') {
     const compiled = customCompiled;
@@ -4777,13 +4777,13 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
   const m = MODELS[model];
   const fitColor = state.fits.some(f => f.dsId === dsId) ? nextColor() : ds.color;
   const algoNames = { lm: 'LM', gn: 'GN', nm: 'NM', bfgs: 'BFGS' };
-  const rSqStr    = isFinite(result.rSq) ? ` (R²=${result.rSq.toFixed(4)})` : '';
-  const msTag     = (nStarts > 1 && !m?.analytic) ? `×${nStarts}` : '';
-  const wTag      = weightMode === 'sigma' ? ' W:σ' : weightMode !== 'none' ? ` W:${weightMode}` : '';
+  const rSqStr    = isFinite(result.rSq) ? ` (RÂ²=${result.rSq.toFixed(4)})` : '';
+  const msTag     = (nStarts > 1 && !m?.analytic) ? `Ã—${nStarts}` : '';
+  const wTag      = weightMode === 'sigma' ? ' W:Ïƒ' : weightMode !== 'none' ? ` W:${weightMode}` : '';
   const excTag    = excluded.size > 0 ? ` -${excluded.size}pt` : '';
   const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}${msTag}${wTag}${excTag}]${rSqStr}`;
 
-  // Compute reduced chi-square when σ weights were used
+  // Compute reduced chi-square when Ïƒ weights were used
   if (weightMode === 'sigma' && ds.sigY && result.residuals) {
     const sigArr = ds.sigY.filter((_, i) => !excluded.has(i));
     const dof = Math.max(result.n - result.params.length, 1);
@@ -4809,9 +4809,9 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
   updatePlots();
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    TRY ALL MODELS
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function tryAllModels() {
   const dsId = parseInt(document.getElementById('fit-dataset-select').value);
   const ds   = state.datasets.find(d => d.id === dsId);
@@ -4821,7 +4821,7 @@ function tryAllModels() {
   const yArr = ds.y.filter((_, i) => !excluded.has(i));
   if (xArr.length < 3) { setConsole('Need at least 3 non-masked points.', 'error'); return; }
 
-  setConsole('Running all models…', '');
+  setConsole('Running all modelsâ€¦', '');
   const opts = { maxIter: 500, tol: 1e-7 };
   const rows = [];
 
@@ -4845,19 +4845,19 @@ function tryAllModels() {
   }
 
   rows.sort((a, b) => b.rSq - a.rSq);
-  setConsole(`Compared ${rows.length} models. Best: ${rows[0]?.key} (R²=${rows[0]?.rSq.toFixed(4)}).`, '');
+  setConsole(`Compared ${rows.length} models. Best: ${rows[0]?.key} (RÂ²=${rows[0]?.rSq.toFixed(4)}).`, '');
   showModelCompareModal(rows, dsId, ds);
 }
 
 function showModelCompareModal(rows, dsId, ds) {
   const body = document.getElementById('model-compare-body');
-  const fmtN = v => isFinite(v) ? v.toPrecision(4) : '—';
+  const fmtN = v => isFinite(v) ? v.toPrecision(4) : 'â€”';
   body.innerHTML = `
     <table style="width:100%;border-collapse:collapse;font-size:.8em">
       <thead>
         <tr style="border-bottom:2px solid var(--border)">
           <th style="text-align:left;padding:6px 10px">Model</th>
-          <th style="text-align:right;padding:6px 8px">R²</th>
+          <th style="text-align:right;padding:6px 8px">RÂ²</th>
           <th style="text-align:right;padding:6px 8px">RMSE</th>
           <th style="text-align:right;padding:6px 8px">AIC</th>
           <th style="text-align:right;padding:6px 8px">BIC</th>
@@ -4885,7 +4885,7 @@ function showModelCompareModal(rows, dsId, ds) {
       const fitColor = state.fits.some(f => f.dsId === dsId) ? nextColor() : ds.color;
       const fitRecord = {
         id: nextId(), dsId, model: r.key, algo: 'lm',
-        label: `${r.key} [LM] (R²=${r.rSq.toFixed(4)})`,
+        label: `${r.key} [LM] (RÂ²=${r.rSq.toFixed(4)})`,
         color: fitColor, result: r.result, fn: r.modelFn,
         visible: true, paramNames: r.paramNames, curvePoints: 300, sseHistory: null,
       };
@@ -4898,7 +4898,7 @@ function showModelCompareModal(rows, dsId, ds) {
       renderStats(fitRecord);
       renderCorrMatrix(fitRecord);
       updatePlots();
-      setConsole(`Applied ${r.key} (R²=${r.rSq.toFixed(4)}).`, '');
+      setConsole(`Applied ${r.key} (RÂ²=${r.rSq.toFixed(4)}).`, '');
       document.getElementById('model-compare-modal').style.display = 'none';
     });
   });
@@ -4906,9 +4906,9 @@ function showModelCompareModal(rows, dsId, ds) {
   document.getElementById('model-compare-modal').style.display = 'flex';
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    EXPORT
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function exportFilename() {
   const title = document.getElementById('plot-title').value.trim();
   return (title || 'curve-fit').replace(/[^\w\s\-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'curve-fit';
@@ -4924,7 +4924,7 @@ function exportCSV() {
   const fit = state.fits.find(f => f.id === state.activeFitId);
   if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
   const ds = state.datasets.find(d => d.id === fit.dsId);
-  let csv = `Curve Fitting Studio — Fit Results\nModel: ${fit.model}\nDataset: ${ds ? ds.name : 'unknown'}\n\n`;
+  let csv = `Curve Fitting Studio â€” Fit Results\nModel: ${fit.model}\nDataset: ${ds ? ds.name : 'unknown'}\n\n`;
   csv += 'Parameter,Value,StdError\n';
   fit.paramNames.forEach((n, i) => {
     csv += `${n},${fit.result.params[i]},${isFinite(fit.result.paramErrors[i]) ? fit.result.paramErrors[i] : 'NaN'}\n`;
@@ -4953,32 +4953,32 @@ function exportReport() {
   const rptYlabel = document.getElementById('plot-ylabel').value.trim();
   const rptTitle  = document.getElementById('plot-title').value.trim();
   let txt = `=======================================================\n`;
-  txt += `  Advanced Curve Fitting Studio — Fit Report\n`;
+  txt += `  Curve Fitting Studio â€” Fit Report\n`;
   txt += `  Generated: ${new Date().toISOString()}\n`;
   txt += `=======================================================\n\n`;
   if (rptTitle)  txt += `Title    : ${rptTitle}\n`;
-  txt += `Dataset  : ${ds ? ds.name : '—'}  (${r.n} points)\n`;
+  txt += `Dataset  : ${ds ? ds.name : 'â€”'}  (${r.n} points)\n`;
   if (rptXlabel) txt += `X label  : ${rptXlabel}\n`;
   if (rptYlabel) txt += `Y label  : ${rptYlabel}\n`;
   txt += `Model    : ${fit.model}\n\n`;
-  txt += `─── Parameters ───────────────────────────────────────\n`;
+  txt += `â”€â”€â”€ Parameters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n`;
   txt += `${'Name'.padEnd(12)}  ${'Value'.padEnd(16)}  ${'Std. Error'.padEnd(16)}\n`;
   txt += `${'-'.repeat(46)}\n`;
   fit.paramNames.forEach((n, i) => {
     const v  = fmt(r.params[i]);
-    const se = isFinite(r.paramErrors[i]) ? fmt(r.paramErrors[i]) : '—';
+    const se = isFinite(r.paramErrors[i]) ? fmt(r.paramErrors[i]) : 'â€”';
     txt += `${n.padEnd(12)}  ${v.padEnd(16)}  ${se}\n`;
   });
-  txt += `\n─── Goodness of Fit ──────────────────────────────────\n`;
-  txt += `R²        : ${r.rSq.toFixed(8)}\n`;
-  txt += `Adj. R²   : ${r.adjRSq.toFixed(8)}\n`;
+  txt += `\nâ”€â”€â”€ Goodness of Fit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n`;
+  txt += `RÂ²        : ${r.rSq.toFixed(8)}\n`;
+  txt += `Adj. RÂ²   : ${r.adjRSq.toFixed(8)}\n`;
   txt += `RMSE      : ${r.rmse.toExponential(4)}\n`;
   txt += `SSE       : ${r.sse.toExponential(4)}\n`;
   txt += `AIC       : ${r.aic.toFixed(4)}\n`;
   txt += `BIC       : ${r.bic.toFixed(4)}\n`;
-  if (r.chiSqRed != null) txt += `χ²ᵣ       : ${r.chiSqRed.toExponential(4)}\n`;
+  if (r.chiSqRed != null) txt += `Ï‡Â²áµ£       : ${r.chiSqRed.toExponential(4)}\n`;
   txt += `\n`;
-  txt += `─── Algorithm ────────────────────────────────────────\n`;
+  txt += `â”€â”€â”€ Algorithm â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n`;
   txt += `Status    : ${r.converged ? 'Converged' : 'Max iterations reached'}\n`;
   txt += `Iterations: ${r.iter}\n`;
   txt += `=======================================================\n`;
@@ -5061,7 +5061,7 @@ function exportPython() {
     `# Results`,
     `param_names = [${fit.paramNames.map(n => `'${n}'`).join(', ')}]`,
     `for name, val, err in zip(param_names, popt, perr):`,
-    `    print(f"{name} = {val:.6g} ± {err:.6g}")`,
+    `    print(f"{name} = {val:.6g} Â± {err:.6g}")`,
     ``,
     `# Plot`,
     `x_fit = np.linspace(x_data.min(), x_data.max(), 300)`,
@@ -5130,7 +5130,7 @@ function exportR() {
   const formula = modelDefs[fit.model] || `# Define formula for ${fit.model}`;
 
   const lines = [
-    `# Advanced Curve Fitting Studio — R export`,
+    `# Curve Fitting Studio â€” R export`,
     `# Model: ${fit.model}`,
     ``,
     `# Data`,
@@ -5279,7 +5279,7 @@ function exportMATLAB() {
   const fnExpr = modelDefs[fit.model] || `% Define model for ${fit.model} here`;
 
   const lines = [
-    `% Advanced Curve Fitting Studio — MATLAB export`,
+    `% Curve Fitting Studio â€” MATLAB export`,
     `% Model: ${fit.model}`,
     `% Parameter map:`,
     namesComment,
@@ -5288,7 +5288,7 @@ function exportMATLAB() {
     `x_data = [${xArr}]';`,
     `y_data = [${yArr}]';`,
     ``,
-    `% Model (Optimization Toolbox — lsqcurvefit)`,
+    `% Model (Optimization Toolbox â€” lsqcurvefit)`,
     `model = @(p, x) ${fnExpr};`,
     ``,
     `% Initial parameters from fit`,
@@ -5325,9 +5325,9 @@ function exportMATLAB() {
   setConsole('MATLAB script downloaded.', '');
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    EXAMPLE GENERATOR MODAL
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 let currentExampleKey = null;
 let currentExampleDsId = null;
 
@@ -5373,7 +5373,7 @@ function openExampleEditor(key, savedState = null) {
         </select>
       </div>
       <div class="ex-param-row">
-        <label class="ex-param-label">Amplitude (σ, y-units)</label>
+        <label class="ex-param-label">Amplitude (Ïƒ, y-units)</label>
         <input class="ctrl-input" type="number" id="ex-extra-noise-amp" value="0" min="0" step="any" style="flex:1">
       </div>
     </div>
@@ -5383,12 +5383,12 @@ function openExampleEditor(key, savedState = null) {
         <span class="ex-noise-hd" style="margin:0;flex:1">Sinusoidal Interference (up to 3)</span>
         <span class="panel-tip" data-tip="ex-freq-noise">?</span>
       </div>
-      <div class="ex-freq-hdr"><span>Amplitude</span><span>Freq (cyc/range)</span><span>Phase (0–1)</span></div>
+      <div class="ex-freq-hdr"><span>Amplitude</span><span>Freq (cyc/range)</span><span>Phase (0â€“1)</span></div>
       ${[1, 2, 3].map(i => `
       <div class="ex-freq-grid">
-        <input class="ctrl-input" type="number" id="ex-freq${i}-amp"   value="0"  min="0"   step="any"  title="Amplitude — set 0 to skip">
+        <input class="ctrl-input" type="number" id="ex-freq${i}-amp"   value="0"  min="0"   step="any"  title="Amplitude â€” set 0 to skip">
         <input class="ctrl-input" type="number" id="ex-freq${i}-freq"  value="${i}" min="0.1" step="0.5" title="Cycles per x-range">
-        <input class="ctrl-input" type="number" id="ex-freq${i}-phase" value="0"  min="0" max="1" step="0.05" title="Phase 0–1 (fraction of 2π)">
+        <input class="ctrl-input" type="number" id="ex-freq${i}-phase" value="0"  min="0" max="1" step="0.05" title="Phase 0â€“1 (fraction of 2Ï€)">
       </div>`).join('')}
     </div>`;
 
@@ -5416,7 +5416,7 @@ function openExampleEditor(key, savedState = null) {
   const footerNote = document.querySelector('#example-modal .modal-footer > span');
   if (savedState) {
     if (loadBtn) loadBtn.textContent = 'Regenerate';
-    if (footerNote) footerNote.textContent = 'Regenerates data in place — existing fits are preserved but should be re-run.';
+    if (footerNote) footerNote.textContent = 'Regenerates data in place â€” existing fits are preserved but should be re-run.';
   } else {
     if (loadBtn) loadBtn.textContent = 'Load Dataset';
     if (footerNote) footerNote.textContent = 'Noise is re-randomised each time you load.';
@@ -5461,7 +5461,7 @@ function loadExampleFromModal() {
   const extraAmp  = parseFloat((document.getElementById('ex-extra-noise-amp') || {}).value) || 0;
   if (extraType !== 'none' && extraAmp > 0) data.y = addExtraNoise(data.y, extraType, extraAmp);
 
-  // Sinusoidal frequency components — collect all 3 rows (including disabled ones for save)
+  // Sinusoidal frequency components â€” collect all 3 rows (including disabled ones for save)
   const freqRows = [1, 2, 3].map(i => ({
     amp:   parseFloat((document.getElementById(`ex-freq${i}-amp`)   || {}).value) || 0,
     freq:  parseFloat((document.getElementById(`ex-freq${i}-freq`)  || {}).value) || i,
@@ -5517,13 +5517,13 @@ function loadExampleFromModal() {
     renderDatasetList();
     updatePlots();
     autoInitParams();
-    setConsole(`Loaded: ${data.name} (${data.x.length} points).  Press ▶ Fit to fit.`, '');
+    setConsole(`Loaded: ${data.name} (${data.x.length} points).  Press â–¶ Fit to fit.`, '');
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    POINT EDIT MODE
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function computeYDataDelta(pixelDY, mainEl) {
   const fl = mainEl._fullLayout;
   if (fl && fl.yaxis && fl.yaxis._length) {
@@ -5611,7 +5611,7 @@ function resetSelectionToOriginal() {
   updatePlots();
 }
 
-/* ── Edit history (undo/redo) ────────────────────────── */
+/* â”€â”€ Edit history (undo/redo) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function pushEditHistory() {
   const ds = state.datasets.find(d => d.id === state.selection.dsId);
   if (!ds) return;
@@ -5661,7 +5661,7 @@ function syncUndoRedoButtons() {
   if (bx) bx.disabled = !state.selection.indices.size;
 }
 
-/* ── Radius canvas overlay ───────────────────────────── */
+/* â”€â”€ Radius canvas overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function syncRadiusCanvas() {
   const canvas = document.getElementById('edit-radius-canvas');
   const mainEl = document.getElementById('main-plot');
@@ -5716,7 +5716,7 @@ function initEditMode() {
   });
   mainEl.addEventListener('mouseleave', () => clearRadiusOverlay());
 
-  // Shift+scroll: adjust capture radius.  Plain scroll → Plotly zoom (scrollZoom:true).
+  // Shift+scroll: adjust capture radius.  Plain scroll â†’ Plotly zoom (scrollZoom:true).
   mainEl.addEventListener('wheel', e => {
     if (!e.shiftKey) return;
     e.preventDefault();
@@ -5727,7 +5727,7 @@ function initEditMode() {
     drawRadiusOverlay(lastMouseX, lastMouseY);
   }, { passive: false });
 
-  // Capture-phase mousedown — intercepts near-point clicks before Plotly starts a pan
+  // Capture-phase mousedown â€” intercepts near-point clicks before Plotly starts a pan
   mainEl.addEventListener('mousedown', function(e) {
     if (e.button !== 0) return;
     const rect = mainEl.getBoundingClientRect();
@@ -5737,7 +5737,7 @@ function initEditMode() {
 
     if (!result || !result.indices.size) {
       nearPoint = null;
-      return; // not near any point — fall through to Plotly (pan)
+      return; // not near any point â€” fall through to Plotly (pan)
     }
 
     e.stopPropagation(); // prevent Plotly from seeing this mousedown
@@ -5814,7 +5814,7 @@ function initEditMode() {
     syncUndoRedoButtons();
   });
 
-  // Click on empty space → clear selection
+  // Click on empty space â†’ clear selection
   mainEl.addEventListener('click', e => {
     const rect = mainEl.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
@@ -5859,9 +5859,9 @@ function initEditMode() {
   });
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    TAB SYSTEM
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 let tabList = [];
 let activeTabId = null;
 
@@ -5996,7 +5996,7 @@ function renderTabBar() {
   const tabsHtml = tabList.map(t => `
     <div class="app-tab${t.id === activeTabId ? ' active' : ''}" data-tab-id="${t.id}">
       <span class="app-tab-label">${t.name.replace(/</g,'&lt;')}</span>
-      <span class="app-tab-close" data-close-id="${t.id}" title="Close tab">×</span>
+      <span class="app-tab-close" data-close-id="${t.id}" title="Close tab">Ã—</span>
     </div>`).join('');
   bar.innerHTML = tabsHtml + `<button class="app-tab-add" id="btn-add-tab" title="New tab">+</button>`;
 
@@ -6043,9 +6043,9 @@ function renderTabBar() {
   if (addBtn) addBtn.addEventListener('click', () => addNewTab());
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    SESSION PERSISTENCE
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function buildSessionPayload() {
   // Capture legend position from live Plotly figure (user may have dragged it)
   const mainEl = document.getElementById('main-plot');
@@ -6229,7 +6229,7 @@ function restoreMultiTabPayload(data) {
     if (active && active.payload) restoreSessionPayload(active.payload);
     else clearWorkspace();
   } else {
-    // Legacy v1/v2 — wrap as single tab
+    // Legacy v1/v2 â€” wrap as single tab
     tabList = [{ id: nextTabId(), name: 'Session', payload: data }];
     activeTabId = tabList[0].id;
     renderTabBar();
@@ -6252,7 +6252,7 @@ function saveSession() {
       ${t.id === activeTabId ? '<span class="save-tab-badge">current</span>' : ''}
     </label>`).join('');
 
-  // Sync radio → checkbox visibility
+  // Sync radio â†’ checkbox visibility
   const radios = modal.querySelectorAll('input[name="save-scope"]');
   function syncTabList() {
     const scope = modal.querySelector('input[name="save-scope"]:checked').value;
@@ -6287,7 +6287,7 @@ function performSave(tabIds) {
     a.download = `curve-fit-session-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
-    setConsole(`Session saved (${selectedTabs.length} tab${selectedTabs.length > 1 ? 's' : ''}) — file downloaded.`, '');
+    setConsole(`Session saved (${selectedTabs.length} tab${selectedTabs.length > 1 ? 's' : ''}) â€” file downloaded.`, '');
   } catch (e) {
     setConsole('Save failed: ' + e.message, 'error');
   }
@@ -6313,9 +6313,9 @@ function loadSession() {
   fileInput.click();
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RESIZABLE PANELS
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function initResizablePanels() {
   const leftPanel  = document.getElementById('panel-left');
   const rightPanel = document.getElementById('panel-right');
@@ -6400,11 +6400,11 @@ function initResizablePanels() {
   document.addEventListener('touchend',  onUp);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    EVENTS
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function initEvents() {
-  /* ── Dropdown toggles ─────────────────────────────────── */
+  /* â”€â”€ Dropdown toggles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   // The topbar uses overflow-x:auto (to prevent button wrapping at any screen
   // width), which clips position:absolute children. Use position:fixed for all
   // dropdowns, anchored to the trigger button's live viewport rect.
@@ -6437,7 +6437,7 @@ function initEvents() {
   setupDropdown('btn-export',   'export-menu',   220);
   setupDropdown('btn-session',  'session-menu',  200);
 
-  /* ── Example datasets ─────────────────────────────────── */
+  /* â”€â”€ Example datasets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('examples-menu').querySelectorAll('.app-dropdown-item').forEach(item => {
     item.addEventListener('click', () => {
       const key = item.dataset.example;
@@ -6447,7 +6447,7 @@ function initEvents() {
     });
   });
 
-  /* ── Example modal ────────────────────────────────────── */
+  /* â”€â”€ Example modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('example-modal-load').addEventListener('click', loadExampleFromModal);
   document.getElementById('example-modal-cancel').addEventListener('click', closeExampleModal);
   document.getElementById('example-modal-close').addEventListener('click', closeExampleModal);
@@ -6455,7 +6455,7 @@ function initEvents() {
     if (e.target === document.getElementById('example-modal')) closeExampleModal();
   });
 
-  /* ── CSV Import ───────────────────────────────────────── */
+  /* â”€â”€ CSV Import â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-import').addEventListener('click', () => document.getElementById('file-input').click());
   document.getElementById('file-input').addEventListener('change', e => {
     const file = e.target.files[0];
@@ -6481,7 +6481,7 @@ function initEvents() {
     e.target.value = '';
   });
 
-  /* ── Drag & drop onto plot area ───────────────────────── */
+  /* â”€â”€ Drag & drop onto plot area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const plotArea = document.getElementById('main-plot');
   plotArea.addEventListener('dragover', e => e.preventDefault());
   plotArea.addEventListener('drop', e => {
@@ -6506,7 +6506,7 @@ function initEvents() {
     reader.readAsText(file);
   });
 
-  /* ── Paste modal ──────────────────────────────────────── */
+  /* â”€â”€ Paste modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-paste').addEventListener('click', () => {
     document.getElementById('paste-modal').style.display = 'flex';
     document.getElementById('paste-textarea').focus();
@@ -6522,7 +6522,7 @@ function initEvents() {
       const delim = document.getElementById('paste-delim').value;
       const rows = parseDelimited(text, delim);
       const { x, y } = rowsToXY(rows);
-      document.getElementById('paste-preview').textContent = x.length ? `Preview: ${x.length} rows parsed. X ∈ [${fmt(Math.min(...x))}, ${fmt(Math.max(...x))}], Y ∈ [${fmt(Math.min(...y))}, ${fmt(Math.max(...y))}]` : 'No numeric pairs found.';
+      document.getElementById('paste-preview').textContent = x.length ? `Preview: ${x.length} rows parsed. X âˆˆ [${fmt(Math.min(...x))}, ${fmt(Math.max(...x))}], Y âˆˆ [${fmt(Math.min(...y))}, ${fmt(Math.max(...y))}]` : 'No numeric pairs found.';
     } catch (_) { document.getElementById('paste-preview').textContent = 'Parse error.'; }
   });
   document.getElementById('paste-import').addEventListener('click', () => {
@@ -6544,11 +6544,11 @@ function initEvents() {
     } catch (err) { setConsole('Paste import error: ' + err.message, 'error'); }
   });
 
-  /* ── Fit button ───────────────────────────────────────── */
+  /* â”€â”€ Fit button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-fit').addEventListener('click', runFit);
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runFit(); });
 
-  /* ── Cancel fit button ────────────────────────────────── */
+  /* â”€â”€ Cancel fit button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-cancel-fit').addEventListener('click', () => {
     if (state.currentWorker) {
       state.currentWorker.terminate();
@@ -6558,7 +6558,7 @@ function initEvents() {
     setConsole('Fit cancelled.', 'warn');
   });
 
-  /* ── Remove fit ───────────────────────────────────────── */
+  /* â”€â”€ Remove fit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-clear-fit').addEventListener('click', () => {
     if (!state.activeFitId) return;
     state.fits = state.fits.filter(f => f.id !== state.activeFitId);
@@ -6569,7 +6569,7 @@ function initEvents() {
     updatePlots();
   });
 
-  /* ── Clear all ────────────────────────────────────────── */
+  /* â”€â”€ Clear all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-clear-all').addEventListener('click', () => {
     state.datasets = []; state.fits = [];
     state.activeDatasetId = null; state.activeFitId = null;
@@ -6579,7 +6579,7 @@ function initEvents() {
     setConsole('All datasets and fits cleared.', '');
   });
 
-  /* ── Clear all fits ───────────────────────────────────── */
+  /* â”€â”€ Clear all fits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-clear-all-fits').addEventListener('click', () => {
     state.fits = [];
     state.activeFitId = null;
@@ -6588,10 +6588,10 @@ function initEvents() {
     setConsole('All fits cleared.', '');
   });
 
-  /* ── Model select ─────────────────────────────────────── */
+  /* â”€â”€ Model select â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('model-select').addEventListener('change', syncModelCustomSection);
 
-  /* ── Edit as Custom button ────────────────────────────── */
+  /* â”€â”€ Edit as Custom button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('model-edit-as-custom').addEventListener('click', () => {
     const model = document.getElementById('model-select').value;
     const jsEq = MODEL_EQ_JS[model];
@@ -6602,14 +6602,14 @@ function initEvents() {
     syncModelCustomSection();
   });
 
-  /* ── Custom equation input ────────────────────────────── */
+  /* â”€â”€ Custom equation input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   let eqDebounce;
   document.getElementById('custom-eq-input').addEventListener('input', e => {
     clearTimeout(eqDebounce);
     eqDebounce = setTimeout(() => parseCustomEquation(e.target.value), 400);
   });
 
-  /* ── Auto init ────────────────────────────────────────── */
+  /* â”€â”€ Auto init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-auto-init').addEventListener('click', autoInitParams);
   document.getElementById('btn-try-all').addEventListener('click', tryAllModels);
   document.getElementById('model-compare-close').addEventListener('click', () => {
@@ -6635,18 +6635,18 @@ function initEvents() {
       const val = r.params[i];
       const err = r.paramErrors && r.paramErrors[i];
       lines.push(err && isFinite(err)
-        ? `  ${name.padEnd(8)} = ${fmt(val)} ± ${fmt(err)}`
+        ? `  ${name.padEnd(8)} = ${fmt(val)} Â± ${fmt(err)}`
         : `  ${name.padEnd(8)} = ${fmt(val)}`);
     });
     lines.push('');
     lines.push('Statistics');
-    lines.push(`  R²       = ${isFinite(r.rSq)     ? r.rSq.toFixed(6)     : 'N/A'}`);
-    lines.push(`  Adj-R²   = ${isFinite(r.adjRSq)  ? r.adjRSq.toFixed(6)  : 'N/A'}`);
+    lines.push(`  RÂ²       = ${isFinite(r.rSq)     ? r.rSq.toFixed(6)     : 'N/A'}`);
+    lines.push(`  Adj-RÂ²   = ${isFinite(r.adjRSq)  ? r.adjRSq.toFixed(6)  : 'N/A'}`);
     lines.push(`  RMSE     = ${isFinite(r.rmse)    ? fmt(r.rmse)          : 'N/A'}`);
     lines.push(`  SSE      = ${isFinite(r.sse)     ? fmt(r.sse)           : 'N/A'}`);
     lines.push(`  AIC      = ${isFinite(r.aic)     ? r.aic.toFixed(3)     : 'N/A'}`);
     lines.push(`  BIC      = ${isFinite(r.bic)     ? r.bic.toFixed(3)     : 'N/A'}`);
-    if (r.chiSqRed != null) lines.push(`  χ²ᵣ      = ${fmt(r.chiSqRed)}`);
+    if (r.chiSqRed != null) lines.push(`  Ï‡Â²áµ£      = ${fmt(r.chiSqRed)}`);
     lines.push(`  N        = ${r.n}`);
     lines.push(`  Status   = ${r.converged ? 'Converged' : 'Not converged'} (${r.iter} iter)`);
     // Extended diagnostics
@@ -6708,7 +6708,7 @@ function initEvents() {
     if (state.fits.length) updatePlots();
   });
 
-  /* ── Toggle buttons ───────────────────────────────────── */
+  /* â”€â”€ Toggle buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-toggle-residuals').addEventListener('click', function () {
     state.plotConfig.showResiduals = !state.plotConfig.showResiduals;
     this.classList.toggle('active', state.plotConfig.showResiduals);
@@ -6754,7 +6754,7 @@ function initEvents() {
       }
     });
     renderDatasetList(); updatePlots();
-    setConsole(added > 0 ? `Masked ${added} outlier(s) — re-fit to update.` : 'No new outliers above 2.5σ.', '');
+    setConsole(added > 0 ? `Masked ${added} outlier(s) â€” re-fit to update.` : 'No new outliers above 2.5Ïƒ.', '');
   });
   document.getElementById('btn-unmask-all').addEventListener('click', () => {
     const ds = state.datasets.find(d => d.id === state.activeDatasetId);
@@ -6775,7 +6775,7 @@ function initEvents() {
 
     const smDescs = {
       movavg:  'Replaces each point with the unweighted mean of its neighbors. Fast and simple; blurs sharp features.',
-      gaussian:'Weighted average using a Gaussian kernel — nearer points contribute more. Better shape preservation than moving average.',
+      gaussian:'Weighted average using a Gaussian kernel â€” nearer points contribute more. Better shape preservation than moving average.',
       savgol:  'Fits a local polynomial to each window (Savitzky-Golay). Best for preserving peak heights and curvature.',
       median:  'Replaces each point with the window median. Excellent at removing spike noise while keeping edges sharp.'
     };
@@ -6835,7 +6835,7 @@ function initEvents() {
       if (_specVisible) renderFFTSpectrum();
     });
 
-    // ── Spectrum preview ──────────────────────────────────────
+    // â”€â”€ Spectrum preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let _specVisible = false;
     const specBtn  = document.getElementById('pp-fft-spectrum-btn');
     const specWrap = document.getElementById('pp-fft-spectrum-wrap');
@@ -6843,7 +6843,7 @@ function initEvents() {
     specBtn.addEventListener('click', () => {
       _specVisible = !_specVisible;
       specWrap.style.display = _specVisible ? 'block' : 'none';
-      specBtn.textContent = _specVisible ? '▤ Hide Spectrum' : '▤ Show Spectrum';
+      specBtn.textContent = _specVisible ? 'â–¤ Hide Spectrum' : 'â–¤ Show Spectrum';
       if (_specVisible) renderFFTSpectrum();
     });
 
@@ -6851,15 +6851,15 @@ function initEvents() {
       if (_specVisible) renderFFTSpectrum();
     });
 
-    // View toggle: Spectrum ↔ Spectrogram
+    // View toggle: Spectrum â†” Spectrogram
     ['spectrum', 'stft'].forEach(view => {
       document.getElementById(`pp-spec-btn-${view}`).addEventListener('click', () => {
         _ppSpecView = view;
         document.getElementById('pp-spec-btn-spectrum').classList.toggle('pp-sv-on', view === 'spectrum');
         document.getElementById('pp-spec-btn-stft').classList.toggle('pp-sv-on', view === 'stft');
         document.getElementById('pp-spec-label').textContent = view === 'stft'
-          ? 'Spectrogram (STFT) — x: % Nyquist, y: sample pos., color: amplitude'
-          : 'Power spectrum — red ▾ = detected peaks · dashed = cutoff';
+          ? 'Spectrogram (STFT) â€” x: % Nyquist, y: sample pos., color: amplitude'
+          : 'Power spectrum â€” red â–¾ = detected peaks Â· dashed = cutoff';
         if (_specVisible) renderFFTSpectrum();
       });
     });
@@ -6918,10 +6918,10 @@ function initEvents() {
     openDataTable();
     renderMaskCount();
     updatePlots();
-    setConsole(added > 0 ? `Excluded ${added} outlier(s).` : 'No outliers above 2.5σ.', '');
+    setConsole(added > 0 ? `Excluded ${added} outlier(s).` : 'No outliers above 2.5Ïƒ.', '');
   });
 
-  /* ── Column picker modal ──────────────────────────────────── */
+  /* â”€â”€ Column picker modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('col-picker-close').addEventListener('click', () => {
     document.getElementById('col-picker-modal').style.display = 'none'; _pendingImport = null;
   });
@@ -6938,7 +6938,7 @@ function initEvents() {
   document.getElementById('col-picker-sig').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-import').addEventListener('click', importFromColumnPicker);
 
-  /* ── Residual tabs ────────────────────────────────────── */
+  /* â”€â”€ Residual tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.querySelectorAll('.resid-tab').forEach(btn => {
     btn.addEventListener('click', function () {
       state.plotConfig.residualTab = this.dataset.tab;
@@ -6947,7 +6947,7 @@ function initEvents() {
     });
   });
 
-  /* ── Log-scale suggest banner ─────────────────────────── */
+  /* â”€â”€ Log-scale suggest banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('log-suggest-apply-x').addEventListener('click', () => {
     state.plotConfig.logX = true;
     updatePlots();
@@ -6963,7 +6963,7 @@ function initEvents() {
     document.getElementById('log-suggest-banner').style.display = 'none';
   });
 
-  /* ── Plot label live update ───────────────────────────── */
+  /* â”€â”€ Plot label live update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   let _labelDebounce;
   ['plot-xlabel','plot-ylabel','plot-title'].forEach(id => {
     document.getElementById(id).addEventListener('input', () => {
@@ -6972,7 +6972,7 @@ function initEvents() {
     });
   });
 
-  /* ── Export ───────────────────────────────────────────── */
+  /* â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('exp-png').addEventListener('click', () => { exportPNG(); document.getElementById('export-menu').classList.remove('open'); });
   document.getElementById('exp-svg').addEventListener('click', () => { exportSVG(); document.getElementById('export-menu').classList.remove('open'); });
   document.getElementById('exp-csv').addEventListener('click', () => { exportCSV(); document.getElementById('export-menu').classList.remove('open'); });
@@ -6982,14 +6982,14 @@ function initEvents() {
   document.getElementById('exp-latex').addEventListener('click', () => { exportLatex(); document.getElementById('export-menu').classList.remove('open'); });
   document.getElementById('exp-matlab').addEventListener('click', () => { exportMATLAB(); document.getElementById('export-menu').classList.remove('open'); });
 
-  /* ── Session ──────────────────────────────────────────── */
+  /* â”€â”€ Session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-save').addEventListener('click', saveSession);
   document.getElementById('btn-load').addEventListener('click', loadSession);
 
   function syncSessionAutoRestore() {
     const isOn = localStorage.getItem('cfs_autorestore') !== '0';
     const item = document.getElementById('sess-auto-restore');
-    if (item) item.textContent = (isOn ? '● ' : '○ ') + ' Auto-restore';
+    if (item) item.textContent = (isOn ? 'â—Â ' : 'â—‹Â ') + ' Auto-restore';
   }
   syncSessionAutoRestore();
 
@@ -7137,7 +7137,7 @@ function initEvents() {
     m.classList.remove('open'); m.style.cssText = '';
   });
 
-  /* ── Full-screen overlay open / close ─────────────────── */
+  /* â”€â”€ Full-screen overlay open / close â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const appOverlay = document.getElementById('app-overlay');
   let appEverOpened = false;
   function openApp() {
@@ -7146,13 +7146,13 @@ function initEvents() {
     document.getElementById('accBtn').style.display = 'none';
     requestAnimationFrame(() => {
       if (!appEverOpened) {
-        // First open: plots were init'd in a hidden zero-size div — do a full re-render
+        // First open: plots were init'd in a hidden zero-size div â€” do a full re-render
         plotsInitialised = false;
         updatePlots();
         appEverOpened = true;
         if (localStorage.getItem(TUT_KEY) !== '1') setTimeout(tutShow, 320);
       } else {
-        // Re-open: theme may have changed while app was closed — re-render with current colors
+        // Re-open: theme may have changed while app was closed â€” re-render with current colors
         updatePlots();
       }
     });
@@ -7166,7 +7166,7 @@ function initEvents() {
   if (btnLaunch) btnLaunch.addEventListener('click', openApp);
   document.getElementById('btn-close-app').addEventListener('click', closeApp);
 
-  // ── Mobile panel drawers ─────────────────────────────────────
+  // â”€â”€ Mobile panel drawers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   (function() {
     const leftPanel  = document.getElementById('panel-left');
     const rightPanel = document.getElementById('panel-right');
@@ -7216,7 +7216,7 @@ function initEvents() {
     if (e.target === document.getElementById('shortcuts-modal')) document.getElementById('shortcuts-modal').style.display = 'none';
   });
 
-  /* ── Equation Editor Modal ────────────────────────────────── */
+  /* â”€â”€ Equation Editor Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   (function() {
     const overlay  = document.getElementById('eq-editor-modal');
     const ta       = document.getElementById('eq-editor-textarea');
@@ -7235,14 +7235,14 @@ function initEvents() {
         const params = [...syms].sort();
         if (!params.length) {
           statEl.style.color = 'var(--amber)';
-          statEl.textContent = '⚠ No free parameters detected (only x)';
+          statEl.textContent = 'âš  No free parameters detected (only x)';
         } else {
           statEl.style.color = 'var(--teal)';
-          statEl.textContent = `✓ Parameters: ${params.join(', ')}`;
+          statEl.textContent = `âœ“ Parameters: ${params.join(', ')}`;
         }
       } catch (err) {
         statEl.style.color = 'var(--red)';
-        statEl.textContent = `✗ ${err.message}`;
+        statEl.textContent = `âœ— ${err.message}`;
       }
     }
 
@@ -7301,18 +7301,18 @@ function initEvents() {
       });
     });
   })();
-  /* ────────────────────────────────────────────────────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
   document.getElementById('btn-auto-restore').addEventListener('click', () => {
     const isOn = localStorage.getItem('cfs_autorestore') !== '0';
     const next = !isOn;
     localStorage.setItem('cfs_autorestore', next ? '1' : '0');
     document.getElementById('btn-auto-restore').classList.toggle('active', next);
-    setConsole(next ? 'Auto-restore ON — saved session will be restored on next reload.' : 'Auto-restore OFF — next reload will start fresh.', '');
+    setConsole(next ? 'Auto-restore ON â€” saved session will be restored on next reload.' : 'Auto-restore OFF â€” next reload will start fresh.', '');
     syncSessionAutoRestore();
   });
 
-  /* ── Save modal ───────────────────────────────────────── */
+  /* â”€â”€ Save modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const saveModal = document.getElementById('save-modal');
   if (saveModal) {
     document.getElementById('save-modal-close').addEventListener('click', () => { saveModal.style.display = 'none'; });
@@ -7333,12 +7333,12 @@ function initEvents() {
     saveModal.addEventListener('click', e => { if (e.target === saveModal) saveModal.style.display = 'none'; });
   }
 
-  /* ── Resize plots when window resizes ─────────────────── */
+  /* â”€â”€ Resize plots when window resizes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   window.addEventListener('resize', () => {
     if (plotsInitialised) { Plotly.Plots.resize('main-plot'); Plotly.Plots.resize('residual-plot'); }
   });
 
-  /* ── Edit controls panel toggle ───────────────────────── */
+  /* â”€â”€ Edit controls panel toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-edit-mode').addEventListener('click', function () {
     const ctrl = document.getElementById('edit-mode-controls');
     const showing = ctrl.style.display === 'flex';
@@ -7347,12 +7347,12 @@ function initEvents() {
     if (!showing) syncUndoRedoButtons();
   });
 
-  /* ── Undo / Redo / Reset buttons ─────────────────────── */
+  /* â”€â”€ Undo / Redo / Reset buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-edit-undo').addEventListener('click', undoEdit);
   document.getElementById('btn-edit-redo').addEventListener('click', redoEdit);
   document.getElementById('btn-edit-reset').addEventListener('click', resetSelectionToOriginal);
 
-  /* ── Graph Style Editor ─────────────────────────────────── */
+  /* â”€â”€ Graph Style Editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-graph-style').addEventListener('click', openGraphStyleEditor);
   document.getElementById('gs-modal-close').addEventListener('click',  () => { document.getElementById('gs-modal').style.display = 'none'; });
   document.getElementById('gs-cancel-btn').addEventListener('click',   () => { document.getElementById('gs-modal').style.display = 'none'; });
@@ -7367,7 +7367,7 @@ function initEvents() {
   document.getElementById('gs-font-family').addEventListener('change', function () {
     document.getElementById('gs-row-font-custom').style.display = this.value === '__custom__' ? '' : 'none';
   });
-  // Sync color picker ↔ hex for all gs- color pairs
+  // Sync color picker â†” hex for all gs- color pairs
   [['gs-font-color','gs-font-color-hex'],['gs-plot-bg','gs-plot-bg-hex'],['gs-paper-bg','gs-paper-bg-hex'],
    ['gs-grid-x-color','gs-grid-x-color-hex'],['gs-grid-y-color','gs-grid-y-color-hex'],
    ['gs-zeroline-x-color','gs-zeroline-x-color-hex'],['gs-zeroline-y-color','gs-zeroline-y-color-hex'],
@@ -7386,7 +7386,7 @@ function initEvents() {
     if (hexEl) hexEl.value = '';
   });
 
-  /* ── Annotations ─────────────────────────────────────────── */
+  /* â”€â”€ Annotations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-ann-add').addEventListener('click', () => openAnnEditor(null));
   document.getElementById('btn-ann-peaks').addEventListener('click', autoAnnotatePeaks);
   document.getElementById('ann-modal-close').addEventListener('click', () => { document.getElementById('ann-modal').style.display = 'none'; });
@@ -7397,7 +7397,7 @@ function initEvents() {
   document.getElementById('ann-font-family').addEventListener('change', function () {
     document.getElementById('ann-row-font-custom').style.display = this.value === '__custom__' ? '' : 'none';
   });
-  // Sync color picker ↔ hex text fields
+  // Sync color picker â†” hex text fields
   [['ann-font-color','ann-font-color-hex'],['ann-line-color','ann-line-color-hex'],['ann-arrow-color','ann-arrow-color-hex']].forEach(([pickId, hexId]) => {
     document.getElementById(pickId).addEventListener('input', function () { document.getElementById(hexId).value = this.value; });
     document.getElementById(hexId).addEventListener('input', function () {
@@ -7416,7 +7416,7 @@ function initEvents() {
     document.getElementById('ann-arrow-opts').style.display = this.checked ? '' : 'none';
   });
 
-  /* ── Predict / Solve ────────────────────────────────────── */
+  /* â”€â”€ Predict / Solve â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const predModeEl = document.getElementById('pred-mode');
   const predLabelEl = document.getElementById('pred-label');
   const predInputEl = document.getElementById('pred-input');
@@ -7429,7 +7429,7 @@ function initEvents() {
   }
   document.getElementById('btn-predict').addEventListener('click', () => {
     const fit = state.fits.find(f => f.id === state.activeFitId);
-    if (!fit || !fit.result) { setConsole('No active fit — run a fit first.', 'error'); return; }
+    if (!fit || !fit.result) { setConsole('No active fit â€” run a fit first.', 'error'); return; }
     const val = parseFloat(predInputEl.value);
     if (!isFinite(val)) { setConsole('Enter a valid number.', 'error'); return; }
     const mode = predModeEl ? predModeEl.value : 'x2y';
@@ -7437,7 +7437,7 @@ function initEvents() {
       const result = predictAtX(fit, val);
       if (!result) { setConsole('Model returned non-finite value at that X.', 'error'); return; }
       renderPredResult(result, 'x2y');
-      setConsole(`Ŷ at X=${fmt(val)}: ${fmt(result.y)}`, '');
+      setConsole(`Å¶ at X=${fmt(val)}: ${fmt(result.y)}`, '');
     } else {
       const ds = state.datasets.find(d => d.id === fit.dsId);
       const xArr = ds ? ds.x.filter((_, i) => !(ds.excludedIndices || new Set()).has(i)) : [];
@@ -7455,7 +7455,7 @@ function initEvents() {
     });
   }
 
-  /* ── F-test ─────────────────────────────────────────────── */
+  /* â”€â”€ F-test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-ftest').addEventListener('click', () => {
     const idA = parseInt(document.getElementById('ftest-fit-a').value);
     const idB = parseInt(document.getElementById('ftest-fit-b').value);
@@ -7470,23 +7470,23 @@ function initEvents() {
       setConsole(`F-test: F=${fmt(result.F)}, p=${result.pVal < 0.001 ? result.pVal.toExponential(2) : result.pVal.toFixed(4)}`, '');
   });
 
-  /* ── Initial state ────────────────────────────────────── */
+  /* â”€â”€ Initial state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   document.getElementById('btn-toggle-residuals').classList.add('active');
   syncModelCustomSection();
   initResizablePanels();
   tutInit();
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    FIRST-RUN TUTORIAL
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const TUT_KEY = 'cfs_tutorial_done';
 let _tutStep = 0;
 
 const TUT_SLIDES = [
   {
-    title: 'Welcome to Advanced Curve Fitting Studio',
-    body: 'A fully offline, browser-native platform for scientific curve fitting and nonlinear regression. Load data, choose from <strong>24 built-in models</strong>, and fit with Levenberg-Marquardt, Gauss-Newton, Nelder-Mead, or BFGS — no installation or internet required.',
+    title: 'Welcome to Curve Fitting Studio',
+    body: 'A fully offline, browser-native platform for scientific curve fitting and nonlinear regression. Load data, choose from <strong>24 built-in models</strong>, and fit with Levenberg-Marquardt, Gauss-Newton, Nelder-Mead, or BFGS â€” no installation or internet required.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- full app shell overview -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -7494,29 +7494,29 @@ const TUT_SLIDES = [
       <rect width="500" height="18" fill="#060e1c"/>
       <rect x="5" y="2" width="82" height="15" rx="3" fill="#0d2040" stroke="#0b9e8a" stroke-width="1"/>
       <text x="40" y="13" font-size="7.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif">Workspace 1</text>
-      <text x="80" y="13" font-size="7" fill="#2a4060" font-family="sans-serif">×</text>
+      <text x="80" y="13" font-size="7" fill="#2a4060" font-family="sans-serif">Ã—</text>
       <rect x="93" y="2" width="58" height="15" rx="3" fill="#07111e" stroke="#1c3050"/>
       <text x="116" y="13" font-size="7.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">Tab 2</text>
-      <text x="144" y="13" font-size="7" fill="#1e2e40" font-family="sans-serif">×</text>
+      <text x="144" y="13" font-size="7" fill="#1e2e40" font-family="sans-serif">Ã—</text>
       <rect x="158" y="4" width="16" height="11" rx="3" fill="#07111e" stroke="#1c3050"/>
       <text x="166" y="13" font-size="10" fill="#2a4060" text-anchor="middle" font-family="sans-serif">+</text>
       <line x1="0" y1="18" x2="500" y2="18" stroke="#1c3050"/>
       <!-- toolbar -->
       <rect x="0" y="18" width="500" height="18" fill="#07111e"/>
       <rect x="3" y="21" width="50" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="28" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Examples ▾</text>
+      <text x="28" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Examples â–¾</text>
       <rect x="56" y="21" width="48" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="80" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Import Data</text>
       <rect x="107" y="21" width="44" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="129" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Paste Data</text>
       <line x1="155" y1="22" x2="155" y2="34" stroke="#1c3050"/>
       <rect x="159" y="21" width="34" height="12" rx="3" fill="#0b2c44" stroke="#0b9e8a" stroke-width="0.8"/>
-      <text x="176" y="30" font-size="6.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif">▶ Fit</text>
+      <text x="176" y="30" font-size="6.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif">â–¶ Fit</text>
       <rect x="196" y="21" width="32" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="212" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Try All</text>
       <line x1="232" y1="22" x2="232" y2="34" stroke="#1c3050"/>
       <rect x="348" y="21" width="38" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="367" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Export ▾</text>
+      <text x="367" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Export â–¾</text>
       <rect x="389" y="21" width="48" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="413" y="30" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Save Session</text>
       <rect x="440" y="21" width="56" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
@@ -7562,26 +7562,26 @@ const TUT_SLIDES = [
       <text x="356" y="58" font-size="6" fill="#7a90ae" font-family="sans-serif">Dataset 1</text>
       <text x="355" y="71" font-size="6.5" fill="#4a6080" font-family="sans-serif" font-weight="600">FIT MODEL</text>
       <rect x="351" y="74" width="144" height="10" rx="2" fill="#0d2040" stroke="#0b9e8a" stroke-width="0.8"/>
-      <text x="356" y="82" font-size="6" fill="#e2e8f0" font-family="sans-serif">Exponential  y = a·eᵇˣ</text>
+      <text x="356" y="82" font-size="6" fill="#e2e8f0" font-family="sans-serif">Exponential  y = aÂ·eáµ‡Ë£</text>
       <text x="355" y="95" font-size="6.5" fill="#4a6080" font-family="sans-serif" font-weight="600">PARAMETERS</text>
       <rect x="351" y="98" width="144" height="34" rx="2" fill="#0d2040" stroke="#1c3050"/>
-      <text x="356" y="108" font-size="6" fill="#7a90ae" font-family="monospace">a   95.0  →  94.82 ±0.91</text>
-      <text x="356" y="118" font-size="6" fill="#7a90ae" font-family="monospace">b   0.18  →  0.179 ±0.003</text>
-      <text x="356" y="128" font-size="6" fill="#7a90ae" font-family="monospace">c   2.00  →  2.11  ±0.29</text>
+      <text x="356" y="108" font-size="6" fill="#7a90ae" font-family="monospace">a   95.0  â†’  94.82 Â±0.91</text>
+      <text x="356" y="118" font-size="6" fill="#7a90ae" font-family="monospace">b   0.18  â†’  0.179 Â±0.003</text>
+      <text x="356" y="128" font-size="6" fill="#7a90ae" font-family="monospace">c   2.00  â†’  2.11  Â±0.29</text>
       <!-- stats bar -->
       <rect x="0" y="144" width="500" height="16" fill="#07111e"/>
       <line x1="0" y1="144" x2="500" y2="144" stroke="#1c3050"/>
-      <text x="6" y="155" font-size="7" fill="#0b9e8a" font-family="monospace" font-weight="600">R² 0.9984</text>
-      <text x="68" y="155" font-size="7" fill="#7a90ae" font-family="monospace">Adj-R² 0.998</text>
+      <text x="6" y="155" font-size="7" fill="#0b9e8a" font-family="monospace" font-weight="600">RÂ² 0.9984</text>
+      <text x="68" y="155" font-size="7" fill="#7a90ae" font-family="monospace">Adj-RÂ² 0.998</text>
       <text x="148" y="155" font-size="7" fill="#7a90ae" font-family="monospace">RMSE 1.23</text>
-      <text x="216" y="155" font-size="7" fill="#7a90ae" font-family="monospace">AIC −32.4</text>
-      <text x="276" y="155" font-size="7" fill="#7a90ae" font-family="monospace">BIC −28.1</text>
+      <text x="216" y="155" font-size="7" fill="#7a90ae" font-family="monospace">AIC âˆ’32.4</text>
+      <text x="276" y="155" font-size="7" fill="#7a90ae" font-family="monospace">BIC âˆ’28.1</text>
       <text x="336" y="155" font-size="7" fill="#7a90ae" font-family="monospace">N 24</text>
     </svg>`
   },
   {
     title: 'Load Your Data',
-    body: 'Click <strong>Examples</strong> for built-in synthetic datasets, <strong>Import Data</strong> to upload a CSV/TSV/TXT file, or <strong>Paste Data</strong> to paste from a spreadsheet. Drag-and-drop onto the plot also works. Three-column files (X, Y, σ) unlock error-weighted fitting.',
+    body: 'Click <strong>Examples</strong> for built-in synthetic datasets, <strong>Import Data</strong> to upload a CSV/TSV/TXT file, or <strong>Paste Data</strong> to paste from a spreadsheet. Drag-and-drop onto the plot also works. Three-column files (X, Y, Ïƒ) unlock error-weighted fitting.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- toolbar focused on load buttons + open examples dropdown -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -7590,7 +7590,7 @@ const TUT_SLIDES = [
       <line x1="0" y1="22" x2="500" y2="22" stroke="#1c3050"/>
       <!-- Examples active/highlighted -->
       <rect x="4" y="3" width="66" height="16" rx="4" fill="#0b2c44" stroke="#0b9e8a" stroke-width="1.2"/>
-      <text x="37" y="14.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Examples ▾</text>
+      <text x="37" y="14.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Examples â–¾</text>
       <!-- Import Data highlighted -->
       <rect x="74" y="3" width="68" height="16" rx="4" fill="#0d2040" stroke="#0b9e8a" stroke-width="1.2"/>
       <text x="108" y="14.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Import Data</text>
@@ -7600,7 +7600,7 @@ const TUT_SLIDES = [
       <!-- separator and dimmed remaining toolbar -->
       <line x1="213" y1="4" x2="213" y2="18" stroke="#1c3050"/>
       <rect x="217" y="3" width="34" height="16" rx="4" fill="#0d2040" stroke="#1c3050"/>
-      <text x="234" y="14.5" font-size="7.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">▶ Fit</text>
+      <text x="234" y="14.5" font-size="7.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">â–¶ Fit</text>
       <rect x="254" y="3" width="34" height="16" rx="4" fill="#0d2040" stroke="#1c3050"/>
       <text x="271" y="14.5" font-size="7.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">Try All</text>
       <!-- 2-column examples dropdown open below Examples button -->
@@ -7627,18 +7627,18 @@ const TUT_SLIDES = [
       <text x="161" y="115" font-size="7.5" fill="#7a90ae" font-family="sans-serif">G-V Curve (Boltzmann)</text>
       <text x="161" y="127" font-size="7.5" fill="#7a90ae" font-family="sans-serif">Kir Channel I-V</text>
       <text x="161" y="139" font-size="7.5" fill="#7a90ae" font-family="sans-serif">HH Na Channel I-V</text>
-      <text x="161" y="151" font-size="7.5" fill="#7a90ae" font-family="sans-serif">Voltage-Dep. τ</text>
+      <text x="161" y="151" font-size="7.5" fill="#7a90ae" font-family="sans-serif">Voltage-Dep. Ï„</text>
       <!-- drag-and-drop zone (right side of illustration) -->
       <rect x="312" y="24" width="184" height="132" rx="5" fill="#07111e" stroke="#1c3050" stroke-dasharray="4 3"/>
       <path d="M404,66 L404,98 M388,82 L420,82 M388,82 L395,75 M420,82 L413,75" stroke="#1c3050" stroke-width="2" stroke-linecap="round"/>
       <text x="404" y="116" font-size="8.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">drag &amp; drop</text>
-      <text x="404" y="129" font-size="7.5" fill="#253448" text-anchor="middle" font-family="sans-serif">.csv  ·  .tsv  ·  .txt</text>
-      <text x="404" y="142" font-size="7" fill="#1e2e3c" text-anchor="middle" font-family="sans-serif">3-col: X · Y · σ for weighted fit</text>
+      <text x="404" y="129" font-size="7.5" fill="#253448" text-anchor="middle" font-family="sans-serif">.csv  Â·  .tsv  Â·  .txt</text>
+      <text x="404" y="142" font-size="7" fill="#1e2e3c" text-anchor="middle" font-family="sans-serif">3-col: X Â· Y Â· Ïƒ for weighted fit</text>
     </svg>`
   },
   {
     title: 'Select a Model and Fit',
-    body: 'Choose from <strong>24 built-in models</strong> across 7 groups — or write a <strong>Custom Equation</strong> in x. Click <strong>Auto Init</strong> for data-driven starting guesses, then press <strong>▶ Fit</strong> (or Ctrl+Enter). Set optional Min/Max bounds on any parameter. Drag the sweep slider for a live preview without fitting.',
+    body: 'Choose from <strong>24 built-in models</strong> across 7 groups â€” or write a <strong>Custom Equation</strong> in x. Click <strong>Auto Init</strong> for data-driven starting guesses, then press <strong>â–¶ Fit</strong> (or Ctrl+Enter). Set optional Min/Max bounds on any parameter. Drag the sweep slider for a live preview without fitting.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- left: plot with data + fit; right: fit model panel + toolbar Fit button -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -7657,18 +7657,18 @@ const TUT_SLIDES = [
       <rect x="244" y="7" width="54" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="271" y="16.5" font-size="7" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Auto Init</text>
       <rect x="302" y="7" width="52" height="12" rx="3" fill="#0b2c44" stroke="#0b9e8a" stroke-width="1"/>
-      <text x="328" y="16.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">▶ Fit</text>
+      <text x="328" y="16.5" font-size="8.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">â–¶ Fit</text>
       <rect x="358" y="7" width="50" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="383" y="16.5" font-size="7" fill="#5a7090" text-anchor="middle" font-family="sans-serif">Try All</text>
       <rect x="412" y="7" width="78" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="451" y="16.5" font-size="7" fill="#5a7090" text-anchor="middle" font-family="sans-serif">✕ Remove Fit</text>
+      <text x="451" y="16.5" font-size="7" fill="#5a7090" text-anchor="middle" font-family="sans-serif">âœ• Remove Fit</text>
       <!-- right panel body -->
       <rect x="238" y="26" width="258" height="130" rx="3" fill="#07111e" stroke="#1c3050" stroke-width="0.5"/>
       <!-- FIT MODEL -->
       <text x="246" y="40" font-size="7" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">FIT MODEL</text>
       <rect x="242" y="43" width="250" height="14" rx="3" fill="#0d2040" stroke="#0b9e8a" stroke-width="1"/>
-      <text x="249" y="53.5" font-size="8.5" fill="#e2e8f0" font-family="sans-serif">Exponential  y = a·eᵇˣ + c</text>
-      <text x="482" y="53.5" font-size="8" fill="#4a6080" font-family="sans-serif">▾</text>
+      <text x="249" y="53.5" font-size="8.5" fill="#e2e8f0" font-family="sans-serif">Exponential  y = aÂ·eáµ‡Ë£ + c</text>
+      <text x="482" y="53.5" font-size="8" fill="#4a6080" font-family="sans-serif">â–¾</text>
       <!-- PARAMETERS header + Auto Init / Copy buttons -->
       <text x="246" y="69" font-size="7" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">PARAMETERS</text>
       <rect x="346" y="62" width="64" height="11" rx="3" fill="#0d2040" stroke="#1c3050"/>
@@ -7679,17 +7679,17 @@ const TUT_SLIDES = [
       <rect x="242" y="73" width="250" height="72" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="249" y="83" font-size="6.5" fill="#3d5470" font-family="monospace">PARAM</text>
       <text x="304" y="83" font-size="6.5" fill="#3d5470" font-family="monospace">INITIAL</text>
-      <text x="368" y="83" font-size="6.5" fill="#3d5470" font-family="monospace">FITTED ± SE</text>
+      <text x="368" y="83" font-size="6.5" fill="#3d5470" font-family="monospace">FITTED Â± SE</text>
       <line x1="242" y1="86" x2="492" y2="86" stroke="#1c3050"/>
       <text x="249" y="97" font-size="7.5" fill="#94a3b8" font-family="monospace">a</text>
       <text x="304" y="97" font-size="7.5" fill="#7a90ae" font-family="monospace">95.00</text>
-      <text x="368" y="97" font-size="7.5" fill="#0b9e8a" font-family="monospace">94.82 ±0.91</text>
+      <text x="368" y="97" font-size="7.5" fill="#0b9e8a" font-family="monospace">94.82 Â±0.91</text>
       <text x="249" y="111" font-size="7.5" fill="#94a3b8" font-family="monospace">b</text>
       <text x="304" y="111" font-size="7.5" fill="#7a90ae" font-family="monospace">0.180</text>
-      <text x="368" y="111" font-size="7.5" fill="#0b9e8a" font-family="monospace">0.179 ±0.003</text>
+      <text x="368" y="111" font-size="7.5" fill="#0b9e8a" font-family="monospace">0.179 Â±0.003</text>
       <text x="249" y="125" font-size="7.5" fill="#94a3b8" font-family="monospace">c</text>
       <text x="304" y="125" font-size="7.5" fill="#7a90ae" font-family="monospace">2.000</text>
-      <text x="368" y="125" font-size="7.5" fill="#0b9e8a" font-family="monospace">2.11 ±0.29</text>
+      <text x="368" y="125" font-size="7.5" fill="#0b9e8a" font-family="monospace">2.11 Â±0.29</text>
       <!-- sweep slider -->
       <rect x="249" y="131" width="116" height="8" rx="3" fill="#1c3050"/>
       <rect x="249" y="131" width="68" height="8" rx="3" fill="#0b9e8a" opacity=".4"/>
@@ -7701,18 +7701,18 @@ const TUT_SLIDES = [
   },
   {
     title: 'Analyse Results',
-    body: 'Converged parameters appear with <strong>± standard errors</strong>. The stats bar shows <strong>R², Adj-R², RMSE, SSE, AIC, BIC, and N</strong>. Four diagnostic tabs — Residuals, Q-Q Plot, Histogram, and Convergence — help assess fit quality. Click <strong>Try All</strong> to rank every model by R² in one shot.',
+    body: 'Converged parameters appear with <strong>Â± standard errors</strong>. The stats bar shows <strong>RÂ², Adj-RÂ², RMSE, SSE, AIC, BIC, and N</strong>. Four diagnostic tabs â€” Residuals, Q-Q Plot, Histogram, and Convergence â€” help assess fit quality. Click <strong>Try All</strong> to rank every model by RÂ² in one shot.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- stats bar at top + plot + residual tabs + residual plot + Try All panel -->
       <rect width="500" height="160" fill="#060e1c"/>
       <!-- stats bar (prominent at top) -->
       <rect x="0" y="0" width="500" height="20" fill="#07111e"/>
       <line x1="0" y1="20" x2="500" y2="20" stroke="#1c3050"/>
-      <text x="7" y="14" font-size="9.5" fill="#0b9e8a" font-family="monospace" font-weight="600">R² 0.9984</text>
-      <text x="88" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">Adj-R² 0.998</text>
+      <text x="7" y="14" font-size="9.5" fill="#0b9e8a" font-family="monospace" font-weight="600">RÂ² 0.9984</text>
+      <text x="88" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">Adj-RÂ² 0.998</text>
       <text x="194" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">RMSE 1.23</text>
-      <text x="278" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">AIC −32.4</text>
-      <text x="354" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">BIC −28.1</text>
+      <text x="278" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">AIC âˆ’32.4</text>
+      <text x="354" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">BIC âˆ’28.1</text>
       <text x="430" y="14" font-size="9.5" fill="#7a90ae" font-family="monospace">N 24</text>
       <!-- main plot -->
       <rect x="4" y="24" width="296" height="64" rx="3" fill="#07111e" stroke="#1c3050"/>
@@ -7737,26 +7737,26 @@ const TUT_SLIDES = [
       <circle cx="90" cy="125" r="2.2" fill="#3b82f6"/><circle cx="128" cy="133" r="2.2" fill="#3b82f6"/>
       <circle cx="170" cy="127" r="2.2" fill="#3b82f6"/><circle cx="216" cy="131" r="2.2" fill="#3b82f6"/>
       <circle cx="258" cy="126" r="2.2" fill="#3b82f6"/><circle cx="288" cy="132" r="2.2" fill="#3b82f6"/>
-      <text x="10" y="149" font-size="7" fill="#3b4f6b" font-family="monospace">SSE 33.5  ·  df 21  ·  converged</text>
+      <text x="10" y="149" font-size="7" fill="#3b4f6b" font-family="monospace">SSE 33.5  Â·  df 21  Â·  converged</text>
       <!-- Try All ranking panel (right side) -->
       <rect x="308" y="24" width="188" height="132" rx="4" fill="#07111e" stroke="#1c3050"/>
-      <text x="316" y="38" font-size="8" fill="#4a6080" font-family="sans-serif" font-weight="600">TRY ALL — RANKED BY R²</text>
+      <text x="316" y="38" font-size="8" fill="#4a6080" font-family="sans-serif" font-weight="600">TRY ALL â€” RANKED BY RÂ²</text>
       <line x1="308" y1="42" x2="496" y2="42" stroke="#1c3050"/>
       <rect x="314" y="46" width="176" height="14" rx="3" fill="#0b2640" stroke="#0b9e8a" stroke-width="0.7"/>
       <text x="320" y="56.5" font-size="7.5" fill="#0b9e8a" font-family="monospace">Exp-Decay-Offset  0.9984</text>
-      <text x="468" y="56.5" font-size="7.5" fill="#0b9e8a" font-family="sans-serif">↵</text>
+      <text x="468" y="56.5" font-size="7.5" fill="#0b9e8a" font-family="sans-serif">â†µ</text>
       <text x="320" y="72" font-size="7.5" fill="#5a7090" font-family="monospace">Exponential       0.9921</text>
       <text x="320" y="87" font-size="7.5" fill="#3d5070" font-family="monospace">Gaussian          0.9401</text>
       <text x="320" y="102" font-size="7.5" fill="#2a3e58" font-family="monospace">Logistic          0.8873</text>
       <text x="320" y="117" font-size="7.5" fill="#1e2e40" font-family="monospace">Power Law         0.7120</text>
       <line x1="308" y1="125" x2="496" y2="125" stroke="#1c3050" stroke-width="0.5"/>
       <text x="316" y="138" font-size="7" fill="#4a6080" font-family="sans-serif" font-weight="600">FITTED PARAMETERS</text>
-      <text x="316" y="149" font-size="7" fill="#94a3b8" font-family="monospace">a 94.82 ±0.91  b 0.179 ±0.003</text>
+      <text x="316" y="149" font-size="7" fill="#94a3b8" font-family="monospace">a 94.82 Â±0.91  b 0.179 Â±0.003</text>
     </svg>`
   },
   {
     title: 'Multiple Independent Workspaces',
-    body: 'Click <strong>+</strong> in the tab bar to open a new workspace. Every tab is completely independent — its own datasets, fits, annotations, graph style, and settings. Double-click a tab name to rename it. Use <strong>Save Session</strong> to export all tabs to JSON, and reload them anytime.',
+    body: 'Click <strong>+</strong> in the tab bar to open a new workspace. Every tab is completely independent â€” its own datasets, fits, annotations, graph style, and settings. Double-click a tab name to rename it. Use <strong>Save Session</strong> to export all tabs to JSON, and reload them anytime.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- tab bar + left panel datasets/fits + plot showing active tab -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -7766,15 +7766,15 @@ const TUT_SLIDES = [
       <!-- active tab -->
       <rect x="6" y="3" width="106" height="21" rx="4" fill="#0d2040" stroke="#0b9e8a" stroke-width="1.2"/>
       <text x="50" y="17.5" font-size="9.5" fill="#0b9e8a" text-anchor="middle" font-family="sans-serif" font-weight="600">Exp Decay</text>
-      <text x="104" y="17.5" font-size="9" fill="#2a4060" font-family="sans-serif">×</text>
+      <text x="104" y="17.5" font-size="9" fill="#2a4060" font-family="sans-serif">Ã—</text>
       <!-- inactive tab 2 -->
       <rect x="118" y="3" width="94" height="21" rx="4" fill="#07111e" stroke="#1c3050"/>
       <text x="157" y="17.5" font-size="9.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">G-V Curve</text>
-      <text x="204" y="17.5" font-size="9" fill="#1e2e40" font-family="sans-serif">×</text>
+      <text x="204" y="17.5" font-size="9" fill="#1e2e40" font-family="sans-serif">Ã—</text>
       <!-- inactive tab 3 -->
       <rect x="218" y="3" width="78" height="21" rx="4" fill="#07111e" stroke="#1c3050"/>
       <text x="251" y="17.5" font-size="9.5" fill="#3d5470" text-anchor="middle" font-family="sans-serif">Kir I-V</text>
-      <text x="289" y="17.5" font-size="9" fill="#1e2e40" font-family="sans-serif">×</text>
+      <text x="289" y="17.5" font-size="9" fill="#1e2e40" font-family="sans-serif">Ã—</text>
       <!-- + button -->
       <rect x="304" y="6" width="22" height="15" rx="4" fill="#07111e" stroke="#1c3050"/>
       <text x="315" y="18" font-size="13" fill="#2a4060" text-anchor="middle" font-family="sans-serif">+</text>
@@ -7794,10 +7794,10 @@ const TUT_SLIDES = [
       <text x="8" y="100" font-size="7.5" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">ACTIVE FITS</text>
       <rect x="4" y="103" width="144" height="17" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <circle cx="14" cy="111.5" r="3.5" fill="#0b9e8a"/>
-      <text x="22" y="115" font-size="8.5" fill="#7a90ae" font-family="sans-serif">Exp-Decay  R²=0.998</text>
+      <text x="22" y="115" font-size="8.5" fill="#7a90ae" font-family="sans-serif">Exp-Decay  RÂ²=0.998</text>
       <rect x="4" y="123" width="144" height="17" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <circle cx="14" cy="131.5" r="3.5" fill="#8b5cf6"/>
-      <text x="22" y="135" font-size="8.5" fill="#7a90ae" font-family="sans-serif">Gaussian   R²=0.941</text>
+      <text x="22" y="135" font-size="8.5" fill="#7a90ae" font-family="sans-serif">Gaussian   RÂ²=0.941</text>
       <!-- save/load session buttons at bottom -->
       <rect x="4" y="144" width="66" height="14" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="37" y="154" font-size="7" fill="#5a7090" text-anchor="middle" font-family="sans-serif">Save Session</text>
@@ -7815,12 +7815,12 @@ const TUT_SLIDES = [
       <rect x="162" y="32" width="158" height="38" rx="4" fill="#0d2040" stroke="#1c3050" opacity=".95"/>
       <text x="170" y="46" font-size="8" fill="#0b9e8a" font-family="sans-serif" font-weight="600">Independent Workspaces</text>
       <text x="170" y="58" font-size="7" fill="#5a7090" font-family="sans-serif">Each tab has its own data, fits,</text>
-      <text x="170" y="68" font-size="7" fill="#5a7090" font-family="sans-serif">style &amp; annotations — no shared state</text>
+      <text x="170" y="68" font-size="7" fill="#5a7090" font-family="sans-serif">style &amp; annotations â€” no shared state</text>
     </svg>`
   },
   {
     title: 'Annotate, Style, and Export',
-    body: 'Add <strong>reference lines, text callouts, and auto-peak markers</strong> from the Annotations panel. Click <strong>⚙ Style</strong> to adjust fonts, colours, grid, axis range, and log scale. <strong>Export</strong> saves the plot as PNG or SVG. <strong>Copy Params</strong> copies all fit results to the clipboard.',
+    body: 'Add <strong>reference lines, text callouts, and auto-peak markers</strong> from the Annotations panel. Click <strong>âš™ Style</strong> to adjust fonts, colours, grid, axis range, and log scale. <strong>Export</strong> saves the plot as PNG or SVG. <strong>Copy Params</strong> copies all fit results to the clipboard.',
     illus: `<svg viewBox="0 0 500 160" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- annotated plot (left) + right panel: Plot Labels/Style + Annotations + Export -->
       <rect width="500" height="160" fill="#060e1c"/>
@@ -7838,13 +7838,13 @@ const TUT_SLIDES = [
       <!-- horizontal reference line (EC50) -->
       <line x1="18" y1="90" x2="234" y2="90" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="4 3" opacity=".9"/>
       <rect x="168" y="82" width="62" height="12" rx="3" fill="#1a0808" opacity=".9"/>
-      <text x="199" y="91.5" font-size="8" fill="#dc2626" text-anchor="middle" font-family="sans-serif">EC₅₀ = 2.4</text>
+      <text x="199" y="91.5" font-size="8" fill="#dc2626" text-anchor="middle" font-family="sans-serif">ECâ‚…â‚€ = 2.4</text>
       <!-- peak annotation -->
       <circle cx="124" cy="33" r="4" fill="#f59e0b" stroke="#07111e" stroke-width="1.5"/>
       <line x1="124" y1="28" x2="124" y2="18" stroke="#f59e0b" stroke-width="1.2"/>
       <polygon points="120,18 128,18 124,12" fill="#f59e0b"/>
       <rect x="82" y="8" width="88" height="12" rx="3" fill="#1c1200" opacity=".9"/>
-      <text x="126" y="17.5" font-size="7.5" fill="#f59e0b" text-anchor="middle" font-family="sans-serif">peak  x = −39 mV</text>
+      <text x="126" y="17.5" font-size="7.5" fill="#f59e0b" text-anchor="middle" font-family="sans-serif">peak  x = âˆ’39 mV</text>
       <!-- text callout -->
       <rect x="22" y="54" width="56" height="12" rx="3" fill="#0a1628" stroke="#1c3050" opacity=".9"/>
       <text x="50" y="63" font-size="7.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">Gaussian fit</text>
@@ -7853,13 +7853,13 @@ const TUT_SLIDES = [
       <!-- PLOT LABELS section -->
       <text x="258" y="18" font-size="7.5" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">PLOT LABELS</text>
       <rect x="398" y="10" width="92" height="13" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="444" y="19.5" font-size="7.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">⚙ Style</text>
+      <text x="444" y="19.5" font-size="7.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">âš™ Style</text>
       <rect x="254" y="21" width="230" height="10" rx="2" fill="#0d2040" stroke="#1c3050"/>
-      <text x="258" y="29" font-size="6.5" fill="#7a90ae" font-family="sans-serif">Title · X-axis label · Y-axis label</text>
+      <text x="258" y="29" font-size="6.5" fill="#7a90ae" font-family="sans-serif">Title Â· X-axis label Â· Y-axis label</text>
       <!-- style options -->
       <rect x="254" y="35" width="230" height="28" rx="3" fill="#0d2040" stroke="#1c3050"/>
-      <text x="260" y="46" font-size="7" fill="#3d5470" font-family="sans-serif">Fonts · Background · Grid · Zero lines</text>
-      <text x="260" y="57" font-size="7" fill="#3d5470" font-family="sans-serif">Axis range · Log scale · Tick spacing</text>
+      <text x="260" y="46" font-size="7" fill="#3d5470" font-family="sans-serif">Fonts Â· Background Â· Grid Â· Zero lines</text>
+      <text x="260" y="57" font-size="7" fill="#3d5470" font-family="sans-serif">Axis range Â· Log scale Â· Tick spacing</text>
       <!-- ANNOTATIONS section -->
       <text x="258" y="76" font-size="7.5" fill="#4a6080" font-family="sans-serif" letter-spacing=".05em" font-weight="600">ANNOTATIONS</text>
       <rect x="330" y="68" width="72" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
@@ -7867,9 +7867,9 @@ const TUT_SLIDES = [
       <rect x="406" y="68" width="72" height="12" rx="3" fill="#0d2040" stroke="#1c3050"/>
       <text x="442" y="77" font-size="6.5" fill="#7a90ae" text-anchor="middle" font-family="sans-serif">+ Add Annotation</text>
       <rect x="254" y="82" width="230" height="12" rx="2" fill="#0d2040" stroke="#1c3050"/>
-      <text x="258" y="91" font-size="7" fill="#f59e0b" font-family="sans-serif">▲ peak  x = −39 mV  (auto-peak)</text>
+      <text x="258" y="91" font-size="7" fill="#f59e0b" font-family="sans-serif">â–² peak  x = âˆ’39 mV  (auto-peak)</text>
       <rect x="254" y="97" width="230" height="12" rx="2" fill="#0d2040" stroke="#1c3050"/>
-      <text x="258" y="106" font-size="7" fill="#dc2626" font-family="sans-serif">— EC₅₀ = 2.4  (h-line)</text>
+      <text x="258" y="106" font-size="7" fill="#dc2626" font-family="sans-serif">â€” ECâ‚…â‚€ = 2.4  (h-line)</text>
       <rect x="254" y="112" width="230" height="12" rx="2" fill="#0d2040" stroke="#1c3050"/>
       <text x="258" y="121" font-size="7" fill="#7a90ae" font-family="sans-serif">T Gaussian fit  (text callout)</text>
       <!-- EXPORT section -->
@@ -7935,7 +7935,7 @@ function tutRender() {
   document.getElementById('tut-body').innerHTML = s.body;
   document.getElementById('tut-count').textContent = `${_tutStep + 1} / ${n}`;
   document.getElementById('tut-prev').disabled = _tutStep === 0;
-  document.getElementById('tut-next').textContent = _tutStep === n - 1 ? 'Get Started!' : 'Next →';
+  document.getElementById('tut-next').textContent = _tutStep === n - 1 ? 'Get Started!' : 'Next â†’';
   const dots = document.getElementById('tut-dots');
   dots.innerHTML = '';
   for (let i = 0; i < n; i++) {
@@ -7971,9 +7971,9 @@ function tutInit() {
   });
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    INITIALISE
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function loadDefaultExample() {
   const ex = generateExample('exponential-decay');
   importDataset(ex.name, ex.x, ex.y);
@@ -7984,7 +7984,7 @@ function loadDefaultExample() {
   renderDatasetList();
   updatePlots();
   autoInitParams();
-  setConsole(`Example loaded: ${ex.name}. Press ▶ Fit to begin.`, '');
+  setConsole(`Example loaded: ${ex.name}. Press â–¶ Fit to begin.`, '');
 }
 
 function init() {
@@ -8024,33 +8024,33 @@ function init() {
 
 init();
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PANEL TOOLTIP SYSTEM
-═══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const PANEL_TIPS = {
   'datasets':
     `<b>Datasets</b><br>Lists all loaded datasets in this tab. Each entry shows the dataset name, point count, and colour swatch.<br><br>` +
-    `Click the <b>toggle</b> (on hover) to enable/disable a dataset — disabled datasets are hidden from the plot and excluded from fitting, residual panels, and the F-test.<br><br>` +
+    `Click the <b>toggle</b> (on hover) to enable/disable a dataset â€” disabled datasets are hidden from the plot and excluded from fitting, residual panels, and the F-test.<br><br>` +
     `Double-click a name to rename it.`,
 
   'active-fits':
-    `<b>Active Fits</b><br>Lists every fit run in this tab. Click a fit to make it active — its parameters and result load into the right panel.<br><br>` +
-    `The coloured dot matches the fit curve on the plot. Hover a fit for a quick stats summary. Use <b>✕</b> to delete individual fits.`,
+    `<b>Active Fits</b><br>Lists every fit run in this tab. Click a fit to make it active â€” its parameters and result load into the right panel.<br><br>` +
+    `The coloured dot matches the fit curve on the plot. Hover a fit for a quick stats summary. Use <b>âœ•</b> to delete individual fits.`,
 
   'target-dataset':
-    `<b>Target Dataset</b><br>Selects which dataset the solver runs against when you press <b>▶ Fit</b>. Only non-masked points from this dataset are used.`,
+    `<b>Target Dataset</b><br>Selects which dataset the solver runs against when you press <b>â–¶ Fit</b>. Only non-masked points from this dataset are used.`,
 
   'point-masking':
-    `<b>Point Masking</b><br>Excludes individual points from fitting without deleting them — masked points stay visible as hollow markers on the plot.<br><br>` +
-    `<b>Mask 2.5σ</b> — exclude all points where |residual| &gt; 2.5 × RMSE for the active fit.<br>` +
-    `<b>Unmask All</b> — restore all masked points for the active dataset.<br>` +
-    `<b>Pre-Process…</b> — open the Pre-Process panel to smooth (Moving Average, Gaussian, Savitzky-Golay, Median) or Fourier-filter (low-pass, high-pass, band-pass, notch) the active dataset, or restore it to original imported values. Masked points are skipped during smoothing.<br>` +
-    `<b>Data Table</b> — per-point view with checkboxes, live residuals, and bulk exclude / include controls.`,
+    `<b>Point Masking</b><br>Excludes individual points from fitting without deleting them â€” masked points stay visible as hollow markers on the plot.<br><br>` +
+    `<b>Mask 2.5Ïƒ</b> â€” exclude all points where |residual| &gt; 2.5 Ã— RMSE for the active fit.<br>` +
+    `<b>Unmask All</b> â€” restore all masked points for the active dataset.<br>` +
+    `<b>Pre-Processâ€¦</b> â€” open the Pre-Process panel to smooth (Moving Average, Gaussian, Savitzky-Golay, Median) or Fourier-filter (low-pass, high-pass, band-pass, notch) the active dataset, or restore it to original imported values. Masked points are skipped during smoothing.<br>` +
+    `<b>Data Table</b> â€” per-point view with checkboxes, live residuals, and bulk exclude / include controls.`,
 
   'fit-model':
     `<b>Fit Model</b><br>The mathematical equation to fit to the data. 38 built-in models are grouped by type.<br><br>` +
-    `Select <b>Custom Equation</b> to type any expression in <code>x</code> — parameters are detected automatically from symbol names (any symbol other than <code>x</code> and math functions).<br><br>` +
-    `Use <b>Try All</b> in the toolbar to fit every model at once and rank by R².`,
+    `Select <b>Custom Equation</b> to type any expression in <code>x</code> â€” parameters are detected automatically from symbol names (any symbol other than <code>x</code> and math functions).<br><br>` +
+    `Use <b>Try All</b> in the toolbar to fit every model at once and rank by RÂ².`,
 
   'custom-eq':
     `<b>Custom Equation</b><br>Type any expression in the variable <code>x</code> using Math.js syntax. All symbols other than <code>x</code> and standard math functions become free parameters.<br><br>` +
@@ -8059,31 +8059,31 @@ const PANEL_TIPS = {
 
   'parameters':
     `<b>Parameters</b><br>One row per model parameter.<br><br>` +
-    `<b>Init</b> — starting guess; preserved across refits.<br>` +
-    `<b>Min / Max</b> — optional box constraints; leave blank for unconstrained.<br>` +
-    `<b>Fit</b> — converged value; hover to see ± std error.<br>` +
-    `<b>🔒</b> — lock a parameter at its Init value; useful for fixing known constants while optimising the rest.<br>` +
-    `<b>Sweep slider</b> — drag to preview the model curve in real time without fitting.<br><br>` +
+    `<b>Init</b> â€” starting guess; preserved across refits.<br>` +
+    `<b>Min / Max</b> â€” optional box constraints; leave blank for unconstrained.<br>` +
+    `<b>Fit</b> â€” converged value; hover to see Â± std error.<br>` +
+    `<b>ðŸ”’</b> â€” lock a parameter at its Init value; useful for fixing known constants while optimising the rest.<br>` +
+    `<b>Sweep slider</b> â€” drag to preview the model curve in real time without fitting.<br><br>` +
     `Click <b>Auto Init</b> to estimate starting values from the data shape.`,
 
   'algorithm-options':
     `<b>Algorithm Options</b><br>Controls how the nonlinear solver runs.<br><br>` +
-    `<b>Solver</b> — LM (robust default) · Gauss-Newton (faster near solution) · Nelder-Mead (derivative-free, good on noisy surfaces) · BFGS (quasi-Newton, fast on smooth problems).<br>` +
-    `<b>Max Iter</b> — iteration limit before the solver stops.<br>` +
-    `<b>Tolerance</b> — convergence threshold; smaller = more precise but slower.<br>` +
-    `<b>Multi-start</b> — number of random pilot runs to escape local minima (1 = off, 8 = default, ~4× compute cost).<br>` +
-    `<b>Weights</b> — None/OLS (equal) · 1/y² (relative errors) · 1/|y| (intermediate) · Huber IRLS (robust, down-weights outliers, 5 reweighting iterations) · 1/σ² (requires a σ uncertainty column).`,
+    `<b>Solver</b> â€” LM (robust default) Â· Gauss-Newton (faster near solution) Â· Nelder-Mead (derivative-free, good on noisy surfaces) Â· BFGS (quasi-Newton, fast on smooth problems).<br>` +
+    `<b>Max Iter</b> â€” iteration limit before the solver stops.<br>` +
+    `<b>Tolerance</b> â€” convergence threshold; smaller = more precise but slower.<br>` +
+    `<b>Multi-start</b> â€” number of random pilot runs to escape local minima (1 = off, 8 = default, ~4Ã— compute cost).<br>` +
+    `<b>Weights</b> â€” None/OLS (equal) Â· 1/yÂ² (relative errors) Â· 1/|y| (intermediate) Â· Huber IRLS (robust, down-weights outliers, 5 reweighting iterations) Â· 1/ÏƒÂ² (requires a Ïƒ uncertainty column).`,
 
   'plot-labels':
     `<b>Plot Labels</b><br>Sets the X axis title, Y axis title, and plot title shown on the figure.<br><br>` +
-    `Click <b>⚙ Style</b> for full graph style control: global font, background colors, grid lines, zero lines, axis spines, tick labels, legend, log axes, and axis min/max/tick spacing.`,
+    `Click <b>âš™ Style</b> for full graph style control: global font, background colors, grid lines, zero lines, axis spines, tick labels, legend, log axes, and axis min/max/tick spacing.`,
 
   'annotations':
     `<b>Annotations</b><br>Adds overlay graphics to the Plotly figure. Three types:<br><br>` +
-    `<b>Horizontal line</b> — reference at a fixed Y value (e.g. detection limit, half-max threshold).<br>` +
-    `<b>Vertical line</b> — reference at a fixed X value (e.g. time point, dose level).<br>` +
-    `<b>Text callout</b> — free text at any (X, Y) coordinate, with optional arrow.<br><br>` +
-    `<b>Peaks</b> — auto-annotates peak centres of visible Gaussian or Lorentzian fits, coloured to match the fit curve.<br><br>` +
+    `<b>Horizontal line</b> â€” reference at a fixed Y value (e.g. detection limit, half-max threshold).<br>` +
+    `<b>Vertical line</b> â€” reference at a fixed X value (e.g. time point, dose level).<br>` +
+    `<b>Text callout</b> â€” free text at any (X, Y) coordinate, with optional arrow.<br><br>` +
+    `<b>Peaks</b> â€” auto-annotates peak centres of visible Gaussian or Lorentzian fits, coloured to match the fit curve.<br><br>` +
     `Annotations are saved with the session file.`,
 
   'fit-curve-points':
@@ -8091,49 +8091,49 @@ const PANEL_TIPS = {
     `300 is sufficient for most models. Increase to 1000+ for highly oscillatory or rapidly-varying functions where the default looks jagged.`,
 
   'extrapolation-range':
-    `<b>Extrapolation Range</b><br>Sets the X range over which the fit curve is drawn — independent of the data extent. Leave blank to use the data range automatically.<br><br>` +
-    `Also sets the search domain used by <b>Y → X calibration</b> in Predict / Solve. Click <b>Reset</b> to revert to the data range.`,
+    `<b>Extrapolation Range</b><br>Sets the X range over which the fit curve is drawn â€” independent of the data extent. Leave blank to use the data range automatically.<br><br>` +
+    `Also sets the search domain used by <b>Y â†’ X calibration</b> in Predict / Solve. Click <b>Reset</b> to revert to the data range.`,
 
   'predict-solve':
     `<b>Predict / Solve</b><br>Evaluates the active fit at a specific input value.<br><br>` +
-    `<b>X → Y (predict)</b> — type an X; returns Ŷ with 95% CI half-width from Jacobian gradient propagation through the covariance matrix.<br>` +
-    `<b>Y → X (calibrate)</b> — type a target Y; finds all X solutions numerically via 500-point grid scan + bisection. Returns IC50, EC50, K<sub>m</sub>, half-life, and calibration inverses directly with CI via the delta method.`,
+    `<b>X â†’ Y (predict)</b> â€” type an X; returns Å¶ with 95% CI half-width from Jacobian gradient propagation through the covariance matrix.<br>` +
+    `<b>Y â†’ X (calibrate)</b> â€” type a target Y; finds all X solutions numerically via 500-point grid scan + bisection. Returns IC50, EC50, K<sub>m</sub>, half-life, and calibration inverses directly with CI via the delta method.`,
 
   'ftest':
     `<b>F-test (Model Comparison)</b><br>Tests whether a more complex model fits significantly better than a simpler one on the <i>same dataset</i>.<br><br>` +
-    `F = [(SSE₁ − SSE₂) / Δp] / [SSE₂ / (n − p₂)]<br><br>` +
-    `Select fit A and fit B — the simpler model (fewer parameters) is automatically the null hypothesis.<br><br>` +
-    `<b>p &lt; 0.05</b> — extra parameters are statistically justified at α = 0.05.<br>` +
-    `<b>p ≥ 0.05</b> — simpler model is adequate; prefer it by parsimony.`,
+    `F = [(SSEâ‚ âˆ’ SSEâ‚‚) / Î”p] / [SSEâ‚‚ / (n âˆ’ pâ‚‚)]<br><br>` +
+    `Select fit A and fit B â€” the simpler model (fewer parameters) is automatically the null hypothesis.<br><br>` +
+    `<b>p &lt; 0.05</b> â€” extra parameters are statistically justified at Î± = 0.05.<br>` +
+    `<b>p â‰¥ 0.05</b> â€” simpler model is adequate; prefer it by parsimony.`,
 
   'ex-model-params':
-    `<b>Model Parameters</b><br>Controls the shape and scale of the generated signal — these match the physical parameters of the chosen example model (e.g. amplitude, time constant, EC50).<br><br>` +
-    `<b>Noise (σ)</b> — standard deviation of the per-point Gaussian noise added to the clean signal.<br>` +
-    `<b>Outlier count</b> — number of random outlier points injected.<br>` +
-    `<b>Outlier scale</b> — how many σ the outliers deviate from the curve.`,
+    `<b>Model Parameters</b><br>Controls the shape and scale of the generated signal â€” these match the physical parameters of the chosen example model (e.g. amplitude, time constant, EC50).<br><br>` +
+    `<b>Noise (Ïƒ)</b> â€” standard deviation of the per-point Gaussian noise added to the clean signal.<br>` +
+    `<b>Outlier count</b> â€” number of random outlier points injected.<br>` +
+    `<b>Outlier scale</b> â€” how many Ïƒ the outliers deviate from the curve.`,
 
   'ex-extra-noise':
-    `<b>Additional Background Noise</b><br>Layers an extra independent noise distribution on top of the per-example Gaussian noise. All types share the same σ convention (same variance for the given Amplitude).<br><br>` +
-    `<b>None</b> — no extra noise added.<br>` +
-    `<b>Gaussian</b> — bell-curve noise; Amplitude = σ.<br>` +
-    `<b>Uniform (white)</b> — equal probability across [−A√3, +A√3] — same variance as Gaussian with the same amplitude.<br>` +
-    `<b>Laplacian (heavy-tail)</b> — symmetric exponential distribution; heavier tails than Gaussian, common in natural images, audio, and impulsive interference.<br><br>` +
+    `<b>Additional Background Noise</b><br>Layers an extra independent noise distribution on top of the per-example Gaussian noise. All types share the same Ïƒ convention (same variance for the given Amplitude).<br><br>` +
+    `<b>None</b> â€” no extra noise added.<br>` +
+    `<b>Gaussian</b> â€” bell-curve noise; Amplitude = Ïƒ.<br>` +
+    `<b>Uniform (white)</b> â€” equal probability across [âˆ’Aâˆš3, +Aâˆš3] â€” same variance as Gaussian with the same amplitude.<br>` +
+    `<b>Laplacian (heavy-tail)</b> â€” symmetric exponential distribution; heavier tails than Gaussian, common in natural images, audio, and impulsive interference.<br><br>` +
     `Set <b>Amplitude = 0</b> to disable.`,
 
   'ex-freq-noise':
-    `<b>Sinusoidal Interference</b><br>Adds up to 3 independent periodic components — useful for simulating powerline hum, mechanical vibration, carrier bleed-through, or any periodic artefact.<br><br>` +
-    `<b>Amplitude</b> — peak height of the sine wave in y-axis units. Set to 0 to skip that component.<br>` +
-    `<b>Freq (cyc/range)</b> — frequency expressed as cycles per full x-span: 1 = one complete sine wave across the dataset, 5 = five cycles, 0.5 = half a cycle.<br>` +
-    `<b>Phase (0–1)</b> — starting phase as a fraction of 2π: 0 = sine (starts at 0), 0.25 = cosine (starts at peak), 0.5 = inverted sine.`,
+    `<b>Sinusoidal Interference</b><br>Adds up to 3 independent periodic components â€” useful for simulating powerline hum, mechanical vibration, carrier bleed-through, or any periodic artefact.<br><br>` +
+    `<b>Amplitude</b> â€” peak height of the sine wave in y-axis units. Set to 0 to skip that component.<br>` +
+    `<b>Freq (cyc/range)</b> â€” frequency expressed as cycles per full x-span: 1 = one complete sine wave across the dataset, 5 = five cycles, 0.5 = half a cycle.<br>` +
+    `<b>Phase (0â€“1)</b> â€” starting phase as a fraction of 2Ï€: 0 = sine (starts at 0), 0.25 = cosine (starts at peak), 0.5 = inverted sine.`,
 
   'corr-matrix':
     `<b>Pearson correlation between each pair of parameters</b>, derived from the covariance matrix.<br><br>` +
-    `<b>1.00</b> (diagonal) — a parameter always correlates perfectly with itself.<br>` +
-    `<b>Near 0</b> — parameters are independent; each is well-determined on its own.<br>` +
-    `<b>Near +1</b> — parameters increase together; the solver struggles to tell them apart.<br>` +
-    `<b>Near −1</b> — parameters trade off; one can compensate for the other.<br><br>` +
-    `<b>|r| &gt; 0.95</b> is a warning: the model may be over-parameterised. Try locking one parameter (🔒) or choosing a simpler model.<br><br>` +
-    `<span style="color:var(--teal)">■</span> Teal = positive &nbsp; <span style="color:#ef4444">■</span> Red = negative`,
+    `<b>1.00</b> (diagonal) â€” a parameter always correlates perfectly with itself.<br>` +
+    `<b>Near 0</b> â€” parameters are independent; each is well-determined on its own.<br>` +
+    `<b>Near +1</b> â€” parameters increase together; the solver struggles to tell them apart.<br>` +
+    `<b>Near âˆ’1</b> â€” parameters trade off; one can compensate for the other.<br><br>` +
+    `<b>|r| &gt; 0.95</b> is a warning: the model may be over-parameterised. Try locking one parameter (ðŸ”’) or choosing a simpler model.<br><br>` +
+    `<span style="color:var(--teal)">â– </span> Teal = positive &nbsp; <span style="color:#ef4444">â– </span> Red = negative`,
 };
 
 (function wirePanelTips() {
@@ -8161,3 +8161,4 @@ const PANEL_TIPS = {
 })();
 
 })();
+

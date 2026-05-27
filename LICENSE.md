@@ -1,7 +1,7 @@
-# NON-COMMERCIAL USE LICENSE AGREEMENT
+﻿# NON-COMMERCIAL USE LICENSE AGREEMENT
 **Version 2.2 (2026)**
 
-Copyright © 2026 Asad Mirza. All rights reserved.
+Copyright Â© 2026 Asad Mirza. All rights reserved.
 
 ---
 
@@ -17,15 +17,15 @@ Copyright © 2026 Asad Mirza. All rights reserved.
 
 **1.5 "Non-Commercial Purpose"** means any of the following uses, provided they are not undertaken for monetary gain or commercial advantage:
 
-(a) **Personal and hobby use** — any individual using the Software for personal curiosity, self-learning, recreational data analysis, or hobby projects, regardless of the individual's profession or employer, provided the use is not on behalf of or for the benefit of a for-profit entity;
+(a) **Personal and hobby use** â€” any individual using the Software for personal curiosity, self-learning, recreational data analysis, or hobby projects, regardless of the individual's profession or employer, provided the use is not on behalf of or for the benefit of a for-profit entity;
 
-(b) **Academic research** — research conducted at a university, college, research institute, or government laboratory, including research funded by public or non-profit grants (e.g. NSF, NIH, EPSRC), provided the research is not performed primarily for the direct commercial benefit of a for-profit sponsor and the results are not assigned exclusively to a for-profit entity;
+(b) **Academic research** â€” research conducted at a university, college, research institute, or government laboratory, including research funded by public or non-profit grants (e.g. NSF, NIH, EPSRC), provided the research is not performed primarily for the direct commercial benefit of a for-profit sponsor and the results are not assigned exclusively to a for-profit entity;
 
-(c) **Teaching and educational instruction** — use by an educator, instructor, or student in the course of classroom teaching, coursework, tutorials, or free educational materials at any educational level (K-12, undergraduate, postgraduate, independent), provided no direct fee is charged to students specifically for access to or use of the Software, and the instructor does not derive direct personal profit from a course whose primary content depends on the Software;
+(c) **Teaching and educational instruction** â€” use by an educator, instructor, or student in the course of classroom teaching, coursework, tutorials, or free educational materials at any educational level (K-12, undergraduate, postgraduate, independent), provided no direct fee is charged to students specifically for access to or use of the Software, and the instructor does not derive direct personal profit from a course whose primary content depends on the Software;
 
-(d) **Student coursework** — use by an enrolled student completing assignments, thesis work, or independent study as part of an accredited or non-profit educational programme;
+(d) **Student coursework** â€” use by an enrolled student completing assignments, thesis work, or independent study as part of an accredited or non-profit educational programme;
 
-(e) **Non-profit scientific investigation** — use by individuals or non-profit organisations for scientific investigation where no commercial product, service, or revenue results from the use.
+(e) **Non-profit scientific investigation** â€” use by individuals or non-profit organisations for scientific investigation where no commercial product, service, or revenue results from the use.
 
 For the avoidance of doubt, the following are **not** Non-Commercial Purposes:
 
@@ -35,7 +35,7 @@ For the avoidance of doubt, the following are **not** Non-Commercial Purposes:
 
 (iii) use in paid consulting, contract work, or any service for which the Licensee charges a client or customer, even if the engagement is described as "research" or "education";
 
-(iv) use in a paid online course, subscription training platform, or commercial workshop where students pay fees and the instructor or platform derives revenue — regardless of whether the instructor considers the activity "teaching";
+(iv) use in a paid online course, subscription training platform, or commercial workshop where students pay fees and the instructor or platform derives revenue â€” regardless of whether the instructor considers the activity "teaching";
 
 (v) use in any activity from which monetary or other material compensation flows as a direct or proximate result of the use of the Software, excluding ordinary salary or stipend received from an educational institution or non-profit employer in the course of permitted teaching or research activities.
 
@@ -119,7 +119,7 @@ Redistribution of the Software, whether in original or Derivative Work form, is 
 
 ## 5. OWNERSHIP AND INTELLECTUAL PROPERTY
 
-The Software is licensed, not sold. The Licensor retains all right, title, and interest — including all copyright, patent, trade secret, trademark, and other intellectual property rights — in and to the Software, regardless of who creates modifications or additions.
+The Software is licensed, not sold. The Licensor retains all right, title, and interest â€” including all copyright, patent, trade secret, trademark, and other intellectual property rights â€” in and to the Software, regardless of who creates modifications or additions.
 
 The Licensee acknowledges that no intellectual property rights of any kind are transferred by this License. The Licensor retains full ownership of all Derived Portions of any Derivative Work created by the Licensee. The Licensee hereby irrevocably assigns to the Licensor all right, title, and interest in and to all Derived Portions of any Derivative Work, effective automatically upon creation, to the maximum extent permitted by applicable law. The Licensee shall execute any documents and take any actions the Licensor may reasonably request to perfect or evidence this assignment.
 
@@ -131,7 +131,7 @@ No patent license of any kind is granted under this License, whether expressly, 
 
 ## 6. ATTRIBUTION
 
-Any publication, presentation, thesis, report, or dissemination of research results that uses or is derived from the Software must include clear and prominent attribution to the Licensor in the form: *"Advanced Curve Fitting Studio, Asad Mirza (2026), https://dthornz.github.io/advanced-curve-fitting-studio/"*.
+Any publication, presentation, thesis, report, or dissemination of research results that uses or is derived from the Software must include clear and prominent attribution to the Licensor in the form: *"Curve Fitting Studio, Asad Mirza (2026), https://dthornz.github.io/curve-fitting-studio/"*.
 
 Nothing in this License grants permission to use the Licensor's name, institutional affiliation, likeness, or logos for endorsement, promotion, or advertising without prior written consent.
 
@@ -145,7 +145,7 @@ Commercial use of the Software is strictly prohibited absent a separate commerci
 
 (b) is effective only upon the Licensor's counter-signature and will not be implied from any course of dealing, email exchange, verbal discussion, invoice, payment, or other conduct absent a fully executed written agreement;
 
-(c) is available entirely at the Licensor's sole and absolute discretion — the Licensor has no obligation to negotiate, offer, or grant any commercial license to any party.
+(c) is available entirely at the Licensor's sole and absolute discretion â€” the Licensor has no obligation to negotiate, offer, or grant any commercial license to any party.
 
 Commercial licensing inquiries may be directed to:
 
@@ -153,7 +153,7 @@ Commercial licensing inquiries may be directed to:
 Florida International University
 asadmirza33165@gmail.com
 
-Any use of the Software for Commercial Purposes prior to the execution of a commercial license agreement constitutes wilful copyright infringement. The Licensee acknowledges that wilful infringement of a copyright may give rise to enhanced statutory damages under 17 U.S.C. § 504(c)(2) of up to USD $150,000 per work infringed, in addition to actual damages, disgorgement of profits, injunctive relief, and attorney's fees and costs.
+Any use of the Software for Commercial Purposes prior to the execution of a commercial license agreement constitutes wilful copyright infringement. The Licensee acknowledges that wilful infringement of a copyright may give rise to enhanced statutory damages under 17 U.S.C. Â§ 504(c)(2) of up to USD $150,000 per work infringed, in addition to actual damages, disgorgement of profits, injunctive relief, and attorney's fees and costs.
 
 ---
 
@@ -201,7 +201,7 @@ TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW:
 
 The Licensee acknowledges and agrees that:
 
-(a) any breach or threatened breach of this License — including, without limitation, any unauthorised Commercial use — would cause the Licensor immediate and irreparable harm for which monetary damages would be an inadequate remedy;
+(a) any breach or threatened breach of this License â€” including, without limitation, any unauthorised Commercial use â€” would cause the Licensor immediate and irreparable harm for which monetary damages would be an inadequate remedy;
 
 (b) the Licensor is therefore entitled to seek equitable relief, including temporary restraining orders, preliminary injunctions, and permanent injunctions, without the requirement to post any bond or other security and without proof of actual damages; and
 
@@ -235,7 +235,7 @@ Nothing in this License grants any right to use the Licensor's trade names, trad
 
 ## 16. GOVERNING LAW AND DISPUTE RESOLUTION
 
-This License, and all matters relating to its interpretation, validity, and enforcement as a contract, shall be governed by and construed in accordance with the laws of the State of Florida, United States of America, without regard to its conflict-of-law provisions. All copyright, patent, and other intellectual property rights in the Software are governed by applicable United States federal law, including the Copyright Act (17 U.S.C. § 101 et seq.).
+This License, and all matters relating to its interpretation, validity, and enforcement as a contract, shall be governed by and construed in accordance with the laws of the State of Florida, United States of America, without regard to its conflict-of-law provisions. All copyright, patent, and other intellectual property rights in the Software are governed by applicable United States federal law, including the Copyright Act (17 U.S.C. Â§ 101 et seq.).
 
 Any dispute, claim, or controversy arising out of or relating to this License or the Software shall be subject to the exclusive jurisdiction of the state and federal courts located in Miami-Dade County, Florida. The Licensee irrevocably consents to the personal jurisdiction of such courts, waives any objection to venue in such courts, and waives any claim that such courts are an inconvenient forum.
 
@@ -281,4 +281,6 @@ If the Licensee does not agree to all terms of this License, it must immediately
 
 ---
 
-*Copyright © 2026 Asad Mirza. All rights reserved.*
+*Copyright Â© 2026 Asad Mirza. All rights reserved.*
+
+

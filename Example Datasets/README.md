@@ -1,6 +1,6 @@
-# Example Datasets
+﻿# Example Datasets
 
-Sample data files demonstrating the import formats accepted by the Advanced Curve Fitting Studio.
+Sample data files demonstrating the import formats accepted by the Curve Fitting Studio.
 
 ## Formats supported
 
@@ -16,16 +16,17 @@ Sample data files demonstrating the import formats accepted by the Advanced Curv
 
 | Folder | Contents |
 |--------|----------|
-| `General/` | Common curve shapes — decay, peaks, growth, oscillation, power law, calibration |
+| `General/` | Common curve shapes â€” decay, peaks, growth, oscillation, power law, calibration |
 | `Electrophysiology/` | Voltage-clamp I-V curves, G-V activation, gating time constants |
 | `Biology_Pharmacology/` | Dose-response, enzyme kinetics, bacterial growth curves |
 | `Physics_Materials/` | XRD diffraction peaks, stress-strain, damped oscillation |
-| `With_Uncertainty/` | Files with a third σ column for weighted / error-bar fitting |
+| `With_Uncertainty/` | Files with a third Ïƒ column for weighted / error-bar fitting |
 
 ## Import tips
 
-- **Two-column files** (X, Y only) are imported directly — no Column Picker dialog.
-- **Three or more columns** open the Column Picker so you can choose which columns to use as X, Y, and optionally σ.
-- Column headers can include units, spaces, and special characters — they are displayed exactly as written.
-- Files with no header row work fine; columns are labelled Col 1, Col 2, … automatically.
-- All files here use UTF-8 encoding with Unix or Windows line endings — both are accepted.
+- **Two-column files** (X, Y only) are imported directly â€” no Column Picker dialog.
+- **Three or more columns** open the Column Picker so you can choose which columns to use as X, Y, and optionally Ïƒ.
+- Column headers can include units, spaces, and special characters â€” they are displayed exactly as written.
+- Files with no header row work fine; columns are labelled Col 1, Col 2, â€¦ automatically.
+- All files here use UTF-8 encoding with Unix or Windows line endings â€” both are accepted.
+
