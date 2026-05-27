@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.3.0</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.4.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -230,7 +230,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.3.0</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.4.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1584,12 +1584,26 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.4.0 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.4.0</span>
+          <span class="relnotes-ver-date">2026-05-26</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Unsaved-data guard</strong> — if any tab contains datasets or fits, closing or refreshing the browser triggers the native "leave page?" confirmation dialog; the session is also silently auto-saved to <code>localStorage</code> at that moment so it can be restored on the next visit</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Stats bar whitespace</strong> — the stats table now fills the full height of the stats bar area, eliminating the blank white gap that appeared below the table when the correlation panel was taller than the fit results</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Correlation panel widened and redesigned</strong> — default width increased from 300 px to 420 px; layout changed from side-by-side (heatmap left, list right) to stacked (heatmap on top, pair list below), giving both the heatmap and every pair-name / value / bar their full panel width with no truncation</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Fixed mojibake (garbled emoji and arrows) in <code>tutorial.js</code> and <code>export.js</code> caused by a double-encode of UTF-8 text as Windows-1252</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.3.0 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.3.0</span>
+          <span class="relnotes-ver-num">v1.3.0</span>
           <span class="relnotes-ver-date">2026-05-26</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Settings panel</strong> — ⚙ Settings under the Session ▾ dropdown. Appearance section: UI font size (range slider), UI font family (6 presets), monospace font (6 presets), theme (Light / Dark buttons), animation speed (Normal / Fast / None). Fitting Defaults section: default solver, multi-start pilot count, default weight scheme. Display section: numeric precision (3–6 sig figs), fit line width, scatter marker size, default CI bands, default legend. All settings persist across sessions via <code>localStorage</code></span></li>

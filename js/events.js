@@ -1075,4 +1075,17 @@ function initEvents() {
   syncModelCustomSection();
   initResizablePanels();
   tutInit();
+
+  /* ── Unsaved-data guard on close / refresh ─────────────── */
+  window.addEventListener('beforeunload', function(e) {
+    const payload = buildMultiTabPayload();
+    const hasData = payload.tabs.some(t => {
+      const p = t.payload;
+      return p && ((p.datasets && p.datasets.length > 0) || (p.fits && p.fits.length > 0));
+    });
+    if (!hasData) return;
+    try { localStorage.setItem('cfs_session', JSON.stringify(payload)); } catch (_) {}
+    e.preventDefault();
+    e.returnValue = '';
+  });
 }
