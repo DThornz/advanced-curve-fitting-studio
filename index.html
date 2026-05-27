@@ -557,6 +557,24 @@
 
   </div><!-- end app-shell -->
 
+  <!-- Unsaved-data guard modal -->
+  <div class="modal-backdrop" id="unsaved-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="unsaved-modal-title">
+    <div class="modal" style="width:400px">
+      <div class="modal-header">
+        <span class="modal-title" id="unsaved-modal-title">Unsaved Session</span>
+      </div>
+      <div class="modal-body" style="font-size:.88em">
+        <p style="margin:0 0 8px;color:var(--text)">You have datasets or fits that haven't been saved to a file.</p>
+        <p style="margin:0;color:var(--dim);font-size:.93em">Save a session JSON to keep your work. Your session is also auto-saved to local storage — if <strong>Auto-restore</strong> is enabled, it will be recovered on your next visit even if you leave without saving.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="unsaved-cancel">Cancel</button>
+        <button class="btn btn-danger" id="unsaved-leave">Leave without saving</button>
+        <button class="btn btn-primary" id="unsaved-save">Save &amp; refresh</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Pre-Process modal -->
   <div class="app-modal" id="preprocess-modal" style="display:none" role="dialog" aria-modal="true">
     <div class="modal-box" style="max-width:530px">

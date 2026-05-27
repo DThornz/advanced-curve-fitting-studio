@@ -1076,16 +1076,74 @@ function initEvents() {
   initResizablePanels();
   tutInit();
 
-  /* ── Unsaved-data guard on close / refresh ─────────────── */
-  window.addEventListener('beforeunload', function(e) {
+  /* ── Unsaved-data guard ────────────────────────────────── */
+  let _allowLeave = false;
+
+  function _hasSessionData() {
     const payload = buildMultiTabPayload();
-    const hasData = payload.tabs.some(t => {
+    return payload.tabs.some(t => {
       const p = t.payload;
       return p && ((p.datasets && p.datasets.length > 0) || (p.fits && p.fits.length > 0));
     });
-    if (!hasData) return;
-    try { localStorage.setItem('cfs_session', JSON.stringify(payload)); } catch (_) {}
+  }
+
+  function _saveAllAndLeave(doLeave) {
+    const payload = buildMultiTabPayload();
+    const json = JSON.stringify(payload, null, 2);
+    try { localStorage.setItem('cfs_session', json); } catch (_) {}
+    const blob = new Blob([json], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `curve-fit-session-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    if (doLeave) { _allowLeave = true; location.reload(); }
+  }
+
+  // Native dialog for browser X button, address-bar navigation, etc.
+  window.addEventListener('beforeunload', function(e) {
+    if (_allowLeave) return;
+    if (!_hasSessionData()) return;
+    // Auto-save to localStorage so Auto-restore can recover the session
+    try { localStorage.setItem('cfs_session', JSON.stringify(buildMultiTabPayload())); } catch (_) {}
     e.preventDefault();
     e.returnValue = '';
   });
+
+  // Custom modal for F5 / Ctrl+R / Cmd+R — intercept before browser refresh
+  const _unsavedModal = document.getElementById('unsaved-modal');
+  let _pendingLeave = null;
+
+  function _showUnsavedModal(leaveCallback) {
+    _pendingLeave = leaveCallback;
+    _unsavedModal.style.display = 'flex';
+  }
+  function _hideUnsavedModal() {
+    _unsavedModal.style.display = 'none';
+    _pendingLeave = null;
+  }
+
+  document.getElementById('unsaved-cancel').addEventListener('click', _hideUnsavedModal);
+
+  document.getElementById('unsaved-leave').addEventListener('click', function() {
+    const cb = _pendingLeave;
+    _hideUnsavedModal();
+    _allowLeave = true;
+    if (cb) cb();
+  });
+
+  document.getElementById('unsaved-save').addEventListener('click', function() {
+    _hideUnsavedModal();
+    _saveAllAndLeave(true);
+  });
+
+  // Capture-phase keydown so we run before any other handler
+  document.addEventListener('keydown', function(e) {
+    const isRefresh = e.key === 'F5' ||
+                      ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R'));
+    if (!isRefresh) return;
+    if (!_hasSessionData()) return;
+    e.preventDefault();
+    _showUnsavedModal(() => location.reload());
+  }, true);
 }
