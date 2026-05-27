@@ -136,7 +136,7 @@ const MODELS = {
   },
   'Hill': {
     params: ['Vmax', 'Kd', 'n'],
-    fn: (x, [Vm, Kd, n]) => Vm * Math.pow(x, n) / (Math.pow(Math.abs(Kd), n) + Math.pow(x, n)),
+    fn: (x, [Vmax, Kd, n]) => Vmax * Math.pow(x, n) / (Math.pow(Math.abs(Kd), n) + Math.pow(x, n)),
     analytic: false,
     autoInit(x, y) {
       const Vmax = Math.max(...y) * 1.2;
@@ -210,8 +210,9 @@ const MODELS = {
     autoInit(x, y) {
       const yf = y.filter(isFinite);
       const A = Math.max(...yf);
-      const Vh = x[Math.floor(x.length / 2)];
-      return [isFinite(A) ? A : 1, Vh, 10];
+      const half = A / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      return [isFinite(A) ? A : 1, x[idx], 10];
     }
   },
   'Double-Boltzmann': {
@@ -223,9 +224,10 @@ const MODELS = {
     autoInit(x, y) {
       const yf = y.filter(isFinite);
       const A = Math.max(...yf);
-      const xlo = x[Math.floor(x.length * 0.25)];
-      const xhi = x[Math.floor(x.length * 0.75)];
-      return [isFinite(A) ? A * 0.6 : 1, xlo, 8, isFinite(A) ? A * 0.4 : 0.5, xhi, 8];
+      const q1 = A * 0.25, q3 = A * 0.75;
+      const idx1 = y.reduce((b, yi, i) => Math.abs(yi - q1) < Math.abs(y[b] - q1) ? i : b, 0);
+      const idx2 = y.reduce((b, yi, i) => Math.abs(yi - q3) < Math.abs(y[b] - q3) ? i : b, 0);
+      return [isFinite(A) ? A * 0.6 : 1, x[idx1], 8, isFinite(A) ? A * 0.4 : 0.5, x[idx2], 8];
     }
   },
   'HH-Activation': {
@@ -326,14 +328,18 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.25));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const peak = Math.max(...shifted);
-      const imax = shifted.indexOf(peak);
-      const mu1 = x[imax] ?? x[Math.floor(x.length / 2)];
-      const A1 = Math.max(peak, 1e-6);
+      const peak1 = Math.max(...shifted);
+      const imax1 = shifted.indexOf(peak1);
+      const mu1 = x[imax1] ?? x[Math.floor(x.length / 2)];
+      const A1 = Math.max(peak1, 1e-6);
       const xRange = Math.max(...x) - Math.min(...x);
       const sig = xRange / 8 || 1;
-      const mu2 = mu1 + sig * 2;
-      return [A1 * 0.8, mu1, sig, A1 * 0.5, mu2, sig, C];
+      const masked = shifted.map((v, i) => Math.abs(x[i] - mu1) > sig * 2 ? v : -Infinity);
+      const peak2 = Math.max(...masked);
+      const imax2 = masked.indexOf(peak2);
+      const mu2 = imax2 >= 0 && peak2 > -Infinity ? x[imax2] : (mu1 + xRange / 3);
+      const A2 = Math.max(peak2 > 0 ? peak2 : A1 * 0.5, 1e-6);
+      return [A1 * 0.8, mu1, sig, A2 * 0.8, mu2, sig, C];
     }
   },
   'Biexponential': {
@@ -421,8 +427,11 @@ const MODELS = {
       const shifted = y.map(v => v - C);
       const maxI = shifted.indexOf(Math.max(...shifted));
       const A = Math.max(shifted[maxI], 1e-6), x0 = x[maxI];
-      const w = (Math.max(...x) - Math.min(...x)) / 8 || 1;
-      return [A, x0, w, w, 0.5, C];
+      const xRange = Math.max(...x) - Math.min(...x);
+      const fwhm = xRange / 6 || 1;
+      const g = fwhm / 2;
+      const s = fwhm / 2.355;
+      return [A, x0, g, s, 0.5, C];
     }
   },
   'Fano': {

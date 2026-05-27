@@ -198,10 +198,11 @@ function computeCIBands(fit, xs) {
 }
 
 function computePIBands(fit, xs) {
-  const { covMatrix, dof, params, rmse } = fit.result;
+  const { covMatrix, dof, params, rmse, wrmse } = fit.result;
   if (!covMatrix || dof <= 0 || rmse == null) return null;
   const m = params.length;
   const tCrit = tCritical95(dof);
+  const effectiveRmse = wrmse != null ? wrmse : rmse;
   const EPS = 1e-7;
   const lower = [], upper = [];
   for (const x of xs) {
@@ -218,7 +219,7 @@ function computePIBands(fit, xs) {
       for (let j = 0; j < m; j++)
         variance += g[i] * covMatrix[i][j] * g[j];
     if (!isFinite(variance) || variance < 0) variance = 0;
-    const hw = tCrit * Math.sqrt(variance + rmse * rmse);
+    const hw = tCrit * Math.sqrt(variance + effectiveRmse * effectiveRmse);
     lower.push(y0 - hw);
     upper.push(y0 + hw);
   }

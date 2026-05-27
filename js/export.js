@@ -35,7 +35,9 @@ function exportCSV() {
     });
   }
   const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${exportFilename()}-results.csv`; a.click();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${exportFilename()}-results.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function exportReport() {
@@ -77,7 +79,9 @@ function exportReport() {
   txt += `Iterations: ${r.iter}\n`;
   txt += `=======================================================\n`;
   const blob = new Blob([txt], { type: 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${exportFilename()}-report.txt`; a.click();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${exportFilename()}-report.txt`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function exportPython() {
@@ -132,6 +136,13 @@ function exportPython() {
   };
   fnBody = modelDefs[fit.model] || `# Custom model: ${fit.model}\n    raise NotImplementedError("Define your model here")`;
 
+  const bounds = fit.bounds;
+  const hasLo = bounds && bounds.lo && bounds.lo.some(v => v !== null);
+  const hasHi = bounds && bounds.hi && bounds.hi.some(v => v !== null);
+  const hasBounds = hasLo || hasHi;
+  const loStr = bounds ? '[' + bounds.lo.map(v => v !== null ? v.toPrecision(6) : '-np.inf').join(', ') + ']' : '[-np.inf]';
+  const hiStr = bounds ? '[' + bounds.hi.map(v => v !== null ? v.toPrecision(6) : 'np.inf').join(', ') + ']' : '[np.inf]';
+
   const lines = [
     `import numpy as np`,
     `from scipy.optimize import curve_fit`,
@@ -147,9 +158,14 @@ function exportPython() {
     ``,
     `# Initial parameters from fit`,
     `p0 = [${p0Str}]`,
+    ...(hasBounds ? [
+    `bounds = (${loStr}, ${hiStr})`,
+    ] : []),
     ``,
     `# Fit`,
-    `popt, pcov = curve_fit(model, x_data, y_data, p0=p0, maxfev=10000)`,
+    hasBounds
+      ? `popt, pcov = curve_fit(model, x_data, y_data, p0=p0, bounds=bounds, maxfev=10000)`
+      : `popt, pcov = curve_fit(model, x_data, y_data, p0=p0, maxfev=10000)`,
     `perr = np.sqrt(np.diag(pcov))`,
     ``,
     `# Results`,
@@ -168,8 +184,10 @@ function exportPython() {
   ];
 
   const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const pyUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = pyUrl;
   a.download = `${exportFilename()}-fit.py`; a.click();
+  setTimeout(() => URL.revokeObjectURL(pyUrl), 60000);
   setConsole('Python script downloaded.', '');
 }
 
@@ -223,6 +241,13 @@ function exportR() {
   };
   const formula = modelDefs[fit.model] || `# Define formula for ${fit.model}`;
 
+  const rBounds = fit.bounds;
+  const rHasLo = rBounds && rBounds.lo && rBounds.lo.some(v => v !== null);
+  const rHasHi = rBounds && rBounds.hi && rBounds.hi.some(v => v !== null);
+  const rHasBounds = rHasLo || rHasHi;
+  const rLoStr = rBounds ? 'c(' + rBounds.lo.map(v => v !== null ? v.toPrecision(6) : '-Inf').join(', ') + ')' : null;
+  const rHiStr = rBounds ? 'c(' + rBounds.hi.map(v => v !== null ? v.toPrecision(6) : 'Inf').join(', ') + ')' : null;
+
   const lines = [
     `# Curve Fitting Studio — R export`,
     `# Model: ${fit.model}`,
@@ -232,24 +257,37 @@ function exportR() {
     `y_data <- ${yArr}`,
     `df <- data.frame(x = x_data, y = y_data)`,
     ``,
+    ...(rHasBounds ? [
+    `# Fit with nlsLM (supports parameter bounds; requires minpack.lm)`,
+    `library(minpack.lm)`,
+    `fit_result <- nlsLM(y ~ ${formula},`,
+    `             data = df,`,
+    `             start = list(${startStr}),`,
+    `             lower = ${rLoStr},`,
+    `             upper = ${rHiStr},`,
+    `             control = nls.lm.control(maxiter = 500))`,
+    ] : [
     `# Fit with nls()`,
-    `fit <- nls(y ~ ${formula},`,
+    `fit_result <- nls(y ~ ${formula},`,
     `           data = df,`,
     `           start = list(${startStr}),`,
     `           control = nls.control(maxiter = 500))`,
+    ]),
     ``,
     `# Results`,
-    `print(summary(fit))`,
+    `print(summary(fit_result))`,
     ``,
     `# Plot`,
     `plot(df$x, df$y, pch = 16, xlab = "x", ylab = "y", main = "${fit.model} fit")`,
     `x_seq <- seq(min(df$x), max(df$x), length.out = 300)`,
-    `lines(x_seq, predict(fit, newdata = data.frame(x = x_seq)), col = "red", lwd = 2)`,
+    `lines(x_seq, predict(fit_result, newdata = data.frame(x = x_seq)), col = "red", lwd = 2)`,
   ];
 
   const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const rUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = rUrl;
   a.download = `${exportFilename()}-fit.R`; a.click();
+  setTimeout(() => URL.revokeObjectURL(rUrl), 60000);
   setConsole('R script downloaded.', '');
 }
 
@@ -372,6 +410,13 @@ function exportMATLAB() {
   };
   const fnExpr = modelDefs[fit.model] || `% Define model for ${fit.model} here`;
 
+  const mBounds = fit.bounds;
+  const mHasLo = mBounds && mBounds.lo && mBounds.lo.some(v => v !== null);
+  const mHasHi = mBounds && mBounds.hi && mBounds.hi.some(v => v !== null);
+  const mHasBounds = mHasLo || mHasHi;
+  const mLoStr = mBounds ? '[' + mBounds.lo.map(v => v !== null ? v.toPrecision(6) : '-Inf').join(', ') + ']' : '[]';
+  const mHiStr = mBounds ? '[' + mBounds.hi.map(v => v !== null ? v.toPrecision(6) : 'Inf').join(', ') + ']' : '[]';
+
   const lines = [
     `% Curve Fitting Studio — MATLAB export`,
     `% Model: ${fit.model}`,
@@ -387,10 +432,16 @@ function exportMATLAB() {
     ``,
     `% Initial parameters from fit`,
     `p0 = [${p0Str}];`,
+    ...(mHasBounds ? [
+    `lb = ${mLoStr};`,
+    `ub = ${mHiStr};`,
+    ] : []),
     ``,
     `% Fit`,
     `opts = optimoptions('lsqcurvefit', 'MaxFunctionEvaluations', 10000, 'Display', 'off');`,
-    `[popt, ~, res, ~, ~, ~, J] = lsqcurvefit(model, p0, x_data, y_data, [], [], opts);`,
+    mHasBounds
+      ? `[popt, ~, res, ~, ~, ~, J] = lsqcurvefit(model, p0, x_data, y_data, lb, ub, opts);`
+      : `[popt, ~, res, ~, ~, ~, J] = lsqcurvefit(model, p0, x_data, y_data, [], [], opts);`,
     ``,
     `% Parameter uncertainties`,
     `MSE  = sum(res.^2) / (numel(x_data) - numel(p0));`,
@@ -414,8 +465,10 @@ function exportMATLAB() {
   ];
 
   const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const mUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = mUrl;
   a.download = `${exportFilename()}-fit.m`; a.click();
+  setTimeout(() => URL.revokeObjectURL(mUrl), 60000);
   setConsole('MATLAB script downloaded.', '');
 }
 

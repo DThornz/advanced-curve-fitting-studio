@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.4.0</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.5.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -230,7 +230,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.4.0</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.5.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -578,7 +578,7 @@
   <!-- Pre-Process modal -->
   <div class="app-modal" id="preprocess-modal" style="display:none" role="dialog" aria-modal="true">
     <div class="modal-box" style="max-width:530px">
-      <div class="modal-header"><span>Pre-Process Data</span><button class="modal-close-btn" id="pp-modal-close">×</button></div>
+      <div class="modal-header"><span>Pre-Process Data</span><button class="modal-close-btn" id="pp-modal-close" aria-label="Close">×</button></div>
       <div style="padding:14px 16px;overflow-y:auto;flex:1;font-size:.82em">
 
         <!-- Smoothing section -->
@@ -685,7 +685,7 @@
   <!-- Keyboard shortcuts modal -->
   <div class="app-modal" id="shortcuts-modal" style="display:none" role="dialog" aria-modal="true">
     <div class="modal-box" style="max-width:480px">
-      <div class="modal-header"><span>Keyboard Shortcuts</span><button class="modal-close-btn" id="shortcuts-modal-close">×</button></div>
+      <div class="modal-header"><span>Keyboard Shortcuts</span><button class="modal-close-btn" id="shortcuts-modal-close" aria-label="Close">×</button></div>
       <div style="padding:12px 16px">
         <table style="width:100%;border-collapse:collapse;font-size:.8em">
           <thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px">Shortcut</th><th style="text-align:left;padding:4px 8px">Action</th></tr></thead>
@@ -709,7 +709,7 @@
   <!-- Equation Editor Modal -->
   <div class="app-modal" id="eq-editor-modal" style="display:none" role="dialog" aria-modal="true" aria-label="Equation Editor">
     <div class="modal-box eq-ed-modal-box">
-      <div class="modal-header"><span>Equation Editor</span><button class="modal-close-btn" id="eq-editor-close">×</button></div>
+      <div class="modal-header"><span>Equation Editor</span><button class="modal-close-btn" id="eq-editor-close" aria-label="Close">×</button></div>
       <div class="eq-ed-body">
         <!-- Top: textarea + status -->
         <div class="eq-ed-top">
@@ -931,7 +931,7 @@
         <div style="display:flex;gap:6px;align-items:center">
           <button class="btn" id="dt-include-all" style="font-size:.72em;padding:2px 8px">Include All</button>
           <button class="btn" id="dt-exclude-selected" style="font-size:.72em;padding:2px 8px" title="Exclude points where residual > 2.5σ (requires active fit on this dataset)">Exclude 2.5σ</button>
-          <button class="modal-close-btn" id="data-table-close">×</button>
+          <button class="modal-close-btn" id="data-table-close" aria-label="Close">×</button>
         </div>
       </div>
       <div style="padding:6px 12px;font-size:.75em;color:var(--dimmer)" id="data-table-summary"></div>
@@ -1602,12 +1602,40 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.5.0 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.5.0</span>
+          <span class="relnotes-ver-date">2026-05-27</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>LM damping (Marquardt scaling)</strong> — replaced the flat <code>JtJ*(1+λ)+1e-10</code> augmentation with proper <code>JtJ + λ·diag(|JtJ|)</code>; damping now scales with parameter sensitivity, preventing over-damping of well-conditioned directions</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>LM and GN convergence criterion</strong> — changed AND logic to OR so that a fit converges when <em>either</em> the step norm or the SSE change falls below tolerance; the AND condition was preventing convergence on flat regions</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>AIC / BIC full MLE form</strong> — added the <code>n·(ln 2π + 1)</code> constant so exported AIC/BIC values match R / Python / MATLAB output</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Weighted RMSE for prediction intervals</strong> — PI bands now use the weighted residual variance when a weight scheme is active</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>t-critical table interpolation</strong> — smooth interpolation added for df 121–200, eliminating a 0.020 step discontinuity at df = 120→121</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Huber IRLS iterations 5 → 20</strong> — more stable convergence under heavy outlier contamination</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>1/y² zero-weight warning</strong> — console warning shown when any y = 0 point is present with 1/y² weighting</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Model auto-init heuristics</strong> — Boltzmann/Double-Boltzmann seed from actual A/2 data crossing; Pseudo-Voigt uses distinct γ and σ; Double-Gaussian masks the first peak before searching for the second</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Hill model parameter name</strong> — internal destructuring corrected from <code>Vm</code> to <code>Vmax</code></span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>FFT Nyquist bin</strong> — DC and Nyquist bins scaled once each; conjugate-symmetric bins mirrored correctly</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Session restore null-fn guard</strong> — fits with unknown model receive a <code>() => NaN</code> stub instead of <code>null</code></span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>FileReader error handler</strong> — session file read failures now surface a visible error message</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Session payload validation</strong> — <code>restoreMultiTabPayload</code> throws a descriptive error on null/non-object input</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Bounds preserved in session and exports</strong> — parameter bounds stored on fit records, serialized to session JSON, and emitted in Python / R / MATLAB exports when non-default bounds were set</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Object URL leak</strong> — all blob download links schedule <code>revokeObjectURL</code> 60 s after click</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Log-scale banner z-index</strong> — raised from 15 to 110 so it renders above the topbar</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Correlation panel responsive</strong> — narrows to 280 px on viewports ≤ 700 px wide</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Accessibility: added <code>aria-label="Close"</code> to all modal close buttons</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.4.0 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.4.0</span>
+          <span class="relnotes-ver-num">v1.4.0</span>
           <span class="relnotes-ver-date">2026-05-26</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Unsaved-data guard</strong> — if any tab contains datasets or fits, closing or refreshing the browser triggers the native "leave page?" confirmation dialog; the session is also silently auto-saved to <code>localStorage</code> at that moment so it can be restored on the next visit</span></li>

@@ -104,6 +104,7 @@ function tCritical95(df) {
   if (df <= 30) return 2.086 - (df - 20) * 0.044 / 10;
   if (df <= 60) return 2.042 - (df - 30) * 0.042 / 30;
   if (df <= 120) return 2.000 - (df - 60) * 0.020 / 60;
+  if (df <= 200) return 1.980 - (df - 120) * 0.020 / 80;
   return 1.960;
 }
 

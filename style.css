@@ -440,7 +440,7 @@ body.dark-mode .ds-edit:hover{color:#fbbf24!important}
 /* ── Log-scale suggest banner ────────────────────────────── */
 #log-suggest-banner{
   position:absolute;top:8px;left:50%;transform:translateX(-50%);
-  z-index:15;display:flex;align-items:center;gap:6px;
+  z-index:110;display:flex;align-items:center;gap:6px;
   background:rgba(245,158,11,.10);border:1px solid var(--amber);
   border-radius:6px;padding:4px 10px;
   font-size:.71em;color:var(--text);white-space:nowrap;
@@ -1237,6 +1237,7 @@ body.dark-mode .sett-toggle-track{background:#1c3050!important}
 .app-statsbar.corr-empty #rh-corr{display:none}
 .statsbar-corr-inner{flex:1;overflow-y:auto;padding:8px 10px}
 body.dark-mode .statsbar-corr{border-color:#1c3050!important;background:#0a1628!important}
+@media(max-width:700px){.statsbar-corr{flex:0 0 280px}}
 
 /* ── Corr two-column layout ──────────────────────────────── */
 .corr-panel-cols{display:flex;flex-direction:column;gap:8px}

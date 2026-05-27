@@ -400,6 +400,40 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ---
 
+## Changelog
+
+### v1.5.0 — 2026-05-27
+- **fix** LM damping — proper Marquardt scaling `JtJ + λ·diag(|JtJ|)` replaces flat `JtJ*(1+λ)+1e-10`
+- **fix** LM and GN convergence — OR logic so either step-norm or ΔSSE below tolerance triggers convergence
+- **fix** AIC / BIC — full MLE constant `n·(ln 2π + 1)` added; absolute values now match R / Python / MATLAB
+- **fix** Weighted RMSE for prediction intervals — PI bands use weighted residual variance when weighting is active
+- **fix** t-critical table — smooth interpolation for df 121–200, eliminating a 0.020 step at df = 120→121
+- **improve** Huber IRLS iterations 5 → 20 for robustness under heavy outlier contamination
+- **new** 1/y² zero-weight warning — console warning when any y = 0 point is present
+- **improve** Model auto-init heuristics — Boltzmann/Double-Boltzmann seed from A/2 data crossing; Pseudo-Voigt uses distinct γ / σ; Double-Gaussian masks first peak before searching for second
+- **fix** Hill model parameter name — `Vm` → `Vmax` in internal destructuring
+- **fix** FFT Nyquist bin — DC and Nyquist scaled once; conjugate-symmetric bins mirrored correctly
+- **fix** Session restore null-fn guard — unknown-model fits get `() => NaN` stub instead of `null`
+- **fix** FileReader error handler — session file read failures surface a visible error message
+- **fix** Session payload validation — `restoreMultiTabPayload` throws descriptive error on invalid input
+- **new** Bounds in session and exports — parameter bounds stored on fit records and emitted in Python / R / MATLAB exports
+- **fix** Object URL leak — all blob download links schedule `revokeObjectURL` 60 s after click
+- **fix** Log-scale banner z-index raised from 15 to 110
+- **improve** Correlation panel responsive — narrows to 280 px on viewports ≤ 700 px wide
+- **improve** Accessibility — `aria-label="Close"` on all modal close buttons
+
+### v1.4.0 — 2026-05-26
+- **new** Unsaved-data guard — beforeunload confirmation + localStorage auto-save
+- **fix** Stats bar whitespace below the fit results table
+- **improve** Correlation panel widened to 420 px, stacked layout
+- **fix** Mojibake in `tutorial.js` and `export.js`
+
+### v1.3.0 — 2026-05-26
+- **new** Settings panel (appearance, fitting defaults, display)
+- **new** Parameter correlation panel moved to stats bar
+
+---
+
 ## Design Principles
 
 - **Offline-first** — works with no internet after initial load.

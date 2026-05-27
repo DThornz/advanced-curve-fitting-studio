@@ -177,6 +177,7 @@ function runFit() {
   // Compute weights
   let weights = null;
   if (weightMode === '1/y2') {
+    if (yArr.some(v => v === 0)) setConsole('Warning: 1/y² weighting with y=0 — those points get near-infinite weight. Consider excluding them.', 'warn');
     weights = yArr.map(y => 1 / Math.max(y * y, 1e-20));
   } else if (weightMode === '1/y') {
     weights = yArr.map(y => 1 / Math.max(Math.abs(y), 1e-10));
@@ -222,7 +223,7 @@ function runFit() {
     const paramRows2 = state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max }));
     setConsole('IRLS fitting (Huber)…', '');
     let result2 = solve2(modelFn, xArr, yArr, p02, { maxIter: maxIter2, tol: tol2, paramRows: paramRows2 });
-    const IRLS_ITERS = 5, HUBER_C = 1.345;
+    const IRLS_ITERS = 20, HUBER_C = 1.345;
     for (let iter = 0; iter < IRLS_ITERS; iter++) {
       const resid = result2.residuals || xArr.map((x, i) => yArr[i] - modelFn(x, result2.params));
       const sortedResid = resid.slice().sort((a, b) => a - b);
@@ -340,7 +341,7 @@ function runFit() {
           })(customCompiled))
         : m.fn;
 
-      _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory });
+      _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory, paramRows: state.paramRows });
     }
   };
 
@@ -378,10 +379,10 @@ function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, 
   result = nStarts > 1
     ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
     : solve(modelFn, xArr, yArr, p0, opts);
-  _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory: null });
+  _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory: null, paramRows });
 }
 
-function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory }) {
+function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory, paramRows: capturedRows }) {
   if (!state.datasets.find(d => d.id === dsId)) { setConsole('Dataset was removed during fitting.', 'warn'); return; }
   const m = MODELS[model];
   const fitColor = state.fits.some(f => f.dsId === dsId) ? nextColor() : ds.color;
@@ -403,11 +404,18 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
     result.chiSqRed = chiSq / dof;
   }
 
+  const rows = capturedRows || state.paramRows;
+  const fitBounds = rows && rows.length ? {
+    lo: rows.map(r => (r && typeof r.min === 'number' && r.min > -1e9) ? r.min : null),
+    hi: rows.map(r => (r && typeof r.max === 'number' && r.max < 1e9) ? r.max : null),
+  } : null;
+
   const fitRecord = {
     id: nextId(), dsId, model, algo: algoKey,
     label: fitLabel, color: fitColor,
     result, fn: modelFn, visible: true,
     paramNames, curvePoints: curvePts, sseHistory,
+    bounds: fitBounds,
   };
   state.fits.push(fitRecord);
   state.activeFitId = fitRecord.id;

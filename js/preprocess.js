@@ -322,10 +322,12 @@ function applyFourierFilter(type, cutoffLo, cutoffHi, rolloff) {
     }
   }
 
-  for (let k = 0; k <= halfN; k++) {
+  re[0] *= gain(0); im[0] *= gain(0);
+  if (halfN > 0) { re[halfN] *= gain(halfN); im[halfN] *= gain(halfN); }
+  for (let k = 1; k < halfN; k++) {
     const g = gain(k);
     re[k] *= g; im[k] *= g;
-    if (k > 0 && k < halfN) { re[N - k] *= g; im[N - k] *= g; }
+    re[N - k] *= g; im[N - k] *= g;
   }
   _ifftInPlace(re, im);
 

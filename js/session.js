@@ -26,6 +26,7 @@ function buildSessionPayload() {
       color: f.color, visible: f.visible, paramNames: f.paramNames,
       curvePoints: f.curvePoints, result: f.result,
       customExpr: f.customExpr || null, sseHistory: f.sseHistory || null,
+      bounds: f.bounds || null,
     })),
     fitConfig: state.fitConfig,
     plotConfig: Object.assign({}, state.plotConfig, { legendPos }),
@@ -82,7 +83,7 @@ function restoreSessionPayload(payload) {
       const deg = m.degree;
       fn = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, deg - j), 0);
     }
-    state.fits.push(Object.assign(f, { fn }));
+    state.fits.push(Object.assign(f, { fn: fn || (() => NaN) }));
   }
   state.fitConfig = payload.fitConfig || state.fitConfig;
   state.plotConfig = Object.assign(
@@ -177,6 +178,7 @@ function buildMultiTabPayload() {
 }
 
 function restoreMultiTabPayload(data) {
+  if (!data || typeof data !== 'object') throw new Error('Invalid session file format.');
   if (data.version === 3 && Array.isArray(data.tabs) && data.tabs.length) {
     tabList = data.tabs.map(t => ({ id: t.id, name: t.name, payload: t.payload, autoNamed: t.autoNamed ?? false }));
     activeTabId = data.activeTabId || tabList[0].id;
@@ -265,6 +267,7 @@ function loadSession() {
         setConsole(`Session loaded: ${file.name}`, '');
       } catch (e) { setConsole('Load failed: ' + e.message, 'error'); }
     };
+    reader.onerror = () => setConsole('File read error — could not read the session file.', 'error');
     reader.readAsText(file);
   });
   fileInput.click();

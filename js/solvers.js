@@ -77,9 +77,9 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     // Gauss-Newton step: solve (J_r^T J_r + λD) δ = −J_r^T r, then p_new = p + δ
     const beta = J.map(col => col.reduce((s, v, i) => s - v * r[i], 0));
 
-    // Augment diagonal
+    // Augment diagonal — proper Marquardt scaling: JtJ + λ·diag(|JtJ|)
     const A = JtJ.map((row, a) =>
-      row.map((v, b) => a === b ? v * (1 + lambda) + 1e-10 : v)
+      row.map((v, b) => a === b ? v + lambda * Math.max(Math.abs(v), 1e-10) : v)
     );
 
     let delta;
@@ -95,7 +95,7 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
       p = pNew;
       lambda = Math.max(lambda / 3, 1e-12);
       const stepNorm = Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
-      if (stepNorm < tol && Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
+      if (stepNorm < tol || Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
     } else {
       lambda = Math.min(lambda * 10, 1e12);
     }
@@ -124,8 +124,9 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
   const rSq = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
   const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1);
   const rmse = Math.sqrt(sseVal / Math.max(n - m, 1));
-  const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
-  const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
+  const LOG2PIE = Math.log(2 * Math.PI) + 1;
+  const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + 2 * m;
+  const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + m * Math.log(n);
   const dof = Math.max(n - m, 1);
   let paramErrors = coeffs.map(() => NaN);
   let covMatrix = null;
@@ -203,7 +204,7 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
     if (newSSE >= curSSE) break;
     p = pNew;
     const stepNorm = alpha * Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
-    if (stepNorm < tol && Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
+    if (stepNorm < tol || Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
   }
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
@@ -374,12 +375,16 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
   const rSq    = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
   const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1);
   const rmse   = Math.sqrt(sseVal / Math.max(n - m, 1));
-  const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
-  const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
+  const LOG2PIE = Math.log(2 * Math.PI) + 1;
+  const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + 2 * m;
+  const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + m * Math.log(n);
   let paramErrors = p.map(() => NaN);
   let covMatrix = null;
   const dof = Math.max(n - m, 1);
   const weights = meta.weights || null;
+  const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
+  const sig2Base = wSSE / dof;
+  const wrmse = Math.sqrt(Math.max(sig2Base, 0));
   try {
     const J_cols = [];
     for (let j = 0; j < m; j++) {
@@ -395,15 +400,12 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
     }
     const JtJ = Array.from({ length: m }, (_, a) =>
       Array.from({ length: m }, (_, b) => J_cols[a].reduce((s, _, i) => s + J_cols[a][i] * J_cols[b][i], 0)));
-    // sig2 based on weighted SSE for correct covariance, but report unweighted stats
-    const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
-    const sig2 = wSSE / dof;
     const inv = invertMatrix(JtJ);
     if (inv) {
-      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
-      covMatrix = inv.map(row => row.map(v => sig2 * v));
+      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2Base * row[i])));
+      covMatrix = inv.map(row => row.map(v => sig2Base * v));
     }
   } catch (_) {}
-  return { params: p, paramErrors, covMatrix, dof, rSq, adjRSq, rmse, sse: sseVal, aic, bic,
+  return { params: p, paramErrors, covMatrix, dof, rSq, adjRSq, rmse, wrmse, sse: sseVal, aic, bic,
            converged: meta.converged, iter: meta.iter, n, residuals: r };
 }
