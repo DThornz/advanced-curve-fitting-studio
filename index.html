@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Advanced Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.2.0</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.3.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -230,7 +230,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.2.0</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.3.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1583,12 +1583,27 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.3.0 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.3.0</span>
+          <span class="relnotes-ver-date">2026-05-26</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Settings panel</strong> — ⚙ Settings under the Session ▾ dropdown. Appearance section: UI font size (range slider), UI font family (6 presets), monospace font (6 presets), theme (Light / Dark buttons), animation speed (Normal / Fast / None). Fitting Defaults section: default solver, multi-start pilot count, default weight scheme. Display section: numeric precision (3–6 sig figs), fit line width, scatter marker size, default CI bands, default legend. All settings persist across sessions via <code>localStorage</code></span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Parameter correlation panel moved to stats bar</strong> — the heatmap and suggestions are now a permanent 300 px side panel on the right edge of the stats bar. It appears automatically after any fit with ≥ 2 parameters and hides itself otherwise, eliminating the white-space gap that appeared in the right panel</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Correlation panel redesigned with a two-column layout — heatmap on the left, scrollable pair list on the right showing all pairwise |r| values sorted by magnitude with a color bar and value label per pair</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Correlation suggestions condensed to up to 3 most-severe pairs with concise one-line advice; green "All parameters well-determined" confirmation shown when no pair exceeds |r| ≥ 0.70</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Version bumped to <strong>v1.3.0</strong> in topbar chip and landing page hero badge; updated README and in-app §5 documentation</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.2.0 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.2.0</span>
+          <span class="relnotes-ver-num">v1.2.0</span>
           <span class="relnotes-ver-date">2026-05-26</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Extended diagnostics stats</strong> — nine additional statistics in the expanded fit panel: MAE, Max |residual|, CV%, Degrees of Freedom, Log-likelihood, overall F-statistic (with p-value), Durbin-Watson autocorrelation, Wald-Wolfowitz Runs test p-value, and Jacobian condition number. Every label has an ⓘ tooltip with the formula and interpretation</span></li>
@@ -2026,7 +2041,7 @@
 
     <p>The <strong>Weights</strong> dropdown in Algorithm Options includes a <strong>Huber (IRLS)</strong> option for robust fitting. Standard least squares treats all residuals equally, making it sensitive to outliers. Huber IRLS (Iteratively Reweighted Least Squares) down-weights points with large residuals. At each of 5 reweighting iterations, the scale is estimated as MAD/0.6745 — the median absolute deviation scaled to be a consistent estimator of σ. This is deliberately chosen over RMSE because MAD is itself robust to outliers, so the threshold adapts correctly even when many points are contaminated. Points whose residuals fall within c = 1.345 standard deviations of this scale receive full weight; larger residuals are down-weighted proportionally. The result is a fit that minimises the influence of outliers without discarding them — compare the Huber fit against the OLS fit to quickly identify which points are pulling the curve.</p>
 
-    <p><strong>The stats bar</strong> at the bottom shows all active fits side-by-side. <strong>Click any row</strong> to expand it — the row opens a full-width detail panel. The top section is a parameter table (Value, SE, SEM = SE/√N, 95% CI at the correct t-distribution d.o.f., and t-statistic — green = significant at 95%, amber = not). Below the table, two rows of chip cards show all statistics: <strong>Model Quality</strong> chips — R², Adj-R², RMSE, SSE, AIC, BIC, N, and χ²ᵣ (σ-weighted fits only); <strong>Diagnostics</strong> chips — MAE, Max |residual|, CV%, df, Log-likelihood, F-statistic (with p-value), Durbin-Watson (color-coded: green ≈ 2 ideal, amber if autocorrelation), Runs test p-value (amber "pattern!" if p &lt; 0.05), and Jacobian condition number (green &lt; 100, amber 100–1000, red &gt; 1000). Every chip label has an ⓘ tooltip with the formula and interpretation. Annotated chips (DW, Runs, Cond(J)) show a colored left border so the health status is visible instantly. Click the same row again to collapse. Multiple rows can be expanded simultaneously and the bar scrolls. The expanded row also shows a <strong>parameter correlation matrix</strong> as a colour-coded heatmap (red = strong negative, teal = strong positive). Below the heatmap, plain-English <strong>correlation suggestions</strong> flag problem pairs: |r| ≥ 0.95 (strong, red) means two parameters are nearly redundant — consider fixing one or reparameterising; |r| ≥ 0.85 (high, amber) suggests checking whether the x-range is wide enough; |r| ≥ 0.70 (moderate) is a caution. A green confirmation appears when all pairs are well-determined.</p>
+    <p><strong>The stats bar</strong> at the bottom shows all active fits side-by-side. <strong>Click any row</strong> to expand it — the row opens a full-width detail panel. The top section is a parameter table (Value, SE, SEM = SE/√N, 95% CI at the correct t-distribution d.o.f., and t-statistic — green = significant at 95%, amber = not). Below the table, two rows of chip cards show all statistics: <strong>Model Quality</strong> chips — R², Adj-R², RMSE, SSE, AIC, BIC, N, and χ²ᵣ (σ-weighted fits only); <strong>Diagnostics</strong> chips — MAE, Max |residual|, CV%, df, Log-likelihood, F-statistic (with p-value), Durbin-Watson (color-coded: green ≈ 2 ideal, amber if autocorrelation), Runs test p-value (amber "pattern!" if p &lt; 0.05), and Jacobian condition number (green &lt; 100, amber 100–1000, red &gt; 1000). Every chip label has an ⓘ tooltip with the formula and interpretation. Annotated chips (DW, Runs, Cond(J)) show a colored left border so the health status is visible instantly. Click the same row again to collapse. Multiple rows can be expanded simultaneously and the bar scrolls. A <strong>parameter correlation panel</strong> appears automatically as a 300 px side column on the right edge of the stats bar whenever the active fit has ≥ 2 parameters (hidden otherwise). The panel has a two-column layout: a colour-coded heatmap (red = strong negative, teal = strong positive) on the left, and a scrollable list of all pairwise |r| values sorted by magnitude on the right, each with a color bar and numeric label. Below both columns, plain-English <strong>correlation suggestions</strong> flag up to 3 problem pairs: |r| ≥ 0.95 (strong, red) means two parameters are nearly redundant — consider fixing one or reparameterising; |r| ≥ 0.85 (high, amber) suggests checking whether the x-range is wide enough; |r| ≥ 0.70 (moderate) is a caution. A green confirmation appears when all pairs are well-determined.</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>Metric</th><th>What it tells you</th><th>Good range</th></tr></thead>
       <tbody>
@@ -2107,7 +2122,7 @@
     <p>Each annotation exposes full style controls: font family (9 presets including DM Sans, DM Mono, Arial, Helvetica, Times New Roman, Georgia, Courier New, Verdana, Trebuchet MS, or a custom string), size, bold, italic, and color; label horizontal anchor (left / center / right) and vertical anchor (top / middle / bottom); label background color + opacity and optional border; reference-line dash style (solid, dash, dot, dash-dot, long-dash, long-dash-dot), width, color, and opacity; and for text/peak callouts, arrowhead type (8 styles from filled triangle to open circle), size, line width, color, and pixel offset of the text from the arrow tail. Annotations are saved with the session and restore on tab switch or session load.</p>
     <p>Click <em>Peaks</em> to automatically annotate the peak centre of every visible Gaussian or Lorentzian fit. Each auto-annotation is colored to match the fit curve, labelled with the fit name, and targeted to the peak centre parameter (μ or x₀). Re-clicking Peaks will not add duplicates.</p>
 
-    <p><strong>Each tab</strong> is a fully independent workspace — opening a new tab starts with a clean slate (default model, no datasets, default solver settings, no annotations) with nothing inherited from other tabs. Tabs are auto-named from the first dataset loaded; double-click a tab name to rename it. The <strong>Session ▾</strong> dropdown on the right side of the toolbar groups all session controls: <em>Save Session</em> (export one, some, or all tabs to a JSON file), <em>Load Session</em> (restore from a file), <em>Auto-restore</em> (● = ON: last saved session is reloaded automatically on page refresh; ○ = OFF: always start fresh), and <em>Shortcuts</em>. The <strong>✕ Close</strong> button is always pinned to the right edge of the toolbar and remains visible regardless of horizontal scroll.</p>
+    <p><strong>Each tab</strong> is a fully independent workspace — opening a new tab starts with a clean slate (default model, no datasets, default solver settings, no annotations) with nothing inherited from other tabs. Tabs are auto-named from the first dataset loaded; double-click a tab name to rename it. The <strong>Session ▾</strong> dropdown on the right side of the toolbar groups all session controls: <em>Save Session</em> (export one, some, or all tabs to a JSON file), <em>Load Session</em> (restore from a file), <em>Auto-restore</em> (● = ON: last saved session is reloaded automatically on page refresh; ○ = OFF: always start fresh), <em>Shortcuts</em>, and <em>Settings</em> (UI font size / family, theme, animations, default solver, precision, line/marker sizes — all persisted via <code>localStorage</code>). The <strong>✕ Close</strong> button is always pinned to the right edge of the toolbar and remains visible regardless of horizontal scroll.</p>
 
     <p>Export options:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
