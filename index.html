@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.6.4</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.6.5</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -260,7 +260,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.6.4</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.6.5</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1747,15 +1747,28 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
-      <!-- ── v1.6.4 ─────────────────────────────────────────── -->
+      <!-- ── v1.6.5 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.6.4</span>
-          <span class="relnotes-ver-date">2026-06-01</span>
+          <span class="relnotes-ver-num current">v1.6.5</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
           <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Equation Editor — more functions</strong> — added <strong>Special Functions</strong> (erf, erfc, Γ gamma, lnΓ, factorial), extra <strong>trig</strong> (cot, sec, csc), <strong>inverse hyperbolic</strong> (asinh, acosh, atanh, coth), <strong>cbrt / nthRoot</strong>, and a <strong>Conditional</strong> group (ternary <code>?:</code> and comparison operators). Math.js is auto-extended with erfc/lgamma polyfills so every palette function evaluates. New example equations: error-function sigmoid, erfc diffusion front, EMG peak, skew-normal, Langevin, softplus, and piecewise forms</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Edit-as-Custom parse errors</strong> — several models produced invalid Math.js when opened in the custom editor (rheology models used <code>|γ̇|</code> pipe notation, Temkin/Softplus used <code>ln(</code>, PK-Lag had trailing prose, Voigt was a description). All now emit valid Math.js (<code>abs(x)</code>, <code>log(</code>, a proper ternary, and a fully-expanded Voigt)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>gamma as a parameter</strong> — reverted treating <code>gamma</code> as a built-in function (it broke Damped-Sine, whose damping parameter is <em>γ</em>, and any custom equation using gamma as a free parameter). The Γ palette button was removed; <code>lgamma</code> remains for the special-function need</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Parameter correlation heatmap in dark mode</strong> — low-correlation cells no longer render near-white with invisible light text; the colormap now uses a theme-aware neutral that blends into the panel, and cell text colour is chosen by luminance for guaranteed contrast in both themes</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Correlation panel polish</strong> — "mild dependency" suggestion box and faint correlation bars given subtle tints/outlines so they read cleanly in light mode instead of looking like dim grey blanks</span></li>
+        </ul>
+      </div>
+      <!-- ── v1.6.4 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.6.4</span>
+          <span class="relnotes-ver-date">2026-06-01</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Equation Editor — more functions</strong> — added <strong>Special Functions</strong> (erf, erfc, lnΓ, factorial), extra <strong>trig</strong> (cot, sec, csc), <strong>inverse hyperbolic</strong> (asinh, acosh, atanh, coth), <strong>cbrt / nthRoot</strong>, and a <strong>Conditional</strong> group (ternary <code>?:</code> and comparison operators). Math.js is auto-extended with erfc/lgamma polyfills so every palette function evaluates. New example equations: error-function sigmoid, erfc diffusion front, EMG peak, skew-normal, Langevin, softplus, and piecewise forms</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Examples menu auto-columns</strong> — the dropdown now measures real rendered height and adds columns until no items are cut off at the bottom of the screen; falls back to a scrollable column on very short viewports</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Autocomplete search</strong> — model and example search boxes show a floating top-8 results panel (opaque, arrow-key + mouse selectable) instead of rewriting the dropdown as you type</span></li>
         </ul>

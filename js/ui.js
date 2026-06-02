@@ -773,24 +773,28 @@ function renderCorrMatrix(fit) {
       return denom < 1e-20 ? (i === j ? 1 : 0) : covMatrix[i][j] / denom;
     })
   );
-  function corrColor(v) {
-    const c = Math.max(-1, Math.min(1, v));
-    if (c >= 0) {
-      const t = c;
-      return `rgb(${Math.round(255-t*(255-29))},${Math.round(255-t*(255-78))},${Math.round(255-t*(255-216))})`;
-    } else {
-      const t = -c;
-      return `rgb(${Math.round(255-t*(255-220))},${Math.round(255-t*(255-38))},${Math.round(255-t*(255-38))})`;
-    }
-  }
   const isDk = document.body.classList.contains('dark-mode');
+  // Diverging colormap: neutral (v≈0) blends into the panel background so it
+  // works in both themes; positive → blue, negative → red.
+  const neutral = isDk ? [18, 36, 63] : [247, 249, 252];
+  function corrColor(v) {
+    const t = Math.min(1, Math.abs(Math.max(-1, Math.min(1, v))));
+    const end = v >= 0 ? [37, 99, 235] : [220, 38, 38];
+    const mix = k => Math.round(neutral[k] + (end[k] - neutral[k]) * t);
+    return `rgb(${mix(0)},${mix(1)},${mix(2)})`;
+  }
+  // Pick black/white text by the cell's relative luminance for guaranteed contrast.
+  function textOn(rgb) {
+    const m = rgb.match(/\d+/g).map(Number);
+    const lum = (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255;
+    return lum < 0.55 ? '#ffffff' : '#15212e';
+  }
   const header = `<tr><th></th>${names.map(n => `<th title="${n}">${n.length>4?n.slice(0,4):n}</th>`).join('')}</tr>`;
   const bodyRows = corr.map((row, i) =>
     `<tr><td>${names[i].length>4?names[i].slice(0,4):names[i]}</td>` +
     row.map((v, j) => {
       const bg = corrColor(v);
-      const txtClr = Math.abs(v) > 0.55 ? '#fff' : (isDk ? '#e2e8f0' : '#1a202c');
-      return `<td style="background:${bg};color:${txtClr}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
+      return `<td style="background:${bg};color:${textOn(bg)}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
     }).join('') + '</tr>'
   ).join('');
 
@@ -802,7 +806,7 @@ function renderCorrMatrix(fit) {
   allPairs.sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
   const listHtml = allPairs.map(({ i, j, v }) => {
     const av = Math.abs(v);
-    const barColor = v > 0 ? corrColor(av) : corrColor(-av < 0 ? -av : av);
+    const barColor = corrColor(v);
     const valCls = av >= 0.95 ? 'style="color:var(--red)"' : av >= 0.70 ? 'style="color:var(--amber)"' : '';
     return `<div class="corr-list-row">
       <span class="corr-list-pair" title="${names[i]} ↔ ${names[j]}">${names[i]} ↔ ${names[j]}</span>

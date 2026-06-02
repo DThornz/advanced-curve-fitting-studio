@@ -1019,7 +1019,8 @@ body.dark-mode .corr-matrix td:first-child{color:#7a90ae!important}
 .corr-ok{border-left-color:var(--teal);color:var(--teal);background:rgba(45,212,191,.06)}
 .corr-strong{border-left-color:var(--red);background:rgba(239,68,68,.05)}
 .corr-high{border-left-color:var(--amber);background:rgba(245,158,11,.05)}
-.corr-moderate{border-left-color:var(--border)}
+.corr-moderate{border-left-color:var(--dim);background:rgba(113,128,150,.08);color:var(--text)}
+body.dark-mode .corr-moderate{background:rgba(122,144,174,.10)}
 .corr-more{border-left-color:var(--border);color:var(--dimmer)}
 
 /* ── Prediction / F-test result tables ───────────────────── */
@@ -1249,7 +1250,7 @@ body.dark-mode .statsbar-corr{border-color:#1c3050!important;background:#0a1628!
 .corr-list-row:hover{background:var(--bg4)}
 .corr-list-pair{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .corr-list-val{font-weight:600;white-space:nowrap}
-.corr-list-bar{width:36px;height:6px;border-radius:3px;flex-shrink:0}
+.corr-list-bar{width:36px;height:6px;border-radius:3px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(128,128,128,.22)}
 body.dark-mode .corr-list-row:hover{background:#0e1e36!important}
 body.dark-mode .corr-list-pair{color:#7a90ae!important}
 

@@ -402,8 +402,14 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.6.5 — 2026-06-02
+- **fix** Edit-as-Custom parse errors — corrected invalid `MODEL_EQ_JS` translations (rheology `|γ̇|`→`abs(x)`, `ln(`→`log(`, PK-Lag trailing prose→ternary, Voigt prose→fully-expanded Thompson-Cox-Hastings expression)
+- **fix** Reverted `gamma` being treated as a built-in function — it collided with `gamma` used as a free parameter (Damped-Sine damping, user equations); removed the Γ palette button, kept `lgamma`
+- **fix** Parameter correlation heatmap unreadable in dark mode — theme-aware neutral colour + luminance-based cell text contrast
+- **improve** Correlation suggestion/list boxes given subtle tints so they don't look like dim grey blanks in light mode
+
 ### v1.6.4 — 2026-06-01
-- **new** Equation Editor palette expanded: Special Functions (erf, erfc, gamma Γ, lgamma lnΓ, factorial), extra trig (cot, sec, csc), inverse hyperbolic (asinh, acosh, atanh, coth), cbrt/nthRoot, and a Conditional group (ternary `?:` + comparison operators)
+- **new** Equation Editor palette expanded: Special Functions (erf, erfc, lgamma lnΓ, factorial), extra trig (cot, sec, csc), inverse hyperbolic (asinh, acosh, atanh, coth), cbrt/nthRoot, and a Conditional group (ternary `?:` + comparison operators)
 - **new** Math.js auto-extended with erfc/lgamma (and gamma/factorial) polyfills in both the main thread and the Web Worker, so every palette function evaluates during fitting
 - **new** 8 additional example equations in the editor: error-function sigmoid, erfc diffusion front, EMG peak, skew-normal, Langevin, saturating tanh, softplus, two-segment & delayed-onset piecewise
 - **improve** Examples dropdown auto-columns: measures real rendered height and adds columns until no items are cut off at the bottom of the viewport; scrollable-column fallback on very short screens
