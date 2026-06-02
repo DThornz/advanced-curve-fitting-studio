@@ -1,5 +1,14 @@
 // UI rendering: fit list, annotation editor, graph style editor, param table, stats table, sync helpers
 
+function _fitQualityBadge(rSq) {
+  if (!isFinite(rSq)) return '<span class="fit-quality-badge badge-none" title="No statistics yet"></span>';
+  const cls = rSq >= 0.99 ? 'badge-green' : rSq >= 0.95 ? 'badge-amber' : 'badge-red';
+  const label = rSq >= 0.99 ? 'excellent' : rSq >= 0.95 ? 'acceptable' : 'poor';
+  return `<span class="fit-quality-badge ${cls}" title="R² = ${rSq.toFixed(4)} (${label})"></span>`;
+}
+
+let _dragSrcFitId = null;
+
 function renderFitList() {
   const el = document.getElementById('fit-list');
   const cnt = document.getElementById('fit-count');
@@ -16,11 +25,17 @@ function renderFitList() {
   el.innerHTML = state.fits.map(fit => {
     const ds = state.datasets.find(d => d.id === fit.dsId);
     const dsOff = ds && ds.enabled === false;
+    const rSq = fit.result?.rSq;
+    const notesTip = fit.notes?.trim() ? ` title="${fit.notes.trim().replace(/"/g,'&quot;').slice(0,200)}"` : '';
     return `
-    <div class="fit-item${fit.id === state.activeFitId ? ' active' : ''}${dsOff ? ' fit-item-off' : ''}" data-fitid="${fit.id}">
+    <div class="fit-item${fit.id === state.activeFitId ? ' active' : ''}${dsOff ? ' fit-item-off' : ''}" data-fitid="${fit.id}" draggable="true">
       <span class="ds-swatch" style="background:${fit.color};opacity:${dsOff ? 0.3 : 1}"></span>
       <span class="ds-label">
-        <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fit.label}</span>
+        <span style="display:flex;align-items:center;gap:3px;overflow:hidden">
+          ${_fitQualityBadge(rSq)}
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fit.label}</span>
+          ${fit.notes?.trim() ? `<span class="fit-notes-dot"${notesTip}>📝</span>` : ''}
+        </span>
         <span class="fit-item-eq">${fit.model}${dsOff ? ' (dataset off)' : ''}</span>
       </span>
       <button class="ds-delete" data-delid="${fit.id}" title="Remove fit">×</button>
@@ -31,10 +46,33 @@ function renderFitList() {
       const fitId = parseInt(item.dataset.fitid);
       const fit = state.fits.find(f => f.id === fitId);
       const ds = fit && state.datasets.find(d => d.id === fit.dsId);
-      if (ds && ds.enabled === false) return; // block interaction with disabled-dataset fits
+      if (ds && ds.enabled === false) return;
       state.activeFitId = fitId;
       renderFitList();
       if (fit) { renderParamResults(fit); renderStatsTable(); }
+    });
+    // Drag-drop reordering
+    item.addEventListener('dragstart', e => {
+      _dragSrcFitId = parseInt(item.dataset.fitid);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(_dragSrcFitId));
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; item.classList.add('drag-over'); });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      const tgtId = parseInt(item.dataset.fitid);
+      if (_dragSrcFitId === null || _dragSrcFitId === tgtId) return;
+      const si = state.fits.findIndex(f => f.id === _dragSrcFitId);
+      const ti = state.fits.findIndex(f => f.id === tgtId);
+      if (si < 0 || ti < 0) return;
+      state.fits.splice(ti, 0, state.fits.splice(si, 1)[0]);
+      _dragSrcFitId = null;
+      renderFitList();
+      updatePlots();
     });
   });
   el.querySelectorAll('.ds-delete').forEach(btn => {
@@ -42,7 +80,6 @@ function renderFitList() {
       e.stopPropagation();
       const id = parseInt(btn.dataset.delid);
       state.fits = state.fits.filter(f => f.id !== id);
-      // Remove annotations that referenced this fit (e.g. auto-peak annotations)
       state.annotations = state.annotations.filter(a => a.fitId !== id);
       if (state.activeFitId === id) {
         const enabledFit = state.fits.find(f => {
@@ -59,6 +96,57 @@ function renderFitList() {
     });
   });
   syncFTestSelects();
+}
+
+function showCompareModal() {
+  const modal = document.getElementById('compare-modal');
+  if (!modal) return;
+  const selA = document.getElementById('compare-fit-a');
+  const selB = document.getElementById('compare-fit-b');
+  const fits = state.fits.filter(f => f.result);
+  if (fits.length < 2) { setConsole('Need at least 2 fits with results to compare.', 'warn'); return; }
+  const opts = fits.map(f => `<option value="${f.id}">${f.label || f.model}</option>`).join('');
+  selA.innerHTML = opts;
+  selB.innerHTML = opts;
+  if (fits.length >= 2) { selA.value = fits[fits.length - 2].id; selB.value = fits[fits.length - 1].id; }
+  renderCompareTable();
+  modal.style.display = 'flex';
+}
+
+function renderCompareTable() {
+  const selA = document.getElementById('compare-fit-a');
+  const selB = document.getElementById('compare-fit-b');
+  const tbody = document.getElementById('compare-tbody');
+  if (!selA || !selB || !tbody) return;
+  const fitA = state.fits.find(f => f.id === parseInt(selA.value));
+  const fitB = state.fits.find(f => f.id === parseInt(selB.value));
+  if (!fitA?.result || !fitB?.result) { tbody.innerHTML = '<tr><td colspan="3">Select two fits with results.</td></tr>'; return; }
+  const rA = fitA.result, rB = fitB.result;
+  const fmt6 = v => isFinite(v) ? v.toPrecision(6) : '—';
+
+  const metrics = [
+    { name: 'Model', a: fitA.model, b: fitB.model, better: null },
+    { name: 'Dataset', a: (state.datasets.find(d=>d.id===fitA.dsId)||{}).name||'—', b: (state.datasets.find(d=>d.id===fitB.dsId)||{}).name||'—', better: null },
+    { name: 'N points', a: rA.n, b: rB.n, better: null },
+    { name: 'Parameters', a: rA.params.length, b: rB.params.length, better: null },
+    { name: 'R²', a: fmt6(rA.rSq), b: fmt6(rB.rSq), better: rA.rSq >= rB.rSq ? 'a' : 'b' },
+    { name: 'Adj. R²', a: fmt6(rA.adjRSq), b: fmt6(rB.adjRSq), better: rA.adjRSq >= rB.adjRSq ? 'a' : 'b' },
+    { name: 'RMSE', a: fmt6(rA.rmse), b: fmt6(rB.rmse), better: rA.rmse <= rB.rmse ? 'a' : 'b' },
+    { name: 'SSE', a: fmt6(rA.sse), b: fmt6(rB.sse), better: rA.sse <= rB.sse ? 'a' : 'b' },
+    { name: 'AIC', a: fmt6(rA.aic), b: fmt6(rB.aic), better: rA.aic <= rB.aic ? 'a' : 'b' },
+    { name: 'BIC', a: fmt6(rA.bic), b: fmt6(rB.bic), better: rA.bic <= rB.bic ? 'a' : 'b' },
+    { name: 'Status', a: rA.converged ? '✓ Converged' : '⚠ Max iter', b: rB.converged ? '✓ Converged' : '⚠ Max iter', better: null },
+  ];
+  if (rA.chiSqRed != null || rB.chiSqRed != null)
+    metrics.push({ name: 'χ²ᵣ', a: rA.chiSqRed != null ? fmt6(rA.chiSqRed) : '—', b: rB.chiSqRed != null ? fmt6(rB.chiSqRed) : '—',
+      better: (rA.chiSqRed != null && rB.chiSqRed != null) ? (Math.abs(rA.chiSqRed - 1) <= Math.abs(rB.chiSqRed - 1) ? 'a' : 'b') : null });
+
+  tbody.innerHTML = metrics.map(m => `
+    <tr>
+      <td style="font-weight:500;padding:3px 8px;white-space:nowrap">${m.name}</td>
+      <td style="padding:3px 8px;text-align:right;${m.better==='a'?'color:var(--teal);font-weight:600':''}">${m.a}</td>
+      <td style="padding:3px 8px;text-align:right;${m.better==='b'?'color:var(--teal);font-weight:600':''}">${m.b}</td>
+    </tr>`).join('');
 }
 
 function syncFTestSelects() {
@@ -582,6 +670,10 @@ function renderParamTable() {
         const sld = container.querySelector(`.param-sweep-range[data-si="${j}"]`);
         return sld ? parseFloat(sld.value) : r.init;
       });
+      // Visual cue when slider is pinned at a bound
+      const span = parseFloat(slider.max) - parseFloat(slider.min);
+      const pct = span > 0 ? (v - parseFloat(slider.min)) / span : 0.5;
+      slider.classList.toggle('at-bound', pct < 0.015 || pct > 0.985);
       updateSweepPreview();
     });
 
@@ -640,6 +732,23 @@ function renderParamResults(fit) {
       if (valSpan) valSpan.textContent = fmt(val);
     }
   });
+  // Update fit notes textarea
+  const notesSection = document.getElementById('fit-notes-section');
+  const notesInput   = document.getElementById('fit-notes-input');
+  if (notesSection && notesInput) {
+    notesSection.style.display = '';
+    notesInput.value = fit.notes || '';
+    notesInput.oninput = () => {
+      fit.notes = notesInput.value;
+      // Refresh badge in fit list (notes icon)
+      const item = document.querySelector(`.fit-item[data-fitid="${fit.id}"] .ds-label`);
+      if (item) {
+        const dot = item.querySelector('.fit-notes-dot');
+        if (fit.notes.trim() && !dot) renderFitList();
+        else if (!fit.notes.trim() && dot) renderFitList();
+      }
+    };
+  }
   renderCorrMatrix(fit);
 }
 

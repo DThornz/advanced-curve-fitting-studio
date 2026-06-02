@@ -77,6 +77,10 @@ function exportReport() {
   txt += `─── Algorithm ────────────────────────────────────────\n`;
   txt += `Status    : ${r.converged ? 'Converged' : 'Max iterations reached'}\n`;
   txt += `Iterations: ${r.iter}\n`;
+  if (fit.notes && fit.notes.trim()) {
+    txt += `\n─── Notes ────────────────────────────────────────────\n`;
+    txt += fit.notes.trim() + '\n';
+  }
   txt += `=======================================================\n`;
   const blob = new Blob([txt], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);

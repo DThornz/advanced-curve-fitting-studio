@@ -26,7 +26,7 @@ function buildSessionPayload() {
       color: f.color, visible: f.visible, paramNames: f.paramNames,
       curvePoints: f.curvePoints, result: f.result,
       customExpr: f.customExpr || null, sseHistory: f.sseHistory || null,
-      bounds: f.bounds || null,
+      bounds: f.bounds || null, notes: f.notes || '',
     })),
     fitConfig: state.fitConfig,
     plotConfig: Object.assign({}, state.plotConfig, { legendPos }),
@@ -83,6 +83,7 @@ function restoreSessionPayload(payload) {
       const deg = m.degree;
       fn = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, deg - j), 0);
     }
+    if (f.notes == null) f.notes = '';
     state.fits.push(Object.assign(f, { fn: fn || (() => NaN) }));
   }
   state.fitConfig = payload.fitConfig || state.fitConfig;

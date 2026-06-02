@@ -10,7 +10,10 @@ const accPanel  = document.getElementById('accPanel');
 const darkToggle = document.getElementById('darkToggle');
 
 function applyPrefs() {
-  const dark = localStorage.getItem('dark') === '1';
+  // If user has never manually set dark mode, follow OS preference
+  let storedDark = localStorage.getItem('dark');
+  if (storedDark === null) storedDark = window.matchMedia('(prefers-color-scheme: dark)').matches ? '1' : '0';
+  const dark = storedDark === '1';
   const size = localStorage.getItem('size') || 'md';
   const font = localStorage.getItem('font') || 'default';
   document.body.classList.toggle('dark-mode', dark);
@@ -21,6 +24,10 @@ function applyPrefs() {
   document.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', b.dataset.font===font));
 }
 applyPrefs();
+// Auto-update if OS preference changes and user hasn't overridden
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (localStorage.getItem('dark') === null) applyPrefs();
+});
 accBtn.addEventListener('click', e => { e.stopPropagation(); accPanel.classList.toggle('open'); });
 document.addEventListener('click', e => { if (!accPanel.contains(e.target) && e.target !== accBtn) accPanel.classList.remove('open'); });
 darkToggle.addEventListener('change', () => {

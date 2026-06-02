@@ -415,7 +415,7 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
     label: fitLabel, color: fitColor,
     result, fn: modelFn, visible: true,
     paramNames, curvePoints: curvePts, sseHistory,
-    bounds: fitBounds,
+    bounds: fitBounds, notes: '',
   };
   state.fits.push(fitRecord);
   state.activeFitId = fitRecord.id;

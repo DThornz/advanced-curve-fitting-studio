@@ -147,6 +147,13 @@ function initEvents() {
   /* ── Fit button ───────────────────────────────────────── */
   document.getElementById('btn-fit').addEventListener('click', runFit);
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runFit(); });
+  // Ctrl+F: quick re-fit (overrides browser find when app is open)
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f' && !e.shiftKey && !e.altKey) {
+      const appOverlay = document.getElementById('app-overlay');
+      if (appOverlay && appOverlay.classList.contains('open')) { e.preventDefault(); runFit(); }
+    }
+  });
 
   /* ── Cancel fit button ────────────────────────────────── */
   document.getElementById('btn-cancel-fit').addEventListener('click', () => {
@@ -1146,4 +1153,57 @@ function initEvents() {
     e.preventDefault();
     _showUnsavedModal(() => location.reload());
   }, true);
+
+  /* ── Model search filter ──────────────────────────────── */
+  (function initModelSearch() {
+    const searchEl = document.getElementById('model-search');
+    const sel      = document.getElementById('model-select');
+    if (!searchEl || !sel) return;
+    const origHTML = sel.innerHTML;
+    const allOpts  = Array.from(sel.querySelectorAll('option')).map(o => ({
+      value: o.value,
+      text:  o.textContent.trim(),
+      group: (o.parentElement instanceof HTMLOptGroupElement) ? o.parentElement.label : '',
+    }));
+    function rebuildFromQuery(q) {
+      const prevVal = sel.value;
+      if (!q) { sel.innerHTML = origHTML; sel.value = prevVal; return; }
+      const hits = allOpts.filter(o => o.value.toLowerCase().includes(q) || o.text.toLowerCase().includes(q));
+      const groups = {};
+      hits.forEach(o => { (groups[o.group] || (groups[o.group] = [])).push(o); });
+      sel.innerHTML = Object.entries(groups).map(([g, opts]) =>
+        `<optgroup label="${g}">${opts.map(o => `<option value="${o.value}">${o.text}</option>`).join('')}</optgroup>`
+      ).join('');
+      const keep = hits.find(o => o.value === prevVal);
+      sel.value = keep ? keep.value : (hits[0]?.value || '');
+      if (!keep && hits.length) sel.dispatchEvent(new Event('change'));
+    }
+    searchEl.addEventListener('input', () => rebuildFromQuery(searchEl.value.trim().toLowerCase()));
+    searchEl.addEventListener('keydown', e => {
+      if (e.key === 'Escape')   { searchEl.value = ''; rebuildFromQuery(''); }
+      if (e.key === 'ArrowDown' || e.key === 'Enter') { e.preventDefault(); sel.focus(); }
+    });
+    sel.addEventListener('change', () => { if (searchEl.value) { searchEl.value = ''; rebuildFromQuery(''); } });
+  })();
+
+  /* ── Fit comparison modal ─────────────────────────────── */
+  const compareModal = document.getElementById('compare-modal');
+  if (compareModal) {
+    document.getElementById('btn-compare-fits')?.addEventListener('click', showCompareModal);
+    document.getElementById('compare-modal-close')?.addEventListener('click',  () => { compareModal.style.display = 'none'; });
+    document.getElementById('compare-modal-close2')?.addEventListener('click', () => { compareModal.style.display = 'none'; });
+    compareModal.addEventListener('click', e => { if (e.target === compareModal) compareModal.style.display = 'none'; });
+    document.getElementById('compare-fit-a')?.addEventListener('change', renderCompareTable);
+    document.getElementById('compare-fit-b')?.addEventListener('change', renderCompareTable);
+  }
+
+  /* ── Axis range mode toggle ───────────────────────────── */
+  document.getElementById('btn-axis-range-mode')?.addEventListener('click', function() {
+    state.plotConfig.axisRangeMode = state.plotConfig.axisRangeMode === 'data' ? 'auto' : 'data';
+    this.classList.toggle('active', state.plotConfig.axisRangeMode === 'data');
+    this.title = state.plotConfig.axisRangeMode === 'data'
+      ? 'Y-axis: data range only (click for auto)'
+      : 'Y-axis: auto range (click for data range only)';
+    updatePlots();
+  });
 }

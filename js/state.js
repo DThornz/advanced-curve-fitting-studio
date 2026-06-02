@@ -35,7 +35,7 @@ const state = {
   activeDatasetId: null,
   activeFitId: null,
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
-  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, showPI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false } },
+  plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, showPI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false }, axisRangeMode: 'auto' },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   sweepParams: null,  // non-null while sweep slider is active
   selection: { dsId: null, indices: new Set() },

@@ -259,6 +259,7 @@
         <div class="panel-header" style="border-top:1px solid var(--border)">
           <span>Active Fits <span class="panel-tip" data-tip="active-fits">?</span></span>
           <span class="panel-fit-count" id="fit-count">0</span>
+          <button class="btn panel-action-btn" id="btn-compare-fits" title="Side-by-side stats comparison of two fits">⇆</button>
           <button class="btn panel-action-btn" id="btn-clear-all-fits" title="Remove all fits">✕ All</button>
         </div>
         <div class="panel-section panel-fits-section" id="fit-list">
@@ -318,6 +319,7 @@
 
         <div class="ctrl-section">
           <label class="ctrl-label">Fit Model <span class="panel-tip" data-tip="fit-model">?</span></label>
+          <input type="search" id="model-search" class="ctrl-input" placeholder="Search models…" autocomplete="off" style="margin-bottom:4px;font-size:.72em" title="Type to filter models — press Esc to clear, ↓ or Enter to move to dropdown">
           <select class="ctrl-select" id="model-select">
             <optgroup label="Basic">
               <option value="Linear">Linear  y = a·x + b</option>
@@ -439,6 +441,11 @@
           <div id="param-table-container">
             <div class="panel-empty-hint">Select a model.</div>
           </div>
+          <!-- Fit Notes (shown when a fit is active) -->
+          <div id="fit-notes-section" style="display:none;padding:6px 0 0">
+            <div style="font-size:.65em;color:var(--dimmer);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Fit Notes</div>
+            <textarea id="fit-notes-input" placeholder="Add notes for this fit…" rows="2" style="width:100%;box-sizing:border-box;font-size:.7em;font-family:var(--mono);resize:vertical;min-height:44px;max-height:110px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 6px;line-height:1.4"></textarea>
+          </div>
         </div>
 
         <!-- Algorithm options -->
@@ -512,7 +519,10 @@
         <!-- Fit curve resolution -->
         <div class="ctrl-section">
           <label class="ctrl-label">Fit Curve Points <span class="panel-tip" data-tip="fit-curve-points">?</span></label>
-          <input class="ctrl-input" id="opt-curve-pts" type="number" value="300" min="50" max="5000">
+          <div style="display:flex;gap:6px;align-items:center">
+            <input class="ctrl-input" id="opt-curve-pts" type="number" value="300" min="50" max="5000" style="flex:1">
+            <button class="btn" id="btn-axis-range-mode" title="Y-axis: auto range (click for data range only)" style="font-size:.65em;padding:2px 7px;white-space:nowrap">Y: auto</button>
+          </div>
         </div>
 
         <!-- Extrapolation range -->
@@ -2363,6 +2373,36 @@
 </div>
 
 </div><!-- end page-wrap -->
+
+<!-- Fit Comparison Modal -->
+<div class="modal-backdrop" id="compare-modal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="width:520px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <span class="modal-title">Fit Comparison</span>
+      <button class="modal-close" id="compare-modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;flex:1;padding:12px 16px">
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+        <label style="font-size:.72em;white-space:nowrap">Fit A</label>
+        <select id="compare-fit-a" class="ctrl-select" style="flex:1;font-size:.72em"></select>
+        <label style="font-size:.72em;white-space:nowrap">Fit B</label>
+        <select id="compare-fit-b" class="ctrl-select" style="flex:1;font-size:.72em"></select>
+      </div>
+      <table class="param-table" style="font-size:.76em;width:100%">
+        <thead><tr>
+          <th style="text-align:left">Metric</th>
+          <th style="text-align:right">Fit A</th>
+          <th style="text-align:right">Fit B</th>
+        </tr></thead>
+        <tbody id="compare-tbody"></tbody>
+      </table>
+      <p style="font-size:.65em;color:var(--dimmer);margin-top:8px">Teal = better value for that metric. For AIC/BIC/RMSE/SSE lower is better; for R² higher is better.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="compare-modal-close2">Close</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Accessibility panel ──────────────────────────────── -->
 <button class="acc-btn" id="accBtn" title="Display settings">⚙</button>

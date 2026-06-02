@@ -139,6 +139,15 @@ function baseLayout(extra) {
       const dt   = parseFloat(isX ? gs.xDtick : gs.yDtick);
       const out  = {};
       if (isFinite(minV) && isFinite(maxV) && minV < maxV) { out.range = [minV, maxV]; out.autorange = false; }
+      else if (!isX && state.plotConfig.axisRangeMode === 'data') {
+        // Clamp Y-axis to data extent only, ignoring extrapolated fit curve values
+        const allY = state.datasets.filter(d => d.enabled !== false).flatMap(d => d.y.filter(isFinite));
+        if (allY.length) {
+          const dMin = Math.min(...allY), dMax = Math.max(...allY);
+          const pad = (dMax - dMin) * 0.05 || 1;
+          out.range = [dMin - pad, dMax + pad]; out.autorange = false;
+        }
+      }
       if (isFinite(dt) && dt > 0) out.dtick = dt;
       return out;
     })(),

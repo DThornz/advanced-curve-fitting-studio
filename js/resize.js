@@ -15,6 +15,16 @@ function initResizablePanels() {
   const rhCorr     = document.getElementById('rh-corr');
   const corrPanel  = document.getElementById('statsbar-corr');
 
+  // Restore saved panel sizes from previous session
+  try {
+    const s = JSON.parse(localStorage.getItem('cfs_panel_sizes') || '{}');
+    if (s.left     && leftPanel)  leftPanel.style.width     = s.left     + 'px';
+    if (s.right    && rightPanel) rightPanel.style.width    = s.right    + 'px';
+    if (s.residual && residualEl) residualEl.style.height   = s.residual + 'px';
+    if (s.stats    && statsBar)   statsBar.style.height     = s.stats    + 'px';
+    if (s.corr     && corrPanel)  corrPanel.style.flexBasis = s.corr     + 'px';
+  } catch {}
+
   let drag = null;
 
   let resizeRafId = null;
@@ -61,6 +71,16 @@ function initResizablePanels() {
     document.body.style.userSelect = '';
     drag = null;
     schedulePlotResize();
+    // Persist panel sizes
+    try {
+      localStorage.setItem('cfs_panel_sizes', JSON.stringify({
+        left:     leftPanel  ? leftPanel.offsetWidth   : undefined,
+        right:    rightPanel ? rightPanel.offsetWidth  : undefined,
+        residual: residualEl ? residualEl.offsetHeight : undefined,
+        stats:    statsBar   ? statsBar.offsetHeight   : undefined,
+        corr:     corrPanel  ? corrPanel.offsetWidth   : undefined,
+      }));
+    } catch {}
   }
 
   function startDrag(type, handle, e) {

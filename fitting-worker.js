@@ -437,6 +437,14 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
 }
 
 /* ── Model function table ────────────────────────────────── */
+// Abramowitz & Stegun 7.1.26 — needed by EMG, Asymmetric-Gaussian, Erf-Diffusion, Erf-Sigmoid
+function _erf(z) {
+  const t = 1 / (1 + 0.3275911 * Math.abs(z));
+  const p = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+  return Math.sign(z) * (1 - p * Math.exp(-z * z));
+}
+function _erfc(z) { return 1 - _erf(z); }
+
 const MODEL_FNS = {
   'Linear':           (x, [a, b])            => a * x + b,
   'Power':            (x, [a, b])            => a * Math.pow(Math.abs(x) + 1e-12, b),
@@ -511,6 +519,55 @@ const MODEL_FNS = {
                      const plastic = Math.sign(x) * Math.pow(Math.abs(x) / Math.max(K, 1e-12), 1 / Math.max(n, 1e-6));
                      return elastic + plastic;
                    },
+  // ── New models added in v1.6.0 ───────────────────────────
+  'Two-Compartment-PK': (x, [A, alpha, B, beta]) =>
+    A * Math.exp(-Math.abs(alpha) * x) + B * Math.exp(-Math.abs(beta) * x),
+  'PK-Lag':             (x, [Amp, ka, ke, tlag]) => {
+                          const t = x - tlag; if (t <= 0) return 0;
+                          if (Math.abs(ka - ke) < 1e-6 * (Math.abs(ka) + Math.abs(ke) + 1))
+                            return Amp * ka * t * Math.exp(-ka * t);
+                          return Amp * ka / (ka - ke) * (Math.exp(-ke * t) - Math.exp(-ka * t));
+                        },
+  'Substrate-Inhibition':(x, [Vm, Km, Ki]) =>
+    Vm * x / (Km + x + x * x / Math.max(Math.abs(Ki), 1e-10)),
+  'Langmuir':           (x, [qm, KL])       => qm * KL * x / (1 + KL * x),
+  'Freundlich':         (x, [KF, n])        => KF * Math.pow(Math.max(x, 1e-12), 1 / Math.max(Math.abs(n), 1e-6)),
+  'Temkin':             (x, [AT, B])        => B * Math.log(Math.max(Math.abs(AT) * Math.max(x, 1e-300), 1e-300)),
+  'Power-Law-Fluid':    (x, [K, n])         => K * Math.pow(Math.abs(x) + 1e-12, n - 1),
+  'Herschel-Bulkley':   (x, [tau0, K, n])  => tau0 + K * Math.pow(Math.abs(x) + 1e-12, n),
+  'Cross-Model':        (x, [e0, eI, K, m]) =>
+    eI + (e0 - eI) / (1 + Math.pow(Math.abs(K * x), Math.abs(m))),
+  'EMG':                (x, [A, mu, sig, tau, C]) => {
+                          const sg = Math.abs(sig) || 1e-10, tk = Math.abs(tau) || 1e-10;
+                          const u = sg / tk, z = (x - mu) / sg;
+                          const ea = (u - z) * 0.7071067811865476;
+                          if (ea > 25) return C;
+                          return 0.5 * A * Math.exp(0.5 * u * u - z * u) * _erfc(ea) + C;
+                        },
+  'Asymmetric-Gaussian':(x, [A, mu, sig, alpha, C]) => {
+                          const sg = sig || 1e-10, z = (x - mu) / sg;
+                          return A * Math.exp(-0.5 * z * z) * (1 + _erf(alpha * z * 0.7071067811865476)) + C;
+                        },
+  'Voigt':              (x, [A, x0, fG, fL, C]) => {
+                          const fGa = Math.abs(fG) || 1e-10, fLa = Math.abs(fL) || 1e-10;
+                          const fV5 = Math.pow(fGa,5) + 2.69269*Math.pow(fGa,4)*fLa +
+                            2.42843*Math.pow(fGa,3)*fLa*fLa + 4.47163*fGa*fGa*Math.pow(fLa,3) +
+                            0.07842*fGa*Math.pow(fLa,4) + Math.pow(fLa,5);
+                          const fV = Math.pow(Math.max(fV5,1e-50),0.2);
+                          const f = fLa/fV;
+                          const eta = Math.max(0,Math.min(1, 1.36603*f - 0.47719*f*f + 0.11116*f*f*f));
+                          const dx = x - x0, hw = fV/2;
+                          return A*(eta*hw*hw/(dx*dx+hw*hw)+(1-eta)*Math.exp(-4*Math.LN2*dx*dx/(fV*fV)))+C;
+                        },
+  'Arrhenius':          (x, [A, EaR])      => A * Math.exp(-EaR / Math.max(x, 1e-6)),
+  'Extended-Arrhenius': (x, [A, n, EaR])  =>
+    A * Math.pow(Math.max(x, 1e-12), n) * Math.exp(-EaR / Math.max(x, 1e-6)),
+  'Erf-Diffusion':      (x, [A, mu, w, B]) => A * _erf((x - mu) / Math.max(Math.abs(w), 1e-10)) + B,
+  'Softplus':           (x, [A, k, x0, C]) => {
+                          const t = k * (x - x0);
+                          return A * (t > 20 ? t : Math.log(1 + Math.exp(t))) + C;
+                        },
+  'Erf-Sigmoid':        (x, [A, k, x0, C]) => A * 0.5 * (1 + _erf(k * (x - x0))) + C,
 };
 
 const MODEL_DEGREES = {
