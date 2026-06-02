@@ -21,10 +21,10 @@ importScripts('https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js'
   };
   const erfFn = (typeof math.erf === 'function') ? (z => math.erf(z)) : erfPoly;
   const ext = {};
+  // 'gamma' intentionally not polyfilled — kept available as a parameter name.
   if (typeof math.erf       !== 'function') ext.erf       = erfPoly;
   if (typeof math.erfc      !== 'function') ext.erfc      = z => 1 - erfFn(z);
   if (typeof math.lgamma    !== 'function') ext.lgamma    = lnGamma;
-  if (typeof math.gamma     !== 'function') ext.gamma     = z => (z > 0.5 || z !== Math.floor(z)) ? Math.exp(lnGamma(z)) : NaN;
   if (typeof math.factorial !== 'function') ext.factorial = z => Math.exp(lnGamma(z + 1));
   try { if (Object.keys(ext).length) math.import(ext, { override: false, silent: true }); } catch (_) {}
 })();

@@ -947,30 +947,31 @@ const MODEL_EQ_JS = {
   'Tau-Gaussian':         'taumax * exp(-0.5 * ((x - Vpeak) / k)^2) + taumin',
   // Pharmacokinetics
   'Two-Compartment-PK':  'A * exp(-alpha * x) + B * exp(-beta * x)',
-  'PK-Lag':              'Amp * ka / (ka - ke) * (exp(-ke*(x-tlag)) - exp(-ka*(x-tlag))), x > tlag',
+  'PK-Lag':              '(x > tlag) ? (Amp * ka / (ka - ke) * (exp(-ke * (x - tlag)) - exp(-ka * (x - tlag)))) : 0',
   // Enzyme kinetics
   'Substrate-Inhibition':'Vmax * x / (Km + x + x^2 / Ki)',
   // Adsorption
   'Langmuir':            'qm * KL * x / (1 + KL * x)',
   'Freundlich':          'KF * x^(1/n)',
-  'Temkin':              'B * ln(AT * x)',
-  // Rheology
-  'Power-Law-Fluid':     'K * |gamma|^(n-1)',
-  'Herschel-Bulkley':    'tau0 + K * |gamma|^n',
-  'Cross-Model':         'eta_inf + (eta0 - eta_inf) / (1 + (K * gamma)^m)',
-  'Carreau':             'eta_inf + (eta0 - eta_inf) * (1 + (lambda * gamma)^2)^((n-1)/2)',
-  'Quemada':             '((sqrt(eta0) + sqrt(eta_inf) * sqrt(gamma/gdotc)) / (1 + sqrt(gamma/gdotc)))^2',
+  'Temkin':              'B * log(AT * x)',
+  // Rheology  (x = shear rate γ̇)
+  'Power-Law-Fluid':     'K * abs(x)^(n - 1)',
+  'Herschel-Bulkley':    'tau0 + K * abs(x)^n',
+  'Cross-Model':         'eta_inf + (eta0 - eta_inf) / (1 + (K * x)^m)',
+  'Carreau':             'eta_inf + (eta0 - eta_inf) * (1 + (lambda * x)^2)^((n - 1) / 2)',
+  'Quemada':             '((sqrt(eta0) + sqrt(eta_inf) * sqrt(x / gdotc)) / (1 + sqrt(x / gdotc)))^2',
   // Peak / spectral
   'EMG':                 '(A/2) * exp(sigma^2/(2*tau^2) - (x-mu)/tau) * erfc((sigma/tau - (x-mu)/sigma)/sqrt(2)) + C',
   'Asymmetric-Gaussian': 'A * exp(-0.5*((x-mu)/sigma)^2) * (1 + erf(alpha*(x-mu)/(sigma*sqrt(2)))) + C',
-  'Voigt':               'A * (eta*L + (1-eta)*G) + C, eta and fV from Thompson-Cox-Hastings(fG, fL)',
+  // Voigt: fV and eta derived from fG, fL via Thompson-Cox-Hastings (fV repeated inline)
+  'Voigt':               'A * (max(0, min(1, 1.36603*(fL/(fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(1/5)) - 0.47719*(fL/(fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(1/5))^2 + 0.11116*(fL/(fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(1/5))^3)) * ((fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(1/5)/2)^2 / ((x-x0)^2 + ((fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(1/5)/2)^2) + (1 - max(0, min(1, 1.36603*(fL/(fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(1/5)) - 0.47719*(fL/(fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(1/5))^2 + 0.11116*(fL/(fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(1/5))^3))) * exp(-4*log(2)*(x-x0)^2 / (fG^5 + 2.69269*fG^4*fL + 2.42843*fG^3*fL^2 + 4.47163*fG^2*fL^3 + 0.07842*fG*fL^4 + fL^5)^(2/5))) + C',
   // Thermal / kinetics
   'Arrhenius':           'A * exp(-Ea_R / x)',
   'Extended-Arrhenius':  'A * x^n * exp(-Ea_R / x)',
   // Diffusion
   'Erf-Diffusion':       'A * erf((x - mu) / w) + B',
   // Activation functions
-  'Softplus':            'A * ln(1 + exp(k * (x - x0))) + C',
+  'Softplus':            'A * log(1 + exp(k * (x - x0))) + C',
   'Erf-Sigmoid':         'A * (1 + erf(k * (x - x0))) / 2 + C',
 };
 

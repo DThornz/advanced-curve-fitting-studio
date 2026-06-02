@@ -26,10 +26,11 @@ function _extendMathFns(m) {
   };
   const erfFn = (typeof m.erf === 'function') ? (z => m.erf(z)) : erfPoly;
   const ext = {};
+  // NOTE: 'gamma' is intentionally not polyfilled — it must remain a plain
+  // parameter name (Damped-Sine etc.). lgamma covers the special-function need.
   if (typeof m.erf       !== 'function') ext.erf       = erfPoly;
   if (typeof m.erfc      !== 'function') ext.erfc      = z => 1 - erfFn(z);
   if (typeof m.lgamma    !== 'function') ext.lgamma    = lnGamma;
-  if (typeof m.gamma     !== 'function') ext.gamma     = z => (z > 0.5 || z !== Math.floor(z)) ? Math.exp(lnGamma(z)) : NaN;
   if (typeof m.factorial !== 'function') ext.factorial = z => Math.exp(lnGamma(z + 1));
   try { if (Object.keys(ext).length) m.import(ext, { override: false, silent: true }); } catch (_) {}
 }
@@ -45,12 +46,13 @@ const CUSTOM_EQ_MATH_SYMS = new Set([
   // Common
   'exp','log','log2','log10','sqrt','abs','sign','pow',
   'ceil','floor','round','max','min','mod',
-  // Error & special
-  'erf','erfc','gamma','lgamma','factorial','nthRoot','cbrt',
-  // Conditional / logical
-  'if','and','or','not','xor',
+  // Error & special — NOTE: 'gamma' is deliberately NOT included so it stays
+  // usable as a free parameter (e.g. Damped-Sine's damping γ); use lgamma instead.
+  'erf','erfc','lgamma','factorial','nthRoot','cbrt',
+  // Logical
+  'and','or','not','xor',
   // Constants / keywords
-  'pi','e','true','false','Infinity','NaN','inf',
+  'pi','e','true','false','Infinity','NaN',
 ]);
 
 function parseCustomEquation(expr) {
