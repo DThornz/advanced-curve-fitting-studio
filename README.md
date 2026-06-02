@@ -53,6 +53,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Repair / impute** | Flag outliers by robust MAD z-score (or fill non-finite gaps) and replace them with a cubic-spline or linear estimate from the remaining points |
 | **Multi-column import modes** | The column picker offers four modes: **Single Y (+σ)** · **Multiple Y → separate datasets** (each Y column becomes its own dataset) · **Replicates → mean ± σ** (wide-format replicate Y columns collapsed to a mean with auto-computed SD or SEM) · **Group column → one dataset per group** (long-format X, Y, category data, with repeated X aggregated to mean ± σ) — live preview for every mode |
 | **Batch fit (Fit All Datasets)** | One click fits the selected model to every enabled dataset, with per-dataset Auto-Init and weighting; results are tabulated side-by-side in the stats panel for direct comparison |
+| **Combine datasets** | Ctrl/⌘-click two or more datasets, then **⊕ Combine** to pool them into one dataset (mean ± σ when they share an x-grid, else pooled points) — fitting it gives a single curve through their average (vs. Fit All, which fits each separately) |
 | **Replicate uncertainty (σ)** | Imported or replicate-derived σ drives 1/σ² weighting and reduced χ², and renders as error bars on the plot. The **Dose-Response + σ** example generates replicate-based error bars to demonstrate the workflow |
 | **36 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration, **Gompertz tumor growth**, **XRD Pseudo-Voigt peak**, **Fano resonance**, **superparamagnetic M-H (Langevin)**, **stress-strain Ramberg-Osgood**, **ELISA 4PL dose-response**, **oral drug PK**, **polymer KWW relaxation**, **fluorescence quenching (Stern-Volmer)**, **Van't Hoff equilibrium vs temperature**, **two-compartment PK** (IV bolus), **oral PK with lag time**, **substrate inhibition** (bell-shaped enzyme kinetics), **Langmuir adsorption isotherm**, **Freundlich adsorption isotherm**, **Herschel-Bulkley fluid**, **Cross Model viscosity**, **EMG chromatography peak**, **Arrhenius rate constant**, **erf diffusion profile** · **Electrophysiology:** G-V Boltzmann, Kir I-V, HH Na I-V, voltage-dependent τ — each with adjustable noise and optional outlier injection (count + scale). The generator modal shows the generating equation rendered in KaTeX. Dropdown is a 3-column grouped layout |
 | **Dataset enable/disable** | Toggle datasets on/off; disabled datasets and all their fits are fully hidden from the plot, residual panels, stats table, and F-test — re-enabling instantly restores them |
@@ -407,6 +408,9 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 ---
 
 ## Changelog
+
+### v1.7.3 — 2026-06-02
+- **new** Combine datasets — Ctrl/⌘-click to multi-select datasets, then **⊕ Combine** pools them into one (mean ± σ when they share an x-grid, else pooled points); fitting it produces a single curve through their average
 
 ### v1.7.2 — 2026-06-02
 - **new** Pre-Process **↶ Undo Step** button — revert any single pre-processing action (smooth, filter, transform, de-trend, repair) one step at a time, in addition to Restore Original

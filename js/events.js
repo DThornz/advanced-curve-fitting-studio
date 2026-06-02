@@ -297,10 +297,13 @@ function initEvents() {
     state.datasets = []; state.fits = [];
     state.activeDatasetId = null; state.activeFitId = null;
     state.selection = { dsId: null, indices: new Set() };
+    if (state.selectedDatasetIds) state.selectedDatasetIds.clear();
     syncFitDatasetSelect(); renderDatasetList(); renderFitList();
     updatePlots();
     setConsole('All datasets and fits cleared.', '');
   });
+
+  document.getElementById('btn-combine-ds').addEventListener('click', combineSelectedDatasets);
 
   /* ── Clear all fits ───────────────────────────────────── */
   document.getElementById('btn-clear-all-fits').addEventListener('click', () => {

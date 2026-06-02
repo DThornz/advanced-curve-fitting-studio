@@ -39,6 +39,8 @@ const state = {
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
   sweepParams: null,  // non-null while sweep slider is active
   selection: { dsId: null, indices: new Set() },
+  selectedDatasetIds: new Set(),  // Ctrl/⌘-click multi-selection for Combine
+
   editHistory: { undo: [], redo: [] },
   editSelectRadius: 0,
   currentWorker: null,

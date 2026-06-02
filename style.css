@@ -362,6 +362,7 @@ body.dark-mode .topbar-close-pin{background:#0a1628!important;box-shadow:-6px 0 
 }
 .ds-item:hover,.fit-item:hover{background:var(--teal-glow);border-color:rgba(11,122,110,.18);color:var(--teal)}
 .ds-item.active,.fit-item.active{background:var(--teal-glow);border-color:rgba(11,122,110,.25);color:var(--teal);font-weight:600}
+.ds-item.ds-multi-sel{box-shadow:inset 0 0 0 2px var(--teal);border-color:var(--teal)}
 .ds-swatch{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .ds-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ds-count{font-size:.65em;color:var(--dimmer);margin-left:auto}

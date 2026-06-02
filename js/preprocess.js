@@ -625,10 +625,12 @@ function renderDatasetList() {
     el.innerHTML = '<div class="panel-empty-hint">Load an example<br>or import a CSV to begin.</div>';
     return;
   }
+  if (!state.selectedDatasetIds) state.selectedDatasetIds = new Set();
+  const sel = state.selectedDatasetIds;
   el.innerHTML = state.datasets.map(ds => {
     const off = ds.enabled === false;
     return `
-    <div class="ds-item${ds.id === state.activeDatasetId ? ' active' : ''}${off ? ' ds-item-off' : ''}" data-dsid="${ds.id}">
+    <div class="ds-item${ds.id === state.activeDatasetId ? ' active' : ''}${sel.has(ds.id) ? ' ds-multi-sel' : ''}${off ? ' ds-item-off' : ''}" data-dsid="${ds.id}" title="Click to select · Ctrl/⌘-click to multi-select for Combine">
       <span class="ds-swatch" style="background:${ds.color}"></span>
       <span class="ds-label" title="${ds.name}">${ds.name}</span>
       <span class="ds-count">${ds.x.length}pt</span>
@@ -638,13 +640,25 @@ function renderDatasetList() {
     </div>`;
   }).join('');
   el.querySelectorAll('.ds-item').forEach(item => {
-    item.addEventListener('click', () => {
-      state.activeDatasetId = parseInt(item.dataset.dsid);
+    item.addEventListener('click', (e) => {
+      const id = parseInt(item.dataset.dsid);
+      if (e.ctrlKey || e.metaKey) {
+        if (sel.has(id)) sel.delete(id); else sel.add(id);
+      } else {
+        sel.clear();
+      }
+      state.activeDatasetId = id;
       syncFitDatasetSelect();
       renderDatasetList();
       renderFitList();
     });
   });
+  // Combine button: visible only when 2+ datasets are multi-selected
+  const combineBtn = document.getElementById('btn-combine-ds');
+  if (combineBtn) {
+    combineBtn.style.display = sel.size >= 2 ? '' : 'none';
+    combineBtn.textContent = sel.size >= 2 ? `⊕ Combine ${sel.size}` : '⊕ Combine';
+  }
   el.querySelectorAll('.ds-toggle').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -685,6 +699,7 @@ function renderDatasetList() {
       state.editHistory.redo = state.editHistory.redo.filter(h => h.dsId !== id);
       syncUndoRedoButtons();
       if (state.selection.dsId === id) state.selection = { dsId: null, indices: new Set() };
+      if (state.selectedDatasetIds) state.selectedDatasetIds.delete(id);
       if (state.activeDatasetId === id) {
         state.activeDatasetId = state.datasets.length ? state.datasets[state.datasets.length - 1].id : null;
       }
@@ -707,4 +722,53 @@ function renderDatasetList() {
     });
   });
   renderMaskCount();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMBINE SELECTED DATASETS → one pooled / averaged dataset
+   (so a single fit yields one curve through their average)
+═══════════════════════════════════════════════════════════ */
+function combineSelectedDatasets() {
+  const sel = state.selectedDatasetIds || new Set();
+  const dsList = [...sel].map(id => state.datasets.find(d => d.id === id)).filter(d => d && d.enabled !== false);
+  if (dsList.length < 2) { setConsole('Ctrl/⌘-click at least two datasets to combine.', 'warn'); return; }
+
+  // Do all selected datasets share the same x-grid? Then aggregate to mean ± σ.
+  const x0 = dsList[0].x;
+  const sameGrid = dsList.every(d =>
+    d.x.length === x0.length && d.x.every((xv, i) => Math.abs(xv - x0[i]) <= 1e-9 * (Math.abs(xv) + 1)));
+
+  let cx, cy, csig, name;
+  if (sameGrid) {
+    cx = x0.slice(); cy = []; csig = [];
+    for (let i = 0; i < x0.length; i++) {
+      const col = dsList.map(d => d.y[i]).filter(isFinite);
+      if (!col.length) { cy.push(NaN); csig.push(NaN); continue; }
+      const m = col.reduce((s, v) => s + v, 0) / col.length;
+      const sd = col.length > 1 ? Math.sqrt(col.reduce((s, v) => s + (v - m) ** 2, 0) / (col.length - 1)) : NaN;
+      cy.push(m); csig.push(sd > 0 ? sd : NaN);
+    }
+    // Drop any all-NaN rows
+    const keep = cy.map((v, i) => isFinite(v) ? i : -1).filter(i => i >= 0);
+    cx = keep.map(i => cx[i]); csig = keep.map(i => csig[i]); cy = keep.map(i => cy[i]);
+    csig = csig.some(isFinite) ? csig : null;
+    name = `Combined mean (${dsList.length} series)`;
+  } else {
+    const pts = [];
+    dsList.forEach(d => d.x.forEach((xv, i) => { if (isFinite(xv) && isFinite(d.y[i])) pts.push([xv, d.y[i]]); }));
+    pts.sort((a, b) => a[0] - b[0]);
+    cx = pts.map(p => p[0]); cy = pts.map(p => p[1]); csig = null;
+    name = `Combined (${dsList.length} series, pooled)`;
+  }
+  if (cx.length < 2) { setConsole('Not enough valid points to combine.', 'error'); return; }
+
+  const ds = importDataset(name, cx, cy, csig);
+  if (!ds) { setConsole('Combine failed.', 'error'); return; }
+  state.selectedDatasetIds = new Set();
+  state.activeDatasetId = ds.id;
+  syncFitDatasetSelect();
+  renderDatasetList();
+  updatePlots();
+  if (typeof autoInitParams === 'function') autoInitParams();
+  setConsole(`Created "${name}" — ${cx.length} points${csig ? ', mean ± σ error bars' : ', pooled'}. Pick a model and press ▶ Fit for one curve through the average.`, '');
 }
