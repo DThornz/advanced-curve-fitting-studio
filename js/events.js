@@ -335,6 +335,7 @@ function initEvents() {
   /* ── Auto init ────────────────────────────────────────── */
   document.getElementById('btn-auto-init').addEventListener('click', autoInitParams);
   document.getElementById('btn-try-all').addEventListener('click', tryAllModels);
+  document.getElementById('btn-fit-all').addEventListener('click', runFitAllDatasets);
   document.getElementById('model-compare-close').addEventListener('click', () => {
     document.getElementById('model-compare-modal').style.display = 'none';
   });
@@ -656,9 +657,13 @@ function initEvents() {
       document.getElementById('col-picker-modal').style.display = 'none'; _pendingImport = null;
     }
   });
+  document.getElementById('col-picker-mode').addEventListener('change', updateColPickerMode);
   document.getElementById('col-picker-x').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-y').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-sig').addEventListener('change', updateColPickerPreview);
+  document.getElementById('col-picker-group').addEventListener('change', updateColPickerPreview);
+  document.getElementById('col-picker-agg').addEventListener('change', updateColPickerPreview);
+  document.getElementById('col-picker-sigmethod').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-import').addEventListener('click', importFromColumnPicker);
 
   /* ── Residual tabs ────────────────────────────────────── */

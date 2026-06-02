@@ -202,6 +202,7 @@ function loadExampleFromModal() {
     editDs.x         = data.x;
     editDs.y         = data.y;
     editDs.originalY = data.y.slice();
+    if (data.sigY && data.sigY.length === data.x.length) editDs.sigY = data.sigY; else delete editDs.sigY;
     editDs.name      = data.name;
     editDs._exKey        = exKey || editDs._exKey;
     editDs._exSavedState = savedState;
@@ -218,7 +219,7 @@ function loadExampleFromModal() {
     setConsole(`Regenerated: ${data.name} (${data.x.length} points). Re-run fits to update results.`, '');
   } else {
     // Create a new dataset
-    const ds = importDataset(data.name, data.x, data.y);
+    const ds = importDataset(data.name, data.x, data.y, data.sigY || null);
     if (!ds) return;
     ds._exKey        = exKey;
     ds._exSavedState = savedState;

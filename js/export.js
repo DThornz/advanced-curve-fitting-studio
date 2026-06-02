@@ -1,8 +1,60 @@
 // Export functions: PNG, SVG, CSV, report text, Python, R, LaTeX, MATLAB, Jupyter, Excel, HTML, JSON, BibTeX
 
 /* ── Shared Python model body helper (used by Python & Jupyter exports) ── */
+// Convert display parameter names (which may contain Greek letters, subscripts,
+// the ∞ sign, combining marks, etc.) into valid ASCII identifiers usable as
+// variable names in generated Python / R code. Deterministic so the function
+// signature and body produced in different places stay consistent.
+const _GREEK_MAP = {
+  'α':'alpha','β':'beta','γ':'gamma','δ':'delta','ε':'epsilon','ζ':'zeta',
+  'η':'eta','θ':'theta','ι':'iota','κ':'kappa','λ':'lambda','μ':'mu','ν':'nu',
+  'ξ':'xi','ο':'omicron','π':'pi','ρ':'rho','σ':'sigma','ς':'sigma','τ':'tau',
+  'υ':'upsilon','φ':'phi','χ':'chi','ψ':'psi','ω':'omega',
+  'Α':'Alpha','Β':'Beta','Γ':'Gamma','Δ':'Delta','Θ':'Theta','Λ':'Lambda',
+  'Π':'Pi','Σ':'Sigma','Φ':'Phi','Ψ':'Psi','Ω':'Omega'
+};
+const _SUB_MAP = { '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9' };
+// Reserved words in Python and/or R — appending '_' keeps generated code valid
+// (e.g. λ → "lambda" is a Python keyword).
+const _RESERVED_IDENTS = new Set([
+  'lambda','def','class','return','import','from','as','with','try','except',
+  'finally','global','nonlocal','pass','break','continue','del','raise','yield',
+  'assert','async','await','and','or','not','is','in','if','elif','else','for',
+  'while','None','True','False',
+  'function','repeat','next','TRUE','FALSE','NULL','Inf','NaN','NA'
+]);
+function _safeIdents(names) {
+  const seen = {};
+  return names.map((nm, idx) => {
+    let s = '';
+    for (const ch of String(nm)) {
+      if (_GREEK_MAP[ch]) s += _GREEK_MAP[ch];
+      else if (_SUB_MAP[ch]) s += _SUB_MAP[ch];
+      else if (ch === '∞') s += 'inf';
+      else if (ch === '·' || ch === '̇' || ch === '̂') continue; // drop dots/combining marks
+      else if (/[A-Za-z0-9_]/.test(ch)) s += ch;
+      // anything else is dropped
+    }
+    if (!s) s = 'p' + idx;
+    if (/^[0-9]/.test(s)) s = 'p' + s;
+    if (_RESERVED_IDENTS.has(s)) s = s + '_';
+    if (seen[s] != null) { seen[s] += 1; s = s + '_' + seen[s]; } else { seen[s] = 0; }
+    return s;
+  });
+}
+
 function _pyModelBody(fit) {
-  const n = fit.paramNames;
+  const n = _safeIdents(fit.paramNames);
+  // Polynomials are degree-driven and not in the table below — build the body.
+  const polyMatch = /^Polynomial-(\d+)$/.exec(fit.model);
+  if (polyMatch) {
+    const deg = n.length - 1;
+    const terms = n.map((c, i) => {
+      const pw = deg - i;
+      return pw === 0 ? `${c}` : pw === 1 ? `${c} * x` : `${c} * x**${pw}`;
+    });
+    return `return ${terms.join(' + ')}`;
+  }
   const defs = {
     'Linear':            `return ${n[0]} * x + ${n[1]}`,
     'Power':             `return ${n[0]} * np.abs(x)**${n[1]}`,
@@ -156,7 +208,7 @@ function exportPython() {
   const xData = ds ? ds.x.filter((_, i) => !excl.has(i)) : [];
   const yData = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
 
-  const paramStr = fit.paramNames.join(', ');
+  const paramStr = _safeIdents(fit.paramNames).join(', ');
   const p0Str = r.params.map(v => v.toPrecision(6)).join(', ');
   const xArr = '[' + xData.map(v => v.toPrecision(8)).join(', ') + ']';
   const yArr = '[' + yData.map(v => v.toPrecision(8)).join(', ') + ']';
@@ -227,46 +279,75 @@ function exportR() {
   const xData = ds ? ds.x.filter((_, i) => !excl.has(i)) : [];
   const yData = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
 
-  const paramStr = fit.paramNames.join(', ');
-  const startStr = fit.paramNames.map((n, i) => `${n}=${r.params[i].toPrecision(6)}`).join(', ');
+  const pn = _safeIdents(fit.paramNames);
+  const startStr = pn.map((n, i) => `${n}=${r.params[i].toPrecision(6)}`).join(', ');
   const xArr = 'c(' + xData.map(v => v.toPrecision(15)).join(', ') + ')';
   const yArr = 'c(' + yData.map(v => v.toPrecision(15)).join(', ') + ')';
 
   const modelDefs = {
-    'Linear':           `${fit.paramNames[0]} * x + ${fit.paramNames[1]}`,
-    'Power':            `${fit.paramNames[0]} * abs(x)^${fit.paramNames[1]}`,
-    'Exponential':      `${fit.paramNames[0]} * exp(${fit.paramNames[1]} * x)`,
-    'Exp-Decay-Offset': `${fit.paramNames[0]} * exp(-${fit.paramNames[1]} * x) + ${fit.paramNames[2]}`,
-    'Logistic':         `${fit.paramNames[0]} / (1 + exp(-${fit.paramNames[1]} * (x - ${fit.paramNames[2]})))`,
-    'Gaussian':         `${fit.paramNames[0]} * exp(-0.5 * ((x - ${fit.paramNames[1]}) / ${fit.paramNames[2]})^2) + ${fit.paramNames[3]}`,
-    'Lorentzian':       `${fit.paramNames[0]} * ${fit.paramNames[2]}^2 / ((x - ${fit.paramNames[1]})^2 + ${fit.paramNames[2]}^2) + ${fit.paramNames[3]}`,
-    'Michaelis-Menten': `${fit.paramNames[0]} * x / (${fit.paramNames[1]} + x)`,
-    'Hill':             `${fit.paramNames[0]} * x^${fit.paramNames[2]} / (${fit.paramNames[1]}^${fit.paramNames[2]} + x^${fit.paramNames[2]})`,
-    'Sine':             `${fit.paramNames[0]} * sin(${fit.paramNames[1]} * x + ${fit.paramNames[2]}) + ${fit.paramNames[3]}`,
-    'Damped-Sine':      `${fit.paramNames[0]} * exp(-${fit.paramNames[1]} * x) * sin(${fit.paramNames[2]} * x + ${fit.paramNames[3]}) + ${fit.paramNames[4]}`,
-    'Double-Gaussian':  `${fit.paramNames[0]} * exp(-0.5*((x-${fit.paramNames[1]})/${fit.paramNames[2]})^2) + ${fit.paramNames[3]} * exp(-0.5*((x-${fit.paramNames[4]})/${fit.paramNames[5]})^2) + ${fit.paramNames[6]}`,
-    'Biexponential':    `${fit.paramNames[0]} * exp(-abs(${fit.paramNames[1]}) * x) + ${fit.paramNames[2]} * exp(-abs(${fit.paramNames[3]}) * x) + ${fit.paramNames[4]}`,
-    'Rational':         `(${fit.paramNames[0]} + ${fit.paramNames[1]} * x) / (1 + ${fit.paramNames[2]} * x)`,
-    'Power-Offset':     `${fit.paramNames[0]} * abs(x)^${fit.paramNames[1]} + ${fit.paramNames[2]}`,
-    'Boltzmann':        `${fit.paramNames[0]} / (1 + exp(-(x - ${fit.paramNames[1]}) / pmax(abs(${fit.paramNames[2]}), 1e-10)))`,
-    'Double-Boltzmann': `${fit.paramNames[0]}/(1+exp(-(x-${fit.paramNames[1]})/pmax(abs(${fit.paramNames[2]}),1e-10))) + ${fit.paramNames[3]}/(1+exp(-(x-${fit.paramNames[4]})/pmax(abs(${fit.paramNames[5]}),1e-10)))`,
-    'HH-Activation':    `${fit.paramNames[0]} * pmax(1/(1+exp(-(x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))),1e-12)^${fit.paramNames[3]} * (x-${fit.paramNames[4]})`,
-    'HH-Na-IV':         `${fit.paramNames[0]} * (1/(1+exp(-(x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))))^3 * (1/(1+exp((x-${fit.paramNames[3]})/pmax(${fit.paramNames[4]},1e-10)))) * (x-${fit.paramNames[5]})`,
-    'Kir':              `${fit.paramNames[0]} * (x-${fit.paramNames[1]}) / (1+exp((x-${fit.paramNames[2]})/pmax(abs(${fit.paramNames[3]}),1e-10)))`,
-    'GHK':              `ifelse(abs(x)<1e-6, ${fit.paramNames[0]}*${fit.paramNames[2]}*(1-${fit.paramNames[1]}), ${fit.paramNames[0]}*x*(1-${fit.paramNames[1]}*exp(-x/pmax(${fit.paramNames[2]},1e-10)))/pmax(1-exp(-x/pmax(${fit.paramNames[2]},1e-10)),1e-10))`,
-    'Tau-Gaussian':     `${fit.paramNames[0]} * exp(-0.5*((x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))^2) + ${fit.paramNames[3]}`,
-    '4PL':              `${fit.paramNames[1]} + (${fit.paramNames[0]} - ${fit.paramNames[1]}) / (1 + (pmax(x, 0) / pmax(abs(${fit.paramNames[2]}), 1e-12))^${fit.paramNames[3]})`,
-    'Gompertz':         `${fit.paramNames[0]} * exp(-exp(-${fit.paramNames[1]} * (x - ${fit.paramNames[2]})))`,
-    'Pseudo-Voigt':     `${fit.paramNames[0]} * (pmin(pmax(${fit.paramNames[4]},0),1)*${fit.paramNames[2]}^2/((x-${fit.paramNames[1]})^2+${fit.paramNames[2]}^2) + (1-pmin(pmax(${fit.paramNames[4]},0),1))*exp(-0.5*((x-${fit.paramNames[1]})/pmax(${fit.paramNames[3]},1e-10))^2)) + ${fit.paramNames[5]}`,
-    'Fano':             `${fit.paramNames[0]} * (${fit.paramNames[3]} + (x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))^2 / (1 + ((x-${fit.paramNames[1]})/pmax(${fit.paramNames[2]},1e-10))^2) + ${fit.paramNames[4]}`,
-    'Oral-PK':          `ifelse(abs(${fit.paramNames[1]}-${fit.paramNames[2]})<1e-9*(abs(${fit.paramNames[1]})+abs(${fit.paramNames[2]})+1), ${fit.paramNames[0]}*${fit.paramNames[1]}*x*exp(-${fit.paramNames[1]}*x), ${fit.paramNames[0]}*${fit.paramNames[1]}/(${fit.paramNames[1]}-${fit.paramNames[2]})*(exp(-${fit.paramNames[2]}*x)-exp(-${fit.paramNames[1]}*x)))`,
-    'KWW':              `${fit.paramNames[0]} * exp(-(pmax(x,0)/pmax(${fit.paramNames[1]},1e-12))^pmax(${fit.paramNames[2]},1e-6)) + ${fit.paramNames[3]}`,
-    'Langevin':         `ifelse(abs(${fit.paramNames[1]}*x)<1e-6, ${fit.paramNames[0]}*${fit.paramNames[1]}*x/3, ${fit.paramNames[0]}*(1/tanh(${fit.paramNames[1]}*x) - 1/(${fit.paramNames[1]}*x)))`,
-    'Stern-Volmer':     `${fit.paramNames[0]} / (pmax(1+${fit.paramNames[1]}*x,1e-10) * pmax(1+${fit.paramNames[2]}*x,1e-10))`,
-    'Van-t-Hoff':       `exp(${fit.paramNames[1]} - ${fit.paramNames[0]} / pmax(x, 1e-6))`,
-    'Ramberg-Osgood':   `x/pmax(${fit.paramNames[0]},1e-12)+sign(x)*(abs(x)/pmax(${fit.paramNames[1]},1e-12))^(1/pmax(${fit.paramNames[2]},1e-6))`,
+    'Linear':           `${pn[0]} * x + ${pn[1]}`,
+    'Power':            `${pn[0]} * abs(x)^${pn[1]}`,
+    'Exponential':      `${pn[0]} * exp(${pn[1]} * x)`,
+    'Exp-Decay-Offset': `${pn[0]} * exp(-${pn[1]} * x) + ${pn[2]}`,
+    'Logistic':         `${pn[0]} / (1 + exp(-${pn[1]} * (x - ${pn[2]})))`,
+    'Gaussian':         `${pn[0]} * exp(-0.5 * ((x - ${pn[1]}) / ${pn[2]})^2) + ${pn[3]}`,
+    'Lorentzian':       `${pn[0]} * ${pn[2]}^2 / ((x - ${pn[1]})^2 + ${pn[2]}^2) + ${pn[3]}`,
+    'Michaelis-Menten': `${pn[0]} * x / (${pn[1]} + x)`,
+    'Hill':             `${pn[0]} * x^${pn[2]} / (${pn[1]}^${pn[2]} + x^${pn[2]})`,
+    'Sine':             `${pn[0]} * sin(${pn[1]} * x + ${pn[2]}) + ${pn[3]}`,
+    'Damped-Sine':      `${pn[0]} * exp(-${pn[1]} * x) * sin(${pn[2]} * x + ${pn[3]}) + ${pn[4]}`,
+    'Double-Gaussian':  `${pn[0]} * exp(-0.5*((x-${pn[1]})/${pn[2]})^2) + ${pn[3]} * exp(-0.5*((x-${pn[4]})/${pn[5]})^2) + ${pn[6]}`,
+    'Biexponential':    `${pn[0]} * exp(-abs(${pn[1]}) * x) + ${pn[2]} * exp(-abs(${pn[3]}) * x) + ${pn[4]}`,
+    'Rational':         `(${pn[0]} + ${pn[1]} * x) / (1 + ${pn[2]} * x)`,
+    'Power-Offset':     `${pn[0]} * abs(x)^${pn[1]} + ${pn[2]}`,
+    'Boltzmann':        `${pn[0]} / (1 + exp(-(x - ${pn[1]}) / pmax(abs(${pn[2]}), 1e-10)))`,
+    'Double-Boltzmann': `${pn[0]}/(1+exp(-(x-${pn[1]})/pmax(abs(${pn[2]}),1e-10))) + ${pn[3]}/(1+exp(-(x-${pn[4]})/pmax(abs(${pn[5]}),1e-10)))`,
+    'HH-Activation':    `${pn[0]} * pmax(1/(1+exp(-(x-${pn[1]})/pmax(${pn[2]},1e-10))),1e-12)^${pn[3]} * (x-${pn[4]})`,
+    'HH-Na-IV':         `${pn[0]} * (1/(1+exp(-(x-${pn[1]})/pmax(${pn[2]},1e-10))))^3 * (1/(1+exp((x-${pn[3]})/pmax(${pn[4]},1e-10)))) * (x-${pn[5]})`,
+    'Kir':              `${pn[0]} * (x-${pn[1]}) / (1+exp((x-${pn[2]})/pmax(abs(${pn[3]}),1e-10)))`,
+    'GHK':              `ifelse(abs(x)<1e-6, ${pn[0]}*${pn[2]}*(1-${pn[1]}), ${pn[0]}*x*(1-${pn[1]}*exp(-x/pmax(${pn[2]},1e-10)))/pmax(1-exp(-x/pmax(${pn[2]},1e-10)),1e-10))`,
+    'Tau-Gaussian':     `${pn[0]} * exp(-0.5*((x-${pn[1]})/pmax(${pn[2]},1e-10))^2) + ${pn[3]}`,
+    '4PL':              `${pn[1]} + (${pn[0]} - ${pn[1]}) / (1 + (pmax(x, 0) / pmax(abs(${pn[2]}), 1e-12))^${pn[3]})`,
+    'Gompertz':         `${pn[0]} * exp(-exp(-${pn[1]} * (x - ${pn[2]})))`,
+    'Pseudo-Voigt':     `${pn[0]} * (pmin(pmax(${pn[4]},0),1)*${pn[2]}^2/((x-${pn[1]})^2+${pn[2]}^2) + (1-pmin(pmax(${pn[4]},0),1))*exp(-0.5*((x-${pn[1]})/pmax(${pn[3]},1e-10))^2)) + ${pn[5]}`,
+    'Fano':             `${pn[0]} * (${pn[3]} + (x-${pn[1]})/pmax(${pn[2]},1e-10))^2 / (1 + ((x-${pn[1]})/pmax(${pn[2]},1e-10))^2) + ${pn[4]}`,
+    'Oral-PK':          `ifelse(abs(${pn[1]}-${pn[2]})<1e-9*(abs(${pn[1]})+abs(${pn[2]})+1), ${pn[0]}*${pn[1]}*x*exp(-${pn[1]}*x), ${pn[0]}*${pn[1]}/(${pn[1]}-${pn[2]})*(exp(-${pn[2]}*x)-exp(-${pn[1]}*x)))`,
+    'KWW':              `${pn[0]} * exp(-(pmax(x,0)/pmax(${pn[1]},1e-12))^pmax(${pn[2]},1e-6)) + ${pn[3]}`,
+    'Langevin':         `ifelse(abs(${pn[1]}*x)<1e-6, ${pn[0]}*${pn[1]}*x/3, ${pn[0]}*(1/tanh(${pn[1]}*x) - 1/(${pn[1]}*x)))`,
+    'Stern-Volmer':     `${pn[0]} / (pmax(1+${pn[1]}*x,1e-10) * pmax(1+${pn[2]}*x,1e-10))`,
+    'Van-t-Hoff':       `exp(${pn[1]} - ${pn[0]} / pmax(x, 1e-6))`,
+    'Ramberg-Osgood':   `x/pmax(${pn[0]},1e-12)+sign(x)*(abs(x)/pmax(${pn[1]},1e-12))^(1/pmax(${pn[2]},1e-6))`,
+    // v1.6.0+ models  (erf(z) = 2*pnorm(z*sqrt(2)) - 1 in base R)
+    'Two-Compartment-PK':  `${pn[0]}*exp(-abs(${pn[1]})*x) + ${pn[2]}*exp(-abs(${pn[3]})*x)`,
+    'PK-Lag':              `ifelse(x>${pn[3]}, ${pn[0]}*${pn[1]}/(${pn[1]}-${pn[2]})*(exp(-${pn[2]}*(x-${pn[3]}))-exp(-${pn[1]}*(x-${pn[3]}))), 0)`,
+    'Substrate-Inhibition':`${pn[0]}*x/(${pn[1]} + x + x^2/abs(${pn[2]}))`,
+    'Langmuir':            `${pn[0]}*${pn[1]}*x/(1 + ${pn[1]}*x)`,
+    'Freundlich':          `${pn[0]}*pmax(x,1e-12)^(1/abs(${pn[1]}))`,
+    'Temkin':              `${pn[1]}*log(abs(${pn[0]})*pmax(x,1e-300))`,
+    'Power-Law-Fluid':     `${pn[0]}*abs(x)^(${pn[1]} - 1)`,
+    'Herschel-Bulkley':    `${pn[0]} + ${pn[1]}*abs(x)^${pn[2]}`,
+    'Cross-Model':         `${pn[1]} + (${pn[0]} - ${pn[1]})/(1 + abs(${pn[2]}*x)^abs(${pn[3]}))`,
+    'Carreau':             `${pn[1]} + (${pn[0]} - ${pn[1]})*(1 + (${pn[2]}*x)^2)^((${pn[3]} - 1)/2)`,
+    'Quemada':             `((sqrt(${pn[0]}) + sqrt(${pn[1]})*sqrt(pmax(x,0)/abs(${pn[2]})))/(1 + sqrt(pmax(x,0)/abs(${pn[2]}))))^2`,
+    'Arrhenius':           `${pn[0]}*exp(-${pn[1]}/pmax(x,1e-6))`,
+    'Extended-Arrhenius':  `${pn[0]}*pmax(x,1e-12)^${pn[1]}*exp(-${pn[2]}/pmax(x,1e-6))`,
+    'EMG':                 `${pn[0]}*exp(0.5*(${pn[2]}/${pn[3]})^2 - (x-${pn[1]})/${pn[3]})*pnorm((x-${pn[1]})/${pn[2]} - ${pn[2]}/${pn[3]}) + ${pn[4]}`,
+    'Asymmetric-Gaussian': `${pn[0]}*exp(-0.5*((x-${pn[1]})/${pn[2]})^2)*2*pnorm(${pn[3]}*(x-${pn[1]})/${pn[2]}) + ${pn[4]}`,
+    'Erf-Diffusion':       `${pn[0]}*(2*pnorm(((x-${pn[1]})/abs(${pn[2]}))*sqrt(2)) - 1) + ${pn[3]}`,
+    'Softplus':            `${pn[0]}*log(1 + exp(${pn[1]}*(x-${pn[2]}))) + ${pn[3]}`,
+    'Erf-Sigmoid':         `${pn[0]}*pnorm(${pn[1]}*(x-${pn[2]})*sqrt(2)) + ${pn[3]}`,
   };
-  const formula = modelDefs[fit.model] || `# Define formula for ${fit.model}`;
+  let formula;
+  const polyR = /^Polynomial-(\d+)$/.exec(fit.model);
+  if (polyR) {
+    const deg = pn.length - 1;
+    formula = pn.map((c, i) => {
+      const pw = deg - i;
+      return pw === 0 ? `${c}` : pw === 1 ? `${c}*x` : `${c}*x^${pw}`;
+    }).join(' + ');
+  } else {
+    formula = modelDefs[fit.model] || `# Define formula for ${fit.model} here`;
+  }
 
   const rBounds = fit.bounds;
   const rHasLo = rBounds && rBounds.lo && rBounds.lo.some(v => v !== null);
@@ -452,8 +533,32 @@ function exportMATLAB() {
     'Stern-Volmer':     `p(1)./(max(1+p(2).*x,1e-10).*max(1+p(3).*x,1e-10))`,
     'Van-t-Hoff':       `exp(p(2)-p(1)./max(x,1e-6))`,
     'Ramberg-Osgood':   `x./max(p(1),1e-12)+sign(x).*(abs(x)./max(p(2),1e-12)).^(1./max(p(3),1e-6))`,
+    // v1.6.0+ models  (MATLAB has built-in erf / erfc)
+    'Two-Compartment-PK':  `p(1).*exp(-abs(p(2)).*x) + p(3).*exp(-abs(p(4)).*x)`,
+    'PK-Lag':              `(x>p(4)).*(p(1).*p(2)./(p(2)-p(3)).*(exp(-p(3).*(x-p(4)))-exp(-p(2).*(x-p(4)))))`,
+    'Substrate-Inhibition':`p(1).*x./(p(2) + x + x.^2./abs(p(3)))`,
+    'Langmuir':            `p(1).*p(2).*x./(1 + p(2).*x)`,
+    'Freundlich':          `p(1).*max(x,1e-12).^(1./abs(p(2)))`,
+    'Temkin':              `p(2).*log(abs(p(1)).*max(x,1e-300))`,
+    'Power-Law-Fluid':     `p(1).*abs(x).^(p(2)-1)`,
+    'Herschel-Bulkley':    `p(1) + p(2).*abs(x).^p(3)`,
+    'Cross-Model':         `p(2) + (p(1)-p(2))./(1 + abs(p(3).*x).^abs(p(4)))`,
+    'Carreau':             `p(2) + (p(1)-p(2)).*(1 + (p(3).*x).^2).^((p(4)-1)/2)`,
+    'Quemada':             `((sqrt(p(1)) + sqrt(p(2)).*sqrt(max(x,0)./abs(p(3))))./(1 + sqrt(max(x,0)./abs(p(3))))).^2`,
+    'Arrhenius':           `p(1).*exp(-p(2)./max(x,1e-6))`,
+    'Extended-Arrhenius':  `p(1).*max(x,1e-12).^p(2).*exp(-p(3)./max(x,1e-6))`,
+    'EMG':                 `0.5.*p(1).*exp(0.5.*(p(3)./p(4)).^2 - (x-p(2))./p(4)).*erfc((p(3)./p(4) - (x-p(2))./p(3))./sqrt(2)) + p(5)`,
+    'Asymmetric-Gaussian': `p(1).*exp(-0.5.*((x-p(2))./p(3)).^2).*(1 + erf(p(4).*(x-p(2))./(p(3).*sqrt(2)))) + p(5)`,
+    'Erf-Diffusion':       `p(1).*erf((x-p(2))./max(abs(p(3)),1e-10)) + p(4)`,
+    'Softplus':            `p(1).*log(1 + exp(p(2).*(x-p(3)))) + p(4)`,
+    'Erf-Sigmoid':         `p(1).*0.5.*(1 + erf(p(2).*(x-p(3)))) + p(4)`,
   };
-  const fnExpr = modelDefs[fit.model] || `% Define model for ${fit.model} here`;
+  let fnExpr;
+  if (/^Polynomial-\d+$/.test(fit.model)) {
+    fnExpr = `polyval(p, x)`;   // p is ordered high-degree → constant, matching CFS
+  } else {
+    fnExpr = modelDefs[fit.model] || `% Define model for ${fit.model} here`;
+  }
 
   const mBounds = fit.bounds;
   const mHasLo = mBounds && mBounds.lo && mBounds.lo.some(v => v !== null);
@@ -611,7 +716,7 @@ function exportJupyter() {
   const xLabel = document.getElementById('plot-xlabel').value.trim() || 'x';
   const yLabel = document.getElementById('plot-ylabel').value.trim() || 'y';
   const pTitle = document.getElementById('plot-title').value.trim() || fit.model + ' Fit';
-  const paramStr = fit.paramNames.join(', ');
+  const paramStr = _safeIdents(fit.paramNames).join(', ');
   const p0Str = r.params.map(v => v.toPrecision(6)).join(', ');
   const fnBody = _pyModelBody(fit);
   const xArr = '[' + xData.map(v => v.toPrecision(8)).join(', ') + ']';
@@ -650,7 +755,7 @@ function exportJupyter() {
     code([
       `# ── Model: ${fit.model} ──────────────────────────────────`,
       `def model(x, ${paramStr}):`,
-      `    ${fnBody.replace(/\n/g, '\n    ')}`,
+      `    ${fnBody}`,
       ``,
       `# Initial parameters (converged values from CFS)`,
       `p0 = [${p0Str}]`,
@@ -849,7 +954,7 @@ function exportBibTeX() {
   author       = {Mirza, Asad},
   title        = {{Curve Fitting Studio}},
   year         = {${year}},
-  version      = {1.6.1},
+  version      = {1.7.0},
   url          = {https://dthornz.github.io/curve-fitting-studio/},
   urldate      = {${new Date().toISOString().slice(0, 10)}},
   note         = {Browser-native nonlinear regression platform.${modelNote}${statsNote}},
@@ -875,9 +980,15 @@ function exportJSON() {
   const r = fit.result;
   const ds = state.datasets.find(d => d.id === fit.dsId);
   const excl = ds ? (ds.excludedIndices || new Set()) : new Set();
-  const xFit = ds ? ds.x.filter((_, i) => !excl.has(i)) : [];
-  const yFit = fit.fn ? xFit.map(x => fit.fn(x, r.params)) : [];
-  const residuals = xFit.map((x, i) => (ds?.y[i] ?? null) - (yFit[i] ?? null));
+  // Keep x, y, y_fit and residuals all the same length and index-aligned with
+  // the full dataset; excluded points get null for the fit/residual columns.
+  const fullX = ds ? ds.x : [];
+  const fullY = ds ? ds.y : [];
+  const yFit = fit.fn ? fullX.map((x, i) => excl.has(i) ? null : fit.fn(x, r.params)) : [];
+  const residuals = fullX.map((x, i) => {
+    const yf = yFit[i];
+    return (yf == null || !isFinite(yf)) ? null : fullY[i] - yf;
+  });
 
   const schema = {
     schema: 'curve-fitting-studio/v1',
@@ -909,8 +1020,8 @@ function exportJSON() {
       chi_sq_red: r.chiSqRed ?? null,
     },
     data: {
-      x:         ds?.x   ?? [],
-      y:         ds?.y   ?? [],
+      x:         fullX,
+      y:         fullY,
       y_fit:     yFit,
       residuals,
       excluded:  ds ? [...excl] : [],

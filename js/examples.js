@@ -851,6 +851,35 @@ const EXAMPLES = {
       const eps = sigma.map(s => s / p.E + Math.pow(s / p.K, 1 / p.n));
       return { name: 'Stress-Strain Curve', x: sigma, y: noisyGauss(eps, p.noise), xlabel: 'Stress σ (MPa)', ylabel: 'Strain ε', suggestModel: 'Ramberg-Osgood' };
     }
+  },
+  // Demonstrates replicate-derived uncertainty: each dose is measured `reps`
+  // times; the dataset carries per-point σ so 1/σ² weighting + reduced χ² apply.
+  'dose-response-replicates': {
+    title: 'Dose–Response + σ (replicates)',
+    tags: 'replicate replicates error bars sigma uncertainty sd sem weighted chi-square dose response 4pl ec50 elisa',
+    params: [
+      { key: 'A',    label: 'Top plateau (A)',   value: 100, min: 0,    max: 1000, step: 1   },
+      { key: 'D',    label: 'Bottom plateau (D)',value: 5,   min: -50,  max: 500,  step: 1   },
+      { key: 'C',    label: 'EC₅₀ (C)',          value: 8,   min: 0.01, max: 1000, step: 0.1 },
+      { key: 'B',    label: 'Hill slope (B)',    value: 1.3, min: 0.1,  max: 8,    step: 0.1 },
+      { key: 'reps', label: 'Replicates / dose', value: 4,   min: 2,    max: 12,   step: 1   },
+      { key: 'noise',label: 'Replicate σ',       value: 6,   min: 0,    max: 100,  step: 0.5 },
+      { key: 'N',    label: 'Doses (N)',         value: 10,  min: 4,    max: 30,   step: 1   },
+    ],
+    generate(p) {
+      const reps = Math.max(2, Math.round(p.reps));
+      const lo = Math.log10(Math.max(p.C / 30, 1e-3)), hi = Math.log10(Math.max(p.C * 30, p.C / 30 * 10 + 1e-3));
+      const x = Array.from({ length: p.N }, (_, i) => Math.pow(10, lo + (hi - lo) * i / Math.max(p.N - 1, 1)));
+      const f = xi => p.D + (p.A - p.D) / (1 + Math.pow(xi / Math.max(p.C, 1e-9), p.B));
+      const y = [], sigY = [];
+      for (const xi of x) {
+        const samples = Array.from({ length: reps }, () => f(xi) + gauss() * p.noise);
+        const m = samples.reduce((s, v) => s + v, 0) / reps;
+        const sd = Math.sqrt(samples.reduce((s, v) => s + (v - m) ** 2, 0) / (reps - 1));
+        y.push(m); sigY.push(sd > 0 ? sd : NaN);
+      }
+      return { name: 'Dose–Response + σ (replicates)', x, y, sigY, xlabel: 'Dose', ylabel: 'Response', suggestModel: '4PL' };
+    }
   }
 };
 
@@ -890,6 +919,7 @@ const EXAMPLE_EQ = {
   'thermal-kinetics':       'k=A\\,\\exp\\!\\left(-E_{a}/(R\\,T)\\right)\\;\\text{(Arrhenius preset)}',
   'sigmoid-activation':     'y=\\tfrac{A}{2}\\!\\left[1+\\mathrm{erf}\\!\\left(k(x-x_{0})\\right)\\right]+C\\;\\text{(Erf-Sigmoid preset)}',
   'erf-diffusion':          'C=A\\,\\mathrm{erf}\\!\\left(\\dfrac{x-\\mu}{w}\\right)+B',
+  'dose-response-replicates': 'y = D+\\dfrac{A-D}{1+(x/C)^{B}}\\quad(\\pm\\,\\sigma\\text{ from replicates})',
 };
 
 function generateExample(key, overrides) {

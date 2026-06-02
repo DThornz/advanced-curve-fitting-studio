@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.6.5</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -181,6 +181,9 @@
               <div class="app-dropdown-sep"></div>
               <div class="examples-col-hdr">Diffusion &amp; Misc</div>
               <div class="app-dropdown-item" data-example="erf-diffusion">Erf Diffusion Profile  <span class="app-dropdown-sub">semiconductor / materials</span></div>
+              <div class="app-dropdown-sep"></div>
+              <div class="examples-col-hdr">Replicates / Uncertainty ★</div>
+              <div class="app-dropdown-item" data-example="dose-response-replicates">Dose-Response + σ  <span class="app-dropdown-sub">replicate-derived error bars (4PL)</span></div>
             </div>
             </div><!-- end examples-cols-wrap -->
           </div>
@@ -193,6 +196,7 @@
       <button class="btn btn-primary" id="btn-fit">▶  Fit</button>
       <button class="btn btn-danger" id="btn-cancel-fit" style="display:none" title="Cancel the current fit">✕ Cancel</button>
       <button class="btn" id="btn-try-all" title="Fit every built-in model and rank by R²">Try All</button>
+      <button class="btn" id="btn-fit-all" title="Fit the selected model to every enabled dataset (batch); results tabulated in the stats panel">Fit All Datasets</button>
       <button class="btn btn-danger" id="btn-clear-fit" title="Remove the selected fit">✕  Remove Fit</button>
       <div style="flex:1"></div>
       <div class="app-toolbar-group">
@@ -260,7 +264,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.6.5</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1105,18 +1109,49 @@
       <button class="modal-close" id="col-picker-close">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:.82em;color:var(--muted);margin-bottom:14px">Your file has multiple columns. Choose which to use as X, Y, and optionally σ (measurement uncertainty).</p>
+      <p style="font-size:.82em;color:var(--muted);margin-bottom:14px">Your file has multiple columns. Pick an import mode, then map the columns.</p>
       <div class="ctrl-row">
-        <label class="ctrl-label" style="margin:0;min-width:56px">X column</label>
+        <label class="ctrl-label" style="margin:0;min-width:78px">Import mode</label>
+        <select class="ctrl-select" id="col-picker-mode">
+          <option value="single">Single Y (+ optional σ)</option>
+          <option value="multi">Multiple Y → separate datasets</option>
+          <option value="replicates">Replicates → mean ± σ</option>
+          <option value="grouped">Group column → one dataset per group</option>
+        </select>
+      </div>
+      <p id="col-picker-mode-desc" style="font-size:.72em;color:var(--dim);margin:6px 0 0">One X column, one Y column, and an optional uncertainty (σ) column.</p>
+      <div class="ctrl-row" style="margin-top:10px">
+        <label class="ctrl-label" style="margin:0;min-width:78px">X column</label>
         <select class="ctrl-select" id="col-picker-x"></select>
       </div>
-      <div class="ctrl-row" style="margin-top:8px">
-        <label class="ctrl-label" style="margin:0;min-width:56px">Y column</label>
+      <div class="ctrl-row" style="margin-top:8px" id="col-picker-y-row">
+        <label class="ctrl-label" style="margin:0;min-width:78px">Y column</label>
         <select class="ctrl-select" id="col-picker-y"></select>
       </div>
-      <div class="ctrl-row" style="margin-top:8px">
-        <label class="ctrl-label" style="margin:0;min-width:56px">σ column</label>
+      <div class="ctrl-row" style="margin-top:8px" id="col-picker-sig-row">
+        <label class="ctrl-label" style="margin:0;min-width:78px">σ column</label>
         <select class="ctrl-select" id="col-picker-sig"></select>
+      </div>
+      <div id="col-picker-ycols-row" style="margin-top:8px;display:none">
+        <label class="ctrl-label" style="margin:0 0 5px">Y columns <span id="col-picker-ycols-hint" style="color:var(--dimmer);font-weight:400"></span></label>
+        <div id="col-picker-ycols" style="max-height:132px;overflow-y:auto;border:1px solid var(--border);border-radius:5px;padding:7px 9px;font-size:.78em;display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+      <div class="ctrl-row" style="margin-top:8px;display:none" id="col-picker-group-row">
+        <label class="ctrl-label" style="margin:0;min-width:78px">Group column</label>
+        <select class="ctrl-select" id="col-picker-group"></select>
+      </div>
+      <div class="ctrl-row" style="margin-top:8px;display:none" id="col-picker-agg-row">
+        <label class="ctrl-label" style="margin:0;min-width:78px">Aggregate</label>
+        <select class="ctrl-select" id="col-picker-agg" style="flex:none;width:96px">
+          <option value="mean">Mean</option>
+          <option value="median">Median</option>
+        </select>
+        <label class="ctrl-label" style="margin:0 0 0 12px;min-width:34px">σ as</label>
+        <select class="ctrl-select" id="col-picker-sigmethod" style="flex:1">
+          <option value="sd">Std. dev.</option>
+          <option value="sem">Std. error (SD/√n)</option>
+          <option value="none">None</option>
+        </select>
       </div>
       <div id="col-picker-preview" style="margin-top:12px;font-size:.71em;font-family:var(--mono);color:var(--muted);line-height:1.5;white-space:pre;overflow-x:auto"></div>
     </div>
@@ -1747,12 +1782,27 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.7.0 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.7.0</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Multi-column import modes</strong> — the column picker now offers four modes: <em>Single Y (+σ)</em>, <em>Multiple Y → separate datasets</em>, <em>Replicates → mean ± σ</em>, and <em>Group column → one dataset per group</em>. Wide-format replicates auto-compute per-point σ (SD or SEM); long-format data is split by category label with repeated X aggregated to mean ± σ</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Fit All Datasets</strong> — batch-fits the selected model to every enabled dataset in one click (per-dataset Auto-Init and weighting), with all results tabulated side-by-side in the stats panel for comparison</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Replicate σ everywhere</strong> — imported/aggregated σ drives 1/σ² weighting and reduced χ², and renders as error bars on the plot. New example <strong>Dose-Response + σ</strong> generates replicate-derived error bars (4PL) to demonstrate the workflow</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Code exports now valid for every model</strong> — Python/R/Jupyter sanitise Greek/subscript/∞ parameter names into legal identifiers (e.g. <code>η∞</code> → <code>etainf</code>, guarding the Python keyword <code>lambda</code>); polynomials emit real bodies instead of a stub; a Jupyter indentation bug that broke multi-line models (EMG, Voigt, PK-Lag…) is fixed; R &amp; MATLAB gained all v1.6.0 models</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>JSON export alignment</strong> — <code>x</code>, <code>y</code>, <code>y_fit</code> and <code>residuals</code> are now equal-length and index-aligned with the full dataset (null at excluded points) instead of silently misaligning when points were masked</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.6.5 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.6.5</span>
+          <span class="relnotes-ver-num">v1.6.5</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Edit-as-Custom parse errors</strong> — several models produced invalid Math.js when opened in the custom editor (rheology models used <code>|γ̇|</code> pipe notation, Temkin/Softplus used <code>ln(</code>, PK-Lag had trailing prose, Voigt was a description). All now emit valid Math.js (<code>abs(x)</code>, <code>log(</code>, a proper ternary, and a fully-expanded Voigt)</span></li>

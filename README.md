@@ -48,6 +48,9 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Axis range & tick control** | Set X/Y min, max, and tick spacing (Δ) from the ⚙ Style modal; blank = Plotly autorange |
 | **Graph style editor** | Full control over global font (family, size, color), plot/paper background, grid lines (color, width, dash per axis), zero lines, axis spines, tick labels, and legend appearance; ⚙ Style button in the Plot Labels section |
 | **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker with optional σ column for files with more than two columns |
+| **Multi-column import modes** | The column picker offers four modes: **Single Y (+σ)** · **Multiple Y → separate datasets** (each Y column becomes its own dataset) · **Replicates → mean ± σ** (wide-format replicate Y columns collapsed to a mean with auto-computed SD or SEM) · **Group column → one dataset per group** (long-format X, Y, category data, with repeated X aggregated to mean ± σ) — live preview for every mode |
+| **Batch fit (Fit All Datasets)** | One click fits the selected model to every enabled dataset, with per-dataset Auto-Init and weighting; results are tabulated side-by-side in the stats panel for direct comparison |
+| **Replicate uncertainty (σ)** | Imported or replicate-derived σ drives 1/σ² weighting and reduced χ², and renders as error bars on the plot. The **Dose-Response + σ** example generates replicate-based error bars to demonstrate the workflow |
 | **36 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration, **Gompertz tumor growth**, **XRD Pseudo-Voigt peak**, **Fano resonance**, **superparamagnetic M-H (Langevin)**, **stress-strain Ramberg-Osgood**, **ELISA 4PL dose-response**, **oral drug PK**, **polymer KWW relaxation**, **fluorescence quenching (Stern-Volmer)**, **Van't Hoff equilibrium vs temperature**, **two-compartment PK** (IV bolus), **oral PK with lag time**, **substrate inhibition** (bell-shaped enzyme kinetics), **Langmuir adsorption isotherm**, **Freundlich adsorption isotherm**, **Herschel-Bulkley fluid**, **Cross Model viscosity**, **EMG chromatography peak**, **Arrhenius rate constant**, **erf diffusion profile** · **Electrophysiology:** G-V Boltzmann, Kir I-V, HH Na I-V, voltage-dependent τ — each with adjustable noise and optional outlier injection (count + scale). The generator modal shows the generating equation rendered in KaTeX. Dropdown is a 3-column grouped layout |
 | **Dataset enable/disable** | Toggle datasets on/off; disabled datasets and all their fits are fully hidden from the plot, residual panels, stats table, and F-test — re-enabling instantly restores them |
 | **Blank startup** | App opens with an empty workspace — no example data pre-loaded; start from a clean slate every time |
@@ -168,7 +171,7 @@ All four solvers (LM, Gauss-Newton, Nelder-Mead, BFGS) enforce bounds by project
 
 ### Equation display
 
-Every built-in model shows its full equation (rendered by KaTeX) directly below the Fit Model dropdown — updated instantly on every selection. The 26 example dataset generators also show the generating equation (in display-mode KaTeX) at the top of the generator modal.
+Every built-in model shows its full equation (rendered by KaTeX) directly below the Fit Model dropdown — updated instantly on every selection. The example dataset generators also show the generating equation (in display-mode KaTeX) at the top of the generator modal.
 
 ### Custom equations
 
@@ -401,6 +404,13 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 ---
 
 ## Changelog
+
+### v1.7.0 — 2026-06-02
+- **new** Multi-column import modes in the column picker: *Single Y (+σ)*, *Multiple Y → separate datasets*, *Replicates → mean ± σ* (auto SD/SEM), and *Group column → one dataset per group* (long-format, repeated X aggregated to mean ± σ), each with a live preview
+- **new** **Fit All Datasets** button — batch-fits the selected model to every enabled dataset (per-dataset Auto-Init + weighting); results tabulated together in the stats panel
+- **new** Replicate-derived σ drives 1/σ² weighting, reduced χ², and plot error bars; new **Dose-Response + σ** example demonstrates the workflow (4PL with replicate error bars)
+- **fix** Code exports valid for all models: Python/R/Jupyter sanitise Greek/subscript/∞ parameter names into legal identifiers (guards Python keyword `lambda`); polynomials emit real bodies; Jupyter multi-line indentation bug fixed; R & MATLAB gained all v1.6.0 models
+- **fix** JSON export `x`/`y`/`y_fit`/`residuals` are now equal-length and index-aligned with the full dataset (null at excluded points)
 
 ### v1.6.5 — 2026-06-02
 - **fix** Edit-as-Custom parse errors — corrected invalid `MODEL_EQ_JS` translations (rheology `|γ̇|`→`abs(x)`, `ln(`→`log(`, PK-Lag trailing prose→ternary, Voigt prose→fully-expanded Thompson-Cox-Hastings expression)

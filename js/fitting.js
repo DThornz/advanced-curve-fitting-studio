@@ -423,7 +423,7 @@ function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, 
   _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory: null, paramRows });
 }
 
-function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory, paramRows: capturedRows }) {
+function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId, ds, excluded, weightMode, nStarts, curvePts, sseHistory, paramRows: capturedRows, defer }) {
   if (!state.datasets.find(d => d.id === dsId)) { setConsole('Dataset was removed during fitting.', 'warn'); return; }
   const m = MODELS[model];
   const fitColor = state.fits.some(f => f.dsId === dsId) ? nextColor() : ds.color;
@@ -461,10 +461,103 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
   state.fits.push(fitRecord);
   state.activeFitId = fitRecord.id;
 
+  if (defer) return fitRecord;   // batch caller refreshes UI once at the end
+
   renderFitList();
   renderParamResults(fitRecord);
   renderStats(fitRecord);
   updatePlots();
+  return fitRecord;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BATCH FIT — fit the selected model to every enabled dataset
+═══════════════════════════════════════════════════════════ */
+function runFitAllDatasets() {
+  const model = state.fitConfig.model;
+  const targets = state.datasets.filter(d => d.enabled !== false);
+  if (!targets.length) { setConsole('No enabled datasets to fit.', 'error'); return; }
+
+  const m          = MODELS[model];
+  const maxIter    = parseInt(document.getElementById('opt-max-iter').value) || 500;
+  const tol        = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
+  const curvePts   = Math.max(10, parseInt(document.getElementById('opt-curve-pts').value) || 300);
+  const algoKey    = document.getElementById('opt-algo').value;
+  const nStarts    = parseInt(document.getElementById('opt-n-starts').value)  || 1;
+  let   weightMode = document.getElementById('opt-weights').value;
+  if (weightMode === 'huber') weightMode = 'none';   // IRLS not run in batch — fall back to OLS
+
+  // Resolve the model function + parameter scaffolding once.
+  let isCustom = false;
+  if (model === 'Custom') {
+    if (!customCompiled) { setConsole('Parse the custom equation first.', 'error'); return; }
+    if (!state.fitConfig.customParams.length) { setConsole('No free parameters in custom equation.', 'error'); return; }
+    isCustom = true;
+  } else if (!m || (!m.fn && !m.analytic)) {
+    setConsole('Unknown model.', 'error'); return;
+  }
+
+  const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
+  const solve = SOLVERS[algoKey] || levenbergMarquardt;
+  const customParams = state.fitConfig.customParams;
+  const customModelFn = isCustom ? (x, params) => {
+    const scope = { x };
+    customParams.forEach((nm, i) => { scope[nm] = params[i]; });
+    try { const v = customCompiled.evaluate(scope); return isFinite(v) ? v : NaN; } catch (_) { return NaN; }
+  } : null;
+
+  if (state.currentWorker) { state.currentWorker.terminate(); state.currentWorker = null; }
+  state.sweepParams = null;
+
+  let ok = 0; const skipped = [];
+  for (const ds of targets) {
+    const excluded = ds.excludedIndices || new Set();
+    const xArr = ds.x.filter((_, i) => !excluded.has(i));
+    const yArr = ds.y.filter((_, i) => !excluded.has(i));
+
+    // Per-dataset weights
+    let weights = null;
+    if (weightMode === '1/y2')      weights = yArr.map(y => 1 / Math.max(y * y, 1e-20));
+    else if (weightMode === '1/y')  weights = yArr.map(y => 1 / Math.max(Math.abs(y), 1e-10));
+    else if (weightMode === 'sigma' && ds.sigY) {
+      const sigArr = ds.sigY.filter((_, i) => !excluded.has(i));
+      weights = sigArr.map(s => (isFinite(s) && s > 0) ? 1 / (s * s) : 1e-40);
+    }
+
+    try {
+      let result, modelFn, paramNames;
+      if (m && m.analytic) {
+        const err = validateFitInput(xArr, yArr, model, null);
+        if (err) { skipped.push(`${ds.name}: ${err}`); continue; }
+        result = fitPolynomialAnalytic(m.degree, xArr, yArr);
+        modelFn = (x, p) => p.reduce((s, c, j) => s + c * Math.pow(x, m.degree - j), 0);
+        paramNames = m.params;
+      } else {
+        paramNames = isCustom ? customParams : m.params;
+        modelFn = isCustom ? customModelFn : m.fn;
+        const p0 = isCustom
+          ? (state.paramRows.length === paramNames.length ? state.paramRows.map(r => r.init) : paramNames.map(() => 1))
+          : m.autoInit(xArr, yArr);
+        const err = validateFitInput(xArr, yArr, model, p0);
+        if (err) { skipped.push(`${ds.name}: ${err}`); continue; }
+        const opts = { maxIter, tol, weights };
+        result = nStarts > 1
+          ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
+          : solve(modelFn, xArr, yArr, p0, opts);
+      }
+      _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId: ds.id, ds, excluded, weightMode, nStarts, curvePts, sseHistory: null, paramRows: null, defer: true });
+      ok++;
+    } catch (e) {
+      skipped.push(`${ds.name}: ${e.message || 'error'}`);
+    }
+  }
+
+  renderFitList();
+  const active = state.fits.find(f => f.id === state.activeFitId);
+  if (active) { renderParamResults(active); renderStats(active); }
+  updatePlots();
+  const skipMsg = skipped.length ? ` · ${skipped.length} skipped (${skipped[0]}${skipped.length > 1 ? ', …' : ''})` : '';
+  setConsole(`Batch fit: ${ok}/${targets.length} dataset${targets.length === 1 ? '' : 's'} fit with ${model}${skipMsg}.`, ok ? '' : 'warn');
 }
 
 /* ═══════════════════════════════════════════════════════════
