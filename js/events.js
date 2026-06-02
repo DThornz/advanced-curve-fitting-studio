@@ -33,9 +33,111 @@ function initEvents() {
       requestAnimationFrame(() => { if (!menu.classList.contains('open')) menu.style.cssText = ''; });
     });
   }
-  setupDropdown('btn-examples', 'examples-menu', 540);
+  setupDropdown('btn-examples', 'examples-menu', 740);
   setupDropdown('btn-export',   'export-menu',   220);
   setupDropdown('btn-session',  'session-menu',  200);
+
+  /* ── Examples menu: auto-column layout ───────────────────
+     Parse all items/sections ONCE from original HTML, then
+     rebuild columns to fill available viewport height on open. */
+  let _exSections = null;
+
+  function _getExSections() {
+    if (_exSections) return _exSections;
+    _exSections = [];
+    let cur = null;
+    document.getElementById('examples-cols-wrap')
+      ?.querySelectorAll('.examples-col-hdr, .app-dropdown-item[data-example]')
+      .forEach(el => {
+        if (el.classList.contains('examples-col-hdr')) {
+          if (cur) _exSections.push(cur);
+          cur = { hdr: el.textContent.trim(), items: [] };
+        } else {
+          if (!cur) cur = { hdr: '', items: [] };
+          cur.items.push({ key: el.dataset.example, html: el.outerHTML });
+        }
+      });
+    if (cur) _exSections.push(cur);
+    return _exSections;
+  }
+
+  function _rebuildExMenuColumns() {
+    if (window.innerWidth < 640) return;   // mobile handled by CSS
+    const menu = document.getElementById('examples-menu');
+    const colsWrap = document.getElementById('examples-cols-wrap');
+    if (!menu || !colsWrap || !menu.classList.contains('open')) return;
+
+    const sections = _getExSections();
+    if (!sections.length) return;
+
+    // Available vertical space below the menu's top edge
+    const menuTop  = parseFloat(menu.style.top) || 50;
+    const searchEl = document.getElementById('examples-search');
+    const searchH  = (searchEl?.closest('[style*="border-bottom"]')?.offsetHeight || 40) + 4;
+    const availH   = Math.max(120, window.innerHeight - menuTop - searchH - 20);
+
+    // Approximate row heights (px)
+    const ITEM_H = 28, HDR_H = 24, SEP_H = 9;
+
+    // Total "row units" for all sections
+    const totalRows = sections.reduce((s, sec, i) =>
+      s + (sec.hdr ? 1 : 0) + sec.items.length + (i < sections.length - 1 ? SEP_H / ITEM_H : 0), 0);
+
+    const rowsPerCol = Math.max(4, Math.floor(availH / ITEM_H));
+    const numCols    = Math.max(1, Math.ceil(totalRows / rowsPerCol));
+    const targetRowsPerCol = totalRows / numCols;
+
+    // Greedily assign sections to columns (keep each section intact)
+    const columns = [];
+    let col = [], colRows = 0;
+    sections.forEach((sec, i) => {
+      const secRows = (sec.hdr ? HDR_H / ITEM_H : 0) + sec.items.length +
+                      (i < sections.length - 1 ? SEP_H / ITEM_H : 0);
+      // Start a new column if this section tips us significantly over target
+      // and we still have budget to open more columns
+      if (col.length > 0 && columns.length < numCols - 1 &&
+          colRows + secRows > targetRowsPerCol * 1.05) {
+        columns.push(col); col = []; colRows = 0;
+      }
+      col.push(sec);
+      colRows += secRows;
+    });
+    if (col.length) columns.push(col);
+
+    // Adjust menu width to fit the actual column count
+    const COL_W  = Math.max(180, Math.min(230, Math.floor((window.innerWidth - 24) / columns.length)));
+    const menuW  = Math.min(window.innerWidth - 16, columns.length * COL_W + 16);
+    menu.style.width = menuW + 'px';
+
+    // Rebuild columns HTML
+    colsWrap.innerHTML = columns.map(secs =>
+      `<div class="examples-col">${secs.map((sec, si) =>
+        (sec.hdr ? `<div class="examples-col-hdr">${sec.hdr}</div>` : '') +
+        sec.items.map(it => it.html).join('') +
+        (si < secs.length - 1 ? '<div class="app-dropdown-sep"></div>' : '')
+      ).join('')}</div>`
+    ).join('');
+
+    // Re-attach click listeners for freshly-built items
+    colsWrap.querySelectorAll('.app-dropdown-item[data-example]').forEach(el => {
+      el.addEventListener('click', () => {
+        openExampleEditor(el.dataset.example);
+        menu.classList.remove('open');
+        menu.style.cssText = '';
+      });
+    });
+  }
+
+  // Hook: rebuild columns whenever the examples menu opens
+  document.getElementById('btn-examples').addEventListener('click', () => {
+    // Run after positionMenu() sets the fixed position/width
+    setTimeout(_rebuildExMenuColumns, 0);
+  });
+  // Also rebuild on window resize while open
+  window.addEventListener('resize', () => {
+    if (document.getElementById('examples-menu')?.classList.contains('open'))
+      _rebuildExMenuColumns();
+  }, { passive: true });
 
   /* ── Example datasets ─────────────────────────────────── */
   document.getElementById('examples-menu').querySelectorAll('.app-dropdown-item').forEach(item => {
