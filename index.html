@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.0</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.1</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -264,7 +264,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.0</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.1</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -749,6 +749,92 @@
               </div>
             </div>
             <div id="pp-fft-spectrum-plot" style="width:100%;height:230px"></div>
+          </div>
+        </div>
+
+        <!-- Normalize / Transform section -->
+        <div class="pp-section">
+          <p class="pp-section-hd">Normalize / Transform</p>
+          <div class="pp-row">
+            <label>Transform</label>
+            <select class="ctrl-select" id="pp-tf-method" style="flex:1">
+              <option value="minmax">Min–Max → [0, 1]</option>
+              <option value="zscore">Z-score (mean 0, SD 1)</option>
+              <option value="log">Log (natural)</option>
+              <option value="log10">Log₁₀</option>
+              <option value="sqrt">Square root</option>
+              <option value="boxcox">Box–Cox (λ)</option>
+            </select>
+          </div>
+          <div class="pp-row" id="pp-tf-lambda-row" style="display:none">
+            <label>λ (Box–Cox)</label>
+            <input class="ctrl-input" type="number" id="pp-tf-lambda" value="0" min="-5" max="5" step="0.1" style="width:70px;flex:none">
+            <button class="btn" id="pp-tf-lambda-auto" style="font-size:.7em;padding:2px 9px">Auto (MLE)</button>
+          </div>
+          <p class="pp-desc" id="pp-tf-desc">Linearly rescales to the [0, 1] interval. A display convenience — note it changes parameter scale and meaning.</p>
+          <p class="pp-warn">⚠ Transforms change what the model sees; fits run on the transformed data. Use Restore Original to revert.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" id="pp-tf-apply">Apply Transform</button>
+          </div>
+        </div>
+
+        <!-- Baseline / De-trend section -->
+        <div class="pp-section">
+          <p class="pp-section-hd">Baseline / De-trend</p>
+          <div class="pp-row">
+            <label>Baseline</label>
+            <select class="ctrl-select" id="pp-bl-method" style="flex:1">
+              <option value="poly">Polynomial</option>
+              <option value="lowess">LOWESS (local regression)</option>
+            </select>
+          </div>
+          <div class="pp-row" id="pp-bl-deg-row">
+            <label>Poly degree</label>
+            <select class="ctrl-select" id="pp-bl-deg" style="flex:1">
+              <option value="1">1 — linear drift</option>
+              <option value="2">2 — quadratic</option>
+              <option value="3">3 — cubic</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <div class="pp-row" id="pp-bl-frac-row" style="display:none">
+            <label>Smoothing frac</label>
+            <input class="ctrl-input" type="number" id="pp-bl-frac" value="0.3" min="0.1" max="1" step="0.05" style="width:70px;flex:none">
+            <span class="pp-hint">fraction of points per local fit</span>
+          </div>
+          <p class="pp-desc" id="pp-bl-desc">Fits a low-order polynomial trend and subtracts it — good for removing drift or background under peaks and oscillations.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" id="pp-bl-apply">Subtract Baseline</button>
+          </div>
+        </div>
+
+        <!-- Repair / Impute section -->
+        <div class="pp-section">
+          <p class="pp-section-hd">Repair / Impute</p>
+          <div class="pp-row">
+            <label>Action</label>
+            <select class="ctrl-select" id="pp-rp-method" style="flex:1">
+              <option value="outliers">Replace outliers (MAD)</option>
+              <option value="nan">Fill non-finite (NaN) gaps</option>
+            </select>
+          </div>
+          <div class="pp-row" id="pp-rp-thresh-row">
+            <label>MAD threshold</label>
+            <input class="ctrl-input" type="number" id="pp-rp-thresh" value="3.5" min="1" max="10" step="0.5" style="width:70px;flex:none">
+            <span class="pp-hint">flag |robust z| &gt; threshold</span>
+          </div>
+          <div class="pp-row">
+            <label>Fill method</label>
+            <select class="ctrl-select" id="pp-rp-fill" style="flex:1">
+              <option value="spline">Cubic spline</option>
+              <option value="linear">Linear</option>
+            </select>
+          </div>
+          <p class="pp-desc" id="pp-rp-desc">Flags points whose robust (MAD-based) z-score exceeds the threshold and replaces them with an interpolated estimate from the remaining points.</p>
+          <p class="pp-warn">⚠ Imputation can bias estimates and understate uncertainty — masking points (Data Table) is often safer. Use Restore Original to revert.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" id="pp-rp-apply">Apply Repair</button>
           </div>
         </div>
 
@@ -1782,12 +1868,25 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.7.1 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.7.1</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Normalize / Transform</strong> (Pre-Process) — Min–Max, Z-score, log, log₁₀, √, and Box–Cox (with an Auto maximum-likelihood λ) transforms of Y, fully reversible via Undo / Restore Original</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Baseline / De-trend</strong> (Pre-Process) — subtract a polynomial (degree 1–5) or LOWESS local-regression baseline, fit on non-masked points; removes drift/background under peaks and oscillations</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Repair / Impute</strong> (Pre-Process) — flag outliers by robust MAD z-score (or non-finite gaps) and replace them with a cubic-spline or linear estimate from the remaining points; with a caution that masking is often the safer choice</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.7.0 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.7.0</span>
+          <span class="relnotes-ver-num">v1.7.0</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Multi-column import modes</strong> — the column picker now offers four modes: <em>Single Y (+σ)</em>, <em>Multiple Y → separate datasets</em>, <em>Replicates → mean ± σ</em>, and <em>Group column → one dataset per group</em>. Wide-format replicates auto-compute per-point σ (SD or SEM); long-format data is split by category label with repeated X aggregated to mean ± σ</span></li>

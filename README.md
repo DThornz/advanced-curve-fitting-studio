@@ -48,6 +48,9 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Axis range & tick control** | Set X/Y min, max, and tick spacing (Δ) from the ⚙ Style modal; blank = Plotly autorange |
 | **Graph style editor** | Full control over global font (family, size, color), plot/paper background, grid lines (color, width, dash per axis), zero lines, axis spines, tick labels, and legend appearance; ⚙ Style button in the Plot Labels section |
 | **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker with optional σ column for files with more than two columns |
+| **Normalize / transform** | Pre-Process panel: Min–Max, Z-score, log, log₁₀, √, and Box–Cox (with Auto maximum-likelihood λ) transforms of Y — fully reversible via Undo / Restore Original |
+| **Baseline / de-trend** | Subtract a polynomial (degree 1–5) or LOWESS local-regression baseline (fit on non-masked points) to remove drift or background under peaks/oscillations |
+| **Repair / impute** | Flag outliers by robust MAD z-score (or fill non-finite gaps) and replace them with a cubic-spline or linear estimate from the remaining points |
 | **Multi-column import modes** | The column picker offers four modes: **Single Y (+σ)** · **Multiple Y → separate datasets** (each Y column becomes its own dataset) · **Replicates → mean ± σ** (wide-format replicate Y columns collapsed to a mean with auto-computed SD or SEM) · **Group column → one dataset per group** (long-format X, Y, category data, with repeated X aggregated to mean ± σ) — live preview for every mode |
 | **Batch fit (Fit All Datasets)** | One click fits the selected model to every enabled dataset, with per-dataset Auto-Init and weighting; results are tabulated side-by-side in the stats panel for direct comparison |
 | **Replicate uncertainty (σ)** | Imported or replicate-derived σ drives 1/σ² weighting and reduced χ², and renders as error bars on the plot. The **Dose-Response + σ** example generates replicate-based error bars to demonstrate the workflow |
@@ -404,6 +407,11 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 ---
 
 ## Changelog
+
+### v1.7.1 — 2026-06-02
+- **new** Normalize / Transform (Pre-Process): Min–Max, Z-score, log, log₁₀, √, Box–Cox (auto-λ via profile likelihood) — reversible via Undo / Restore Original
+- **new** Baseline / De-trend (Pre-Process): subtract a polynomial (deg 1–5) or LOWESS baseline fit on non-masked points
+- **new** Repair / Impute (Pre-Process): MAD-based outlier flagging (or non-finite gap fill) with cubic-spline / linear replacement
 
 ### v1.7.0 — 2026-06-02
 - **new** Multi-column import modes in the column picker: *Single Y (+σ)*, *Multiple Y → separate datasets*, *Replicates → mean ± σ* (auto SD/SEM), and *Group column → one dataset per group* (long-format, repeated X aggregated to mean ± σ), each with a live preview

@@ -559,6 +559,70 @@ function initEvents() {
       if (_specVisible) renderFFTSpectrum();
     });
 
+    // ── Normalize / Transform (#3) ────────────────────────────
+    const tfDescs = {
+      minmax: 'Linearly rescales to the [0, 1] interval. A display convenience — note it changes parameter scale and meaning.',
+      zscore: 'Centres to mean 0 and scales to unit standard deviation. Useful for comparing differently-scaled signals.',
+      log:    'Natural logarithm — variance-stabilising for multiplicative/exponential data. Requires all Y > 0.',
+      log10:  'Base-10 logarithm — same as ln but in decades. Requires all Y > 0.',
+      sqrt:   'Square root — variance-stabilising for Poisson-like count data. Requires Y ≥ 0.',
+      boxcox: 'Box–Cox power transform with parameter λ (λ = 0 ⇒ log). Requires all Y > 0. Use Auto to maximise the profile likelihood.'
+    };
+    const tfMethod = document.getElementById('pp-tf-method');
+    tfMethod.addEventListener('change', () => {
+      document.getElementById('pp-tf-lambda-row').style.display = tfMethod.value === 'boxcox' ? 'flex' : 'none';
+      document.getElementById('pp-tf-desc').textContent = tfDescs[tfMethod.value] || '';
+    });
+    document.getElementById('pp-tf-lambda-auto').addEventListener('click', () => {
+      const ds = state.datasets.find(d => d.id === state.activeDatasetId);
+      if (!ds) { setConsole('No active dataset.', 'warn'); return; }
+      if (ds.y.some(v => !(v > 0))) { setConsole('Box–Cox requires all Y > 0.', 'error'); return; }
+      const lam = _boxcoxAutoLambda(ds.y);
+      document.getElementById('pp-tf-lambda').value = lam;
+      setConsole(`Auto Box–Cox λ = ${lam} (maximum-likelihood estimate).`, '');
+    });
+    document.getElementById('pp-tf-apply').addEventListener('click', () => {
+      const lam = parseFloat(document.getElementById('pp-tf-lambda').value);
+      applyTransform(tfMethod.value, lam);
+      if (_specVisible) renderFFTSpectrum();
+    });
+
+    // ── Baseline / De-trend (#5) ──────────────────────────────
+    const blDescs = {
+      poly:   'Fits a low-order polynomial trend and subtracts it — good for removing drift or background under peaks and oscillations.',
+      lowess: 'Fits a locally-weighted regression (tricube kernel) baseline and subtracts it — follows slow, non-polynomial trends.'
+    };
+    const blMethod = document.getElementById('pp-bl-method');
+    blMethod.addEventListener('change', () => {
+      const poly = blMethod.value === 'poly';
+      document.getElementById('pp-bl-deg-row').style.display  = poly ? 'flex' : 'none';
+      document.getElementById('pp-bl-frac-row').style.display = poly ? 'none' : 'flex';
+      document.getElementById('pp-bl-desc').textContent = blDescs[blMethod.value] || '';
+    });
+    document.getElementById('pp-bl-apply').addEventListener('click', () => {
+      const deg  = parseInt(document.getElementById('pp-bl-deg').value) || 1;
+      const frac = parseFloat(document.getElementById('pp-bl-frac').value) || 0.3;
+      applyBaseline(blMethod.value, deg, frac);
+      if (_specVisible) renderFFTSpectrum();
+    });
+
+    // ── Repair / Impute (#4) ──────────────────────────────────
+    const rpDescs = {
+      outliers: 'Flags points whose robust (MAD-based) z-score exceeds the threshold and replaces them with an interpolated estimate from the remaining points.',
+      nan:      'Replaces any non-finite (NaN/Inf) Y values with an interpolated estimate from the surrounding finite points.'
+    };
+    const rpMethod = document.getElementById('pp-rp-method');
+    rpMethod.addEventListener('change', () => {
+      document.getElementById('pp-rp-thresh-row').style.display = rpMethod.value === 'outliers' ? 'flex' : 'none';
+      document.getElementById('pp-rp-desc').textContent = rpDescs[rpMethod.value] || '';
+    });
+    document.getElementById('pp-rp-apply').addEventListener('click', () => {
+      const thresh = parseFloat(document.getElementById('pp-rp-thresh').value) || 3.5;
+      const fill   = document.getElementById('pp-rp-fill').value;
+      applyRepair(rpMethod.value, thresh, fill);
+      if (_specVisible) renderFFTSpectrum();
+    });
+
     // ── Spectrum preview ──────────────────────────────────────
     let _specVisible = false;
     const specBtn  = document.getElementById('pp-fft-spectrum-btn');
