@@ -580,14 +580,22 @@ function initEvents() {
   });
 
   /* ── Export ───────────────────────────────────────────── */
-  document.getElementById('exp-png').addEventListener('click', () => { exportPNG(); document.getElementById('export-menu').classList.remove('open'); });
-  document.getElementById('exp-svg').addEventListener('click', () => { exportSVG(); document.getElementById('export-menu').classList.remove('open'); });
-  document.getElementById('exp-csv').addEventListener('click', () => { exportCSV(); document.getElementById('export-menu').classList.remove('open'); });
-  document.getElementById('exp-report').addEventListener('click', () => { exportReport(); document.getElementById('export-menu').classList.remove('open'); });
-  document.getElementById('exp-python').addEventListener('click', () => { exportPython(); document.getElementById('export-menu').classList.remove('open'); });
-  document.getElementById('exp-r').addEventListener('click', () => { exportR(); document.getElementById('export-menu').classList.remove('open'); });
-  document.getElementById('exp-latex').addEventListener('click', () => { exportLatex(); document.getElementById('export-menu').classList.remove('open'); });
-  document.getElementById('exp-matlab').addEventListener('click', () => { exportMATLAB(); document.getElementById('export-menu').classList.remove('open'); });
+  const _closeExport = () => document.getElementById('export-menu').classList.remove('open');
+  document.getElementById('exp-png')       .addEventListener('click', () => { exportPNG();              _closeExport(); });
+  document.getElementById('exp-svg')       .addEventListener('click', () => { exportSVG();              _closeExport(); });
+  document.getElementById('exp-copy-plot') .addEventListener('click', () => { copyPlotToClipboard();    _closeExport(); });
+  document.getElementById('exp-html')      .addEventListener('click', () => { exportStandaloneHTML();   _closeExport(); });
+  document.getElementById('exp-csv')       .addEventListener('click', () => { exportCSV();              _closeExport(); });
+  document.getElementById('exp-report')    .addEventListener('click', () => { exportReport();           _closeExport(); });
+  document.getElementById('exp-excel')     .addEventListener('click', () => { exportExcel();            _closeExport(); });
+  document.getElementById('exp-json')      .addEventListener('click', () => { exportJSON();             _closeExport(); });
+  document.getElementById('exp-python')    .addEventListener('click', () => { exportPython();           _closeExport(); });
+  document.getElementById('exp-jupyter')   .addEventListener('click', () => { exportJupyter();          _closeExport(); });
+  document.getElementById('exp-r')         .addEventListener('click', () => { exportR();                _closeExport(); });
+  document.getElementById('exp-latex')     .addEventListener('click', () => { exportLatex();            _closeExport(); });
+  document.getElementById('exp-latex-doc') .addEventListener('click', () => { exportLatexDoc();         _closeExport(); });
+  document.getElementById('exp-matlab')    .addEventListener('click', () => { exportMATLAB();           _closeExport(); });
+  document.getElementById('exp-bibtex')    .addEventListener('click', () => { exportBibTeX();           _closeExport(); });
 
   /* ── Session ──────────────────────────────────────────── */
   document.getElementById('btn-save').addEventListener('click', saveSession);

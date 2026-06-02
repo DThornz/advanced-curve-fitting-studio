@@ -1,4 +1,63 @@
-// Export functions: PNG, SVG, CSV, report text, Python, R, LaTeX, MATLAB
+// Export functions: PNG, SVG, CSV, report text, Python, R, LaTeX, MATLAB, Jupyter, Excel, HTML, JSON, BibTeX
+
+/* ── Shared Python model body helper (used by Python & Jupyter exports) ── */
+function _pyModelBody(fit) {
+  const n = fit.paramNames;
+  const defs = {
+    'Linear':            `return ${n[0]} * x + ${n[1]}`,
+    'Power':             `return ${n[0]} * np.abs(x)**${n[1]}`,
+    'Exponential':       `return ${n[0]} * np.exp(${n[1]} * x)`,
+    'Exp-Decay-Offset':  `return ${n[0]} * np.exp(-${n[1]} * x) + ${n[2]}`,
+    'Logistic':          `return ${n[0]} / (1 + np.exp(-${n[1]} * (x - ${n[2]})))`,
+    'Gaussian':          `return ${n[0]} * np.exp(-0.5 * ((x - ${n[1]}) / ${n[2]})**2) + ${n[3]}`,
+    'Lorentzian':        `return ${n[0]} * ${n[2]}**2 / ((x - ${n[1]})**2 + ${n[2]}**2) + ${n[3]}`,
+    'Michaelis-Menten':  `return ${n[0]} * x / (${n[1]} + x)`,
+    'Hill':              `return ${n[0]} * x**${n[2]} / (${n[1]}**${n[2]} + x**${n[2]})`,
+    'Sine':              `return ${n[0]} * np.sin(${n[1]} * x + ${n[2]}) + ${n[3]}`,
+    'Damped-Sine':       `return ${n[0]} * np.exp(-${n[1]} * x) * np.sin(${n[2]} * x + ${n[3]}) + ${n[4]}`,
+    'Weibull':           `return 1 - np.exp(-(np.maximum(x, 1e-12) / ${n[0]})**${n[1]})`,
+    'Double-Gaussian':   `return (${n[0]} * np.exp(-0.5 * ((x - ${n[1]}) / ${n[2]})**2) +\n           ${n[3]} * np.exp(-0.5 * ((x - ${n[4]}) / ${n[5]})**2) + ${n[6]})`,
+    'Biexponential':     `return ${n[0]} * np.exp(-np.abs(${n[1]}) * x) + ${n[2]} * np.exp(-np.abs(${n[3]}) * x) + ${n[4]}`,
+    'Rational':          `return (${n[0]} + ${n[1]} * x) / np.maximum(1 + ${n[2]} * x, 1e-10)`,
+    'Power-Offset':      `return ${n[0]} * np.abs(x)**${n[1]} + ${n[2]}`,
+    'Boltzmann':         `return ${n[0]} / (1 + np.exp(-(x - ${n[1]}) / np.maximum(np.abs(${n[2]}), 1e-10)))`,
+    'Double-Boltzmann':  `return (${n[0]}/(1+np.exp(-(x-${n[1]})/np.maximum(np.abs(${n[2]}),1e-10))) +\n           ${n[3]}/(1+np.exp(-(x-${n[4]})/np.maximum(np.abs(${n[5]}),1e-10))))`,
+    'HH-Activation':     `return ${n[0]} * np.power(np.maximum(1/(1+np.exp(-(x-${n[1]})/np.maximum(${n[2]},1e-10))),1e-12),${n[3]}) * (x-${n[4]})`,
+    'HH-Na-IV':          `return ${n[0]} * (1/(1+np.exp(-(x-${n[1]})/np.maximum(${n[2]},1e-10))))**3 * (1/(1+np.exp((x-${n[3]})/np.maximum(${n[4]},1e-10)))) * (x-${n[5]})`,
+    'Kir':               `return ${n[0]} * (x-${n[1]}) / (1+np.exp((x-${n[2]})/np.maximum(np.abs(${n[3]}),1e-10)))`,
+    'GHK':               `return np.where(np.abs(x)<1e-6, ${n[0]}*${n[2]}*(1-${n[1]}), ${n[0]}*x*(1-${n[1]}*np.exp(-x/np.maximum(${n[2]},1e-10)))/np.maximum(1-np.exp(-x/np.maximum(${n[2]},1e-10)),1e-10))`,
+    'Tau-Gaussian':      `return ${n[0]} * np.exp(-0.5*((x-${n[1]})/np.maximum(${n[2]},1e-10))**2) + ${n[3]}`,
+    '4PL':               `return ${n[1]} + (${n[0]} - ${n[1]}) / (1 + (np.maximum(x, 0) / np.maximum(np.abs(${n[2]}), 1e-12))**${n[3]})`,
+    'Gompertz':          `return ${n[0]} * np.exp(-np.exp(-${n[1]} * (x - ${n[2]})))`,
+    'Pseudo-Voigt':      `eta_c = np.clip(${n[4]}, 0, 1)\n    L = ${n[2]}**2 / ((x-${n[1]})**2 + ${n[2]}**2)\n    G = np.exp(-0.5*((x-${n[1]})/np.maximum(${n[3]},1e-10))**2)\n    return ${n[0]} * (eta_c*L + (1-eta_c)*G) + ${n[5]}`,
+    'Fano':              `eps = (x - ${n[1]}) / np.maximum(${n[2]}, 1e-10)\n    return ${n[0]} * (${n[3]} + eps)**2 / (1 + eps**2) + ${n[4]}`,
+    'Oral-PK':           `return np.where(np.abs(${n[1]}-${n[2]})<1e-9*max(abs(${n[1]})+abs(${n[2]}),1), ${n[0]}*${n[1]}*x*np.exp(-${n[1]}*x), ${n[0]}*${n[1]}/(${n[1]}-${n[2]})*(np.exp(-${n[2]}*x)-np.exp(-${n[1]}*x)))`,
+    'KWW':               `return ${n[0]} * np.exp(-(np.maximum(x,0)/np.maximum(${n[1]},1e-12))**np.maximum(${n[2]},1e-6)) + ${n[3]}`,
+    'Langevin':          `u = ${n[1]} * x\n    return np.where(np.abs(u)<1e-6, ${n[0]}*u/3, ${n[0]}*(1/np.tanh(u) - 1/u))`,
+    'Stern-Volmer':      `return ${n[0]} / (np.maximum(1+${n[1]}*x,1e-10) * np.maximum(1+${n[2]}*x,1e-10))`,
+    'Van-t-Hoff':        `return np.exp(${n[1]} - ${n[0]} / np.maximum(x, 1e-6))`,
+    'Ramberg-Osgood':    `return x/np.maximum(${n[0]},1e-12) + np.sign(x)*(np.abs(x)/np.maximum(${n[1]},1e-12))**(1.0/np.maximum(${n[2]},1e-6))`,
+    // v1.6.0 models
+    'Two-Compartment-PK':`return ${n[0]} * np.exp(-np.abs(${n[1]}) * x) + ${n[2]} * np.exp(-np.abs(${n[3]}) * x)`,
+    'PK-Lag':            `t_eff = np.maximum(x - ${n[3]}, 0)\n    ka, ke = ${n[1]}, ${n[2]}\n    return np.where(x <= ${n[3]}, 0, np.where(np.abs(ka-ke)<1e-9, ${n[0]}*ka*t_eff*np.exp(-ka*t_eff), ${n[0]}*ka/(ka-ke)*(np.exp(-ke*t_eff)-np.exp(-ka*t_eff))))`,
+    'Substrate-Inhibition':`return ${n[0]} * x / (${n[1]} + x + x**2 / np.maximum(np.abs(${n[2]}), 1e-10))`,
+    'Langmuir':          `return ${n[0]} * ${n[1]} * x / (1 + ${n[1]} * x)`,
+    'Freundlich':        `return ${n[0]} * np.maximum(x, 1e-12)**(1.0 / np.maximum(np.abs(${n[1]}), 1e-6))`,
+    'Temkin':            `return ${n[1]} * np.log(np.maximum(np.abs(${n[0]}) * np.maximum(x, 1e-300), 1e-300))`,
+    'Power-Law-Fluid':   `return ${n[0]} * np.abs(x)**(${n[1]} - 1)`,
+    'Herschel-Bulkley':  `return ${n[0]} + ${n[1]} * np.abs(x)**${n[2]}`,
+    'Cross-Model':       `return ${n[1]} + (${n[0]} - ${n[1]}) / (1 + np.abs(${n[2]} * x)**np.abs(${n[3]}))`,
+    'EMG':               `from scipy.special import erfc as _erfc\n    sg = max(abs(${n[2]}), 1e-10); tk = max(abs(${n[3]}), 1e-10)\n    u = sg/tk; z = (x - ${n[1]})/sg\n    ea = (u - z)/np.sqrt(2)\n    return np.where(ea > 25, ${n[4]}, 0.5*${n[0]}*np.exp(0.5*u**2 - z*u)*_erfc(ea) + ${n[4]})`,
+    'Asymmetric-Gaussian':`from scipy.special import erf as _erf\n    z = (x - ${n[1]})/max(abs(${n[2]}), 1e-10)\n    return ${n[0]}*np.exp(-0.5*z**2)*(1 + _erf(${n[3]}*z/np.sqrt(2))) + ${n[4]}`,
+    'Voigt':             `fG=max(abs(${n[2]}),1e-10); fL=max(abs(${n[3]}),1e-10)\n    fV5=fG**5+2.69269*fG**4*fL+2.42843*fG**3*fL**2+4.47163*fG**2*fL**3+0.07842*fG*fL**4+fL**5\n    fV=fV5**0.2; f=fL/fV\n    eta=np.clip(1.36603*f-0.47719*f**2+0.11116*f**3, 0, 1); hw=fV/2\n    L=hw**2/((x-${n[1]})**2+hw**2); G=np.exp(-4*np.log(2)*(x-${n[1]})**2/fV**2)\n    return ${n[0]}*(eta*L+(1-eta)*G)+${n[4]}`,
+    'Arrhenius':         `return ${n[0]} * np.exp(-${n[1]} / np.maximum(x, 1e-6))`,
+    'Extended-Arrhenius':`return ${n[0]} * np.maximum(x, 1e-12)**${n[1]} * np.exp(-${n[2]} / np.maximum(x, 1e-6))`,
+    'Erf-Diffusion':     `from scipy.special import erf as _erf\n    return ${n[0]} * _erf((x - ${n[1]}) / max(abs(${n[2]}), 1e-10)) + ${n[3]}`,
+    'Softplus':          `t = ${n[1]} * (x - ${n[2]})\n    return ${n[0]} * np.where(t > 20, t, np.log1p(np.exp(np.minimum(t, 20)))) + ${n[3]}`,
+    'Erf-Sigmoid':       `from scipy.special import erf as _erf\n    return ${n[0]} * 0.5 * (1 + _erf(${n[1]} * (x - ${n[2]}))) + ${n[3]}`,
+  };
+  return defs[fit.model] || `# Custom/unknown model: ${fit.model}\n    raise NotImplementedError("Define your model here")`;
+}
 
 /* ═══════════════════════════════════════════════════════════
    EXPORT
@@ -102,43 +161,7 @@ function exportPython() {
   const xArr = '[' + xData.map(v => v.toPrecision(8)).join(', ') + ']';
   const yArr = '[' + yData.map(v => v.toPrecision(8)).join(', ') + ']';
 
-  let fnBody = '';
-  const modelDefs = {
-    'Linear':           `return ${fit.paramNames[0]} * x + ${fit.paramNames[1]}`,
-    'Power':            `return ${fit.paramNames[0]} * np.abs(x)**${fit.paramNames[1]}`,
-    'Exponential':      `return ${fit.paramNames[0]} * np.exp(${fit.paramNames[1]} * x)`,
-    'Exp-Decay-Offset': `return ${fit.paramNames[0]} * np.exp(-${fit.paramNames[1]} * x) + ${fit.paramNames[2]}`,
-    'Logistic':         `return ${fit.paramNames[0]} / (1 + np.exp(-${fit.paramNames[1]} * (x - ${fit.paramNames[2]})))`,
-    'Gaussian':         `return ${fit.paramNames[0]} * np.exp(-0.5 * ((x - ${fit.paramNames[1]}) / ${fit.paramNames[2]})**2) + ${fit.paramNames[3]}`,
-    'Lorentzian':       `return ${fit.paramNames[0]} * ${fit.paramNames[2]}**2 / ((x - ${fit.paramNames[1]})**2 + ${fit.paramNames[2]}**2) + ${fit.paramNames[3]}`,
-    'Michaelis-Menten': `return ${fit.paramNames[0]} * x / (${fit.paramNames[1]} + x)`,
-    'Hill':             `return ${fit.paramNames[0]} * x**${fit.paramNames[2]} / (${fit.paramNames[1]}**${fit.paramNames[2]} + x**${fit.paramNames[2]})`,
-    'Sine':             `return ${fit.paramNames[0]} * np.sin(${fit.paramNames[1]} * x + ${fit.paramNames[2]}) + ${fit.paramNames[3]}`,
-    'Damped-Sine':      `return ${fit.paramNames[0]} * np.exp(-${fit.paramNames[1]} * x) * np.sin(${fit.paramNames[2]} * x + ${fit.paramNames[3]}) + ${fit.paramNames[4]}`,
-    'Weibull':          `return 1 - np.exp(-(np.maximum(x, 1e-12) / ${fit.paramNames[0]})**${fit.paramNames[1]})`,
-    'Double-Gaussian':  `return (${fit.paramNames[0]} * np.exp(-0.5 * ((x - ${fit.paramNames[1]}) / ${fit.paramNames[2]})**2) +\n           ${fit.paramNames[3]} * np.exp(-0.5 * ((x - ${fit.paramNames[4]}) / ${fit.paramNames[5]})**2) + ${fit.paramNames[6]})`,
-    'Biexponential':    `return ${fit.paramNames[0]} * np.exp(-np.abs(${fit.paramNames[1]}) * x) + ${fit.paramNames[2]} * np.exp(-np.abs(${fit.paramNames[3]}) * x) + ${fit.paramNames[4]}`,
-    'Rational':         `return (${fit.paramNames[0]} + ${fit.paramNames[1]} * x) / np.maximum(1 + ${fit.paramNames[2]} * x, 1e-10)`,
-    'Power-Offset':     `return ${fit.paramNames[0]} * np.abs(x)**${fit.paramNames[1]} + ${fit.paramNames[2]}`,
-    'Boltzmann':        `return ${fit.paramNames[0]} / (1 + np.exp(-(x - ${fit.paramNames[1]}) / np.maximum(np.abs(${fit.paramNames[2]}), 1e-10)))`,
-    'Double-Boltzmann': `return (${fit.paramNames[0]}/(1+np.exp(-(x-${fit.paramNames[1]})/np.maximum(np.abs(${fit.paramNames[2]}),1e-10))) +\n           ${fit.paramNames[3]}/(1+np.exp(-(x-${fit.paramNames[4]})/np.maximum(np.abs(${fit.paramNames[5]}),1e-10))))`,
-    'HH-Activation':    `return ${fit.paramNames[0]} * np.power(np.maximum(1/(1+np.exp(-(x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[2]},1e-10))),1e-12),${fit.paramNames[3]}) * (x-${fit.paramNames[4]})`,
-    'HH-Na-IV':         `return ${fit.paramNames[0]} * (1/(1+np.exp(-(x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[2]},1e-10))))**3 * (1/(1+np.exp((x-${fit.paramNames[3]})/np.maximum(${fit.paramNames[4]},1e-10)))) * (x-${fit.paramNames[5]})`,
-    'Kir':              `return ${fit.paramNames[0]} * (x-${fit.paramNames[1]}) / (1+np.exp((x-${fit.paramNames[2]})/np.maximum(np.abs(${fit.paramNames[3]}),1e-10)))`,
-    'GHK':              `return np.where(np.abs(x)<1e-6, ${fit.paramNames[0]}*${fit.paramNames[2]}*(1-${fit.paramNames[1]}), ${fit.paramNames[0]}*x*(1-${fit.paramNames[1]}*np.exp(-x/np.maximum(${fit.paramNames[2]},1e-10)))/np.maximum(1-np.exp(-x/np.maximum(${fit.paramNames[2]},1e-10)),1e-10))`,
-    'Tau-Gaussian':     `return ${fit.paramNames[0]} * np.exp(-0.5*((x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[2]},1e-10))**2) + ${fit.paramNames[3]}`,
-    '4PL':              `return ${fit.paramNames[1]} + (${fit.paramNames[0]} - ${fit.paramNames[1]}) / (1 + (np.maximum(x, 0) / np.maximum(np.abs(${fit.paramNames[2]}), 1e-12))**${fit.paramNames[3]})`,
-    'Gompertz':         `return ${fit.paramNames[0]} * np.exp(-np.exp(-${fit.paramNames[1]} * (x - ${fit.paramNames[2]})))`,
-    'Pseudo-Voigt':     `eta_c = np.clip(${fit.paramNames[4]}, 0, 1)\n    L = ${fit.paramNames[2]}**2 / ((x-${fit.paramNames[1]})**2 + ${fit.paramNames[2]}**2)\n    G = np.exp(-0.5*((x-${fit.paramNames[1]})/np.maximum(${fit.paramNames[3]},1e-10))**2)\n    return ${fit.paramNames[0]} * (eta_c*L + (1-eta_c)*G) + ${fit.paramNames[5]}`,
-    'Fano':             `eps = (x - ${fit.paramNames[1]}) / np.maximum(${fit.paramNames[2]}, 1e-10)\n    return ${fit.paramNames[0]} * (${fit.paramNames[3]} + eps)**2 / (1 + eps**2) + ${fit.paramNames[4]}`,
-    'Oral-PK':          `return np.where(np.abs(${fit.paramNames[1]}-${fit.paramNames[2]})<1e-9*max(abs(${fit.paramNames[1]})+abs(${fit.paramNames[2]}),1), ${fit.paramNames[0]}*${fit.paramNames[1]}*x*np.exp(-${fit.paramNames[1]}*x), ${fit.paramNames[0]}*${fit.paramNames[1]}/(${fit.paramNames[1]}-${fit.paramNames[2]})*(np.exp(-${fit.paramNames[2]}*x)-np.exp(-${fit.paramNames[1]}*x)))`,
-    'KWW':              `return ${fit.paramNames[0]} * np.exp(-(np.maximum(x,0)/np.maximum(${fit.paramNames[1]},1e-12))**np.maximum(${fit.paramNames[2]},1e-6)) + ${fit.paramNames[3]}`,
-    'Langevin':         `u = ${fit.paramNames[1]} * x\n    return np.where(np.abs(u)<1e-6, ${fit.paramNames[0]}*u/3, ${fit.paramNames[0]}*(1/np.tanh(u) - 1/u))`,
-    'Stern-Volmer':     `return ${fit.paramNames[0]} / (np.maximum(1+${fit.paramNames[1]}*x,1e-10) * np.maximum(1+${fit.paramNames[2]}*x,1e-10))`,
-    'Van-t-Hoff':       `return np.exp(${fit.paramNames[1]} - ${fit.paramNames[0]} / np.maximum(x, 1e-6))`,
-    'Ramberg-Osgood':   `return x/np.maximum(${fit.paramNames[0]},1e-12) + np.sign(x)*(np.abs(x)/np.maximum(${fit.paramNames[1]},1e-12))**(1.0/np.maximum(${fit.paramNames[2]},1e-6))`,
-  };
-  fnBody = modelDefs[fit.model] || `# Custom model: ${fit.model}\n    raise NotImplementedError("Define your model here")`;
+  const fnBody = _pyModelBody(fit);
 
   const bounds = fit.bounds;
   const hasLo = bounds && bounds.lo && bounds.lo.some(v => v !== null);
@@ -344,7 +367,25 @@ function exportLatex() {
     'Langevin':         `y = ${fmtL(p[0])}\\left(\\coth(${fmtL(p[1])} x) - \\frac{1}{${fmtL(p[1])} x}\\right)`,
     'Stern-Volmer':     `\\frac{F_0}{F} = (1+K_D[Q])(1+K_S[Q]),\\;F_0=${fmtL(p[0])},\\;K_D=${fmtL(p[1])},\\;K_S=${fmtL(p[2])}`,
     'Van-t-Hoff':       `\\ln K = \\frac{\\Delta S}{R} - \\frac{\\Delta H}{RT},\\;\\Delta H/R=${fmtL(p[0])}\\text{ K},\\;\\Delta S/R=${fmtL(p[1])}`,
-    'Ramberg-Osgood':   `\\varepsilon = \\frac{\\sigma}{${fmtL(p[0])}} + \\left(\\frac{\\sigma}{${fmtL(p[1])}}\\right)^{1/${fmtL(p[2])}}`,
+    'Ramberg-Osgood':      `\\varepsilon = \\frac{\\sigma}{${fmtL(p[0])}} + \\left(\\frac{\\sigma}{${fmtL(p[1])}}\\right)^{1/${fmtL(p[2])}}`,
+    // v1.6.0
+    'Two-Compartment-PK':  `C = ${fmtL(p[0])} e^{-${fmtL(p[1])} t} + ${fmtL(p[2])} e^{-${fmtL(p[3])} t}`,
+    'PK-Lag':              `C = \\frac{${fmtL(p[0])} k_a}{k_a-k_e}(e^{-k_e(t-t_{\\rm lag})}-e^{-k_a(t-t_{\\rm lag})}),\\;k_a=${fmtL(p[1])},\\;k_e=${fmtL(p[2])},\\;t_{\\rm lag}=${fmtL(p[3])}`,
+    'Substrate-Inhibition':`v = \\frac{${fmtL(p[0])} [S]}{${fmtL(p[1])} + [S] + [S]^2/${fmtL(p[2])}}`,
+    'Langmuir':            `q = \\frac{${fmtL(p[0])} \\cdot ${fmtL(p[1])} C}{1 + ${fmtL(p[1])} C}`,
+    'Freundlich':          `q = ${fmtL(p[0])} C^{1/${fmtL(p[1])}}`,
+    'Temkin':              `q = ${fmtL(p[1])} \\ln(${fmtL(p[0])} C)`,
+    'Power-Law-Fluid':     `\\eta = ${fmtL(p[0])} |\\dot{\\gamma}|^{${fmtL(p[1])}-1}`,
+    'Herschel-Bulkley':    `\\tau = ${fmtL(p[0])} + ${fmtL(p[1])} |\\dot{\\gamma}|^{${fmtL(p[2])}}`,
+    'Cross-Model':         `\\eta = ${fmtL(p[1])} + \\frac{${fmtL(p[0])} - ${fmtL(p[1])}}{1+(${fmtL(p[2])}\\dot{\\gamma})^{${fmtL(p[3])}}}`,
+    'EMG':                 `y = \\tfrac{${fmtL(p[0])}}{2}e^{\\sigma^2/2\\tau^2-(x-\\mu)/\\tau}\\,\\mathrm{erfc}\\!\\left(\\tfrac{\\sigma/\\tau-(x-\\mu)/\\sigma}{\\sqrt{2}}\\right)+${fmtL(p[4])},\\;\\mu=${fmtL(p[1])},\\;\\sigma=${fmtL(p[2])},\\;\\tau=${fmtL(p[3])}`,
+    'Asymmetric-Gaussian': `y = ${fmtL(p[0])} e^{-(x-${fmtL(p[1])})^2/2\\sigma^2}\\left[1+\\mathrm{erf}\\!\\left(\\frac{${fmtL(p[3])}(x-${fmtL(p[1])})}{\\sigma\\sqrt{2}}\\right)\\right]+${fmtL(p[4])},\\;\\sigma=${fmtL(p[2])}`,
+    'Voigt':               `y=A(\\eta L+(1-\\eta)G)+C,\\;A=${fmtL(p[0])},\\;x_0=${fmtL(p[1])},\\;f_G=${fmtL(p[2])},\\;f_L=${fmtL(p[3])},\\;C=${fmtL(p[4])}`,
+    'Arrhenius':           `k = ${fmtL(p[0])} \\exp\\!\\left(-\\frac{${fmtL(p[1])}}{T}\\right)`,
+    'Extended-Arrhenius':  `k = ${fmtL(p[0])} T^{${fmtL(p[1])}} \\exp\\!\\left(-\\frac{${fmtL(p[2])}}{T}\\right)`,
+    'Erf-Diffusion':       `y = ${fmtL(p[0])}\\,\\mathrm{erf}\\!\\left(\\frac{x-${fmtL(p[1])}}{${fmtL(p[2])}}\\right)+${fmtL(p[3])}`,
+    'Softplus':            `y = ${fmtL(p[0])}\\ln\\!\\left(1+e^{${fmtL(p[1])}(x-${fmtL(p[2])})}\\right)+${fmtL(p[3])}`,
+    'Erf-Sigmoid':         `y = \\frac{${fmtL(p[0])}}{2}\\!\\left[1+\\mathrm{erf}\\!\\left(${fmtL(p[1])}(x-${fmtL(p[2])})\\right)\\right]+${fmtL(p[3])}`,
   };
 
   let latex = latexDefs[fit.model];
@@ -474,5 +515,419 @@ function exportMATLAB() {
   a.download = `${exportFilename()}-fit.m`; a.click();
   setTimeout(() => URL.revokeObjectURL(mUrl), 60000);
   setConsole('MATLAB script downloaded.', '');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LATEX DOCUMENT FRAGMENT
+═══════════════════════════════════════════════════════════ */
+function exportLatexDoc() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
+  const r = fit.result;
+  const ds = state.datasets.find(d => d.id === fit.dsId);
+  const title = document.getElementById('plot-title').value.trim() || fit.model + ' fit';
+  const xlabel = document.getElementById('plot-xlabel').value.trim() || 'x';
+  const ylabel = document.getElementById('plot-ylabel').value.trim() || 'y';
+
+  // Reuse fmtL from exportLatex (redefined here for self-containment)
+  const fmtL = v => {
+    if (!isFinite(v)) return '?';
+    const abs = Math.abs(v);
+    if (abs >= 1e4 || (abs < 1e-3 && abs !== 0)) {
+      const exp = Math.floor(Math.log10(abs));
+      return `${(v / Math.pow(10, exp)).toFixed(3)} \\times 10^{${exp}}`;
+    }
+    return v.toPrecision(4).replace(/\.?0+$/, '');
+  };
+
+  // Parameter table rows
+  const paramRows = fit.paramNames.map((nm, i) => {
+    const val = r.params[i];
+    const err = isFinite(r.paramErrors?.[i]) ? r.paramErrors[i] : null;
+    const latexName = nm.replace(/[_^{}\\]/g, '\\$&');  // basic escape
+    return `  ${latexName} & $${fmtL(val)}$ & ${err ? `$${fmtL(err)}$` : '---'} \\\\`;
+  }).join('\n');
+
+  const lines = [
+    `% ───────────────────────────────────────────────────────`,
+    `% Curve Fitting Studio — LaTeX document fragment`,
+    `% Model   : ${fit.model}`,
+    `% Dataset : ${ds ? ds.name : '—'}`,
+    `% Date    : ${new Date().toISOString().slice(0, 10)}`,
+    `% ───────────────────────────────────────────────────────`,
+    ``,
+    `\\begin{figure}[htbp]`,
+    `\\centering`,
+    `% Insert your Tikz/pgfplots or includegraphics here`,
+    `\\caption{${title}. ${xlabel} vs.\\ ${ylabel}.}`,
+    `\\label{fig:${exportFilename()}}`,
+    `\\end{figure}`,
+    ``,
+    `\\begin{equation}`,
+    `  % Equation (with fitted parameter values substituted)`,
+    `  % See parameter table below for symbol values.`,
+    `\\label{eq:${exportFilename()}}`,
+    `\\end{equation}`,
+    ``,
+    `\\begin{table}[htbp]`,
+    `\\centering`,
+    `\\caption{Fitted parameters for ${fit.model} model ($R^2 = ${isFinite(r.rSq) ? r.rSq.toFixed(6) : '?'}$, $\\text{RMSE} = ${isFinite(r.rmse) ? r.rmse.toExponential(3) : '?'}$, $n = ${r.n}$, AIC $= ${isFinite(r.aic) ? r.aic.toFixed(2) : '?'}$).}`,
+    `\\label{tab:${exportFilename()}-params}`,
+    `\\begin{tabular}{lcc}`,
+    `\\hline`,
+    `Parameter & Value & Std.\\ Error \\\\`,
+    `\\hline`,
+    paramRows,
+    `\\hline`,
+    `\\end{tabular}`,
+    `\\end{table}`,
+    ``,
+    `% Goodness-of-fit summary`,
+    `% $R^2 = ${isFinite(r.rSq) ? r.rSq.toFixed(8) : '?'}$`,
+    `% Adj.\\ $R^2 = ${isFinite(r.adjRSq) ? r.adjRSq.toFixed(8) : '?'}$`,
+    `% RMSE $= ${isFinite(r.rmse) ? r.rmse.toExponential(4) : '?'}$`,
+    `% SSE $= ${isFinite(r.sse) ? r.sse.toExponential(4) : '?'}$`,
+    `% AIC $= ${isFinite(r.aic) ? r.aic.toFixed(4) : '?'}$`,
+    `% BIC $= ${isFinite(r.bic) ? r.bic.toFixed(4) : '?'}$`,
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${exportFilename()}-latex.tex`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  setConsole('LaTeX document fragment downloaded.', '');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   JUPYTER NOTEBOOK EXPORT
+═══════════════════════════════════════════════════════════ */
+function exportJupyter() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
+  const ds = state.datasets.find(d => d.id === fit.dsId);
+  const r = fit.result;
+  const excl = ds ? (ds.excludedIndices || new Set()) : new Set();
+  const xData = ds ? ds.x.filter((_, i) => !excl.has(i)) : [];
+  const yData = ds ? ds.y.filter((_, i) => !excl.has(i)) : [];
+  const xLabel = document.getElementById('plot-xlabel').value.trim() || 'x';
+  const yLabel = document.getElementById('plot-ylabel').value.trim() || 'y';
+  const pTitle = document.getElementById('plot-title').value.trim() || fit.model + ' Fit';
+  const paramStr = fit.paramNames.join(', ');
+  const p0Str = r.params.map(v => v.toPrecision(6)).join(', ');
+  const fnBody = _pyModelBody(fit);
+  const xArr = '[' + xData.map(v => v.toPrecision(8)).join(', ') + ']';
+  const yArr = '[' + yData.map(v => v.toPrecision(8)).join(', ') + ']';
+  const bounds = fit.bounds;
+  const hasLo = bounds?.lo?.some(v => v !== null);
+  const hasHi = bounds?.hi?.some(v => v !== null);
+  const hasBounds = hasLo || hasHi;
+  const loStr = bounds ? '[' + bounds.lo.map(v => v !== null ? v.toPrecision(6) : '-np.inf').join(', ') + ']' : '[-np.inf]';
+  const hiStr = bounds ? '[' + bounds.hi.map(v => v !== null ? v.toPrecision(6) : 'np.inf').join(', ') + ']' : '[np.inf]';
+
+  const src = lines => lines.map((l, i) => i < lines.length - 1 ? l + '\n' : l);
+  const md  = lines => ({ cell_type: 'markdown', metadata: {}, source: src(lines) });
+  const code = lines => ({ cell_type: 'code', execution_count: null, metadata: {}, outputs: [], source: src(lines) });
+
+  const cells = [
+    md([
+      `# ${pTitle}`,
+      '',
+      `**Model:** ${fit.model}  `,
+      `**Dataset:** ${ds ? ds.name : '—'}  `,
+      `**Date:** ${new Date().toISOString().slice(0, 10)}  `,
+      `**R²:** ${isFinite(r.rSq) ? r.rSq.toFixed(6) : '—'}  `,
+      `**RMSE:** ${isFinite(r.rmse) ? r.rmse.toExponential(4) : '—'}`,
+    ]),
+    code([
+      `import numpy as np`,
+      `import matplotlib.pyplot as plt`,
+      `from scipy.optimize import curve_fit`,
+    ]),
+    code([
+      `# ── Data ──────────────────────────────────────────────`,
+      `x_data = np.array(${xArr})`,
+      `y_data = np.array(${yArr})`,
+    ]),
+    code([
+      `# ── Model: ${fit.model} ──────────────────────────────────`,
+      `def model(x, ${paramStr}):`,
+      `    ${fnBody.replace(/\n/g, '\n    ')}`,
+      ``,
+      `# Initial parameters (converged values from CFS)`,
+      `p0 = [${p0Str}]`,
+      ...(hasBounds ? [
+      `bounds = (${loStr}, ${hiStr})`,
+      `popt, pcov = curve_fit(model, x_data, y_data, p0=p0, bounds=bounds, maxfev=100000)`,
+      ] : [
+      `popt, pcov = curve_fit(model, x_data, y_data, p0=p0, maxfev=100000)`,
+      ]),
+      `perr = np.sqrt(np.diag(pcov))`,
+      `y_fit = model(x_data, *popt)`,
+      `residuals = y_data - y_fit`,
+    ]),
+    code([
+      `# ── Statistics ────────────────────────────────────────`,
+      `ss_res = np.sum(residuals**2)`,
+      `ss_tot = np.sum((y_data - np.mean(y_data))**2)`,
+      `r_sq = 1 - ss_res / ss_tot if ss_tot > 0 else float('nan')`,
+      `rmse = np.sqrt(ss_res / max(len(y_data) - len(popt), 1))`,
+      `n, m = len(y_data), len(popt)`,
+      `aic = n * np.log(ss_res / n) + 2*m + n*(np.log(2*np.pi) + 1)`,
+      `bic = n * np.log(ss_res / n) + m*np.log(n) + n*(np.log(2*np.pi) + 1)`,
+      `print(f"R²     = {r_sq:.6f}")`,
+      `print(f"RMSE   = {rmse:.4e}")`,
+      `print(f"AIC    = {aic:.4f}")`,
+      `print(f"BIC    = {bic:.4f}")`,
+      `print()`,
+      `print(f"{'Parameter':<14}{'Value':>14}{'Std Error':>14}")`,
+      `print('-' * 42)`,
+      `for name, val, err in zip([${fit.paramNames.map(n=>`'${n}'`).join(',')}], popt, perr):`,
+      `    print(f"{name:<14}{val:>14.6g}{err:>14.6g}")`,
+    ]),
+    code([
+      `# ── Plot ──────────────────────────────────────────────`,
+      `fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 7), gridspec_kw={'height_ratios': [3, 1]})`,
+      `x_smooth = np.linspace(x_data.min(), x_data.max(), 400)`,
+      `ax1.scatter(x_data, y_data, s=30, label='Data')`,
+      `ax1.plot(x_smooth, model(x_smooth, *popt), 'r-', lw=2, label=f'${fit.model} fit ($R^2$={r_sq:.4f})')`,
+      `ax1.set_xlabel('${xLabel}'); ax1.set_ylabel('${yLabel}')`,
+      `ax1.set_title('${pTitle}'); ax1.legend()`,
+      `ax2.scatter(x_data, residuals, s=25, c='gray')`,
+      `ax2.axhline(0, color='r', lw=1, ls='--')`,
+      `ax2.set_xlabel('${xLabel}'); ax2.set_ylabel('Residuals')`,
+      `plt.tight_layout(); plt.show()`,
+    ]),
+  ];
+
+  const nb = {
+    nbformat: 4, nbformat_minor: 5,
+    metadata: {
+      kernelspec: { display_name: 'Python 3', language: 'python', name: 'python3' },
+      language_info: { name: 'python', version: '3.10.0' },
+    },
+    cells,
+  };
+
+  const blob = new Blob([JSON.stringify(nb, null, 1)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${exportFilename()}-fit.ipynb`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  setConsole('Jupyter notebook downloaded.', '');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXCEL WORKBOOK EXPORT (lazy SheetJS)
+═══════════════════════════════════════════════════════════ */
+function exportExcel() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
+  function _doExcel() {
+    const r = fit.result;
+    const ds = state.datasets.find(d => d.id === fit.dsId);
+    const excl = ds ? (ds.excludedIndices || new Set()) : new Set();
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Data + Residuals
+    const dataRows = [['X', 'Y', 'Y_fit', 'Residual', 'Masked']];
+    if (ds) {
+      ds.x.forEach((x, i) => {
+        const masked = excl.has(i);
+        const yFit = (!masked && fit.fn) ? fit.fn(x, r.params) : null;
+        const resid = yFit !== null && isFinite(yFit) ? ds.y[i] - yFit : null;
+        dataRows.push([x, ds.y[i], yFit, resid, masked ? 1 : 0]);
+      });
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataRows), 'Data');
+
+    // Sheet 2: Parameters + Statistics
+    const paramRows = [
+      ['Parameter', 'Value', 'Std. Error', '95% CI (±)', 't-stat'],
+      ...fit.paramNames.map((nm, i) => {
+        const v = r.params[i], e = r.paramErrors?.[i];
+        const ci = (isFinite(e) && isFinite(r.n) && r.n > fit.paramNames.length)
+          ? e * 1.96 : null;
+        const tstat = (isFinite(v) && isFinite(e) && e > 0) ? Math.abs(v / e) : null;
+        return [nm, v, isFinite(e) ? e : null, ci, tstat];
+      }),
+      [], ['Statistic', 'Value'],
+      ['R²',       r.rSq],   ['Adj. R²', r.adjRSq],
+      ['RMSE',     r.rmse],  ['SSE',     r.sse],
+      ['AIC',      r.aic],   ['BIC',     r.bic],
+      ['N points', r.n],     ['Parameters', fit.paramNames.length],
+      ['Converged', r.converged ? 'Yes' : 'No'],
+      ['Algorithm', fit.algo || '—'],
+      ...(r.chiSqRed != null ? [['χ²ᵣ', r.chiSqRed]] : []),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(paramRows), 'Parameters');
+
+    // Sheet 3: Diagnostics (covariance matrix)
+    if (r.covMatrix && r.covMatrix.length) {
+      const hdr = ['', ...fit.paramNames];
+      const covRows = [hdr, ...r.covMatrix.map((row, i) => [fit.paramNames[i], ...row])];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(covRows), 'Covariance');
+    }
+
+    XLSX.writeFile(wb, `${exportFilename()}-fit.xlsx`);
+    setConsole('Excel workbook downloaded.', '');
+  }
+
+  if (typeof XLSX !== 'undefined') { _doExcel(); return; }
+  setConsole('Loading SheetJS…', '');
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = _doExcel;
+  s.onerror = () => setConsole('Failed to load SheetJS. Check internet connection.', 'error');
+  document.head.appendChild(s);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STANDALONE PLOTLY HTML EXPORT
+═══════════════════════════════════════════════════════════ */
+function exportStandaloneHTML() {
+  const mainEl = document.getElementById('main-plot');
+  if (!mainEl?.data?.length) { setConsole('No plot to export.', 'warn'); return; }
+  const safeTitle = (document.getElementById('plot-title').value.trim() || 'Curve Fitting Studio')
+    .replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+  const replacer = (k, v) => (typeof v === 'function' ? undefined : v);
+  const tracesJSON  = JSON.stringify(mainEl.data,   replacer);
+  const layoutJSON  = JSON.stringify(mainEl.layout, replacer);
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${safeTitle}</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"><\/script>
+</head>
+<body style="margin:0;background:#fff">
+<div id="plot" style="width:100%;height:100vh"></div>
+<script>
+Plotly.newPlot('plot',${tracesJSON},${layoutJSON},{responsive:true,displayModeBar:true});
+<\/script>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${exportFilename()}-plot.html`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  setConsole('Standalone Plotly HTML exported.', '');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COPY PLOT TO CLIPBOARD (PNG)
+═══════════════════════════════════════════════════════════ */
+function copyPlotToClipboard() {
+  if (!document.getElementById('main-plot')?.data) { setConsole('No plot to copy.', 'warn'); return; }
+  if (!navigator.clipboard?.write) {
+    setConsole('Clipboard image API not supported in this browser.', 'warn'); return;
+  }
+  setConsole('Capturing plot image…', '');
+  Plotly.toImage('main-plot', { format: 'png', width: 1920, height: 1200 })
+    .then(dataUrl => {
+      const base64 = dataUrl.split(',')[1];
+      const bytes = atob(base64);
+      const arr = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      const blob = new Blob([arr], { type: 'image/png' });
+      return navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    })
+    .then(() => setConsole('Plot image copied to clipboard (1920×1200 PNG).', ''))
+    .catch(err => setConsole('Copy failed: ' + (err.message || err), 'error'));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BIBTEX CITATION
+═══════════════════════════════════════════════════════════ */
+function exportBibTeX() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  const r = fit?.result;
+  const year = new Date().getFullYear();
+  const modelNote = fit ? ` Fitted model: ${fit.model}.` : '';
+  const statsNote = (r && isFinite(r.rSq))
+    ? ` Fitted parameters: ${fit.paramNames.map((n, i) => `${n} = ${r.params[i].toPrecision(4)}`).join(', ')}. R\\textsuperscript{2} = ${r.rSq.toFixed(4)}.`
+    : '';
+  const bib = `@software{CurveStudio${year},
+  author       = {Mirza, Asad},
+  title        = {{Curve Fitting Studio}},
+  year         = {${year}},
+  version      = {1.6.1},
+  url          = {https://dthornz.github.io/curve-fitting-studio/},
+  urldate      = {${new Date().toISOString().slice(0, 10)}},
+  note         = {Browser-native nonlinear regression platform.${modelNote}${statsNote}},
+  license      = {Non-commercial},
+}`;
+  navigator.clipboard.writeText(bib)
+    .then(() => setConsole('BibTeX entry copied to clipboard.', ''))
+    .catch(() => {
+      const blob = new Blob([bib], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `${exportFilename()}-citation.bib`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setConsole('BibTeX downloaded (clipboard unavailable).', '');
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   API JSON SCHEMA EXPORT
+═══════════════════════════════════════════════════════════ */
+function exportJSON() {
+  const fit = state.fits.find(f => f.id === state.activeFitId);
+  if (!fit || !fit.result) { setConsole('No active fit to export.', 'warn'); return; }
+  const r = fit.result;
+  const ds = state.datasets.find(d => d.id === fit.dsId);
+  const excl = ds ? (ds.excludedIndices || new Set()) : new Set();
+  const xFit = ds ? ds.x.filter((_, i) => !excl.has(i)) : [];
+  const yFit = fit.fn ? xFit.map(x => fit.fn(x, r.params)) : [];
+  const residuals = xFit.map((x, i) => (ds?.y[i] ?? null) - (yFit[i] ?? null));
+
+  const schema = {
+    schema: 'curve-fitting-studio/v1',
+    generated: new Date().toISOString(),
+    model: fit.model,
+    label: fit.label,
+    dataset: ds ? ds.name : null,
+    parameters: Object.fromEntries(
+      fit.paramNames.map((n, i) => [n, {
+        value: r.params[i],
+        std_error: isFinite(r.paramErrors?.[i]) ? r.paramErrors[i] : null,
+        ci_95: (isFinite(r.paramErrors?.[i]) && r.n > fit.paramNames.length)
+          ? r.paramErrors[i] * 1.96 : null,
+      }])
+    ),
+    covariance: r.covMatrix || null,
+    statistics: {
+      r_sq:     r.rSq,
+      adj_r_sq: r.adjRSq,
+      rmse:     r.rmse,
+      sse:      r.sse,
+      aic:      r.aic,
+      bic:      r.bic,
+      n:        r.n,
+      n_params: fit.paramNames.length,
+      dof:      r.n - fit.paramNames.length,
+      converged: r.converged,
+      iterations: r.iter,
+      chi_sq_red: r.chiSqRed ?? null,
+    },
+    data: {
+      x:         ds?.x   ?? [],
+      y:         ds?.y   ?? [],
+      y_fit:     yFit,
+      residuals,
+      excluded:  ds ? [...excl] : [],
+    },
+    metadata: {
+      xlabel:    document.getElementById('plot-xlabel').value.trim() || null,
+      ylabel:    document.getElementById('plot-ylabel').value.trim() || null,
+      title:     document.getElementById('plot-title').value.trim()  || null,
+      algorithm: fit.algo || null,
+      fit_color: fit.color,
+    },
+  };
+
+  const blob = new Blob([JSON.stringify(schema, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${exportFilename()}-schema.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  setConsole('API JSON schema exported.', '');
 }
 
