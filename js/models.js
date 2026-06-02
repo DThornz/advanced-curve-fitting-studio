@@ -829,6 +829,38 @@ const MODELS = {
       return [isFinite(A) ? A : 1, mean(x), xRange / 4 || 1, isFinite(B) ? B : 0];
     }
   },
+  // ── Rheology (extended) ──────────────────────────────────
+  'Carreau': {
+    params: ['η₀', 'η∞', 'λ', 'n'],
+    fn: (x, [eta0, etaInf, lam, n]) =>
+      etaInf + (eta0 - etaInf) * Math.pow(1 + (lam * x) * (lam * x), (n - 1) / 2),
+    analytic: false,
+    autoInit(x, y) {
+      const yf = y.filter(v => isFinite(v) && v > 0);
+      const eta0 = Math.max(...yf) || 1;
+      const etaInf = Math.min(...yf) * 0.5 || 0.001;
+      const half = (eta0 + etaInf) / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      return [eta0, isFinite(etaInf) ? etaInf : 0.001, 1 / Math.max(x[idx], 1e-6), 0.5];
+    }
+  },
+  'Quemada': {
+    params: ['η₀', 'η∞', 'γ̇c'],
+    fn: (x, [eta0, etaInf, gdotc]) => {
+      const k = Math.sqrt(Math.max(x, 0) / Math.max(Math.abs(gdotc), 1e-10));
+      const num = Math.sqrt(Math.max(eta0, 0)) + Math.sqrt(Math.max(etaInf, 0)) * k;
+      return (num / (1 + k)) ** 2;
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const yf = y.filter(v => isFinite(v) && v > 0);
+      const eta0 = Math.max(...yf) || 1;
+      const etaInf = Math.min(...yf) * 0.5 || 0.001;
+      const target = Math.sqrt(eta0 * etaInf);
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - target) < Math.abs(y[b] - target) ? i : b, 0);
+      return [eta0, isFinite(etaInf) ? etaInf : 0.001, Math.max(x[idx], 1e-6)];
+    }
+  },
   // ── Activation Functions ─────────────────────────────────
   'Softplus': {
     params: ['A', 'k', 'x₀', 'C'],
@@ -926,6 +958,8 @@ const MODEL_EQ_JS = {
   'Power-Law-Fluid':     'K * |gamma|^(n-1)',
   'Herschel-Bulkley':    'tau0 + K * |gamma|^n',
   'Cross-Model':         'eta_inf + (eta0 - eta_inf) / (1 + (K * gamma)^m)',
+  'Carreau':             'eta_inf + (eta0 - eta_inf) * (1 + (lambda * gamma)^2)^((n-1)/2)',
+  'Quemada':             '((sqrt(eta0) + sqrt(eta_inf) * sqrt(gamma/gdotc)) / (1 + sqrt(gamma/gdotc)))^2',
   // Peak / spectral
   'EMG':                 '(A/2) * exp(sigma^2/(2*tau^2) - (x-mu)/tau) * erfc((sigma/tau - (x-mu)/sigma)/sqrt(2)) + C',
   'Asymmetric-Gaussian': 'A * exp(-0.5*((x-mu)/sigma)^2) * (1 + erf(alpha*(x-mu)/(sigma*sqrt(2)))) + C',
@@ -992,6 +1026,8 @@ const MODEL_EQ = {
   'Power-Law-Fluid':     '\\eta=K\\,|\\dot{\\gamma}|^{n-1}',
   'Herschel-Bulkley':    '\\tau=\\tau_{0}+K\\,|\\dot{\\gamma}|^{n}',
   'Cross-Model':         '\\eta=\\eta_{\\infty}+\\dfrac{\\eta_{0}-\\eta_{\\infty}}{1+(K\\dot{\\gamma})^{m}}',
+  'Carreau':             '\\eta=\\eta_{\\infty}+(\\eta_{0}-\\eta_{\\infty})\\left[1+(\\lambda\\dot{\\gamma})^{2}\\right]^{(n-1)/2}',
+  'Quemada':             '\\eta=\\left(\\dfrac{\\sqrt{\\eta_{0}}+\\sqrt{\\eta_{\\infty}}\\,\\sqrt{\\dot{\\gamma}/\\dot{\\gamma}_{c}}}{1+\\sqrt{\\dot{\\gamma}/\\dot{\\gamma}_{c}}}\\right)^{\\!2}',
   // Peak / spectral
   'EMG':                 'y=\\dfrac{A}{2}\\exp\\!\\left(\\dfrac{\\sigma^{2}}{2\\tau^{2}}-\\dfrac{x-\\mu}{\\tau}\\right)\\mathrm{erfc}\\!\\left(\\dfrac{\\sigma/\\tau-(x-\\mu)/\\sigma}{\\sqrt{2}}\\right)+C',
   'Asymmetric-Gaussian': 'y=A\\,e^{-(x-\\mu)^{2}/2\\sigma^{2}}\\!\\left[1+\\mathrm{erf}\\!\\left(\\dfrac{\\alpha(x-\\mu)}{\\sigma\\sqrt{2}}\\right)\\right]+C',

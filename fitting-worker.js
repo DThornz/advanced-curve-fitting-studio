@@ -568,6 +568,13 @@ const MODEL_FNS = {
                           return A * (t > 20 ? t : Math.log(1 + Math.exp(t))) + C;
                         },
   'Erf-Sigmoid':        (x, [A, k, x0, C]) => A * 0.5 * (1 + _erf(k * (x - x0))) + C,
+  'Carreau':            (x, [e0, eI, lam, n]) =>
+    eI + (e0 - eI) * Math.pow(1 + (lam * x) * (lam * x), (n - 1) / 2),
+  'Quemada':            (x, [e0, eI, gc]) => {
+                          const k = Math.sqrt(Math.max(x, 0) / Math.max(Math.abs(gc), 1e-10));
+                          const num = Math.sqrt(Math.max(e0, 0)) + Math.sqrt(Math.max(eI, 0)) * k;
+                          return (num / (1 + k)) ** 2;
+                        },
 };
 
 const MODEL_DEGREES = {

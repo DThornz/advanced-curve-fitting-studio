@@ -1162,6 +1162,57 @@ function initEvents() {
     _showUnsavedModal(() => location.reload());
   }, true);
 
+  /* ── Example dataset search filter ──────────────────────── */
+  (function initExampleSearch() {
+    const searchEl = document.getElementById('examples-search');
+    const resultsEl = document.getElementById('examples-search-results');
+    const colsEl = document.getElementById('examples-cols-wrap');
+    if (!searchEl || !resultsEl || !colsEl) return;
+    searchEl.addEventListener('input', () => {
+      const q = searchEl.value.trim().toLowerCase();
+      if (!q) {
+        resultsEl.style.display = 'none';
+        colsEl.style.display = 'flex';
+        return;
+      }
+      const hits = Object.entries(EXAMPLES).filter(([key, ex]) => {
+        const searchable = [
+          key,
+          ex.title || '',
+          ex.tags || '',
+          ...(ex.presets || []).map(pr => pr.label + ' ' + (pr.suggestModel || '')),
+        ].join(' ').toLowerCase();
+        return searchable.includes(q);
+      });
+      colsEl.style.display = 'none';
+      resultsEl.style.display = '';
+      if (!hits.length) {
+        resultsEl.innerHTML = `<div style="padding:6px 12px;font-size:.72em;color:var(--dimmer)">No matching examples for "${q}"</div>`;
+        return;
+      }
+      resultsEl.innerHTML = hits.map(([key, ex]) => {
+        const presetLabel = ex.presets ? ` <span class="app-dropdown-sub">${ex.presets.map(p => p.label.split('—')[0].trim()).join(' · ')}</span>` : '';
+        return `<div class="app-dropdown-item" data-example="${key}">${ex.title || key}${presetLabel}</div>`;
+      }).join('');
+      resultsEl.querySelectorAll('[data-example]').forEach(item => {
+        item.addEventListener('click', () => {
+          searchEl.value = '';
+          resultsEl.style.display = 'none';
+          colsEl.style.display = 'flex';
+          openExampleEditor(item.dataset.example);
+          document.getElementById('examples-menu').classList.remove('open');
+        });
+      });
+    });
+    searchEl.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { searchEl.value = ''; searchEl.dispatchEvent(new Event('input')); }
+    });
+    // Clear search when dropdown closes
+    document.getElementById('btn-examples')?.addEventListener('click', () => {
+      setTimeout(() => { if (document.getElementById('examples-menu').classList.contains('open')) searchEl.focus(); }, 50);
+    });
+  })();
+
   /* ── Model search filter ──────────────────────────────── */
   (function initModelSearch() {
     const searchEl = document.getElementById('model-search');

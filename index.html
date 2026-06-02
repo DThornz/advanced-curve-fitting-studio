@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.6.0</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.6.3</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -68,7 +68,7 @@
     <span class="pill">Export-Ready</span>
   </div>
   <div class="hero-meta">
-    <div><div class="hero-stat-num">56</div><div class="hero-stat-label">Built-in Models</div></div>
+    <div><div class="hero-stat-num">58</div><div class="hero-stat-label">Built-in Models</div></div>
     <div><div class="hero-stat-num">4</div><div class="hero-stat-label">Fit Algorithms</div></div>
     <div><div class="hero-stat-num">8+</div><div class="hero-stat-label">Fit Diagnostics</div></div>
     <div><div class="hero-stat-num">100%</div><div class="hero-stat-label">Client-Side</div></div>
@@ -123,6 +123,11 @@
         <div class="app-dropdown-wrap">
           <button class="btn" id="btn-examples">Examples ▾</button>
           <div class="app-dropdown" id="examples-menu">
+            <div style="padding:4px 8px 6px;border-bottom:1px solid var(--border)">
+              <input type="search" id="examples-search" class="ctrl-input" placeholder="Search examples… (e.g. blood, peak, arrhenius)" autocomplete="off" style="font-size:.72em;width:100%;box-sizing:border-box" title="Filter examples by name, model, or keyword">
+            </div>
+            <div id="examples-search-results" style="display:none;padding:4px 0;max-height:280px;overflow-y:auto"></div>
+            <div id="examples-cols-wrap" style="display:flex">
             <div class="examples-col">
               <div class="examples-col-hdr">General</div>
               <div class="app-dropdown-item" data-example="exponential-decay">Exponential Decay  <span class="app-dropdown-sub">radioactive / RC circuit</span></div>
@@ -161,6 +166,23 @@
               <div class="app-dropdown-item" data-example="hhna-iv">HH Na Channel I-V  <span class="app-dropdown-sub">Hodgkin-Huxley m³h model</span></div>
               <div class="app-dropdown-item" data-example="tau-voltage">Voltage-Dependent τ  <span class="app-dropdown-sub">gating time constant bell curve</span></div>
             </div>
+            <div class="examples-col">
+              <div class="examples-col-hdr">Pharmacokinetics</div>
+              <div class="app-dropdown-item" data-example="two-compartment-pk">Two-Compartment PK  <span class="app-dropdown-sub">IV bolus biexponential</span></div>
+              <div class="app-dropdown-item" data-example="pk-lag">Oral PK + Lag Time  <span class="app-dropdown-sub">delayed absorption</span></div>
+              <div class="app-dropdown-item" data-example="substrate-inhibition">Substrate Inhibition  <span class="app-dropdown-sub">bell-shaped enzyme kinetics</span></div>
+              <div class="app-dropdown-sep"></div>
+              <div class="examples-col-hdr">Multi-Model Groups ★</div>
+              <div class="app-dropdown-item" data-example="adsorption-isotherm">Adsorption Isotherm  <span class="app-dropdown-sub">Langmuir · Freundlich · Temkin</span></div>
+              <div class="app-dropdown-item" data-example="viscosity-flow">Viscosity vs Shear Rate  <span class="app-dropdown-sub">Blood · Polymer · Cornstarch · Ketchup</span></div>
+              <div class="app-dropdown-item" data-example="spectral-peak">Spectral / Chrom. Peak  <span class="app-dropdown-sub">EMG · Asymmetric-Gaussian · Voigt</span></div>
+              <div class="app-dropdown-item" data-example="thermal-kinetics">Thermal Kinetics  <span class="app-dropdown-sub">Arrhenius · Extended-Arrhenius</span></div>
+              <div class="app-dropdown-item" data-example="sigmoid-activation">Sigmoid / Activation  <span class="app-dropdown-sub">Erf-Sigmoid · Softplus</span></div>
+              <div class="app-dropdown-sep"></div>
+              <div class="examples-col-hdr">Diffusion &amp; Misc</div>
+              <div class="app-dropdown-item" data-example="erf-diffusion">Erf Diffusion Profile  <span class="app-dropdown-sub">semiconductor / materials</span></div>
+            </div>
+            </div><!-- end examples-cols-wrap -->
           </div>
         </div>
         <button class="btn" id="btn-import" title="Import a CSV, TSV, or TXT file (comma/semicolon delimited)">Import Data</button>
@@ -238,7 +260,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.6.0</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.6.3</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -381,6 +403,8 @@
               <option value="Power-Law-Fluid">Power-Law Fluid  K·γ̇^(n−1)</option>
               <option value="Herschel-Bulkley">Herschel-Bulkley  τ₀ + K·γ̇ⁿ</option>
               <option value="Cross-Model">Cross Model  η∞+(η₀−η∞)/(1+(K·γ̇)ᵐ)</option>
+              <option value="Carreau">Carreau Model  [1+(λγ̇)²]^((n−1)/2)</option>
+              <option value="Quemada">Quemada Model  blood / concentrated dispersion</option>
             </optgroup>
             <optgroup label="Oscillation">
               <option value="Sine">Sinusoidal</option>
@@ -1649,12 +1673,47 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
-      <!-- ── v1.6.0 ─────────────────────────────────────────── -->
+      <!-- ── v1.6.3 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.6.0</span>
+          <span class="relnotes-ver-num current">v1.6.3</span>
           <span class="relnotes-ver-date">2026-06-01</span>
           <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>2 new rheology models (56 → 58 total)</strong> — <strong>Carreau</strong> (biofluids / polymer melts: [1+(λγ̇)²]^((n−1)/2)) and <strong>Quemada</strong> (blood / concentrated dispersions: 3-parameter geometric-mean form)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Preset-based grouped examples</strong> — 6 standalone examples replaced by 5 multi-model groups each with a Preset dropdown: <em>Adsorption Isotherm</em> (Langmuir · Freundlich · Temkin), <em>Viscosity vs Shear Rate</em> (Blood/Carreau · Dense suspension/Quemada · Polymer/Cross · Cornstarch · Ketchup/HB), <em>Spectral/Chrom. Peak</em> (EMG · Asymmetric-Gaussian · Voigt), <em>Thermal Kinetics</em> (Arrhenius · Extended-Arrhenius), <em>Sigmoid/Activation</em> (Erf-Sigmoid · Softplus)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Example search</strong> — search box at the top of the Examples dropdown filters by name, model, and keyword tags (e.g. "blood" → viscosity / rheology examples)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Third examples column</strong> — Pharmacokinetics, Multi-Model Groups, and Diffusion added as a third column in the Examples dropdown</span></li>
+        </ul>
+      </div>
+      <!-- ── v1.6.2 (moved down) ────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.6.2</span>
+          <span class="relnotes-ver-date">2026-06-01</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>7 new export formats</strong> — Jupyter Notebook (.ipynb), Excel Workbook (.xlsx via SheetJS), Standalone Plotly HTML, Copy Plot to Clipboard (PNG), BibTeX Citation, API JSON Schema, LaTeX Doc Fragment (.tex)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Python / LaTeX exports now include all 17 v1.6.0 models</span></li>
+        </ul>
+      </div>
+      <!-- ── v1.6.1 (moved down) ────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.6.1</span>
+          <span class="relnotes-ver-date">2026-06-01</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>10 UI/UX features</strong> — dark mode auto-detect, model search filter, fit quality badge, fit comparison modal, drag-drop fit reorder, resize preference memory, fit notes, axis range mode toggle, Ctrl+F quick-fit, sweep clamping cue</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>All 17 v1.6.0 models added to fitting-worker.js MODEL_FNS</span></li>
+        </ul>
+      </div>
+      <!-- ── v1.6.0 (original) ──────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.6.0</span>
+          <span class="relnotes-ver-date">2026-06-01</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>17 new built-in models (39 → 56 total)</strong> — Pharmacokinetics: <strong>Two-Compartment PK</strong>, <strong>PK Lag Time</strong> · Enzyme kinetics: <strong>Substrate Inhibition</strong> · Adsorption isotherms: <strong>Langmuir</strong>, <strong>Freundlich</strong>, <strong>Temkin</strong> · Rheology: <strong>Power-Law Fluid</strong>, <strong>Herschel-Bulkley</strong>, <strong>Cross Model</strong> · Peak shapes: <strong>EMG</strong> (Exponentially Modified Gaussian), <strong>Asymmetric Gaussian</strong> (skew-normal), <strong>Voigt</strong> (Thompson-Cox-Hastings) · Thermal kinetics: <strong>Arrhenius</strong>, <strong>Extended Arrhenius</strong> · Diffusion: <strong>Erf Diffusion</strong> · Activation: <strong>Softplus</strong>, <strong>Erf Sigmoid</strong></span></li>
@@ -2339,6 +2398,8 @@
       <tr><td><strong>Power-Law Fluid</strong></td><td>$\eta = K\,|\dot{\gamma}|^{n-1}$</td><td>K (consistency index Pa·sⁿ), n (flow behaviour index)</td><td>Viscosity vs. shear rate for non-Newtonian fluids. n &lt; 1: shear-thinning (pseudoplastic — polymer solutions, blood, paint); n = 1: Newtonian (constant η = K); n &gt; 1: shear-thickening (dilatant — starch suspensions). Mathematically identical to Power Law. Auto-init via log-log regression.</td></tr>
       <tr><td><strong>Herschel-Bulkley</strong></td><td>$\tau = \tau_0 + K\,|\dot{\gamma}|^n$</td><td>τ₀ (yield stress Pa), K (consistency Pa·sⁿ), n (flow index)</td><td>Yield-stress fluid model generalising Bingham (n = 1) and Power-Law (τ₀ = 0). Flow begins only above τ₀; below it the material deforms elastically. Common for gels, pastes, food products, muds, and fresh concrete. Mathematically identical to Power-Offset. τ₀ = 0 recovers the power-law fluid.</td></tr>
       <tr><td><strong>Cross Model</strong></td><td>$\eta = \eta_{\infty}+\dfrac{\eta_{0}-\eta_{\infty}}{1+(K\dot{\gamma})^{m}}$</td><td>η₀ (zero-shear viscosity Pa·s), η∞ (infinite-shear viscosity Pa·s), K (relaxation time s), m (rate constant)</td><td>Describes the full viscosity curve from the Newtonian plateau at low shear (η₀) through the power-law region to the high-shear plateau (η∞). Mathematically equivalent to 4PL. Common for polymer melts, concentrated dispersions, and hydrogels. m = 1 gives the Carreau model asymptote; larger m means sharper transition.</td></tr>
+      <tr><td><strong>Carreau Model</strong></td><td>$\eta = \eta_{\infty}+(\eta_{0}-\eta_{\infty})\left[1+(\lambda\dot{\gamma})^{2}\right]^{(n-1)/2}$</td><td>η₀ (zero-shear Pa·s), η∞ (high-shear Pa·s), λ (relaxation time s), n (power index)</td><td>More physically motivated than Cross: the square-root-square structure arises from network theory. n &lt; 1 gives shear-thinning (blood, polymer melts, concentrated emulsions); n = 1 gives Newtonian (η = η₀). λ is the reciprocal critical shear rate. Common for biofluids and non-Newtonian polymer solutions. Reduces to Cross model in the limit of large (λγ̇).</td></tr>
+      <tr><td><strong>Quemada Model</strong></td><td>$\eta = \left(\dfrac{\sqrt{\eta_{0}}+\sqrt{\eta_{\infty}}\,\sqrt{\dot{\gamma}/\dot{\gamma}_{c}}}{1+\sqrt{\dot{\gamma}/\dot{\gamma}_{c}}}\right)^{\!2}$</td><td>η₀ (zero-shear Pa·s), η∞ (infinite-shear Pa·s), γ̇c (critical shear rate s⁻¹)</td><td>Derived from energy-minimisation in concentrated dispersions. Frequently used for blood (captures red blood cell aggregation at low shear and disaggregation at high shear). The geometric mean √(η₀·η∞) lies near the transition point. Three-parameter model; fewer parameters than Carreau. Also used for dense suspensions and pastes.</td></tr>
       <tr><td colspan="4" class="ref-group-hdr">PEAK / SPECTRAL (EXTENDED)</td></tr>
       <tr><td><strong>Exponentially Modified Gaussian (EMG)</strong></td><td>$y=\dfrac{A}{2}\exp\!\left(\dfrac{\sigma^2}{2\tau^2}-\dfrac{x-\mu}{\tau}\right)\mathrm{erfc}\!\left(\dfrac{\sigma/\tau-(x-\mu)/\sigma}{\sqrt{2}}\right)+C$</td><td>A (amplitude), μ (Gaussian centre), σ (Gaussian std dev), τ (exponential tail constant), C (baseline)</td><td>Convolution of a Gaussian with a one-sided exponential decay. Standard model for asymmetric chromatography peaks (HPLC, GC). τ &gt; 0 gives right (trailing) tailing; τ → 0 recovers the Gaussian. The asymmetry ratio A = τ/σ characterises peak shape. Implemented with erfc via Abramowitz &amp; Stegun polynomial (|err| &lt; 1.5×10⁻⁷).</td></tr>
       <tr><td><strong>Asymmetric Gaussian</strong></td><td>$y=A\,e^{-(x-\mu)^2/2\sigma^2}\!\left[1+\mathrm{erf}\!\left(\dfrac{\alpha(x-\mu)}{\sigma\sqrt{2}}\right)\right]+C$</td><td>A (amplitude), μ (centre), σ (width), α (skewness), C (baseline)</td><td>Skew-normal peak model. α = 0 recovers the symmetric Gaussian; α &gt; 0 right-skews (longer right shoulder); α &lt; 0 left-skews. Useful for asymmetric spectroscopic peaks, powder diffraction with strain broadening, and asymmetric chromatographic peaks when the simpler EMG is over-parameterised.</td></tr>

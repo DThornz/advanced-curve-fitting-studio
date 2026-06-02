@@ -11,7 +11,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 
 | Capability | Detail |
 |---|---|
-| **56 built-in models** | Linear, Power Law, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Double-Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Biexponential, Rational, Power-law + Offset, **Gompertz**, **KWW Stretched Exponential**, **4-Parameter Logistic (4PL)**, **Pseudo-Voigt**, **Fano Resonance**, **Oral 1-Compartment PK**, **Stern-Volmer**, **Langevin**, **Van't Hoff**, **Ramberg-Osgood** · **Pharmacokinetics:** Two-Compartment PK, Oral PK + Lag Time · **Enzyme kinetics:** Substrate Inhibition · **Adsorption isotherms:** Langmuir, Freundlich, Temkin · **Rheology:** Power-Law Fluid, Herschel-Bulkley, Cross Model · **Peak shapes:** EMG (Exponentially Modified Gaussian), Asymmetric Gaussian, Voigt (Thompson-Cox-Hastings) · **Thermal kinetics:** Arrhenius, Extended Arrhenius · **Diffusion:** Erf Diffusion · **Activation functions:** Softplus, Erf Sigmoid · **Electrophysiology:** Boltzmann G-V, Double Boltzmann, HH Activation I-V, HH Na Channel I-V, Kir Inward Rectifier, GHK Current, τ-V Gaussian · Custom |
+| **58 built-in models** | Linear, Power Law, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Double-Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Biexponential, Rational, Power-law + Offset, **Gompertz**, **KWW Stretched Exponential**, **4-Parameter Logistic (4PL)**, **Pseudo-Voigt**, **Fano Resonance**, **Oral 1-Compartment PK**, **Stern-Volmer**, **Langevin**, **Van't Hoff**, **Ramberg-Osgood** · **Pharmacokinetics:** Two-Compartment PK, Oral PK + Lag Time · **Enzyme kinetics:** Substrate Inhibition · **Adsorption isotherms:** Langmuir, Freundlich, Temkin · **Rheology:** Power-Law Fluid, Herschel-Bulkley, Cross Model, Carreau, Quemada · **Peak shapes:** EMG (Exponentially Modified Gaussian), Asymmetric Gaussian, Voigt (Thompson-Cox-Hastings) · **Thermal kinetics:** Arrhenius, Extended Arrhenius · **Diffusion:** Erf Diffusion · **Activation functions:** Softplus, Erf Sigmoid · **Electrophysiology:** Boltzmann G-V, Double Boltzmann, HH Activation I-V, HH Na Channel I-V, Kir Inward Rectifier, GHK Current, τ-V Gaussian · Custom |
 | **Fitting algorithms** | Levenberg-Marquardt · Gauss-Newton · Nelder-Mead Simplex · BFGS (selectable per fit); analytic Vandermonde normal equations for polynomials |
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
@@ -357,7 +357,7 @@ curve-fitting-studio/
 ├── js/
 │   ├── main.js         — App init, preferences, auto-restore
 │   ├── state.js        — Central mutable state object
-│   ├── models.js       — 56 built-in model definitions + MODEL_EQ / MODEL_EQ_JS
+│   ├── models.js       — 58 built-in model definitions + MODEL_EQ / MODEL_EQ_JS
 │   ├── fitting.js      — Fit orchestration, Web Worker dispatch, result storage
 │   ├── solvers.js      — LM, Gauss-Newton, Nelder-Mead, BFGS implementations
 │   ├── math-utils.js   — Matrix ops, statistics, covariance, CI/PI, Jacobian
@@ -401,6 +401,22 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 ---
 
 ## Changelog
+
+### v1.6.3 — 2026-06-01
+- **new** Carreau model (η∞ + (η₀−η∞)·[1+(λγ̇)²]^((n−1)/2)) — biofluids, polymer melts; 4 params
+- **new** Quemada model (3-parameter geometric-mean form) — blood, dense suspensions
+- **new** Preset-based grouped examples: 6 standalone replaced by 5 multi-model groups with in-modal preset dropdown (Adsorption Isotherms, Viscosity/Rheology with named fluid presets, Spectral/Chrom. peaks, Thermal Kinetics, Sigmoid/Activation)
+- **new** Example search: filter box in Examples dropdown matches by name, suggested model, and keyword tags (e.g. "blood" → viscosity/rheology group)
+- **new** Third column in Examples dropdown (Pharmacokinetics, Multi-Model Groups, Diffusion)
+- **improve** Version bumped to v1.6.3; hero badge 56 → 58
+
+### v1.6.2 — 2026-06-01
+- **new** 7 new export formats: Jupyter Notebook (.ipynb), Excel Workbook (.xlsx), Standalone Plotly HTML, Copy Plot to Clipboard (PNG), BibTeX citation, API JSON schema, LaTeX doc fragment
+- **improve** Python / LaTeX exports cover all 17 v1.6.0 models (extracted `_pyModelBody` helper)
+
+### v1.6.1 — 2026-06-01
+- **new** 10 UI/UX features: dark mode auto-detect, model search, fit quality badge, fit comparison modal, drag-drop reorder, resize memory, fit notes, axis range mode, Ctrl+F fit, sweep clamping cue
+- **fix** All 17 v1.6.0 models added to fitting-worker.js (Softplus, Erf-Sigmoid, EMG, Voigt etc. were showing "Unknown model")
 
 ### v1.6.0 — 2026-06-01
 - **new** 17 new built-in models (39 → 56 total): Pharmacokinetics — Two-Compartment PK, Oral PK + Lag Time; Enzyme kinetics — Substrate Inhibition; Adsorption isotherms — Langmuir, Freundlich, Temkin; Rheology — Power-Law Fluid, Herschel-Bulkley, Cross Model; Peak shapes — EMG (Exponentially Modified Gaussian), Asymmetric Gaussian (skew-normal), Voigt (Thompson-Cox-Hastings constrained); Thermal kinetics — Arrhenius, Extended Arrhenius; Diffusion — Erf Diffusion; Activation functions — Softplus, Erf Sigmoid
