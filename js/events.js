@@ -61,6 +61,45 @@ function initEvents() {
     return _exSections;
   }
 
+  const EX_COL_W = 210;  // fixed column width (px) → consistent text wrapping
+
+  // Split sections into exactly `n` order-preserving columns, balancing item weight.
+  function _splitExColumns(sections, n) {
+    const weight = sec => (sec.hdr ? 1 : 0) + sec.items.length + 0.4; // +sep allowance
+    const total  = sections.reduce((s, sec) => s + weight(sec), 0);
+    const target = total / n;
+    const cols = []; let col = [], w = 0;
+    sections.forEach(sec => {
+      const sw = weight(sec);
+      // move to next column once we've met our share AND more columns remain
+      if (col.length && cols.length < n - 1 && w >= target - sw / 2) {
+        cols.push(col); col = []; w = 0;
+      }
+      col.push(sec); w += sw;
+    });
+    if (col.length) cols.push(col);
+    return cols;
+  }
+
+  function _renderExColumns(columns) {
+    const colsWrap = document.getElementById('examples-cols-wrap');
+    colsWrap.innerHTML = columns.map(secs =>
+      `<div class="examples-col">${secs.map((sec, si) =>
+        (sec.hdr ? `<div class="examples-col-hdr">${sec.hdr}</div>` : '') +
+        sec.items.map(it => it.html).join('') +
+        (si < secs.length - 1 ? '<div class="app-dropdown-sep"></div>' : '')
+      ).join('')}</div>`
+    ).join('');
+    colsWrap.querySelectorAll('.app-dropdown-item[data-example]').forEach(el => {
+      el.addEventListener('click', () => {
+        const menu = document.getElementById('examples-menu');
+        openExampleEditor(el.dataset.example);
+        menu.classList.remove('open');
+        menu.style.cssText = '';
+      });
+    });
+  }
+
   function _rebuildExMenuColumns() {
     if (window.innerWidth < 640) return;   // mobile handled by CSS
     const menu = document.getElementById('examples-menu');
@@ -70,62 +109,37 @@ function initEvents() {
     const sections = _getExSections();
     if (!sections.length) return;
 
-    // Available vertical space below the menu's top edge
-    const menuTop  = parseFloat(menu.style.top) || 50;
-    const searchEl = document.getElementById('examples-search');
-    const searchH  = (searchEl?.closest('[style*="border-bottom"]')?.offsetHeight || 40) + 4;
-    const availH   = Math.max(120, window.innerHeight - menuTop - searchH - 20);
+    // Clear any prior scroll fallback before measuring
+    colsWrap.style.maxHeight = '';
+    colsWrap.style.overflowY = '';
 
-    // Approximate row heights (px)
-    const ITEM_H = 28, HDR_H = 24, SEP_H = 9;
+    // How many columns can fit horizontally
+    const maxByWidth = Math.max(1, Math.floor((window.innerWidth - 24) / EX_COL_W));
+    const maxCols    = Math.min(sections.length, maxByWidth, 8);
 
-    // Total "row units" for all sections
-    const totalRows = sections.reduce((s, sec, i) =>
-      s + (sec.hdr ? 1 : 0) + sec.items.length + (i < sections.length - 1 ? SEP_H / ITEM_H : 0), 0);
+    // Anchor left edge from current fixed position (set by positionMenu)
+    const startLeft = parseFloat(menu.style.left) || menu.getBoundingClientRect().left;
 
-    const rowsPerCol = Math.max(4, Math.floor(availH / ITEM_H));
-    const numCols    = Math.max(1, Math.ceil(totalRows / rowsPerCol));
-    const targetRowsPerCol = totalRows / numCols;
+    // Try increasing column counts until the rendered content fits the viewport
+    const availFor = () => window.innerHeight - colsWrap.getBoundingClientRect().top - 12;
+    for (let n = 1; n <= maxCols; n++) {
+      const columns = _splitExColumns(sections, n);
+      _renderExColumns(columns);
 
-    // Greedily assign sections to columns (keep each section intact)
-    const columns = [];
-    let col = [], colRows = 0;
-    sections.forEach((sec, i) => {
-      const secRows = (sec.hdr ? HDR_H / ITEM_H : 0) + sec.items.length +
-                      (i < sections.length - 1 ? SEP_H / ITEM_H : 0);
-      // Start a new column if this section tips us significantly over target
-      // and we still have budget to open more columns
-      if (col.length > 0 && columns.length < numCols - 1 &&
-          colRows + secRows > targetRowsPerCol * 1.05) {
-        columns.push(col); col = []; colRows = 0;
-      }
-      col.push(sec);
-      colRows += secRows;
-    });
-    if (col.length) columns.push(col);
+      // Size + reposition so we measure at the real on-screen geometry
+      const width = columns.length * EX_COL_W + 8;
+      const left  = Math.max(8, Math.min(startLeft, window.innerWidth - width - 8));
+      menu.style.width = width + 'px';
+      menu.style.left  = Math.round(left) + 'px';
 
-    // Adjust menu width to fit the actual column count
-    const COL_W  = Math.max(180, Math.min(230, Math.floor((window.innerWidth - 24) / columns.length)));
-    const menuW  = Math.min(window.innerWidth - 16, columns.length * COL_W + 16);
-    menu.style.width = menuW + 'px';
+      if (colsWrap.scrollHeight <= availFor()) break;  // fits — done
+    }
 
-    // Rebuild columns HTML
-    colsWrap.innerHTML = columns.map(secs =>
-      `<div class="examples-col">${secs.map((sec, si) =>
-        (sec.hdr ? `<div class="examples-col-hdr">${sec.hdr}</div>` : '') +
-        sec.items.map(it => it.html).join('') +
-        (si < secs.length - 1 ? '<div class="app-dropdown-sep"></div>' : '')
-      ).join('')}</div>`
-    ).join('');
-
-    // Re-attach click listeners for freshly-built items
-    colsWrap.querySelectorAll('.app-dropdown-item[data-example]').forEach(el => {
-      el.addEventListener('click', () => {
-        openExampleEditor(el.dataset.example);
-        menu.classList.remove('open');
-        menu.style.cssText = '';
-      });
-    });
+    // If even the widest layout overflows (very short viewport), scroll the columns
+    if (colsWrap.scrollHeight > availFor()) {
+      colsWrap.style.maxHeight = Math.max(120, availFor()) + 'px';
+      colsWrap.style.overflowY = 'auto';
+    }
   }
 
   // Hook: rebuild columns whenever the examples menu opens

@@ -6,12 +6,51 @@
 let customCompiled = null;
 
 // Shared set used by parseCustomEquation and the Equation Editor validator
+// Extend Math.js with special functions, polyfilling any the bundled build lacks,
+// so custom equations using erf/erfc/gamma/lgamma/factorial always evaluate.
+function _extendMathFns(m) {
+  if (!m || typeof m.import !== 'function') return;
+  const erfPoly = z => {                       // Abramowitz & Stegun 7.1.26 (|err| < 1.5e-7)
+    const t = 1 / (1 + 0.3275911 * Math.abs(z));
+    const p = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+    return Math.sign(z) * (1 - p * Math.exp(-z * z));
+  };
+  const lnGamma = z => {                        // Lanczos approximation
+    const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+      771.32342877765313, -176.61502916214059, 12.507343278686905,
+      -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lnGamma(1 - z);
+    z -= 1; let a = c[0]; const t = z + g + 0.5;
+    for (let i = 1; i < g + 2; i++) a += c[i] / (z + i);
+    return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(a);
+  };
+  const erfFn = (typeof m.erf === 'function') ? (z => m.erf(z)) : erfPoly;
+  const ext = {};
+  if (typeof m.erf       !== 'function') ext.erf       = erfPoly;
+  if (typeof m.erfc      !== 'function') ext.erfc      = z => 1 - erfFn(z);
+  if (typeof m.lgamma    !== 'function') ext.lgamma    = lnGamma;
+  if (typeof m.gamma     !== 'function') ext.gamma     = z => (z > 0.5 || z !== Math.floor(z)) ? Math.exp(lnGamma(z)) : NaN;
+  if (typeof m.factorial !== 'function') ext.factorial = z => Math.exp(lnGamma(z + 1));
+  try { if (Object.keys(ext).length) m.import(ext, { override: false, silent: true }); } catch (_) {}
+}
+if (typeof math !== 'undefined') _extendMathFns(math);
+
 const CUSTOM_EQ_MATH_SYMS = new Set([
+  // Trig
   'sin','cos','tan','asin','acos','atan','atan2',
-  'sinh','cosh','tanh',
+  'cot','sec','csc','acot','asec','acsc',
+  // Hyperbolic + inverse
+  'sinh','cosh','tanh','coth','sech','csch',
+  'asinh','acosh','atanh','acoth','asech','acsch',
+  // Common
   'exp','log','log2','log10','sqrt','abs','sign','pow',
   'ceil','floor','round','max','min','mod',
-  'pi','e',
+  // Error & special
+  'erf','erfc','gamma','lgamma','factorial','nthRoot','cbrt',
+  // Conditional / logical
+  'if','and','or','not','xor',
+  // Constants / keywords
+  'pi','e','true','false','Infinity','NaN','inf',
 ]);
 
 function parseCustomEquation(expr) {

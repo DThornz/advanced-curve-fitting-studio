@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.6.3</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.6.4</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -260,7 +260,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.6.3</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.6.4</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -821,9 +821,21 @@
                 <button class="eq-pal-btn eq-pal-fn" data-ins="log10()" data-cur="-1" title="Base-10 logarithm">log₁₀( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="log2()" data-cur="-1" title="Base-2 logarithm">log₂( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="sqrt()" data-cur="-1" title="Square root">√( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="cbrt()" data-cur="-1" title="Cube root">∛( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="nthRoot(, )" data-cur="-3" title="nthRoot(value, n) — n-th root">ⁿ√( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="abs()" data-cur="-1" title="Absolute value">|x|</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="sign()" data-cur="-1" title="Sign: −1, 0, or +1">sign( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="pow(, )" data-cur="-3" title="pow(base, exponent)">pow( )</button>
+              </div>
+            </div>
+            <div class="eq-pal-group">
+              <div class="eq-pal-hdr">Special Functions</div>
+              <div class="eq-pal-row">
+                <button class="eq-pal-btn eq-pal-fn" data-ins="erf()" data-cur="-1" title="Error function — integral of the Gaussian; used in diffusion, probit, and EMG peaks">erf( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="erfc()" data-cur="-1" title="Complementary error function: erfc(x) = 1 − erf(x)">erfc( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="gamma()" data-cur="-1" title="Gamma function Γ(x) — generalised factorial">Γ( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="lgamma()" data-cur="-1" title="Natural log of the Gamma function (numerically stable)">lnΓ( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="factorial()" data-cur="-1" title="Factorial x! (also Γ(x+1))">x!</button>
               </div>
             </div>
             <div class="eq-pal-group">
@@ -832,6 +844,9 @@
                 <button class="eq-pal-btn eq-pal-fn" data-ins="sin()" data-cur="-1">sin( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="cos()" data-cur="-1">cos( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="tan()" data-cur="-1">tan( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="cot()" data-cur="-1" title="Cotangent = cos/sin">cot( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="sec()" data-cur="-1" title="Secant = 1/cos">sec( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="csc()" data-cur="-1" title="Cosecant = 1/sin">csc( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="asin()" data-cur="-1" title="Inverse sine">asin( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="acos()" data-cur="-1" title="Inverse cosine">acos( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="atan()" data-cur="-1" title="Inverse tangent">atan( )</button>
@@ -844,6 +859,10 @@
                 <button class="eq-pal-btn eq-pal-fn" data-ins="sinh()" data-cur="-1">sinh( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="cosh()" data-cur="-1">cosh( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="tanh()" data-cur="-1">tanh( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="coth()" data-cur="-1" title="Hyperbolic cotangent — appears in Langevin function">coth( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="asinh()" data-cur="-1" title="Inverse hyperbolic sine">asinh( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="acosh()" data-cur="-1" title="Inverse hyperbolic cosine">acosh( )</button>
+                <button class="eq-pal-btn eq-pal-fn" data-ins="atanh()" data-cur="-1" title="Inverse hyperbolic tangent">atanh( )</button>
               </div>
             </div>
             <div class="eq-pal-group">
@@ -855,6 +874,17 @@
                 <button class="eq-pal-btn eq-pal-fn" data-ins="mod(, )" data-cur="-3" title="mod(a, b) — remainder">mod( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="max(, )" data-cur="-3">max( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="min(, )" data-cur="-3">min( )</button>
+              </div>
+            </div>
+            <div class="eq-pal-group">
+              <div class="eq-pal-hdr">Conditional</div>
+              <div class="eq-pal-row">
+                <button class="eq-pal-btn eq-pal-fn" data-ins="( ? : )" data-cur="-6" title="Ternary: condition ? value_if_true : value_if_false">a ? b : c</button>
+                <button class="eq-pal-btn" data-ins=" == " title="Equal to">=</button>
+                <button class="eq-pal-btn" data-ins=" &lt; " title="Less than">&lt;</button>
+                <button class="eq-pal-btn" data-ins=" &gt; " title="Greater than">&gt;</button>
+                <button class="eq-pal-btn" data-ins=" &lt;= " title="Less than or equal">≤</button>
+                <button class="eq-pal-btn" data-ins=" &gt;= " title="Greater than or equal">≥</button>
               </div>
             </div>
             <div class="eq-pal-group">
@@ -985,6 +1015,48 @@
               <button class="eq-ex-item" data-eq="(a * x^2 + b * x + c) / (x^2 + d * x + f)">
                 <span class="eq-ex-name">Quadratic rational (Padé 2,2)</span>
                 <code class="eq-ex-code">(a·x²+b·x+c) / (x²+d·x+f)</code>
+              </button>
+
+              <div class="eq-ex-cat">Error Function / Special</div>
+              <button class="eq-ex-item" data-eq="A * erf((x - mu) / (sqrt(2) * sigma)) + B">
+                <span class="eq-ex-name">Error-function sigmoid (probit)</span>
+                <code class="eq-ex-code">A·erf((x−μ)/(√2·σ)) + B</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A / 2 * erfc((x - mu) / (sqrt(2) * sigma))">
+                <span class="eq-ex-name">Diffusion / dose front (erfc)</span>
+                <code class="eq-ex-code">A/2·erfc((x−μ)/(√2·σ))</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A / 2 * exp((sigma^2) / (2 * tau^2) - (x - mu) / tau) * erfc((sigma / tau - (x - mu) / sigma) / sqrt(2)) + C">
+                <span class="eq-ex-name">Exp.-modified Gaussian (EMG)</span>
+                <code class="eq-ex-code">EMG chromatography peak</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A * exp(-((x - mu)^2) / (2 * sigma^2)) * (1 + erf(alpha * (x - mu) / (sqrt(2) * sigma)))">
+                <span class="eq-ex-name">Skew-normal peak</span>
+                <code class="eq-ex-code">Gaussian·(1 + erf(α·z))</code>
+              </button>
+
+              <div class="eq-ex-cat">Hyperbolic / Magnetism</div>
+              <button class="eq-ex-item" data-eq="A * (coth(b * x) - 1 / (b * x))">
+                <span class="eq-ex-name">Langevin (paramagnetism)</span>
+                <code class="eq-ex-code">A·(coth(b·x) − 1/(b·x))</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A * tanh(b * x) + C">
+                <span class="eq-ex-name">Saturating tanh</span>
+                <code class="eq-ex-code">A·tanh(b·x) + C</code>
+              </button>
+              <button class="eq-ex-item" data-eq="A * log(1 + exp(k * (x - x0))) + C">
+                <span class="eq-ex-name">Softplus (smooth ReLU)</span>
+                <code class="eq-ex-code">A·ln(1 + exp(k·(x−x₀))) + C</code>
+              </button>
+
+              <div class="eq-ex-cat">Conditional / Piecewise</div>
+              <button class="eq-ex-item" data-eq="(x &lt; x0) ? (a * x + b) : (c * x + d)">
+                <span class="eq-ex-name">Two-segment piecewise linear</span>
+                <code class="eq-ex-code">x&lt;x₀ ? a·x+b : c·x+d</code>
+              </button>
+              <button class="eq-ex-item" data-eq="(x &lt; t0) ? base : base + A * (1 - exp(-k * (x - t0)))">
+                <span class="eq-ex-name">Delayed onset response</span>
+                <code class="eq-ex-code">step + saturating rise after t₀</code>
               </button>
             </div>
           </div>
@@ -1676,12 +1748,24 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.6.4 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.6.4</span>
+          <span class="relnotes-ver-date">2026-06-01</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Equation Editor — more functions</strong> — added <strong>Special Functions</strong> (erf, erfc, Γ gamma, lnΓ, factorial), extra <strong>trig</strong> (cot, sec, csc), <strong>inverse hyperbolic</strong> (asinh, acosh, atanh, coth), <strong>cbrt / nthRoot</strong>, and a <strong>Conditional</strong> group (ternary <code>?:</code> and comparison operators). Math.js is auto-extended with erfc/lgamma polyfills so every palette function evaluates. New example equations: error-function sigmoid, erfc diffusion front, EMG peak, skew-normal, Langevin, softplus, and piecewise forms</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Examples menu auto-columns</strong> — the dropdown now measures real rendered height and adds columns until no items are cut off at the bottom of the screen; falls back to a scrollable column on very short viewports</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Autocomplete search</strong> — model and example search boxes show a floating top-8 results panel (opaque, arrow-key + mouse selectable) instead of rewriting the dropdown as you type</span></li>
+        </ul>
+      </div>
       <!-- ── v1.6.3 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.6.3</span>
+          <span class="relnotes-ver-num">v1.6.3</span>
           <span class="relnotes-ver-date">2026-06-01</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>2 new rheology models (56 → 58 total)</strong> — <strong>Carreau</strong> (biofluids / polymer melts: [1+(λγ̇)²]^((n−1)/2)) and <strong>Quemada</strong> (blood / concentrated dispersions: 3-parameter geometric-mean form)</span></li>

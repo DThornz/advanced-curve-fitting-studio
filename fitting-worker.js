@@ -1,6 +1,34 @@
 'use strict';
 importScripts('https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js');
 
+// Extend Math.js with special functions (polyfill any the build lacks) so custom
+// equations using erf/erfc/gamma/lgamma/factorial evaluate inside the worker too.
+(function extendMath() {
+  if (typeof math === 'undefined' || typeof math.import !== 'function') return;
+  const erfPoly = z => {
+    const t = 1 / (1 + 0.3275911 * Math.abs(z));
+    const p = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+    return Math.sign(z) * (1 - p * Math.exp(-z * z));
+  };
+  const lnGamma = z => {
+    const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+      771.32342877765313, -176.61502916214059, 12.507343278686905,
+      -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lnGamma(1 - z);
+    z -= 1; let a = c[0]; const t = z + g + 0.5;
+    for (let i = 1; i < g + 2; i++) a += c[i] / (z + i);
+    return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(a);
+  };
+  const erfFn = (typeof math.erf === 'function') ? (z => math.erf(z)) : erfPoly;
+  const ext = {};
+  if (typeof math.erf       !== 'function') ext.erf       = erfPoly;
+  if (typeof math.erfc      !== 'function') ext.erfc      = z => 1 - erfFn(z);
+  if (typeof math.lgamma    !== 'function') ext.lgamma    = lnGamma;
+  if (typeof math.gamma     !== 'function') ext.gamma     = z => (z > 0.5 || z !== Math.floor(z)) ? Math.exp(lnGamma(z)) : NaN;
+  if (typeof math.factorial !== 'function') ext.factorial = z => Math.exp(lnGamma(z + 1));
+  try { if (Object.keys(ext).length) math.import(ext, { override: false, silent: true }); } catch (_) {}
+})();
+
 /* ── Math utilities ──────────────────────────────────────── */
 function mean(arr) { return arr.reduce((s, v) => s + v, 0) / arr.length; }
 
