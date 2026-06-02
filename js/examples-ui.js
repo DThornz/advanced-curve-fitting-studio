@@ -52,29 +52,7 @@ function openExampleEditor(key, savedState = null) {
       <span style="font-weight:600;font-size:.8em;flex:1">Model Parameters</span>
       <span class="panel-tip" data-tip="ex-model-params">?</span>
     </div>
-    <div id="ex-params-container">${_buildExParamsHtml(activeDef.params)}</div>`;
-
-  if (hasPresets) {
-    document.getElementById('ex-preset-select').addEventListener('change', function() {
-      const idx = parseInt(this.value);
-      const pr = ex.presets[idx];
-      const eqD = document.getElementById('ex-eq-display');
-      if (eqD) {
-        const h = _renderExEq(pr.eq || '');
-        eqD.innerHTML = h;
-        eqD.style.display = h ? '' : 'none';
-      }
-      const pc = document.getElementById('ex-params-container');
-      if (pc) pc.innerHTML = _buildExParamsHtml(pr.params);
-    });
-  }
-
-  // Restore saved values when re-editing a generated dataset
-  if (savedState) {
-    body.querySelectorAll('.ex-param-input').forEach(inp => {
-      if (inp.dataset.key && savedState.params?.[inp.dataset.key] !== undefined)
-        inp.value = savedState.params[inp.dataset.key];
-    });
+    <div id="ex-params-container">${_buildExParamsHtml(activeDef.params)}</div>
 
     <div class="ex-noise-section">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
@@ -95,7 +73,6 @@ function openExampleEditor(key, savedState = null) {
         <input class="ctrl-input" type="number" id="ex-extra-noise-amp" value="0" min="0" step="any" style="flex:1">
       </div>
     </div>
-
     <div class="ex-noise-section">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
         <span class="ex-noise-hd" style="margin:0;flex:1">Sinusoidal Interference (up to 3)</span>
@@ -109,6 +86,21 @@ function openExampleEditor(key, savedState = null) {
         <input class="ctrl-input" type="number" id="ex-freq${i}-phase" value="0"  min="0" max="1" step="0.05" title="Phase 0–1 (fraction of 2π)">
       </div>`).join('')}
     </div>`;
+
+  if (hasPresets) {
+    document.getElementById('ex-preset-select').addEventListener('change', function() {
+      const idx = parseInt(this.value);
+      const pr = ex.presets[idx];
+      const eqD = document.getElementById('ex-eq-display');
+      if (eqD) {
+        const h = _renderExEq(pr.eq || '');
+        eqD.innerHTML = h;
+        eqD.style.display = h ? '' : 'none';
+      }
+      const pc = document.getElementById('ex-params-container');
+      if (pc) pc.innerHTML = _buildExParamsHtml(pr.params);
+    });
+  }
 
   // Restore saved values when re-editing a generated dataset
   if (savedState) {

@@ -1162,87 +1162,176 @@ function initEvents() {
     _showUnsavedModal(() => location.reload());
   }, true);
 
-  /* ── Example dataset search filter ──────────────────────── */
+  /* ── Example dataset search ─────────────────────────────── */
   (function initExampleSearch() {
-    const searchEl = document.getElementById('examples-search');
+    const searchEl  = document.getElementById('examples-search');
     const resultsEl = document.getElementById('examples-search-results');
-    const colsEl = document.getElementById('examples-cols-wrap');
+    const colsEl    = document.getElementById('examples-cols-wrap');
     if (!searchEl || !resultsEl || !colsEl) return;
-    searchEl.addEventListener('input', () => {
-      const q = searchEl.value.trim().toLowerCase();
-      if (!q) {
-        resultsEl.style.display = 'none';
-        colsEl.style.display = 'flex';
-        return;
-      }
-      const hits = Object.entries(EXAMPLES).filter(([key, ex]) => {
-        const searchable = [
-          key,
-          ex.title || '',
-          ex.tags || '',
-          ...(ex.presets || []).map(pr => pr.label + ' ' + (pr.suggestModel || '')),
-        ].join(' ').toLowerCase();
-        return searchable.includes(q);
-      });
+
+    let focusIdx = -1;
+    let currentHits = [];
+
+    function score(key, ex, q) {
+      const title = (ex.title || '').toLowerCase();
+      const tags  = (ex.tags  || '').toLowerCase();
+      const presets = (ex.presets || []).map(p => p.label + ' ' + (p.suggestModel || '')).join(' ').toLowerCase();
+      const blob = key + ' ' + title + ' ' + tags + ' ' + presets;
+      if (!blob.includes(q)) return 0;
+      if (title.startsWith(q) || key.startsWith(q)) return 3;
+      if (title.split(/\s+/).some(w => w.startsWith(q))) return 2;
+      return 1;
+    }
+
+    function render() {
+      resultsEl.querySelectorAll('.srp-item').forEach((el, i) => el.classList.toggle('focused', i === focusIdx));
+    }
+
+    function pick(key) {
+      searchEl.value = '';
+      resultsEl.style.display = 'none';
+      colsEl.style.display = 'flex';
+      focusIdx = -1; currentHits = [];
+      openExampleEditor(key);
+      document.getElementById('examples-menu').classList.remove('open');
+    }
+
+    function buildResults(q) {
+      if (!q) { resultsEl.style.display = 'none'; colsEl.style.display = 'flex'; return; }
+      currentHits = Object.entries(EXAMPLES)
+        .map(([k, ex]) => ({ k, ex, s: score(k, ex, q) }))
+        .filter(e => e.s > 0)
+        .sort((a, b) => b.s - a.s)
+        .slice(0, 8);
       colsEl.style.display = 'none';
-      resultsEl.style.display = '';
-      if (!hits.length) {
-        resultsEl.innerHTML = `<div style="padding:6px 12px;font-size:.72em;color:var(--dimmer)">No matching examples for "${q}"</div>`;
+      if (!currentHits.length) {
+        resultsEl.innerHTML = `<div class="srp-empty">No examples match "<strong>${q}</strong>"</div>`;
+        resultsEl.style.display = '';
         return;
       }
-      resultsEl.innerHTML = hits.map(([key, ex]) => {
-        const presetLabel = ex.presets ? ` <span class="app-dropdown-sub">${ex.presets.map(p => p.label.split('—')[0].trim()).join(' · ')}</span>` : '';
-        return `<div class="app-dropdown-item" data-example="${key}">${ex.title || key}${presetLabel}</div>`;
+      resultsEl.innerHTML = currentHits.map(({ k, ex }, i) => {
+        const desc = ex.presets
+          ? ex.presets.map(p => p.label.split(/[—–-]/)[0].trim()).join(' · ')
+          : (ex.tags || '').split(' ').slice(0, 5).join(' ');
+        return `<div class="srp-item" data-idx="${i}" data-example="${k}">
+          <span class="srp-name">${ex.title || k}</span>
+          <span class="srp-desc">${desc}</span>
+        </div>`;
       }).join('');
-      resultsEl.querySelectorAll('[data-example]').forEach(item => {
-        item.addEventListener('click', () => {
-          searchEl.value = '';
-          resultsEl.style.display = 'none';
-          colsEl.style.display = 'flex';
-          openExampleEditor(item.dataset.example);
-          document.getElementById('examples-menu').classList.remove('open');
-        });
+      resultsEl.style.display = '';
+      focusIdx = -1;
+      resultsEl.querySelectorAll('.srp-item').forEach(item => {
+        item.addEventListener('mousedown', e => { e.preventDefault(); pick(item.dataset.example); });
+        item.addEventListener('mouseover', () => { focusIdx = parseInt(item.dataset.idx); render(); });
       });
-    });
+    }
+
+    searchEl.addEventListener('input', () => buildResults(searchEl.value.trim().toLowerCase()));
     searchEl.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { searchEl.value = ''; searchEl.dispatchEvent(new Event('input')); }
+      if (e.key === 'Escape') { searchEl.value = ''; buildResults(''); return; }
+      if (!currentHits.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx + 1, currentHits.length - 1); render(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx - 1, 0); render(); }
+      else if (e.key === 'Enter') {
+        if (focusIdx >= 0) { e.preventDefault(); pick(currentHits[focusIdx].k); }
+        else if (currentHits.length === 1) { e.preventDefault(); pick(currentHits[0].k); }
+      }
     });
-    // Clear search when dropdown closes
     document.getElementById('btn-examples')?.addEventListener('click', () => {
       setTimeout(() => { if (document.getElementById('examples-menu').classList.contains('open')) searchEl.focus(); }, 50);
     });
   })();
 
-  /* ── Model search filter ──────────────────────────────── */
+  /* ── Model search autocomplete ───────────────────────────── */
   (function initModelSearch() {
-    const searchEl = document.getElementById('model-search');
-    const sel      = document.getElementById('model-select');
-    if (!searchEl || !sel) return;
-    const origHTML = sel.innerHTML;
-    const allOpts  = Array.from(sel.querySelectorAll('option')).map(o => ({
-      value: o.value,
-      text:  o.textContent.trim(),
-      group: (o.parentElement instanceof HTMLOptGroupElement) ? o.parentElement.label : '',
-    }));
-    function rebuildFromQuery(q) {
-      const prevVal = sel.value;
-      if (!q) { sel.innerHTML = origHTML; sel.value = prevVal; return; }
-      const hits = allOpts.filter(o => o.value.toLowerCase().includes(q) || o.text.toLowerCase().includes(q));
-      const groups = {};
-      hits.forEach(o => { (groups[o.group] || (groups[o.group] = [])).push(o); });
-      sel.innerHTML = Object.entries(groups).map(([g, opts]) =>
-        `<optgroup label="${g}">${opts.map(o => `<option value="${o.value}">${o.text}</option>`).join('')}</optgroup>`
-      ).join('');
-      const keep = hits.find(o => o.value === prevVal);
-      sel.value = keep ? keep.value : (hits[0]?.value || '');
-      if (!keep && hits.length) sel.dispatchEvent(new Event('change'));
+    const searchEl  = document.getElementById('model-search');
+    const resultsEl = document.getElementById('model-search-results');
+    const sel       = document.getElementById('model-select');
+    if (!searchEl || !resultsEl || !sel) return;
+
+    // Snapshot all options once — never modify the <select> while typing
+    const allOpts = Array.from(sel.querySelectorAll('option'))
+      .filter(o => o.value)
+      .map(o => {
+        const parts = o.textContent.trim().split(/\s{2,}/);
+        return {
+          value: o.value,
+          name:  parts[0] || o.value,
+          desc:  parts.slice(1).join('  '),
+          group: (o.parentElement instanceof HTMLOptGroupElement) ? o.parentElement.label : '',
+        };
+      });
+
+    let focusIdx = -1;
+    let currentHits = [];
+
+    function score(o, q) {
+      const v = o.value.toLowerCase(), n = o.name.toLowerCase(), g = o.group.toLowerCase(), d = o.desc.toLowerCase();
+      if (v === q || n === q) return 4;
+      if (v.startsWith(q) || n.startsWith(q)) return 3;
+      if (n.split(/\s+/).some(w => w.startsWith(q))) return 2;
+      if (v.includes(q) || n.includes(q) || g.includes(q) || d.includes(q)) return 1;
+      return 0;
     }
-    searchEl.addEventListener('input', () => rebuildFromQuery(searchEl.value.trim().toLowerCase()));
+
+    function render() {
+      resultsEl.querySelectorAll('.srp-item').forEach((el, i) => el.classList.toggle('focused', i === focusIdx));
+    }
+
+    function pick(opt) {
+      sel.value = opt.value;
+      sel.dispatchEvent(new Event('change'));
+      searchEl.value = '';
+      resultsEl.style.display = 'none';
+      focusIdx = -1; currentHits = [];
+    }
+
+    function buildResults(q) {
+      if (!q) { resultsEl.style.display = 'none'; return; }
+      currentHits = allOpts
+        .map(o => ({ o, s: score(o, q) }))
+        .filter(e => e.s > 0)
+        .sort((a, b) => b.s - a.s)
+        .slice(0, 8)
+        .map(e => e.o);
+      if (!currentHits.length) {
+        resultsEl.innerHTML = `<div class="srp-empty">No models match "<strong>${q}</strong>"</div>`;
+        resultsEl.style.display = '';
+        return;
+      }
+      resultsEl.innerHTML = currentHits.map((o, i) =>
+        `<div class="srp-item" data-idx="${i}">
+          <span class="srp-name">${o.name}</span>
+          ${o.desc ? `<span class="srp-desc">${o.desc}</span>` : ''}
+          <span class="srp-group">${o.group}</span>
+        </div>`
+      ).join('');
+      resultsEl.style.display = '';
+      focusIdx = -1;
+      resultsEl.querySelectorAll('.srp-item').forEach(item => {
+        item.addEventListener('mousedown', e => { e.preventDefault(); pick(currentHits[parseInt(item.dataset.idx)]); });
+        item.addEventListener('mouseover', () => { focusIdx = parseInt(item.dataset.idx); render(); });
+      });
+    }
+
+    searchEl.addEventListener('input', () => buildResults(searchEl.value.trim().toLowerCase()));
     searchEl.addEventListener('keydown', e => {
-      if (e.key === 'Escape')   { searchEl.value = ''; rebuildFromQuery(''); }
-      if (e.key === 'ArrowDown' || e.key === 'Enter') { e.preventDefault(); sel.focus(); }
+      if (e.key === 'Escape') { searchEl.value = ''; resultsEl.style.display = 'none'; return; }
+      if (!currentHits.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx + 1, currentHits.length - 1); render(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx - 1, 0); render(); }
+      else if (e.key === 'Enter') {
+        if (focusIdx >= 0) { e.preventDefault(); pick(currentHits[focusIdx]); }
+        else if (currentHits.length === 1) { e.preventDefault(); pick(currentHits[0]); }
+      }
     });
-    sel.addEventListener('change', () => { if (searchEl.value) { searchEl.value = ''; rebuildFromQuery(''); } });
+    // Hide panel when focus leaves both the input and the results
+    searchEl.addEventListener('blur', () => setTimeout(() => {
+      if (!resultsEl.contains(document.activeElement)) resultsEl.style.display = 'none';
+    }, 150));
+    document.addEventListener('click', e => {
+      if (!searchEl.contains(e.target) && !resultsEl.contains(e.target)) resultsEl.style.display = 'none';
+    });
   })();
 
   /* ── Fit comparison modal ─────────────────────────────── */

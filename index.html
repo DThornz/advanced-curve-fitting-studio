@@ -349,7 +349,10 @@
 
         <div class="ctrl-section">
           <label class="ctrl-label">Fit Model <span class="panel-tip" data-tip="fit-model">?</span></label>
-          <input type="search" id="model-search" class="ctrl-input" placeholder="Search models…" autocomplete="off" style="margin-bottom:4px;font-size:.72em" title="Type to filter models — press Esc to clear, ↓ or Enter to move to dropdown">
+          <div style="position:relative;margin-bottom:4px">
+            <input type="search" id="model-search" class="ctrl-input" placeholder="Search models…" autocomplete="off" style="font-size:.72em;width:100%;box-sizing:border-box" title="Type to search — top 8 matches appear below; arrows/Enter to pick">
+            <div id="model-search-results" class="srp" style="display:none"></div>
+          </div>
           <select class="ctrl-select" id="model-select">
             <optgroup label="Basic">
               <option value="Linear">Linear  y = a·x + b</option>

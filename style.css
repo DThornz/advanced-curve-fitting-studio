@@ -1274,3 +1274,14 @@ body.dark-mode .corr-list-pair{color:#7a90ae!important}
 /* ── Sweep at-bound cue ──────────────────────────────────── */
 .param-sweep-range.at-bound{accent-color:#f59e0b}
 .param-sweep-range.at-bound::-webkit-slider-thumb{box-shadow:0 0 0 2px #f59e0b55}
+
+/* ── Autocomplete search result panels ───────────────────── */
+.srp{position:absolute;left:0;right:0;top:100%;z-index:200;background:var(--panel-bg);border:1px solid var(--border);border-radius:0 0 6px 6px;box-shadow:0 6px 18px rgba(0,0,0,.18);overflow-y:auto;max-height:300px}
+.srp-item{padding:5px 10px;cursor:pointer;font-size:.72em;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:6px;line-height:1.35}
+.srp-item:last-child{border-bottom:none}
+.srp-item.focused,.srp-item:hover{background:var(--teal-soft,rgba(11,122,110,.12))}
+.srp-name{font-weight:600;flex-shrink:0;color:var(--text)}
+.srp-desc{color:var(--dimmer);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:.9em}
+.srp-group{color:var(--muted);font-size:.85em;margin-left:auto;flex-shrink:0;white-space:nowrap}
+.srp-empty{padding:7px 10px;font-size:.72em;color:var(--dimmer)}
+body.dark-mode .srp-item.focused,body.dark-mode .srp-item:hover{background:rgba(11,122,110,.18)!important}
