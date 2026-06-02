@@ -11,7 +11,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 
 | Capability | Detail |
 |---|---|
-| **39 built-in models** | Linear, Power Law, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Double-Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Biexponential, Rational, Power-law + Offset, **Gompertz**, **KWW Stretched Exponential**, **4-Parameter Logistic (4PL)**, **Pseudo-Voigt**, **Fano Resonance**, **Oral 1-Compartment PK**, **Stern-Volmer**, **Langevin**, **Van't Hoff**, **Ramberg-Osgood** · **Electrophysiology:** Boltzmann G-V, Double Boltzmann, HH Activation I-V, HH Na Channel I-V, Kir Inward Rectifier, GHK Current, τ-V Gaussian · Custom |
+| **56 built-in models** | Linear, Power Law, Polynomial (2–6), Exponential, Exp Decay + Offset, Logistic/Sigmoid, Gaussian Peak, Double-Gaussian Peak, Lorentzian, Michaelis-Menten, Hill, Sinusoidal, Damped Sinusoid, Weibull CDF, Biexponential, Rational, Power-law + Offset, **Gompertz**, **KWW Stretched Exponential**, **4-Parameter Logistic (4PL)**, **Pseudo-Voigt**, **Fano Resonance**, **Oral 1-Compartment PK**, **Stern-Volmer**, **Langevin**, **Van't Hoff**, **Ramberg-Osgood** · **Pharmacokinetics:** Two-Compartment PK, Oral PK + Lag Time · **Enzyme kinetics:** Substrate Inhibition · **Adsorption isotherms:** Langmuir, Freundlich, Temkin · **Rheology:** Power-Law Fluid, Herschel-Bulkley, Cross Model · **Peak shapes:** EMG (Exponentially Modified Gaussian), Asymmetric Gaussian, Voigt (Thompson-Cox-Hastings) · **Thermal kinetics:** Arrhenius, Extended Arrhenius · **Diffusion:** Erf Diffusion · **Activation functions:** Softplus, Erf Sigmoid · **Electrophysiology:** Boltzmann G-V, Double Boltzmann, HH Activation I-V, HH Na Channel I-V, Kir Inward Rectifier, GHK Current, τ-V Gaussian · Custom |
 | **Fitting algorithms** | Levenberg-Marquardt · Gauss-Newton · Nelder-Mead Simplex · BFGS (selectable per fit); analytic Vandermonde normal equations for polynomials |
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
@@ -27,7 +27,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Prediction lookup** | Type an X value → get Ŷ with 95% CI (Jacobian propagation); or type a Y value → solve for X numerically (grid scan + bisection) with CI via delta method — returns IC50, EC50, Km, half-life, etc. directly |
 | **F-test** | Nested model comparison: select two fits on the same dataset; computes F-statistic and exact p-value (regularized incomplete beta) and reports whether extra parameters are statistically justified at α = 0.05 |
 | **Plot annotations** | Add horizontal/vertical reference lines, text callouts, and auto-peak markers; per-annotation control over font family, size, bold/italic, color, label placement, background, border, line style/width/opacity, and arrowhead type/size/color |
-| **Try All Models** | One-click comparison table — fits all 38 non-Custom models and ranks by R²; apply any result to the active fit |
+| **Try All Models** | One-click comparison table — fits all 55 non-Custom models and ranks by R²; apply any result to the active fit |
 | **Copy Parameters** | One-click copy of fit name, dataset, all parameters (with ± std errors), and full statistics (R², Adj-R², RMSE, SSE, AIC, BIC, N, status) to clipboard |
 | **Parameter table** | Init / Min / Max / Fit columns per parameter; Init preserves the starting guess; Fit column shows converged values; switching fits loads that fit's parameters into Init |
 | **Parameter locking** | Lock icon on any parameter row — freezes that parameter at its Init value during fitting; useful for fixing known constants while optimising the rest |
@@ -48,7 +48,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Axis range & tick control** | Set X/Y min, max, and tick spacing (Δ) from the ⚙ Style modal; blank = Plotly autorange |
 | **Graph style editor** | Full control over global font (family, size, color), plot/paper background, grid lines (color, width, dash per axis), zero lines, axis spines, tick labels, and legend appearance; ⚙ Style button in the Plot Labels section |
 | **Data import** | CSV/TSV/TXT file upload, drag-and-drop onto plot, paste from clipboard; auto-detects delimiter and headers; multi-column picker with optional σ column for files with more than two columns |
-| **26 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration, **Gompertz tumor growth**, **XRD Pseudo-Voigt peak**, **Fano resonance**, **superparamagnetic M-H (Langevin)**, **stress-strain Ramberg-Osgood**, **ELISA 4PL dose-response**, **oral drug PK**, **polymer KWW relaxation**, **fluorescence quenching (Stern-Volmer)**, **Van't Hoff equilibrium vs temperature** · **Electrophysiology:** G-V Boltzmann, Kir I-V, HH Na I-V, voltage-dependent τ — each with adjustable noise and optional outlier injection (count + scale). The generator modal shows the generating equation rendered in KaTeX. Dropdown is a 3-column grouped layout |
+| **36 example datasets** | Exponential decay, Gaussian/Lorentzian peaks, logistic growth, enzyme kinetics, Hill dose-response, damped oscillation, sinusoidal, power law, Weibull CDF, polynomial calibration, linear calibration, **Gompertz tumor growth**, **XRD Pseudo-Voigt peak**, **Fano resonance**, **superparamagnetic M-H (Langevin)**, **stress-strain Ramberg-Osgood**, **ELISA 4PL dose-response**, **oral drug PK**, **polymer KWW relaxation**, **fluorescence quenching (Stern-Volmer)**, **Van't Hoff equilibrium vs temperature**, **two-compartment PK** (IV bolus), **oral PK with lag time**, **substrate inhibition** (bell-shaped enzyme kinetics), **Langmuir adsorption isotherm**, **Freundlich adsorption isotherm**, **Herschel-Bulkley fluid**, **Cross Model viscosity**, **EMG chromatography peak**, **Arrhenius rate constant**, **erf diffusion profile** · **Electrophysiology:** G-V Boltzmann, Kir I-V, HH Na I-V, voltage-dependent τ — each with adjustable noise and optional outlier injection (count + scale). The generator modal shows the generating equation rendered in KaTeX. Dropdown is a 3-column grouped layout |
 | **Dataset enable/disable** | Toggle datasets on/off; disabled datasets and all their fits are fully hidden from the plot, residual panels, stats table, and F-test — re-enabling instantly restores them |
 | **Blank startup** | App opens with an empty workspace — no example data pre-loaded; start from a clean slate every time |
 | **First-run tutorial** | 6-slide modal on first launch with SVG illustrations of the real app UI that automatically adapt to light/dark mode; forward/back navigation, keyboard support (arrow keys, Escape), and a "Don't show this again" option stored in localStorage |
@@ -357,7 +357,7 @@ curve-fitting-studio/
 ├── js/
 │   ├── main.js         — App init, preferences, auto-restore
 │   ├── state.js        — Central mutable state object
-│   ├── models.js       — 39 built-in model definitions + MODEL_EQ / MODEL_EQ_JS
+│   ├── models.js       — 56 built-in model definitions + MODEL_EQ / MODEL_EQ_JS
 │   ├── fitting.js      — Fit orchestration, Web Worker dispatch, result storage
 │   ├── solvers.js      — LM, Gauss-Newton, Nelder-Mead, BFGS implementations
 │   ├── math-utils.js   — Matrix ops, statistics, covariance, CI/PI, Jacobian
@@ -371,7 +371,7 @@ curve-fitting-studio/
 │   ├── session.js      — Save/load session JSON, multi-tab payload, beforeunload guard
 │   ├── resize.js       — Drag-resize handles for left/right/residual/stats/corr panels
 │   ├── preprocess.js   — Smoothing, FFT/STFT filter, baseline modal
-│   ├── examples.js     — 26 built-in example dataset generators
+│   ├── examples.js     — 36 built-in example dataset generators
 │   ├── examples-ui.js  — Examples dropdown UI and modal
 │   ├── tutorial.js     — Interactive tutorial overlay (SVG step diagrams)
 │   └── edit-mode.js    — Click-to-drag point editing, lasso select, masking
@@ -401,6 +401,14 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 ---
 
 ## Changelog
+
+### v1.6.0 — 2026-06-01
+- **new** 17 new built-in models (39 → 56 total): Pharmacokinetics — Two-Compartment PK, Oral PK + Lag Time; Enzyme kinetics — Substrate Inhibition; Adsorption isotherms — Langmuir, Freundlich, Temkin; Rheology — Power-Law Fluid, Herschel-Bulkley, Cross Model; Peak shapes — EMG (Exponentially Modified Gaussian), Asymmetric Gaussian (skew-normal), Voigt (Thompson-Cox-Hastings constrained); Thermal kinetics — Arrhenius, Extended Arrhenius; Diffusion — Erf Diffusion; Activation functions — Softplus, Erf Sigmoid
+- **new** `_erf` / `_erfc` helpers in models.js — Abramowitz & Stegun 7.1.26 polynomial (max |err| < 1.5×10⁻⁷), no external dependency
+- **new** 10 new example datasets (26 → 36 total): Two-Compartment PK, Oral PK + Lag, Substrate Inhibition, Langmuir isotherm, Freundlich isotherm, Herschel-Bulkley fluid, Cross Model viscosity, EMG chromatography peak, Arrhenius rate constant, Erf diffusion profile
+- **new** 6 new model-selector optgroups: Pharmacokinetics, Adsorption / Isotherms, Rheology, Thermal / Kinetics, Diffusion / Transport, Activation Functions
+- **improve** Model reference table — 8 new section headers, 17 new rows with equations and physical interpretation
+- **improve** Version bumped to v1.6.0 in topbar chip, hero badge, and release notes
 
 ### v1.5.0 — 2026-05-27
 - **fix** LM damping — proper Marquardt scaling `JtJ + λ·diag(|JtJ|)` replaces flat `JtJ*(1+λ)+1e-10`

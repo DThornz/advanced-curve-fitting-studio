@@ -2,6 +2,15 @@
 /* ═══════════════════════════════════════════════════════════
    MODELS LIBRARY
 ═══════════════════════════════════════════════════════════ */
+
+// Abramowitz & Stegun 7.1.26 — max |err| < 1.5e-7; used by EMG, Asymmetric-Gaussian, Erf-Diffusion, Erf-Sigmoid
+function _erf(z) {
+  const t = 1 / (1 + 0.3275911 * Math.abs(z));
+  const p = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+  return Math.sign(z) * (1 - p * Math.exp(-z * z));
+}
+function _erfc(z) { return 1 - _erf(z); }
+
 const MODELS = {
   'Linear': {
     params: ['a', 'b'],
@@ -550,6 +559,313 @@ const MODELS = {
       return [isFinite(E) ? E : 200000, xMax * 0.5 || 250, 5];
     }
   },
+  // ── Pharmacokinetics ─────────────────────────────────────
+  'Two-Compartment-PK': {
+    params: ['A', 'α', 'B', 'β'],
+    fn: (x, [A, alpha, B, beta]) =>
+      A * Math.exp(-Math.abs(alpha) * x) + B * Math.exp(-Math.abs(beta) * x),
+    analytic: false,
+    autoInit(x, y) {
+      const range = Math.max(...y) - Math.min(...y);
+      const xRange = Math.max(Math.max(...x) - Math.min(...x), 1e-10);
+      return [range * 0.7, 3 / xRange, range * 0.3, 0.3 / xRange];
+    }
+  },
+  'PK-Lag': {
+    params: ['Amp', 'ka', 'ke', 'tlag'],
+    fn: (x, [Amp, ka, ke, tlag]) => {
+      const t = x - tlag;
+      if (t <= 0) return 0;
+      if (Math.abs(ka - ke) < 1e-6 * (Math.abs(ka) + Math.abs(ke) + 1))
+        return Amp * ka * t * Math.exp(-ka * t);
+      return Amp * ka / (ka - ke) * (Math.exp(-ke * t) - Math.exp(-ka * t));
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const peakI = y.indexOf(Math.max(...y));
+      const tmax = x[peakI] || (x[x.length - 1] - x[0]) * 0.4;
+      const tlag = tmax * 0.15;
+      const ka = 3 / Math.max(tmax - tlag, 1e-6);
+      const ke = ka / 8;
+      const tEff = tmax - tlag;
+      const predPeak = ka / (ka - ke) * (Math.exp(-ke * tEff) - Math.exp(-ka * tEff));
+      const Amp = Math.max(...y) / Math.max(predPeak, 1e-10);
+      return [isFinite(Amp) ? Amp : 1, ka, ke, Math.max(tlag, 0)];
+    }
+  },
+  // ── Enzyme Kinetics (extended) ───────────────────────────
+  'Substrate-Inhibition': {
+    params: ['Vmax', 'Km', 'Ki'],
+    fn: (x, [Vmax, Km, Ki]) =>
+      Vmax * x / (Km + x + x * x / Math.max(Math.abs(Ki), 1e-10)),
+    analytic: false,
+    autoInit(x, y) {
+      const peakI = y.indexOf(Math.max(...y));
+      const Sopt = Math.max(x[peakI], 1e-6);
+      const vPeak = y[peakI];
+      const Km = Sopt / 4;
+      const Ki = Sopt * 4;
+      const Vmax = vPeak * (Km + Sopt + Sopt * Sopt / Ki) / Sopt;
+      return [isFinite(Vmax) ? Vmax : Math.max(...y) * 2, Km, Ki];
+    }
+  },
+  // ── Adsorption Isotherms ─────────────────────────────────
+  'Langmuir': {
+    params: ['qm', 'KL'],
+    fn: (x, [qm, KL]) => qm * KL * x / (1 + KL * x),
+    analytic: false,
+    autoInit(x, y) {
+      const qm = Math.max(...y) * 1.5;
+      const half = Math.max(...y) / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      const KL = 1 / Math.max(x[idx], 1e-6);
+      return [qm, isFinite(KL) ? KL : 1];
+    }
+  },
+  'Freundlich': {
+    params: ['KF', 'n'],
+    fn: (x, [KF, n]) => KF * Math.pow(Math.max(x, 1e-12), 1 / Math.max(Math.abs(n), 1e-6)),
+    analytic: false,
+    autoInit(x, y) {
+      const pairs = x.map((xi, i) => [xi, y[i]]).filter(([xi, yi]) => xi > 0 && yi > 0);
+      if (pairs.length < 2) return [mean(y.filter(v => v > 0)) || 1, 2];
+      const lx = pairs.map(([xi]) => Math.log(xi));
+      const ly = pairs.map(([, yi]) => Math.log(yi));
+      const xlm = mean(lx), ylm = mean(ly);
+      const slope = lx.reduce((s, lxi, i) => s + (lxi - xlm) * (ly[i] - ylm), 0) /
+                    (lx.reduce((s, lxi) => s + (lxi - xlm) ** 2, 0) || 1);
+      const KF = Math.exp(ylm - slope * xlm);
+      const n = Math.max(1 / Math.max(slope, 0.01), 0.1);
+      return [isFinite(KF) ? KF : 1, isFinite(n) ? n : 2];
+    }
+  },
+  'Temkin': {
+    params: ['AT', 'B'],
+    fn: (x, [AT, B]) => B * Math.log(Math.max(Math.abs(AT) * Math.max(x, 1e-300), 1e-300)),
+    analytic: false,
+    autoInit(x, y) {
+      const valid = x.map((xi, i) => [xi, y[i]]).filter(([xi]) => xi > 0);
+      if (valid.length < 2) return [1, mean(y.filter(v => v > 0)) || 1];
+      const lx = valid.map(([xi]) => Math.log(xi));
+      const ly = valid.map(([, yi]) => yi);
+      const xlm = mean(lx), ylm = mean(ly);
+      const B = lx.reduce((s, lxi, i) => s + (lxi - xlm) * (ly[i] - ylm), 0) /
+                (lx.reduce((s, lxi) => s + (lxi - xlm) ** 2, 0) || 1);
+      const intercept = ylm - B * xlm;
+      const AT = isFinite(B) && Math.abs(B) > 1e-10 ? Math.exp(intercept / B) : 1;
+      return [isFinite(AT) && AT > 0 ? AT : 1, isFinite(B) ? B : 1];
+    }
+  },
+  // ── Rheology ─────────────────────────────────────────────
+  'Power-Law-Fluid': {
+    params: ['K', 'n'],
+    fn: (x, [K, n]) => K * Math.pow(Math.abs(x) + 1e-12, n - 1),
+    analytic: false,
+    autoInit(x, y) {
+      const pairs = x.map((xi, i) => [xi, y[i]]).filter(([xi, yi]) => xi > 0 && yi > 0);
+      if (pairs.length < 2) return [mean(y.filter(v => v > 0)) || 1, 0.5];
+      const lx = pairs.map(([xi]) => Math.log(xi));
+      const ly = pairs.map(([, yi]) => Math.log(yi));
+      const xlm = mean(lx), ylm = mean(ly);
+      const slope = lx.reduce((s, lxi, i) => s + (lxi - xlm) * (ly[i] - ylm), 0) /
+                    (lx.reduce((s, lxi) => s + (lxi - xlm) ** 2, 0) || 1);
+      const K = Math.exp(ylm - slope * xlm);
+      return [isFinite(K) ? K : 1, isFinite(slope + 1) ? Math.max(slope + 1, 0.01) : 0.5];
+    }
+  },
+  'Herschel-Bulkley': {
+    params: ['τ₀', 'K', 'n'],
+    fn: (x, [tau0, K, n]) => tau0 + K * Math.pow(Math.abs(x) + 1e-12, n),
+    analytic: false,
+    autoInit(x, y) {
+      const yf = y.filter(v => isFinite(v));
+      const tau0 = Math.max(Math.min(...yf) * 0.5, 0);
+      const shifted = y.map(v => Math.max(v - tau0, 1e-10));
+      const pairs = x.map((xi, i) => [xi, shifted[i]]).filter(([xi]) => xi > 0);
+      if (pairs.length < 2) return [tau0, Math.max(...yf) * 0.5 || 1, 1];
+      const lx = pairs.map(([xi]) => Math.log(xi));
+      const ly = pairs.map(([, yi]) => Math.log(yi));
+      const xlm = mean(lx), ylm = mean(ly);
+      const n = lx.reduce((s, lxi, i) => s + (lxi - xlm) * (ly[i] - ylm), 0) /
+                (lx.reduce((s, lxi) => s + (lxi - xlm) ** 2, 0) || 1);
+      const K = Math.exp(ylm - n * xlm);
+      return [tau0, isFinite(K) ? K : 1, isFinite(n) ? Math.max(n, 0.01) : 1];
+    }
+  },
+  'Cross-Model': {
+    params: ['η₀', 'η∞', 'K', 'm'],
+    fn: (x, [eta0, etaInf, K, m]) =>
+      etaInf + (eta0 - etaInf) / (1 + Math.pow(Math.abs(K * x), Math.abs(m))),
+    analytic: false,
+    autoInit(x, y) {
+      const yf = y.filter(v => isFinite(v) && v > 0);
+      const eta0 = Math.max(...yf) || 1;
+      const etaInf = Math.min(...yf) * 0.5 || 0.001;
+      const half = (eta0 + etaInf) / 2;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      const K = 1 / Math.max(x[idx], 1e-6);
+      return [eta0, isFinite(etaInf) ? etaInf : 0.001, isFinite(K) ? K : 1, 1];
+    }
+  },
+  // ── Peak / Spectral (extended) ───────────────────────────
+  'EMG': {
+    params: ['A', 'μ', 'σ', 'τ', 'C'],
+    fn: (x, [A, mu, sig, tau, C]) => {
+      const sg = Math.abs(sig) || 1e-10;
+      const tk = Math.abs(tau) || 1e-10;
+      const u = sg / tk;            // σ/τ
+      const z = (x - mu) / sg;     // (x-μ)/σ
+      const erfcArg = (u - z) * 0.7071067811865476; // (u-z)/√2
+      if (erfcArg > 25) return C;
+      return 0.5 * A * Math.exp(0.5 * u * u - z * u) * _erfc(erfcArg) + C;
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const sortedY = y.slice().sort((a, b) => a - b);
+      const nBase = Math.max(2, Math.ceil(y.length * 0.2));
+      const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
+      const shifted = y.map(v => v - C);
+      const peakI = shifted.indexOf(Math.max(...shifted));
+      const A = Math.max(shifted[peakI], 1e-6);
+      const mu = x[peakI];
+      const xRange = Math.max(...x) - Math.min(...x);
+      const sig = xRange / (6 * 2.355) || 0.5;
+      const tau = Math.max(sig * 0.6, 1e-6);
+      return [A, mu, sig, tau, C];
+    }
+  },
+  'Asymmetric-Gaussian': {
+    params: ['A', 'μ', 'σ', 'α', 'C'],
+    fn: (x, [A, mu, sig, alpha, C]) => {
+      const sg = sig || 1e-10;
+      const z = (x - mu) / sg;
+      return A * Math.exp(-0.5 * z * z) * (1 + _erf(alpha * z * 0.7071067811865476)) + C;
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const sortedY = y.slice().sort((a, b) => a - b);
+      const nBase = Math.max(2, Math.ceil(y.length * 0.25));
+      const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
+      const shifted = y.map(v => v - C);
+      const peakI = shifted.indexOf(Math.max(...shifted));
+      const A = Math.max(shifted[peakI], 1e-6);
+      const mu = x[peakI];
+      const xRange = Math.max(...x) - Math.min(...x);
+      return [A, mu, xRange / 8 || 1, 0, C];
+    }
+  },
+  'Voigt': {
+    params: ['A', 'x0', 'fG', 'fL', 'C'],
+    fn: (x, [A, x0, fG, fL, C]) => {
+      const fGa = Math.abs(fG) || 1e-10, fLa = Math.abs(fL) || 1e-10;
+      const fV5 = Math.pow(fGa, 5) + 2.69269 * Math.pow(fGa, 4) * fLa +
+                  2.42843 * Math.pow(fGa, 3) * fLa * fLa +
+                  4.47163 * fGa * fGa * Math.pow(fLa, 3) +
+                  0.07842 * fGa * Math.pow(fLa, 4) + Math.pow(fLa, 5);
+      const fV = Math.pow(Math.max(fV5, 1e-50), 0.2);
+      const f = fLa / fV;
+      const eta = Math.max(0, Math.min(1, 1.36603 * f - 0.47719 * f * f + 0.11116 * f * f * f));
+      const dx = x - x0, hw = fV / 2;
+      const L = hw * hw / (dx * dx + hw * hw);
+      const G = Math.exp(-4 * Math.LN2 * dx * dx / (fV * fV));
+      return A * (eta * L + (1 - eta) * G) + C;
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const sortedY = y.slice().sort((a, b) => a - b);
+      const nBase = Math.max(2, Math.ceil(y.length * 0.25));
+      const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
+      const shifted = y.map(v => v - C);
+      const peakI = shifted.indexOf(Math.max(...shifted));
+      const A = Math.max(shifted[peakI], 1e-6), x0 = x[peakI];
+      const xRange = Math.max(...x) - Math.min(...x);
+      const fwhm = xRange / 6 || 1;
+      return [A, x0, fwhm * 0.7, fwhm * 0.3, C];
+    }
+  },
+  // ── Thermal / Kinetics ───────────────────────────────────
+  'Arrhenius': {
+    params: ['A', 'Ea_R'],
+    fn: (x, [A, EaR]) => A * Math.exp(-EaR / Math.max(x, 1e-6)),
+    analytic: false,
+    autoInit(x, y) {
+      const valid = x.map((xi, i) => [xi, y[i]]).filter(([xi, yi]) => xi > 0 && yi > 0);
+      if (valid.length < 2) return [1e10, 5000];
+      const inv = valid.map(([xi]) => 1 / xi);
+      const lny = valid.map(([, yi]) => Math.log(yi));
+      const invm = mean(inv), lnym = mean(lny);
+      const EaR = -inv.reduce((s, v, i) => s + (v - invm) * (lny[i] - lnym), 0) /
+                  Math.max(inv.reduce((s, v) => s + (v - invm) ** 2, 0), 1e-15);
+      const lnA = lnym + EaR * invm;
+      return [isFinite(lnA) ? Math.exp(lnA) : 1e10, isFinite(EaR) ? EaR : 5000];
+    }
+  },
+  'Extended-Arrhenius': {
+    params: ['A', 'n', 'Ea_R'],
+    fn: (x, [A, n, EaR]) =>
+      A * Math.pow(Math.max(x, 1e-12), n) * Math.exp(-EaR / Math.max(x, 1e-6)),
+    analytic: false,
+    autoInit(x, y) {
+      const valid = x.map((xi, i) => [xi, y[i]]).filter(([xi, yi]) => xi > 0 && yi > 0);
+      if (valid.length < 2) return [1, 1, 5000];
+      const inv = valid.map(([xi]) => 1 / xi);
+      const lny = valid.map(([, yi]) => Math.log(yi));
+      const invm = mean(inv), lnym = mean(lny);
+      const EaR = -inv.reduce((s, v, i) => s + (v - invm) * (lny[i] - lnym), 0) /
+                  Math.max(inv.reduce((s, v) => s + (v - invm) ** 2, 0), 1e-15);
+      const lnA = lnym + EaR * invm;
+      return [isFinite(lnA) ? Math.exp(lnA) : 1, 1, isFinite(EaR) ? EaR : 5000];
+    }
+  },
+  // ── Diffusion / Transport ────────────────────────────────
+  'Erf-Diffusion': {
+    params: ['A', 'μ', 'w', 'B'],
+    fn: (x, [A, mu, w, B]) => A * _erf((x - mu) / Math.max(Math.abs(w), 1e-10)) + B,
+    analytic: false,
+    autoInit(x, y) {
+      const A = (Math.max(...y) - Math.min(...y)) / 2;
+      const B = (Math.max(...y) + Math.min(...y)) / 2;
+      const xRange = Math.max(...x) - Math.min(...x);
+      return [isFinite(A) ? A : 1, mean(x), xRange / 4 || 1, isFinite(B) ? B : 0];
+    }
+  },
+  // ── Activation Functions ─────────────────────────────────
+  'Softplus': {
+    params: ['A', 'k', 'x₀', 'C'],
+    fn: (x, [A, k, x0, C]) => {
+      const t = k * (x - x0);
+      return A * (t > 20 ? t : Math.log(1 + Math.exp(t))) + C;
+    },
+    analytic: false,
+    autoInit(x, y) {
+      const yRange = Math.max(...y) - Math.min(...y);
+      const A = yRange || 1;
+      const C = Math.min(...y);
+      const half = A / 2 + C;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      const x0 = x[idx];
+      const i1 = Math.max(idx - 3, 0), i2 = Math.min(idx + 3, x.length - 1);
+      const slope = i2 > i1 ? (y[i2] - y[i1]) / ((x[i2] - x[i1]) || 1) : 1;
+      const k = Math.max(Math.abs(slope) / Math.max(A, 1e-10), 0.1);
+      return [A, k, x0, C];
+    }
+  },
+  'Erf-Sigmoid': {
+    params: ['A', 'k', 'x₀', 'C'],
+    fn: (x, [A, k, x0, C]) => A * 0.5 * (1 + _erf(k * (x - x0))) + C,
+    analytic: false,
+    autoInit(x, y) {
+      const A = (Math.max(...y) - Math.min(...y)) || 1;
+      const C = Math.min(...y);
+      const half = A / 2 + C;
+      const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
+      const x0 = x[idx];
+      const i1 = Math.max(idx - 3, 0), i2 = Math.min(idx + 3, x.length - 1);
+      const slope = i2 > i1 ? (y[i2] - y[i1]) / ((x[i2] - x[i1]) || 1) : 1;
+      const k = Math.max(Math.abs(slope) * 0.886 / Math.max(A, 1e-10), 0.1);
+      return [A, k, x0, C];
+    }
+  },
   'Custom': {
     params: [],
     fn: null,
@@ -596,7 +912,32 @@ const MODEL_EQ_JS = {
   'HH-Na-IV':         'g * (1/(1+exp(-(x-Vm)/km)))^3 * (1/(1+exp((x-Vh)/kh))) * (x - Erev)',
   'Kir':              'g * (x - EK) / (1 + exp((x - Vh) / k))',
   'GHK':              'A * x * (1 - r * exp(-x / Vt)) / (1 - exp(-x / Vt))',
-  'Tau-Gaussian':     'taumax * exp(-0.5 * ((x - Vpeak) / k)^2) + taumin',
+  'Tau-Gaussian':         'taumax * exp(-0.5 * ((x - Vpeak) / k)^2) + taumin',
+  // Pharmacokinetics
+  'Two-Compartment-PK':  'A * exp(-alpha * x) + B * exp(-beta * x)',
+  'PK-Lag':              'Amp * ka / (ka - ke) * (exp(-ke*(x-tlag)) - exp(-ka*(x-tlag))), x > tlag',
+  // Enzyme kinetics
+  'Substrate-Inhibition':'Vmax * x / (Km + x + x^2 / Ki)',
+  // Adsorption
+  'Langmuir':            'qm * KL * x / (1 + KL * x)',
+  'Freundlich':          'KF * x^(1/n)',
+  'Temkin':              'B * ln(AT * x)',
+  // Rheology
+  'Power-Law-Fluid':     'K * |gamma|^(n-1)',
+  'Herschel-Bulkley':    'tau0 + K * |gamma|^n',
+  'Cross-Model':         'eta_inf + (eta0 - eta_inf) / (1 + (K * gamma)^m)',
+  // Peak / spectral
+  'EMG':                 '(A/2) * exp(sigma^2/(2*tau^2) - (x-mu)/tau) * erfc((sigma/tau - (x-mu)/sigma)/sqrt(2)) + C',
+  'Asymmetric-Gaussian': 'A * exp(-0.5*((x-mu)/sigma)^2) * (1 + erf(alpha*(x-mu)/(sigma*sqrt(2)))) + C',
+  'Voigt':               'A * (eta*L + (1-eta)*G) + C, eta and fV from Thompson-Cox-Hastings(fG, fL)',
+  // Thermal / kinetics
+  'Arrhenius':           'A * exp(-Ea_R / x)',
+  'Extended-Arrhenius':  'A * x^n * exp(-Ea_R / x)',
+  // Diffusion
+  'Erf-Diffusion':       'A * erf((x - mu) / w) + B',
+  // Activation functions
+  'Softplus':            'A * ln(1 + exp(k * (x - x0))) + C',
+  'Erf-Sigmoid':         'A * (1 + erf(k * (x - x0))) / 2 + C',
 };
 
 const MODEL_EQ = {
@@ -637,6 +978,31 @@ const MODEL_EQ = {
   'HH-Na-IV':         'm=\\dfrac{1}{1+e^{-(x-V_{m})/k_{m}}},\\;h=\\dfrac{1}{1+e^{(x-V_{h})/k_{h}}},\\;y=g\\,m^{3}h\\,(x-E_{\\mathrm{rev}})',
   'Kir':              'y=\\dfrac{g(x-E_{K})}{1+e^{(x-V_{h})/k}}',
   'GHK':              'y=\\dfrac{Ax\\left(1-r\\,e^{-x/V_{t}}\\right)}{1-e^{-x/V_{t}}}',
-  'Tau-Gaussian':     'y=\\tau_{\\max}\\exp\\!\\left(-\\dfrac{(x-V_{\\mathrm{peak}})^{2}}{2k^{2}}\\right)+\\tau_{\\min}',
-  'Custom':           '',
+  'Tau-Gaussian':         'y=\\tau_{\\max}\\exp\\!\\left(-\\dfrac{(x-V_{\\mathrm{peak}})^{2}}{2k^{2}}\\right)+\\tau_{\\min}',
+  // Pharmacokinetics
+  'Two-Compartment-PK':  'C=A\\,e^{-\\alpha t}+B\\,e^{-\\beta t}',
+  'PK-Lag':              'C=\\dfrac{A_{mp}\\,k_{a}}{k_{a}-k_{e}}\\!\\left(e^{-k_{e}(t-t_{lag})}-e^{-k_{a}(t-t_{lag})}\\right),\\;t>t_{lag}',
+  // Enzyme kinetics
+  'Substrate-Inhibition':'v=\\dfrac{V_{\\!\\max}[S]}{K_{m}+[S]+[S]^{2}/K_{i}}',
+  // Adsorption
+  'Langmuir':            'q=\\dfrac{q_{m}K_{L}C}{1+K_{L}C}',
+  'Freundlich':          'q=K_{F}\\,C^{1/n}',
+  'Temkin':              'q=B\\ln(A_{T}\\,C)',
+  // Rheology
+  'Power-Law-Fluid':     '\\eta=K\\,|\\dot{\\gamma}|^{n-1}',
+  'Herschel-Bulkley':    '\\tau=\\tau_{0}+K\\,|\\dot{\\gamma}|^{n}',
+  'Cross-Model':         '\\eta=\\eta_{\\infty}+\\dfrac{\\eta_{0}-\\eta_{\\infty}}{1+(K\\dot{\\gamma})^{m}}',
+  // Peak / spectral
+  'EMG':                 'y=\\dfrac{A}{2}\\exp\\!\\left(\\dfrac{\\sigma^{2}}{2\\tau^{2}}-\\dfrac{x-\\mu}{\\tau}\\right)\\mathrm{erfc}\\!\\left(\\dfrac{\\sigma/\\tau-(x-\\mu)/\\sigma}{\\sqrt{2}}\\right)+C',
+  'Asymmetric-Gaussian': 'y=A\\,e^{-(x-\\mu)^{2}/2\\sigma^{2}}\\!\\left[1+\\mathrm{erf}\\!\\left(\\dfrac{\\alpha(x-\\mu)}{\\sigma\\sqrt{2}}\\right)\\right]+C',
+  'Voigt':               'y=A\\!\\left[\\eta\\dfrac{(f_V/2)^{2}}{(x-x_0)^{2}+(f_V/2)^{2}}+(1-\\eta)\\,e^{-4\\ln2\\,(x-x_0)^{2}/f_V^{2}}\\right]+C',
+  // Thermal / kinetics
+  'Arrhenius':           'y=A\\,\\exp\\!\\left(-\\dfrac{E_{a}/R}{x}\\right)',
+  'Extended-Arrhenius':  'y=A\\,x^{n}\\,\\exp\\!\\left(-\\dfrac{E_{a}/R}{x}\\right)',
+  // Diffusion
+  'Erf-Diffusion':       'y=A\\,\\mathrm{erf}\\!\\left(\\dfrac{x-\\mu}{w}\\right)+B',
+  // Activation functions
+  'Softplus':            'y=A\\ln\\!\\left(1+e^{k(x-x_{0})}\\right)+C',
+  'Erf-Sigmoid':         'y=\\dfrac{A}{2}\\!\\left[1+\\mathrm{erf}\\!\\left(k(x-x_{0})\\right)\\right]+C',
+  'Custom':              '',
 };

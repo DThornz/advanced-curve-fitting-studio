@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Curve Fitting Studio — Asad Mirza</title>
-<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 39 built-in models including electrophysiology (Boltzmann G-V, HH, Kir, GHK), Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
+<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 56 built-in models including pharmacokinetics, adsorption isotherms, rheology, EMG peaks, Arrhenius kinetics, Voigt profiles, Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.5.0</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.6.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -68,7 +68,7 @@
     <span class="pill">Export-Ready</span>
   </div>
   <div class="hero-meta">
-    <div><div class="hero-stat-num">39</div><div class="hero-stat-label">Built-in Models</div></div>
+    <div><div class="hero-stat-num">56</div><div class="hero-stat-label">Built-in Models</div></div>
     <div><div class="hero-stat-num">4</div><div class="hero-stat-label">Fit Algorithms</div></div>
     <div><div class="hero-stat-num">8+</div><div class="hero-stat-label">Fit Diagnostics</div></div>
     <div><div class="hero-stat-num">100%</div><div class="hero-stat-label">Client-Side</div></div>
@@ -230,7 +230,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.5.0</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.6.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -341,18 +341,36 @@
             </optgroup>
             <optgroup label="Peak / Spectral">
               <option value="Gaussian">Gaussian Peak</option>
+              <option value="Asymmetric-Gaussian">Asymmetric Gaussian  skew-normal</option>
               <option value="Lorentzian">Lorentzian Peak</option>
               <option value="Double-Gaussian">Double Gaussian  A₁·G(x,μ₁,σ₁)+A₂·G(x,μ₂,σ₂)</option>
               <option value="Pseudo-Voigt">Pseudo-Voigt  η·L+(1−η)·G</option>
+              <option value="Voigt">Voigt (Thompson-Cox-Hastings)</option>
+              <option value="EMG">Exponentially Modified Gaussian  chromatography</option>
               <option value="Fano">Fano Resonance  asymmetric lineshape</option>
             </optgroup>
             <optgroup label="Biology / Pharmacology">
               <option value="Michaelis-Menten">Michaelis-Menten</option>
+              <option value="Substrate-Inhibition">Substrate Inhibition  Vmax·S/(Km+S+S²/Ki)</option>
               <option value="Hill">Hill Equation</option>
               <option value="4PL">4-Parameter Logistic (4PL / ELISA)</option>
-              <option value="Oral-PK">Oral 1-Compartment PK</option>
               <option value="Stern-Volmer">Stern-Volmer  fluorescence quenching</option>
               <option value="Rational">Rational (Padé)  (a+bx)/(1+cx)</option>
+            </optgroup>
+            <optgroup label="Pharmacokinetics">
+              <option value="Oral-PK">Oral 1-Compartment PK</option>
+              <option value="Two-Compartment-PK">Two-Compartment PK  A·e⁻ᵅᵗ + B·e⁻ᵝᵗ</option>
+              <option value="PK-Lag">Oral PK + Lag Time  1-compartment, tlag</option>
+            </optgroup>
+            <optgroup label="Adsorption / Isotherms">
+              <option value="Langmuir">Langmuir Isotherm  qm·KL·C/(1+KL·C)</option>
+              <option value="Freundlich">Freundlich Isotherm  KF·C^(1/n)</option>
+              <option value="Temkin">Temkin Isotherm  B·ln(AT·C)</option>
+            </optgroup>
+            <optgroup label="Rheology">
+              <option value="Power-Law-Fluid">Power-Law Fluid  K·γ̇^(n−1)</option>
+              <option value="Herschel-Bulkley">Herschel-Bulkley  τ₀ + K·γ̇ⁿ</option>
+              <option value="Cross-Model">Cross Model  η∞+(η₀−η∞)/(1+(K·γ̇)ᵐ)</option>
             </optgroup>
             <optgroup label="Oscillation">
               <option value="Sine">Sinusoidal</option>
@@ -361,9 +379,20 @@
             <optgroup label="Distribution">
               <option value="Weibull">Weibull CDF</option>
             </optgroup>
+            <optgroup label="Thermal / Kinetics">
+              <option value="Arrhenius">Arrhenius  A·exp(−Ea/RT)</option>
+              <option value="Extended-Arrhenius">Extended Arrhenius  A·Tⁿ·exp(−Ea/RT)</option>
+              <option value="Van-t-Hoff">Van't Hoff  K vs temperature</option>
+            </optgroup>
+            <optgroup label="Diffusion / Transport">
+              <option value="Erf-Diffusion">Erf Diffusion  A·erf((x−μ)/w)+B</option>
+            </optgroup>
+            <optgroup label="Activation Functions">
+              <option value="Softplus">Softplus  A·ln(1+exp(k·(x−x₀)))+C</option>
+              <option value="Erf-Sigmoid">Erf Sigmoid (Probit)  A·(1+erf(k·(x−x₀)))/2+C</option>
+            </optgroup>
             <optgroup label="Physics / Material">
               <option value="Langevin">Langevin  paramagnetism / polymer</option>
-              <option value="Van-t-Hoff">Van't Hoff  K vs temperature</option>
               <option value="Ramberg-Osgood">Ramberg-Osgood  stress-strain</option>
             </optgroup>
             <optgroup label="Electrophysiology">
@@ -1602,12 +1631,26 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.6.0 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.6.0</span>
+          <span class="relnotes-ver-date">2026-06-01</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>17 new built-in models (39 → 56 total)</strong> — Pharmacokinetics: <strong>Two-Compartment PK</strong>, <strong>PK Lag Time</strong> · Enzyme kinetics: <strong>Substrate Inhibition</strong> · Adsorption isotherms: <strong>Langmuir</strong>, <strong>Freundlich</strong>, <strong>Temkin</strong> · Rheology: <strong>Power-Law Fluid</strong>, <strong>Herschel-Bulkley</strong>, <strong>Cross Model</strong> · Peak shapes: <strong>EMG</strong> (Exponentially Modified Gaussian), <strong>Asymmetric Gaussian</strong> (skew-normal), <strong>Voigt</strong> (Thompson-Cox-Hastings) · Thermal kinetics: <strong>Arrhenius</strong>, <strong>Extended Arrhenius</strong> · Diffusion: <strong>Erf Diffusion</strong> · Activation: <strong>Softplus</strong>, <strong>Erf Sigmoid</strong></span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>erf / erfc helper</strong> — Abramowitz &amp; Stegun 7.1.26 polynomial approximation (max |err| &lt; 1.5×10⁻⁷) added to models.js; powers EMG, Asymmetric Gaussian, Erf Diffusion, and Erf Sigmoid without any external dependency</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>10 new example datasets (26 → 36 total)</strong> — Two-Compartment PK (IV bolus), Oral PK with Lag Time, Substrate Inhibition, Langmuir Isotherm, Freundlich Isotherm, Herschel-Bulkley fluid, Cross Model viscosity, EMG chromatography peak, Arrhenius rate constant, Erf Diffusion profile</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>6 new model-selector optgroups</strong> — Pharmacokinetics, Adsorption / Isotherms, Rheology, Thermal / Kinetics, Diffusion / Transport, Activation Functions</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Model reference table extended</strong> — 8 new section headers and 17 new rows with equations, parameters, and physical interpretation for all new models</span></li>
+        </ul>
+      </div>
       <!-- ── v1.5.0 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.5.0</span>
+          <span class="relnotes-ver-num">v1.5.0</span>
           <span class="relnotes-ver-date">2026-05-27</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>LM damping (Marquardt scaling)</strong> — replaced the flat <code>JtJ*(1+λ)+1e-10</code> augmentation with proper <code>JtJ + λ·diag(|JtJ|)</code>; damping now scales with parameter sensitivity, preventing over-damping of well-conditioned directions</span></li>
@@ -2092,7 +2135,7 @@
       </tbody>
     </table>
 
-    <p>Every built-in model shows its full mathematical equation — rendered by KaTeX — directly below the Fit Model dropdown, updating instantly whenever you change the selection. Selecting <em>Custom Equation</em> hides the display and opens the custom editor instead. The 26 example dataset generators also display the generating equation (in larger display-mode rendering) at the top of the generator modal, so you always know what function produced the example data.</p>
+    <p>Every built-in model shows its full mathematical equation — rendered by KaTeX — directly below the Fit Model dropdown, updating instantly whenever you change the selection. Selecting <em>Custom Equation</em> hides the display and opens the custom editor instead. The 36 example dataset generators also display the generating equation (in larger display-mode rendering) at the top of the generator modal, so you always know what function produced the example data.</p>
 
     <p>For iterative (nonlinear) models, the quality of the initial guess strongly affects convergence. Click Auto Init to run data-driven heuristics: amplitudes are estimated from the data range, rate constants from zero-crossing counts or log-linear regression, peak centres from the data maximum, and so on. If Auto Init produces a poor fit, inspect the parameter table and adjust manually — look at the plot to understand what each parameter physically controls. Each parameter also has a <strong>sweep slider</strong> directly below its row: drag it to preview the model curve in real time with no fitting. The slider updates the Init input live and draws a dashed amber preview line on the main plot, making it easy to build intuition about what each parameter controls and to narrow initial guesses visually before running the solver. Releasing the slider clears the preview. Enabling Multi-start (default: 8 pilots) perturbs the initial guess log-uniformly across an order of magnitude and picks the best result automatically, at the cost of ~4× compute time.</p>
 
@@ -2264,8 +2307,32 @@
       <tr><td><strong>Fano Resonance</strong></td><td>$y = A\dfrac{(q+\varepsilon)^2}{1+\varepsilon^2}+C,\;\varepsilon=\dfrac{x-x_0}{\Gamma}$</td><td>A (amplitude), x₀ (resonance center), Γ (linewidth), q (asymmetry / Fano parameter), C (background)</td><td>Asymmetric lineshape arising from quantum interference between a discrete resonance and a continuum. Seen in nanophotonic/plasmonic structures, NEMS resonators, Raman spectra near electronic resonances, photonic crystals, atomic physics. q = 0 gives a symmetric dip (anti-resonance); large |q| approaches a symmetric peak.</td></tr>
       <tr><td colspan="4" class="ref-group-hdr">BIOLOGY / PHARMACOLOGY (EXTENDED)</td></tr>
       <tr><td><strong>4-Parameter Logistic (4PL)</strong></td><td>$y = D + \dfrac{A-D}{1+(x/C)^B}$</td><td>A (top asymptote), D (bottom asymptote), C (EC50/IC50), B (Hill slope)</td><td>Standard model for ELISA, immunoassays, flow cytometry, and dose-response. Unlike Logistic and Hill (which force the lower asymptote to 0), 4PL has free upper and lower plateaux. C is the inflection point (EC50 or IC50); B is the Hill slope (steepness). Reduces to Hill equation when D = 0.</td></tr>
-      <tr><td><strong>Oral 1-Compartment PK</strong></td><td>$C = \dfrac{\mathrm{Amp}\cdot k_a}{k_a-k_e}(e^{-k_e t}-e^{-k_a t})$</td><td>Amp (dose factor = F·D/V), ka (absorption rate h⁻¹), ke (elimination rate h⁻¹)</td><td>Drug concentration-time profile after oral administration. Rising absorption phase (ka) followed by exponential elimination (ke). Peak concentration at T_max = ln(ka/ke)/(ka−ke). L'Hôpital limit applied analytically when ka ≈ ke. Amp absorbs bioavailability, dose, and volume of distribution.</td></tr>
+      <tr><td><strong>Substrate Inhibition</strong></td><td>$v = \dfrac{V_{\max}[S]}{K_m+[S]+[S]^2/K_i}$</td><td>Vmax (max rate), Km (Michaelis constant), Ki (inhibition constant)</td><td>Enzyme kinetics where high substrate concentrations inhibit activity (uncompetitive or mixed inhibition by excess substrate). Produces a characteristic bell-shaped v vs. [S] curve; peak occurs at $[S]_\mathrm{opt}=\sqrt{K_m K_i}$. Reduces to Michaelis-Menten when Ki → ∞.</td></tr>
       <tr><td><strong>Stern-Volmer</strong></td><td>$F = \dfrac{F_0}{(1+K_D[Q])(1+K_S[Q])}$</td><td>F₀ (unquenched fluorescence), KD (dynamic quenching constant M⁻¹), KS (static quenching constant M⁻¹)</td><td>Combined static and dynamic fluorescence quenching. Dynamic quenching (KS = 0) gives a linear Stern-Volmer plot; static + dynamic gives upward curvature. Used in biosensor characterisation, protein-ligand binding studies, FRET, and collisional quenching assays. Setting KS = 0 recovers the classical linear form F₀/F = 1 + Ksv[Q].</td></tr>
+      <tr><td colspan="4" class="ref-group-hdr">PHARMACOKINETICS</td></tr>
+      <tr><td><strong>Oral 1-Compartment PK</strong></td><td>$C = \dfrac{\mathrm{Amp}\cdot k_a}{k_a-k_e}(e^{-k_e t}-e^{-k_a t})$</td><td>Amp (dose factor = F·D/V), ka (absorption rate h⁻¹), ke (elimination rate h⁻¹)</td><td>Drug concentration-time profile after oral administration. Rising absorption phase (ka) followed by exponential elimination (ke). Peak at T_max = ln(ka/ke)/(ka−ke). L'Hôpital limit applied when ka ≈ ke.</td></tr>
+      <tr><td><strong>Two-Compartment PK</strong></td><td>$C = A\,e^{-\alpha t}+B\,e^{-\beta t}$</td><td>A (fast amplitude), α (distribution rate h⁻¹), B (slow amplitude), β (elimination rate h⁻¹)</td><td>IV-bolus two-compartment model: fast α phase reflects distribution into peripheral tissue; slow β phase reflects terminal elimination. α &gt; β always; equivalent mathematically to Biexponential (no offset). Used to extract volume of distribution, clearance, and intercompartmental transfer rates.</td></tr>
+      <tr><td><strong>Oral PK + Lag Time</strong></td><td>$C = \dfrac{A_{mp}\,k_a}{k_a-k_e}\!\left(e^{-k_e(t-t_{lag})}-e^{-k_a(t-t_{lag})}\right),\;t&gt;t_{lag}$</td><td>Amp, ka, ke (as in Oral-PK), tlag (absorption lag time)</td><td>Extends the one-compartment oral PK model with a lag phase (e.g., enteric coating, gastric emptying delay). The drug begins absorbing only after time tlag; the profile is zero for t ≤ tlag.</td></tr>
+      <tr><td colspan="4" class="ref-group-hdr">ADSORPTION / ISOTHERMS</td></tr>
+      <tr><td><strong>Langmuir Isotherm</strong></td><td>$q = \dfrac{q_m K_L C}{1+K_L C}$</td><td>qm (max adsorption capacity mg/g), KL (Langmuir constant L/mg)</td><td>Monolayer adsorption on a surface with finite identical sites; mathematically identical to Michaelis-Menten. Widely used for heavy metals, dyes, and pharmaceuticals on activated carbon or zeolites. Saturation at high C approaches qm; initial slope qm·KL relates to affinity.</td></tr>
+      <tr><td><strong>Freundlich Isotherm</strong></td><td>$q = K_F\,C^{1/n}$</td><td>KF (Freundlich capacity constant), n (heterogeneity factor &gt; 1 for favourable adsorption)</td><td>Empirical power-law isotherm for heterogeneous surfaces with a distribution of binding energies; linearises as log q = log KF + (1/n)·log C. Mathematically identical to Power Law. No saturation plateau. 1/n &lt; 1 indicates normal (favourable) adsorption; 1/n &gt; 1 indicates cooperative or multilayer behaviour.</td></tr>
+      <tr><td><strong>Temkin Isotherm</strong></td><td>$q = B\ln(A_T C)$</td><td>AT (Temkin equilibrium binding constant L/mg), B = RT/b (heat of adsorption factor J/mol)</td><td>Assumes adsorbate-adsorbent interactions cause a linear decrease in adsorption heat with coverage; linearises as q vs. ln C. Used for ion exchange, heavy metal removal, and protein adsorption. B encodes the adsorption energy; large B indicates weak adsorption energy heterogeneity.</td></tr>
+      <tr><td colspan="4" class="ref-group-hdr">RHEOLOGY</td></tr>
+      <tr><td><strong>Power-Law Fluid</strong></td><td>$\eta = K\,|\dot{\gamma}|^{n-1}$</td><td>K (consistency index Pa·sⁿ), n (flow behaviour index)</td><td>Viscosity vs. shear rate for non-Newtonian fluids. n &lt; 1: shear-thinning (pseudoplastic — polymer solutions, blood, paint); n = 1: Newtonian (constant η = K); n &gt; 1: shear-thickening (dilatant — starch suspensions). Mathematically identical to Power Law. Auto-init via log-log regression.</td></tr>
+      <tr><td><strong>Herschel-Bulkley</strong></td><td>$\tau = \tau_0 + K\,|\dot{\gamma}|^n$</td><td>τ₀ (yield stress Pa), K (consistency Pa·sⁿ), n (flow index)</td><td>Yield-stress fluid model generalising Bingham (n = 1) and Power-Law (τ₀ = 0). Flow begins only above τ₀; below it the material deforms elastically. Common for gels, pastes, food products, muds, and fresh concrete. Mathematically identical to Power-Offset. τ₀ = 0 recovers the power-law fluid.</td></tr>
+      <tr><td><strong>Cross Model</strong></td><td>$\eta = \eta_{\infty}+\dfrac{\eta_{0}-\eta_{\infty}}{1+(K\dot{\gamma})^{m}}$</td><td>η₀ (zero-shear viscosity Pa·s), η∞ (infinite-shear viscosity Pa·s), K (relaxation time s), m (rate constant)</td><td>Describes the full viscosity curve from the Newtonian plateau at low shear (η₀) through the power-law region to the high-shear plateau (η∞). Mathematically equivalent to 4PL. Common for polymer melts, concentrated dispersions, and hydrogels. m = 1 gives the Carreau model asymptote; larger m means sharper transition.</td></tr>
+      <tr><td colspan="4" class="ref-group-hdr">PEAK / SPECTRAL (EXTENDED)</td></tr>
+      <tr><td><strong>Exponentially Modified Gaussian (EMG)</strong></td><td>$y=\dfrac{A}{2}\exp\!\left(\dfrac{\sigma^2}{2\tau^2}-\dfrac{x-\mu}{\tau}\right)\mathrm{erfc}\!\left(\dfrac{\sigma/\tau-(x-\mu)/\sigma}{\sqrt{2}}\right)+C$</td><td>A (amplitude), μ (Gaussian centre), σ (Gaussian std dev), τ (exponential tail constant), C (baseline)</td><td>Convolution of a Gaussian with a one-sided exponential decay. Standard model for asymmetric chromatography peaks (HPLC, GC). τ &gt; 0 gives right (trailing) tailing; τ → 0 recovers the Gaussian. The asymmetry ratio A = τ/σ characterises peak shape. Implemented with erfc via Abramowitz &amp; Stegun polynomial (|err| &lt; 1.5×10⁻⁷).</td></tr>
+      <tr><td><strong>Asymmetric Gaussian</strong></td><td>$y=A\,e^{-(x-\mu)^2/2\sigma^2}\!\left[1+\mathrm{erf}\!\left(\dfrac{\alpha(x-\mu)}{\sigma\sqrt{2}}\right)\right]+C$</td><td>A (amplitude), μ (centre), σ (width), α (skewness), C (baseline)</td><td>Skew-normal peak model. α = 0 recovers the symmetric Gaussian; α &gt; 0 right-skews (longer right shoulder); α &lt; 0 left-skews. Useful for asymmetric spectroscopic peaks, powder diffraction with strain broadening, and asymmetric chromatographic peaks when the simpler EMG is over-parameterised.</td></tr>
+      <tr><td><strong>Voigt (Thompson-Cox-Hastings)</strong></td><td>$y=A\!\left[\eta\dfrac{(f_V/2)^2}{(x-x_0)^2+(f_V/2)^2}+(1-\eta)e^{-4\ln2\,(x-x_0)^2/f_V^2}\right]+C$</td><td>A (amplitude), x₀ (centre), fG (Gaussian FWHM), fL (Lorentzian FWHM), C (baseline)</td><td>True Voigt profile via the Thompson-Cox-Hastings (1987) approximation: fV and η are computed from fG and fL rather than being free parameters. The Voigt FWHM follows $f_V^5 = f_G^5 + 2.693\,f_G^4 f_L + \cdots + f_L^5$; error &lt; 0.01% vs. numerical Voigt. Use when physical broadening mechanisms are known: fG encodes instrumental/thermal broadening, fL encodes natural/strain linewidth. More constrained and physically meaningful than Pseudo-Voigt.</td></tr>
+      <tr><td colspan="4" class="ref-group-hdr">THERMAL / KINETICS</td></tr>
+      <tr><td><strong>Arrhenius</strong></td><td>$k = A\,\exp\!\left(-\dfrac{E_a/R}{T}\right)$</td><td>A (pre-exponential factor s⁻¹), Ea/R (activation energy / gas constant, K); x = T (Kelvin)</td><td>Rate constant vs. absolute temperature. Mathematically identical to Van't Hoff (K = exp(ΔS/R − ΔH/RT)) with A = exp(ΔS/R) and Ea/R = ΔH/R. Auto-init via linear regression of ln(k) vs. 1/T. Linearise as ln(k) = ln(A) − (Ea/R)·(1/T) for a quick graphical estimate.</td></tr>
+      <tr><td><strong>Extended Arrhenius</strong></td><td>$k = A\,T^n\,\exp\!\left(-\dfrac{E_a/R}{T}\right)$</td><td>A (pre-factor), n (temperature exponent), Ea/R (K)</td><td>Modified Arrhenius with a T^n pre-factor accounting for non-Arrhenius behaviour: collision theory gives n = 0.5; transition-state theory (Eyring) gives n = 1; empirical fits to combustion or atmospheric data yield other values. Reduces to standard Arrhenius when n = 0, and to Eyring (up to constants) when n = 1.</td></tr>
+      <tr><td colspan="4" class="ref-group-hdr">DIFFUSION / TRANSPORT</td></tr>
+      <tr><td><strong>Erf Diffusion</strong></td><td>$C = A\,\mathrm{erf}\!\left(\dfrac{x-\mu}{w}\right)+B$</td><td>A (amplitude), μ (interface position), w (diffusion width ∝ √(Dt)), B (baseline concentration)</td><td>Error-function concentration profile arising from 1D diffusion into a semi-infinite medium. The diffusion width w = 2√(Dt) encodes the product of diffusivity D and time t. Used for dopant profiles in semiconductors, solute diffusion in alloys, drug release, and oxygen uptake. The S-shaped curve transitions from B − A to B + A over a width ∼2w.</td></tr>
+      <tr><td colspan="4" class="ref-group-hdr">ACTIVATION FUNCTIONS</td></tr>
+      <tr><td><strong>Softplus</strong></td><td>$y = A\ln\!\left(1+e^{k(x-x_0)}\right)+C$</td><td>A (scale), k (steepness), x₀ (threshold), C (baseline)</td><td>Smooth approximation to the rectified linear unit (ReLU). For x ≫ x₀: y ≈ A·k·(x−x₀) + C (linear); for x ≪ x₀: y ≈ C. Useful for threshold phenomena, soft-onset activation curves, and fitting data that shows a smooth linear ramp after a transition. Overflow-safe: ln(1+exp(t)) → t for t &gt; 20.</td></tr>
+      <tr><td><strong>Erf Sigmoid (Probit)</strong></td><td>$y = \dfrac{A}{2}\!\left[1+\mathrm{erf}\!\left(k(x-x_0)\right)\right]+C$</td><td>A (amplitude), k (steepness ∝ 1/σ), x₀ (midpoint), C (baseline)</td><td>Normal-CDF-based sigmoid (probit). Differs from the logistic sigmoid (Boltzmann) in that the tails follow a Gaussian rather than an exponential distribution — lighter tails, slower approach to asymptotes. Used in psychophysics (threshold detection), reliability (probit analysis), and neural-network activation curves. k = 0 steepness recovers a flat line at A/2 + C.</td></tr>
       <tr><td colspan="4" class="ref-group-hdr">PHYSICS / MATERIAL</td></tr>
       <tr><td><strong>Langevin</strong></td><td>$y = A\!\left(\coth(Bx)-\dfrac{1}{Bx}\right)$</td><td>A (saturation value Ms), B (Langevin parameter ∝ μ/kT)</td><td>Magnetization of a classical paramagnet or superparamagnetic nanoparticle vs. applied field H. A = saturation magnetization Ms; B = μ/(kBT) where μ is the particle moment. Also describes polymer chain extension (freely-jointed chain model) and orientational polarization in dielectrics. L'Hôpital limit applied at Bx ≈ 0 to avoid 0/0.</td></tr>
       <tr><td><strong>Van't Hoff</strong></td><td>$\ln K = \dfrac{\Delta S}{R} - \dfrac{\Delta H}{RT}$, i.e. $K = e^{\Delta S/R - \Delta H/(RT)}$</td><td>dHR = ΔH/R (K), dSR = ΔS/R (dimensionless); x = T (Kelvin)</td><td>Equilibrium constant K vs. absolute temperature T. Linear in a ln K vs. 1/T (Van't Hoff plot) for constant ΔH; the nonlinear form here fits K vs. T directly. Used for protein folding/unfolding thermodynamics, binding affinity temperature dependence, solubility and reaction equilibria. Auto-init uses log-linear regression on ln K vs. 1/T.</td></tr>

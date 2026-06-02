@@ -474,6 +474,178 @@ const EXAMPLES = {
       return { name: "Van't Hoff Equilibrium", x: T, y: noisyGauss(K, p.noise * mean(K)), xlabel: 'Temperature (K)', ylabel: 'Equilibrium Constant K', suggestModel: 'Van-t-Hoff', _note: `dHR=${dHR.toFixed(0)}, dSR=${dSR.toFixed(2)}` };
     }
   },
+  'two-compartment-pk': {
+    title: 'Two-Compartment PK (IV Bolus)',
+    params: [
+      { key: 'A',     label: 'Fast amplitude (A)',   value: 80,   min: 1,    max: 500,  step: 1    },
+      { key: 'alpha', label: 'Fast rate α (h⁻¹)',    value: 1.2,  min: 0.01, max: 10,   step: 0.05 },
+      { key: 'B',     label: 'Slow amplitude (B)',   value: 40,   min: 1,    max: 500,  step: 1    },
+      { key: 'beta',  label: 'Slow rate β (h⁻¹)',    value: 0.12, min: 0.005,max: 2,    step: 0.005},
+      { key: 'noise', label: 'Noise (σ, ng/mL)',     value: 1.5,  min: 0,    max: 20,   step: 0.5  },
+      { key: 'N',     label: 'Points (N)',            value: 20,   min: 5,    max: 60,   step: 1    },
+    ],
+    generate(p) {
+      const t = [0.083,0.25,0.5,0.75,1,1.5,2,3,4,6,8,12,16,20,24,30,36,48,60,72].slice(0, p.N);
+      const y = t.map(ti => p.A * Math.exp(-p.alpha * ti) + p.B * Math.exp(-p.beta * ti));
+      return { name: 'Two-Compartment PK (IV Bolus)', x: t, y: noisyGauss(y, p.noise).map(v => Math.max(v, 0)), xlabel: 'Time (h)', ylabel: 'Concentration (ng/mL)', suggestModel: 'Two-Compartment-PK' };
+    }
+  },
+  'pk-lag': {
+    title: 'Oral PK with Lag Time',
+    params: [
+      { key: 'Amp',   label: 'Dose factor (Amp)',    value: 10,   min: 0.1,  max: 200,  step: 0.5  },
+      { key: 'ka',    label: 'Absorption ka (h⁻¹)',  value: 1.2,  min: 0.05, max: 10,   step: 0.05 },
+      { key: 'ke',    label: 'Elimination ke (h⁻¹)', value: 0.15, min: 0.01, max: 5,    step: 0.01 },
+      { key: 'tlag',  label: 'Lag time tlag (h)',    value: 0.75, min: 0,    max: 5,    step: 0.05 },
+      { key: 'noise', label: 'Noise (σ, ng/mL)',     value: 0.3,  min: 0,    max: 10,   step: 0.1  },
+      { key: 'N',     label: 'Points (N)',            value: 22,   min: 5,    max: 60,   step: 1    },
+    ],
+    generate(p) {
+      const t = [0,0.5,0.75,1,1.25,1.5,2,2.5,3,4,5,6,8,10,12,14,18,24,36,48,60,72].slice(0, p.N);
+      const y = t.map(ti => {
+        const dt = ti - p.tlag;
+        if (dt <= 0) return 0;
+        if (Math.abs(p.ka - p.ke) < 1e-6) return p.Amp * p.ka * dt * Math.exp(-p.ka * dt);
+        return p.Amp * p.ka / (p.ka - p.ke) * (Math.exp(-p.ke * dt) - Math.exp(-p.ka * dt));
+      });
+      return { name: 'Oral PK with Lag Time', x: t, y: noisyGauss(y, p.noise).map(v => Math.max(v, 0)), xlabel: 'Time (h)', ylabel: 'Concentration (ng/mL)', suggestModel: 'PK-Lag' };
+    }
+  },
+  'substrate-inhibition': {
+    title: 'Substrate Inhibition (Enzyme Kinetics)',
+    params: [
+      { key: 'Vmax', label: 'Vmax',            value: 120,  min: 1,    max: 2000, step: 5    },
+      { key: 'Km',   label: 'Km (mM)',          value: 2,    min: 0.01, max: 100,  step: 0.1  },
+      { key: 'Ki',   label: 'Ki (mM)',           value: 50,   min: 0.1,  max: 500,  step: 1    },
+      { key: 'noise',label: 'Noise (σ)',         value: 3,    min: 0,    max: 30,   step: 0.5  },
+      { key: 'outliers',label: 'Outliers',       value: 0,    min: 0,    max: 4,    step: 1    },
+    ],
+    generate(p) {
+      const S = [0.1,0.3,0.5,1,2,5,10,20,40,80,120,200,350,500];
+      const y = S.map(s => p.Vmax * s / (p.Km + s + s * s / p.Ki));
+      return { name: 'Substrate Inhibition', x: S, y: injectOutliers(noisyGauss(y, p.noise), p.outliers, 3), xlabel: '[S] (mM)', ylabel: 'v (nmol·min⁻¹)', suggestModel: 'Substrate-Inhibition' };
+    }
+  },
+  'langmuir-isotherm': {
+    title: 'Langmuir Adsorption Isotherm',
+    params: [
+      { key: 'qm',   label: 'Max capacity qm (mg/g)', value: 45,   min: 1,    max: 500,  step: 1    },
+      { key: 'KL',   label: 'Langmuir KL (L/mg)',      value: 0.08, min: 0.001,max: 5,    step: 0.005},
+      { key: 'noise',label: 'Noise (σ)',                value: 1.0,  min: 0,    max: 10,   step: 0.1  },
+      { key: 'outliers',label: 'Outliers',              value: 0,    min: 0,    max: 4,    step: 1    },
+    ],
+    generate(p) {
+      const C = [0.5, 1, 2, 5, 10, 20, 40, 80, 120, 200, 300, 500];
+      const y = C.map(c => p.qm * p.KL * c / (1 + p.KL * c));
+      return { name: 'Langmuir Adsorption Isotherm', x: C, y: injectOutliers(noisyGauss(y, p.noise), p.outliers, 3).map(v => Math.max(v, 0)), xlabel: 'Ce (mg/L)', ylabel: 'qe (mg/g)', suggestModel: 'Langmuir' };
+    }
+  },
+  'freundlich-isotherm': {
+    title: 'Freundlich Adsorption Isotherm',
+    params: [
+      { key: 'KF',   label: 'Freundlich KF',         value: 8,    min: 0.1,  max: 200,  step: 0.5  },
+      { key: 'n',    label: 'Freundlich n',           value: 2.5,  min: 0.5,  max: 10,   step: 0.1  },
+      { key: 'noise',label: 'Noise (σ%)',             value: 5,    min: 0,    max: 30,   step: 1    },
+      { key: 'outliers',label: 'Outliers',            value: 0,    min: 0,    max: 4,    step: 1    },
+    ],
+    generate(p) {
+      const C = [0.1, 0.3, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+      const yClean = C.map(c => p.KF * Math.pow(c, 1 / p.n));
+      const y = yClean.map(v => v * (1 + (p.noise / 100) * gauss()));
+      return { name: 'Freundlich Adsorption Isotherm', x: C, y: injectOutliers(y.map(v => Math.max(v, 0)), p.outliers, 3), xlabel: 'Ce (mg/L)', ylabel: 'qe (mg/g)', suggestModel: 'Freundlich' };
+    }
+  },
+  'herschel-bulkley': {
+    title: 'Herschel-Bulkley (Yield-Stress Fluid)',
+    params: [
+      { key: 'tau0', label: 'Yield stress τ₀ (Pa)',   value: 12,   min: 0,    max: 200,  step: 0.5  },
+      { key: 'K',    label: 'Consistency K (Pa·sⁿ)',  value: 3.5,  min: 0.01, max: 100,  step: 0.1  },
+      { key: 'n',    label: 'Flow index n',            value: 0.55, min: 0.05, max: 2,    step: 0.05 },
+      { key: 'noise',label: 'Noise (σ, Pa)',           value: 1.0,  min: 0,    max: 20,   step: 0.2  },
+      { key: 'N',    label: 'Points (N)',              value: 20,   min: 5,    max: 60,   step: 1    },
+    ],
+    generate(p) {
+      const gamma = linspace(0.1, 500, p.N);
+      const y = gamma.map(g => p.tau0 + p.K * Math.pow(g, p.n));
+      return { name: 'Herschel-Bulkley Fluid', x: gamma, y: noisyGauss(y, p.noise).map(v => Math.max(v, 0)), xlabel: 'Shear rate γ̇ (s⁻¹)', ylabel: 'Shear stress τ (Pa)', suggestModel: 'Herschel-Bulkley' };
+    }
+  },
+  'cross-viscosity': {
+    title: 'Cross Model (Shear-Thinning Viscosity)',
+    params: [
+      { key: 'eta0', label: 'Zero-shear η₀ (Pa·s)',  value: 10,   min: 0.01, max: 1000, step: 0.1  },
+      { key: 'etaI', label: 'Inf-shear η∞ (Pa·s)',   value: 0.01, min: 0,    max: 10,   step: 0.001},
+      { key: 'K',    label: 'Relax. time K (s)',      value: 0.5,  min: 0.001,max: 100,  step: 0.01 },
+      { key: 'm',    label: 'Power index m',          value: 0.7,  min: 0.1,  max: 2,    step: 0.05 },
+      { key: 'noise',label: 'Noise (σ%)',             value: 3,    min: 0,    max: 20,   step: 0.5  },
+      { key: 'N',    label: 'Points (N)',             value: 25,   min: 5,    max: 60,   step: 1    },
+    ],
+    generate(p) {
+      const gamma = Array.from({ length: p.N }, (_, i) => Math.pow(10, -2 + i * 4 / (p.N - 1)));
+      const yClean = gamma.map(g => p.etaI + (p.eta0 - p.etaI) / (1 + Math.pow(p.K * g, p.m)));
+      const y = yClean.map(v => v * (1 + (p.noise / 100) * gauss()));
+      return { name: 'Cross Model Viscosity', x: gamma, y: y.map(v => Math.max(v, 0)), xlabel: 'Shear rate γ̇ (s⁻¹)', ylabel: 'Viscosity η (Pa·s)', suggestModel: 'Cross-Model' };
+    }
+  },
+  'emg-peak': {
+    title: 'EMG Peak (Chromatography)',
+    params: [
+      { key: 'A',    label: 'Amplitude (A)',     value: 150,  min: 1,    max: 2000, step: 5    },
+      { key: 'mu',   label: 'Gaussian μ',         value: 5,    min: -20,  max: 50,   step: 0.1  },
+      { key: 'sig',  label: 'Gaussian σ',         value: 0.5,  min: 0.05, max: 5,    step: 0.05 },
+      { key: 'tau',  label: 'Tail const. τ',      value: 0.8,  min: 0.05, max: 10,   step: 0.05 },
+      { key: 'C',    label: 'Baseline (C)',        value: 3,    min: 0,    max: 100,  step: 1    },
+      { key: 'noise',label: 'Noise (σ)',           value: 3,    min: 0,    max: 30,   step: 0.5  },
+      { key: 'N',    label: 'Points (N)',          value: 50,   min: 10,   max: 200,  step: 1    },
+    ],
+    generate(p) {
+      const x = linspace(p.mu - 3 * p.sig, p.mu + 6 * p.tau + 4 * p.sig, p.N);
+      const u = p.sig / p.tau;
+      const y = x.map(xi => {
+        const z = (xi - p.mu) / p.sig;
+        const erfcArg = (u - z) * 0.7071067811865476;
+        if (erfcArg > 25) return p.C;
+        const val = 0.5 * p.A * Math.exp(0.5 * u * u - z * u) * (1 - (function(t) {
+          const a = 1/(1+0.3275911*Math.abs(t)), pp = a*(0.254829592+a*(-0.284496736+a*(1.421413741+a*(-1.453152027+a*1.061405429))));
+          return Math.sign(t)*(1-pp*Math.exp(-t*t));
+        })(erfcArg)) + p.C;
+        return val;
+      });
+      return { name: 'EMG Chromatography Peak', x, y: noisyGauss(y, p.noise).map(v => Math.max(v, 0)), xlabel: 'Retention time (min)', ylabel: 'Signal (mAU)', suggestModel: 'EMG' };
+    }
+  },
+  'arrhenius-rate': {
+    title: 'Arrhenius Rate vs Temperature',
+    params: [
+      { key: 'A',    label: 'Pre-factor A (s⁻¹)',  value: 1e12, min: 1,    max: 1e16, step: 1e11 },
+      { key: 'EaR',  label: 'Ea/R (K)',             value: 8000, min: 1000, max: 30000,step: 100  },
+      { key: 'noise',label: 'Noise (σ%)',            value: 5,    min: 0,    max: 30,   step: 1    },
+      { key: 'N',    label: 'Points (N)',            value: 14,   min: 4,    max: 30,   step: 1    },
+    ],
+    generate(p) {
+      const T = linspace(280, 380, p.N);
+      const yClean = T.map(t => p.A * Math.exp(-p.EaR / t));
+      const y = yClean.map(v => v * (1 + (p.noise / 100) * gauss()));
+      return { name: 'Arrhenius Rate Constant', x: T, y: y.map(v => Math.max(v, 0)), xlabel: 'Temperature T (K)', ylabel: 'Rate constant k (s⁻¹)', suggestModel: 'Arrhenius' };
+    }
+  },
+  'erf-diffusion': {
+    title: 'Erf Diffusion Profile',
+    params: [
+      { key: 'A',    label: 'Amplitude (A)',   value: 0.45, min: 0.01, max: 5,    step: 0.01 },
+      { key: 'mu',   label: 'Interface μ',      value: 0.5,  min: -5,   max: 10,   step: 0.1  },
+      { key: 'w',    label: 'Diff. width w',    value: 0.6,  min: 0.05, max: 5,    step: 0.05 },
+      { key: 'B',    label: 'Baseline B',       value: 0.5,  min: -2,   max: 2,    step: 0.05 },
+      { key: 'noise',label: 'Noise (σ)',         value: 0.01, min: 0,    max: 0.1,  step: 0.005},
+      { key: 'N',    label: 'Points (N)',        value: 30,   min: 5,    max: 100,  step: 1    },
+    ],
+    generate(p) {
+      const x = linspace(-2, 4, p.N);
+      const erf = z => { const t = 1/(1+0.3275911*Math.abs(z)), pp = t*(0.254829592+t*(-0.284496736+t*(1.421413741+t*(-1.453152027+t*1.061405429)))); return Math.sign(z)*(1-pp*Math.exp(-z*z)); };
+      const y = x.map(xi => p.A * erf((xi - p.mu) / p.w) + p.B);
+      return { name: 'Erf Diffusion Profile', x, y: noisyGauss(y, p.noise), xlabel: 'Depth x (mm)', ylabel: 'Concentration C/C₀', suggestModel: 'Erf-Diffusion' };
+    }
+  },
   'stress-strain': {
     title: 'Stress-Strain (Ramberg-Osgood)',
     params: [
@@ -518,6 +690,16 @@ const EXAMPLE_EQ = {
   'stern-volmer':           'y=\\dfrac{F_{0}}{(1+K_{D}[Q])(1+K_{S}[Q])}',
   'vant-hoff':              'y=\\exp\\!\\left(\\dfrac{\\Delta S}{R}-\\dfrac{\\Delta H}{RT}\\right)',
   'stress-strain':          '\\varepsilon=\\dfrac{\\sigma}{E}+\\left(\\dfrac{\\sigma}{K}\\right)^{\\!1/n}',
+  'two-compartment-pk':     'C=A\\,e^{-\\alpha t}+B\\,e^{-\\beta t}',
+  'pk-lag':                 'C=\\dfrac{A_{mp}\\,k_{a}}{k_{a}-k_{e}}\\!\\left(e^{-k_{e}(t-t_{lag})}-e^{-k_{a}(t-t_{lag})}\\right)',
+  'substrate-inhibition':   'v=\\dfrac{V_{\\!\\max}[S]}{K_{m}+[S]+[S]^{2}/K_{i}}',
+  'langmuir-isotherm':      'q=\\dfrac{q_{m}K_{L}C}{1+K_{L}C}',
+  'freundlich-isotherm':    'q=K_{F}\\,C^{1/n}',
+  'herschel-bulkley':       '\\tau=\\tau_{0}+K\\,|\\dot{\\gamma}|^{n}',
+  'cross-viscosity':        '\\eta=\\eta_{\\infty}+\\dfrac{\\eta_{0}-\\eta_{\\infty}}{1+(K\\dot{\\gamma})^{m}}',
+  'emg-peak':               'y=\\dfrac{A}{2}\\exp\\!\\left(\\dfrac{\\sigma^{2}}{2\\tau^{2}}-\\dfrac{x-\\mu}{\\tau}\\right)\\mathrm{erfc}\\!\\left(\\dfrac{\\sigma/\\tau-(x-\\mu)/\\sigma}{\\sqrt{2}}\\right)+C',
+  'arrhenius-rate':         'k=A\\,\\exp\\!\\left(-E_{a}/(R\\,T)\\right)',
+  'erf-diffusion':          'C=A\\,\\mathrm{erf}\\!\\left(\\dfrac{x-\\mu}{w}\\right)+B',
 };
 
 function generateExample(key, overrides) {
