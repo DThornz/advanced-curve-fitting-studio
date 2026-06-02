@@ -85,6 +85,42 @@ function openExampleEditor(key, savedState = null) {
         <input class="ctrl-input" type="number" id="ex-freq${i}-freq"  value="${i}" min="0.1" step="0.5" title="Cycles per x-range">
         <input class="ctrl-input" type="number" id="ex-freq${i}-phase" value="0"  min="0" max="1" step="0.05" title="Phase 0–1 (fraction of 2π)">
       </div>`).join('')}
+    </div>
+    <div class="ex-noise-section">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span class="ex-noise-hd" style="margin:0;flex:1">Inject Trend / Baseline</span>
+      </div>
+      <div class="ex-param-row">
+        <label class="ex-param-label" title="Total rise added across the x-range (linear drift)">Linear drift (Δy over range)</label>
+        <input class="ctrl-input" type="number" id="ex-trend-slope" value="0" step="any" style="flex:1">
+      </div>
+      <div class="ex-param-row">
+        <label class="ex-param-label" title="Quadratic component added across the x-range">Curvature (quadratic Δy)</label>
+        <input class="ctrl-input" type="number" id="ex-trend-curv" value="0" step="any" style="flex:1">
+      </div>
+      <div class="ex-param-row">
+        <label class="ex-param-label" title="Constant offset added to every point">Baseline offset</label>
+        <input class="ctrl-input" type="number" id="ex-trend-offset" value="0" step="any" style="flex:1">
+      </div>
+      <p style="font-size:.68em;color:var(--dim);margin:4px 0 0">Adds a deterministic trend you can remove later with Pre-Process → Baseline / De-trend.</p>
+    </div>
+    <div class="ex-noise-section">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span class="ex-noise-hd" style="margin:0;flex:1">Output Format</span>
+      </div>
+      <div class="ex-param-row">
+        <label class="ex-param-label">Format</label>
+        <select class="ctrl-select" id="ex-output-format" style="flex:1">
+          <option value="single">Single dataset</option>
+          <option value="replicates">Replicates → mean ± σ</option>
+          <option value="multi">Multiple series (separate datasets)</option>
+        </select>
+      </div>
+      <div class="ex-param-row" id="ex-output-count-row" style="display:none">
+        <label class="ex-param-label" id="ex-output-count-label">Replicates</label>
+        <input class="ctrl-input" type="number" id="ex-output-count" value="4" min="2" max="24" step="1" style="flex:1">
+      </div>
+      <p style="font-size:.68em;color:var(--dim);margin:4px 0 0" id="ex-output-desc">One dataset. “Replicates” generates the curve N times and stores mean ± σ (error bars); “Multiple series” creates N independent datasets — try “Fit All Datasets”.</p>
     </div>`;
 
   if (hasPresets) {
@@ -120,6 +156,31 @@ function openExampleEditor(key, savedState = null) {
       if (fe) fe.value = r.freq;
       if (pe) pe.value = r.phase;
     });
+    if (savedState.trend) {
+      const ts = document.getElementById('ex-trend-slope'), tc = document.getElementById('ex-trend-curv'), to = document.getElementById('ex-trend-offset');
+      if (ts) ts.value = savedState.trend.slope ?? 0;
+      if (tc) tc.value = savedState.trend.curv ?? 0;
+      if (to) to.value = savedState.trend.offset ?? 0;
+    }
+    if (savedState.output) {
+      const of = document.getElementById('ex-output-format'), oc = document.getElementById('ex-output-count');
+      if (of) of.value = savedState.output.format || 'single';
+      if (oc) oc.value = savedState.output.count ?? 4;
+    }
+  }
+
+  // Output-format row visibility + label (run after any savedState restore)
+  const ofSel = document.getElementById('ex-output-format');
+  if (ofSel) {
+    const syncOut = () => {
+      const v = ofSel.value;
+      const row = document.getElementById('ex-output-count-row');
+      const lbl = document.getElementById('ex-output-count-label');
+      if (row) row.style.display = v === 'single' ? 'none' : 'flex';
+      if (lbl) lbl.textContent = v === 'replicates' ? 'Replicates' : 'Series';
+    };
+    ofSel.addEventListener('change', syncOut);
+    syncOut();
   }
 
   const loadBtn = document.getElementById('example-modal-load');
@@ -166,13 +227,9 @@ function loadExampleFromModal() {
   // Round integer params
   activeDef.params.forEach(d => { if (d.step === 1) p[d.key] = Math.max(d.min, Math.round(p[d.key])); });
 
-  const data = activeDef.generate(p);
-  if (p.outliers > 0) data.y = injectOutliers(data.y, Math.round(p.outliers), p.outlierScale || 4);
-
   // Additional background noise
   const extraType = (document.getElementById('ex-extra-noise-type') || {}).value || 'none';
   const extraAmp  = parseFloat((document.getElementById('ex-extra-noise-amp') || {}).value) || 0;
-  if (extraType !== 'none' && extraAmp > 0) data.y = addExtraNoise(data.y, extraType, extraAmp);
 
   // Sinusoidal frequency components — collect all 3 rows (including disabled ones for save)
   const freqRows = [1, 2, 3].map(i => ({
@@ -181,57 +238,122 @@ function loadExampleFromModal() {
     phase: parseFloat((document.getElementById(`ex-freq${i}-phase`) || {}).value) || 0
   }));
   const activeFreqComps = freqRows.filter(r => r.amp > 0);
-  if (activeFreqComps.length) data.y = addFreqNoise(data.y, data.x, activeFreqComps);
+
+  // Injected trend / baseline
+  const trend = {
+    slope:  parseFloat((document.getElementById('ex-trend-slope')  || {}).value) || 0,
+    curv:   parseFloat((document.getElementById('ex-trend-curv')   || {}).value) || 0,
+    offset: parseFloat((document.getElementById('ex-trend-offset') || {}).value) || 0
+  };
+
+  // Output format
+  const outFmt   = (document.getElementById('ex-output-format') || {}).value || 'single';
+  const outCount = Math.max(2, Math.min(24, Math.round(parseFloat((document.getElementById('ex-output-count') || {}).value) || 4)));
+
+  // Generates one fresh realisation (fresh noise + outliers + interference + trend).
+  const buildOne = () => {
+    const d = activeDef.generate(p);
+    if (p.outliers > 0) d.y = injectOutliers(d.y, Math.round(p.outliers), p.outlierScale || 4);
+    if (extraType !== 'none' && extraAmp > 0) d.y = addExtraNoise(d.y, extraType, extraAmp);
+    if (activeFreqComps.length) d.y = addFreqNoise(d.y, d.x, activeFreqComps);
+    if (trend.slope || trend.curv || trend.offset) d.y = _addTrend(d.x, d.y, trend);
+    return d;
+  };
+
+  // Build the list of datasets to produce based on the chosen output format.
+  const first = buildOne();
+  const meta = { xlabel: first.xlabel, ylabel: first.ylabel, suggestModel: first.suggestModel };
+  let datasets;
+  if (outFmt === 'replicates') {
+    const reals = [first.y];
+    for (let r = 1; r < outCount; r++) {
+      const d = buildOne();
+      if (d.y.length === first.x.length) reals.push(d.y);
+    }
+    const n = first.x.length;
+    const y = new Array(n), sigY = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const col = reals.map(a => a[i]).filter(isFinite);
+      const m = col.reduce((s, v) => s + v, 0) / col.length;
+      const sd = col.length > 1 ? Math.sqrt(col.reduce((s, v) => s + (v - m) ** 2, 0) / (col.length - 1)) : NaN;
+      y[i] = m; sigY[i] = sd > 0 ? sd : NaN;
+    }
+    datasets = [{ name: `${first.name} (mean ± σ, n=${outCount})`, x: first.x, y, sigY: sigY.some(isFinite) ? sigY : null }];
+  } else if (outFmt === 'multi') {
+    datasets = [{ name: `${first.name} #1`, x: first.x, y: first.y, sigY: first.sigY || null }];
+    for (let s = 2; s <= outCount; s++) {
+      const d = buildOne();
+      datasets.push({ name: `${first.name} #${s}`, x: d.x, y: d.y, sigY: d.sigY || null });
+    }
+  } else {
+    datasets = [{ name: first.name, x: first.x, y: first.y, sigY: first.sigY || null }];
+  }
 
   // Snapshot of all form state for re-editing later
   const savedState = {
     presetIdx:   activePresetIdx,
     params:      { ...p },
     extraNoise:  { type: extraType, amp: extraAmp },
-    freqRows
+    freqRows, trend,
+    output:      { format: outFmt, count: outCount }
   };
 
   const editDsId = currentExampleDsId;
   const exKey    = currentExampleKey;
   closeExampleModal();
 
-  if (editDsId) {
-    // Update existing generated dataset in place
+  // Edit-in-place only when exactly one dataset is produced (single / replicates).
+  if (editDsId && datasets.length === 1) {
     const editDs = state.datasets.find(d => d.id === editDsId);
-    if (!editDs) return;
-    editDs.x         = data.x;
-    editDs.y         = data.y;
-    editDs.originalY = data.y.slice();
-    if (data.sigY && data.sigY.length === data.x.length) editDs.sigY = data.sigY; else delete editDs.sigY;
-    editDs.name      = data.name;
-    editDs._exKey        = exKey || editDs._exKey;
-    editDs._exSavedState = savedState;
-    // Drop stale undo history for this dataset
-    state.editHistory.undo = state.editHistory.undo.filter(h => h.dsId !== editDs.id);
-    state.editHistory.redo = [];
-    syncUndoRedoButtons();
-    if (state.activeDatasetId !== editDs.id) {
-      state.activeDatasetId = editDs.id;
-      syncFitDatasetSelect();
+    if (editDs) {
+      const d0 = datasets[0];
+      editDs.x = d0.x; editDs.y = d0.y; editDs.originalY = d0.y.slice();
+      if (d0.sigY && d0.sigY.length === d0.x.length) editDs.sigY = d0.sigY; else delete editDs.sigY;
+      editDs.name = d0.name;
+      editDs._exKey = exKey || editDs._exKey;
+      editDs._exSavedState = savedState;
+      state.editHistory.undo = state.editHistory.undo.filter(h => h.dsId !== editDs.id);
+      state.editHistory.redo = [];
+      syncUndoRedoButtons();
+      if (state.activeDatasetId !== editDs.id) { state.activeDatasetId = editDs.id; syncFitDatasetSelect(); }
+      renderDatasetList();
+      updatePlots();
+      setConsole(`Regenerated: ${d0.name} (${d0.x.length} points). Re-run fits to update results.`, '');
+      return;
     }
-    renderDatasetList();
-    updatePlots();
-    setConsole(`Regenerated: ${data.name} (${data.x.length} points). Re-run fits to update results.`, '');
-  } else {
-    // Create a new dataset
-    const ds = importDataset(data.name, data.x, data.y, data.sigY || null);
-    if (!ds) return;
-    ds._exKey        = exKey;
-    ds._exSavedState = savedState;
-    applyParsedMeta({ xlabel: data.xlabel, ylabel: data.ylabel, title: null });
-    if (data.suggestModel) {
-      document.getElementById('model-select').value = data.suggestModel;
-      syncModelCustomSection();
-    }
-    syncFitDatasetSelect();
-    renderDatasetList();
-    updatePlots();
-    autoInitParams();
-    setConsole(`Loaded: ${data.name} (${data.x.length} points).  Press ▶ Fit to fit.`, '');
   }
+
+  // Otherwise create new dataset(s).
+  let firstDs = null;
+  datasets.forEach((d, i) => {
+    const ds = importDataset(d.name, d.x, d.y, d.sigY || null);
+    if (!ds) return;
+    if (i === 0) { ds._exKey = exKey; ds._exSavedState = savedState; firstDs = ds; }
+  });
+  if (!firstDs) return;
+  applyParsedMeta({ xlabel: meta.xlabel, ylabel: meta.ylabel, title: null });
+  if (meta.suggestModel) {
+    document.getElementById('model-select').value = meta.suggestModel;
+    syncModelCustomSection();
+  }
+  state.activeDatasetId = firstDs.id;
+  syncFitDatasetSelect();
+  renderDatasetList();
+  updatePlots();
+  autoInitParams();
+  if (datasets.length > 1) {
+    setConsole(`Loaded ${datasets.length} series from "${first.name}". Pick a model and press “Fit All Datasets”.`, '');
+  } else {
+    setConsole(`Loaded: ${datasets[0].name} (${datasets[0].x.length} points).  Press ▶ Fit to fit.`, '');
+  }
+}
+
+// Adds a deterministic trend/baseline across the x-range: offset + slope·u + curv·u²,
+// where u = (x − xmin)/(xmax − xmin) ∈ [0, 1]. slope/curv are total Δy across the range.
+function _addTrend(x, y, t) {
+  const xmin = Math.min(...x), xmax = Math.max(...x), rng = (xmax - xmin) || 1;
+  return y.map((v, i) => {
+    const u = (x[i] - xmin) / rng;
+    return v + t.offset + t.slope * u + t.curv * u * u;
+  });
 }

@@ -138,6 +138,8 @@ function syncUndoRedoButtons() {
   if (bu) bu.disabled = !state.editHistory.undo.length;
   if (br) br.disabled = !state.editHistory.redo.length;
   if (bx) bx.disabled = !state.selection.indices.size;
+  const ppu = document.getElementById('pp-undo');
+  if (ppu) ppu.disabled = !state.editHistory.undo.length;
 }
 
 /* ── Radius canvas overlay ───────────────────────────── */

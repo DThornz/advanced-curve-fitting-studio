@@ -492,7 +492,7 @@ function initEvents() {
   (function() {
     const ppModal = document.getElementById('preprocess-modal');
     const closePP = () => { ppModal.style.display = 'none'; };
-    document.getElementById('btn-preprocess').addEventListener('click', () => { ppModal.style.display = 'flex'; });
+    document.getElementById('btn-preprocess').addEventListener('click', () => { ppModal.style.display = 'flex'; syncUndoRedoButtons(); });
     document.getElementById('pp-modal-close').addEventListener('click', closePP);
     document.getElementById('pp-close').addEventListener('click', closePP);
     ppModal.addEventListener('click', e => { if (e.target === ppModal) closePP(); });
@@ -552,6 +552,12 @@ function initEvents() {
       if (hi < lo) [lo, hi] = [hi, lo];
       applyFourierFilter(t, lo, hi, rolloff);
       if (_specVisible) renderFFTSpectrum(); // re-render with filtered data
+    });
+
+    document.getElementById('pp-undo').addEventListener('click', () => {
+      if (!state.editHistory.undo.length) { setConsole('Nothing to undo.', ''); return; }
+      undoEdit();
+      if (_specVisible) renderFFTSpectrum();
     });
 
     document.getElementById('pp-restore').addEventListener('click', () => {

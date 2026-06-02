@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.1</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.2</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -264,7 +264,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.1</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.2</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -840,7 +840,8 @@
 
       </div>
       <div class="modal-footer">
-        <button class="btn" id="pp-restore" style="margin-right:auto" title="Revert to the original imported y values">Restore Original</button>
+        <button class="btn" id="pp-undo" title="Revert the most recent pre-processing step (undo one at a time)">↶ Undo Step</button>
+        <button class="btn" id="pp-restore" style="margin-right:auto" title="Revert all the way back to the original imported y values">Restore Original</button>
         <button class="btn" id="pp-close">Close</button>
       </div>
     </div>
@@ -1868,12 +1869,25 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.7.2 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.7.2</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Undo Step in Pre-Process</strong> — every pre-processing action (smooth, filter, transform, de-trend, repair) can now be reverted one step at a time with the new <strong>↶ Undo Step</strong> button, alongside the existing Restore Original (revert all)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Inject Trend / Baseline</strong> in the example generator — add a deterministic linear drift, quadratic curvature, and/or baseline offset to generated data, so you can practice removing it with Pre-Process → Baseline / De-trend</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Output format</strong> in the example generator — generate any example as a single dataset, as <strong>Replicates → mean ± σ</strong> (N realisations collapsed to error bars), or as <strong>Multiple series</strong> (N independent datasets) to exercise <em>Fit All Datasets</em></span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.7.1 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.7.1</span>
+          <span class="relnotes-ver-num">v1.7.1</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Normalize / Transform</strong> (Pre-Process) — Min–Max, Z-score, log, log₁₀, √, and Box–Cox (with an Auto maximum-likelihood λ) transforms of Y, fully reversible via Undo / Restore Original</span></li>

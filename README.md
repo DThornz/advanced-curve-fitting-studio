@@ -408,6 +408,11 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.7.2 — 2026-06-02
+- **new** Pre-Process **↶ Undo Step** button — revert any single pre-processing action (smooth, filter, transform, de-trend, repair) one step at a time, in addition to Restore Original
+- **new** Example generator **Inject Trend / Baseline** — add a deterministic linear drift, quadratic curvature, and/or offset to generated data (pairs with the new De-trend tool)
+- **new** Example generator **Output format** — produce any example as a single dataset, **Replicates → mean ± σ** (error bars), or **Multiple series** (N datasets for Fit All)
+
 ### v1.7.1 — 2026-06-02
 - **new** Normalize / Transform (Pre-Process): Min–Max, Z-score, log, log₁₀, √, Box–Cox (auto-λ via profile likelihood) — reversible via Undo / Restore Original
 - **new** Baseline / De-trend (Pre-Process): subtract a polynomial (deg 1–5) or LOWESS baseline fit on non-masked points
