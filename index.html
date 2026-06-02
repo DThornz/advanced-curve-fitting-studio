@@ -45,7 +45,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.3</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.4</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -264,7 +264,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.3</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.4</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -656,9 +656,10 @@
 
   <!-- Pre-Process modal -->
   <div class="app-modal" id="preprocess-modal" style="display:none" role="dialog" aria-modal="true">
-    <div class="modal-box" style="max-width:530px">
+    <div class="modal-box" style="max-width:900px">
       <div class="modal-header"><span>Pre-Process Data</span><button class="modal-close-btn" id="pp-modal-close" aria-label="Close">×</button></div>
       <div style="padding:14px 16px;overflow-y:auto;flex:1;font-size:.82em">
+        <div class="pp-grid">
 
         <!-- Smoothing section -->
         <div class="pp-section">
@@ -839,6 +840,7 @@
           </div>
         </div>
 
+        </div><!-- .pp-grid -->
       </div>
       <div class="modal-footer">
         <button class="btn" id="pp-undo" title="Revert the most recent pre-processing step (undo one at a time)">↶ Undo Step</button>
@@ -864,6 +866,7 @@
             <tr><td style="padding:4px 8px;font-family:var(--mono)">Shift+Scroll</td><td style="padding:4px 8px">Adjust multi-select radius (in edit mode)</td></tr>
             <tr><td style="padding:4px 8px;font-family:var(--mono)">Click empty area</td><td style="padding:4px 8px">Deselect point</td></tr>
             <tr><td style="padding:4px 8px;font-family:var(--mono)">Drag point</td><td style="padding:4px 8px">Move point vertically</td></tr>
+            <tr><td style="padding:4px 8px;font-family:var(--mono)">Ctrl/⌘+Click dataset</td><td style="padding:4px 8px">Multi-select datasets for ⊕ Combine</td></tr>
             <tr><td style="padding:4px 8px;font-family:var(--mono)">?</td><td style="padding:4px 8px">Show this panel</td></tr>
           </tbody>
         </table>
@@ -1870,12 +1873,24 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.7.4 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.7.4</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Pre-Process panel multi-column layout</strong> — the five sections (Smoothing, Fourier, Normalize/Transform, Baseline/De-trend, Repair/Impute) now flow into a wider, responsive 2-column grid instead of one tall scrolling column, so most of the panel is visible at once (collapses to one column on narrow screens)</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">docs</span>In-app usage guide refreshed for the current feature set (36 examples, 58 models, four import modes, five Pre-Process sections, Fit All &amp; Combine, Ctrl/⌘-click multi-select)</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.7.3 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.7.3</span>
+          <span class="relnotes-ver-num">v1.7.3</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Combine datasets for one fit</strong> — <strong>Ctrl/⌘-click</strong> two or more datasets in the Datasets panel to multi-select, then press <strong>⊕ Combine</strong>. If the selected series share an x-grid they are aggregated to <em>mean ± σ</em> (error bars); otherwise their points are pooled. Fitting the combined dataset gives a single curve through their average — distinct from <em>Fit All Datasets</em>, which fits each series separately</span></li>
@@ -2451,13 +2466,13 @@
 
     <p>Three routes are available for loading data:</p>
     <ul style="margin:8px 0 8px 20px;line-height:1.8">
-      <li><strong>Examples</strong> — 16 built-in synthetic datasets with adjustable noise, covering every major model family. The dropdown is split into two columns: <em>General</em> (Exp Decay, Gaussian, Logistic Growth, etc.) and <em>Calibration &amp; Distributions / Electrophysiology</em> (G-V Boltzmann, Kir I-V, HH Na Channel, voltage-dependent τ, and more). Each example pre-selects the matching model and sensible initial parameters. An <em>Outliers</em> slider and <em>Outlier scale</em> control let you inject random outliers to test robustness.</li>
-      <li><strong>Import CSV / TSV / TXT</strong> — drag a file onto the plot area or use the Import button. Headers are optional; the first two numeric columns are used as X and Y. Comma, semicolon, tab, and space delimiters are all detected automatically. Files with more than two columns open a <em>Column Picker</em> where you choose X, Y, and optionally a σ (uncertainty) column. If a σ column is loaded, error bars appear on the scatter plot and the 1/σ² weighting option becomes available in Algorithm Options.</li>
+      <li><strong>Examples</strong> — 36 built-in synthetic dataset generators with adjustable noise, covering every major model family, laid out in a three-column grouped dropdown with a keyword search box (e.g. typing "blood" surfaces the rheology examples). Each example pre-selects the matching model and sensible initial parameters. Beyond the model parameters, the generator modal offers: an <em>Outliers</em> slider and <em>Outlier scale</em>; additional background noise (Gaussian/uniform/Laplacian) and sinusoidal interference; an <em>Inject Trend / Baseline</em> section (linear drift, quadratic curvature, offset) so you can practise removing it with Pre-Process → De-trend; and an <em>Output Format</em> selector — a single dataset, <em>Replicates → mean ± σ</em> (error bars), or <em>Multiple series</em> (N independent datasets for Fit All / Combine).</li>
+      <li><strong>Import CSV / TSV / TXT</strong> — drag a file onto the plot area or use the Import button. Headers are optional; the first two numeric columns are used as X and Y. Comma, semicolon, tab, and space delimiters are all detected automatically. Files with three or more columns open a <em>Column Picker</em> with four import modes: <em>Single Y (+ optional σ)</em>; <em>Multiple Y → separate datasets</em> (each Y column becomes its own dataset); <em>Replicates → mean ± σ</em> (replicate Y columns collapsed to a mean with auto-computed SD or SEM); and <em>Group column → one dataset per group</em> (long-format X, Y, category data, with repeated X aggregated to mean ± σ). When σ is present, error bars appear on the scatter plot and the 1/σ² weighting option becomes available in Algorithm Options. Sample files for every mode live in the <code>Example Datasets/</code> folder of the repository.</li>
       <li><strong>Paste Data</strong> — paste directly from Excel, a terminal, or any text editor. The delimiter auto-detection handles mixed formats.</li>
     </ul>
-    <p><strong>Multiple datasets</strong> can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled using the toggle button that appears on hover. Disabling a dataset hides it and all its associated fits from the plot, residual panels, stats table, and F-test — they are restored instantly when re-enabled.</p>
+    <p><strong>Multiple datasets</strong> can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled using the toggle button that appears on hover. Disabling a dataset hides it and all its associated fits from the plot, residual panels, stats table, and F-test — they are restored instantly when re-enabled. With several datasets loaded you have two batch options: <strong>Fit All Datasets</strong> (toolbar) fits the selected model to every enabled dataset separately and tabulates the results side-by-side; or <strong>Ctrl/⌘-click</strong> two or more datasets in the left panel to multi-select them and press <strong>⊕ Combine</strong> — this pools them into one dataset (mean ± σ when they share an x-grid, otherwise pooled points) so that fitting it yields a single curve through their average.</p>
 
-    <p>The right panel lists 38 built-in models across 10 groups. A guide to choosing:</p>
+    <p>The right panel lists 58 built-in models across 15 categories. A guide to choosing:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>If your data looks like…</th><th>Try</th></tr></thead>
       <tbody>
@@ -2539,11 +2554,12 @@
 
     <p>Click <em>Data Table</em> in the Point Masking section to open a scrollable table of every x/y pair in the active dataset, with the residual from the active fit shown for each point. A checkbox on each row lets you exclude that individual point from fitting while it remains visible on the plot as a hollow marker. Use <em>Exclude 2.5σ</em> to bulk-exclude all statistical outliers from the table, or <em>Include All</em> to restore the full dataset. This is the recommended way to handle a bad measurement point that should not be deleted entirely.</p>
 
-    <p>Click <em>Pre-Process…</em> in the Point Masking section to open the Pre-Process panel. It contains two independent sections, each with its own Apply button.</p>
+    <p>Click <em>Pre-Process…</em> in the Point Masking section to open the Pre-Process panel. It contains five independent sections — Smoothing Filter, Fourier Filter, Normalize / Transform, Baseline / De-trend, and Repair / Impute — each with its own Apply button.</p>
     <p><strong>Smoothing Filter</strong> — select a method and click <em>Apply Smoothing</em>. <em>Moving Average</em> replaces each point with the unweighted mean of the surrounding window; simple and fast but blurs sharp features. <em>Gaussian</em> weights the window with a Gaussian kernel (controlled by σ in points) so that the center point contributes most — better shape preservation than a plain average. <em>Savitzky-Golay</em> fits a local polynomial (order 2–5) to each window by solving normal equations, which preserves peak heights and curvature far better than averaging; choose a higher polynomial order for signals with sharp peaks and a wide window for very noisy data. <em>Median</em> takes the window median rather than the mean, making it highly effective at removing isolated spike noise while keeping smooth regions and edges intact. In all methods, masked (excluded) points are skipped from the window and their values are left unchanged.</p>
     <p><strong>Fourier Filter</strong> — operates in the frequency domain using a native Cooley-Tukey FFT (the data is zero-padded to the next power-of-2 before transforming). <em>Low-pass</em> removes high-frequency noise to reveal a smooth underlying trend. <em>High-pass</em> removes slow baseline drift while keeping rapid variation. <em>Band-pass</em> passes only a specified frequency range, useful for isolating a known periodic signal. <em>Notch</em> (band-reject) zeros out a narrow band — useful for eliminating power-line interference or other periodic artefacts. Cutoffs are entered as a percentage of the Nyquist frequency (50% of sampling rate = 100% Nyquist). The <em>Rolloff shape</em> controls the transition: Brick-wall gives the sharpest possible cutoff but can introduce Gibbs ringing; Cosine taper and Hann window give progressively smoother roll-offs that trade transition-band width for lower ringing.</p>
     <p>Click <em>▤ Show Spectrum</em> to reveal an inline frequency analyser beneath the filter controls. Use the <em>Spectrum / Spectrogram</em> toggle to switch between two views. <strong>Spectrum</strong> shows the 1D power spectrum of the full dataset — frequency runs along the x-axis as a percentage of Nyquist and amplitude on the y-axis in dB (switch to linear with the dB checkbox). Frequencies that stand out at least 10 dB above the noise floor are automatically flagged with red ▾ markers labeled with their exact % Nyquist position, so contaminating tones are immediately visible without having to read individual peaks by eye. Red dashed vertical lines track the current cutoff positions as you type, letting you line them up with flagged peaks before committing. <strong>Spectrogram</strong> switches to an STFT heatmap: the dataset is divided into overlapping Hann-windowed frames, each is FFT'd, and the result is displayed as a 2D colour image (Viridis scale) with frequency on the x-axis and position along the dataset on the y-axis. Persistent sinusoidal interference appears as a sharp horizontal band at a constant frequency, while broadband noise fills the image uniformly — making the two visually unambiguous even when the 1D spectrum is crowded. Both views support scroll-to-zoom and click-drag-to-pan for close inspection. The cutoff lines carry over into spectrogram mode. The filter assumes approximately uniform x-axis spacing; masked-point status is preserved after filtering.</p>
-    <p>Click <em>Restore Original</em> in the footer of the Pre-Process panel at any time to revert to the exact imported y-values. Every Apply and Restore action is pushed onto the undo stack, so <kbd>Ctrl+Z</kbd> also steps back through pre-processing changes.</p>
+    <p><strong>Normalize / Transform</strong> applies a Min–Max, Z-score, log, log₁₀, √, or Box–Cox transform to Y (Box–Cox includes an <em>Auto</em> button that finds λ by maximising the profile likelihood). Domain errors (e.g. log of non-positive data) are caught with a plain-language message. <strong>Baseline / De-trend</strong> fits a polynomial (degree 1–5) or LOWESS local-regression baseline on the non-masked points and subtracts it — ideal for removing drift or background under peaks and oscillations. <strong>Repair / Impute</strong> flags outliers by robust MAD z-score (or fills non-finite gaps) and replaces them with a cubic-spline or linear estimate from the remaining points; a note reminds you that masking is often statistically safer than imputation.</p>
+    <p>Two revert paths are always available in the footer: <strong>↶ Undo Step</strong> reverts the most recent pre-processing action one step at a time (every Apply snapshots the prior state), and <em>Restore Original</em> jumps all the way back to the exact imported y-values. Both push onto the shared undo stack, so <kbd>Ctrl+Z</kbd> also steps back through pre-processing changes.</p>
 
     <p>Click Try All in the toolbar to automatically fit every built-in model to the active dataset. A comparison table opens, ranked by R², showing R², RMSE, AIC, and BIC for each model. Click Apply on any row to load that model and its initial parameter estimates into the right panel for further tuning. Use AIC or BIC — rather than R² alone — to identify the best model without overfitting.</p>
 
@@ -2604,6 +2620,7 @@
         <tr><td><kbd>Ctrl + Z / Y</kbd></td><td>Undo / redo point edits (when selection exists)</td></tr>
         <tr><td><kbd>← → ↑ ↓</kbd></td><td>Nudge selected points by the step value</td></tr>
         <tr><td><kbd>Shift + Scroll</kbd></td><td>Adjust multi-select radius</td></tr>
+        <tr><td><kbd>Ctrl/⌘ + Click</kbd></td><td>Multi-select datasets for ⊕ Combine</td></tr>
         <tr><td><kbd>?</kbd></td><td>Open keyboard shortcuts reference</td></tr>
         <tr><td><kbd>Escape</kbd></td><td>Close open modal / deselect points / close full-screen app</td></tr>
       </tbody>

@@ -35,7 +35,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Outlier detection** | Highlights points where \|residual\| > 2.5σ for the active fit with red rings; updates live as points are moved |
 | **Point masking** | Mask 2.5σ outliers to exclude them from fitting; Unmask All to restore; masked count shown in panel; mask state is saved in the undo/redo history so Ctrl+Z also restores or removes masks |
 | **Data table** | Per-point table showing x, y, and residual for every data point; checkbox to exclude individual points from fitting while keeping them visible as hollow markers on the plot; bulk exclude-by-2.5σ and include-all buttons |
-| **Data pre-processing** | **Pre-Process…** button opens a two-section panel. **Smoothing Filter** — four methods, each with an independent Apply: *Moving Average* (window size); *Gaussian* (window + σ, Gaussian-kernel weighted average); *Savitzky-Golay* (window + polynomial order 2–5, local normal-equation solve, preserves peak heights); *Median* (window size, spike-robust). Masked points are skipped in all methods. **Fourier Filter** — native Cooley-Tukey FFT (zero-padded to next power-of-2): *Low-pass*, *High-pass*, *Band-pass*, *Notch (band-reject)*; cutoff(s) as % of Nyquist; rolloff shapes: Brick-wall, Cosine taper, Hann window. **▤ Show Spectrum** opens an inline frequency analyser with two views — *Spectrum*: 1D power spectrum (dB/linear toggle) with automatic peak detection (red ▾ markers at frequencies ≥10 dB above the noise floor, labeled with their % Nyquist position) and live cutoff marker lines; *Spectrogram*: STFT heatmap (Hann-windowed frames, Viridis colorscale) showing how frequency content varies along the dataset — persistent interference appears as a horizontal band, making contaminating frequencies unambiguous. Both views support scroll-to-zoom and drag-to-pan. **Restore Original** in the panel footer reverts to imported y-values; every operation is pushed to the undo stack |
+| **Data pre-processing** | **Pre-Process…** button opens a five-section panel (Smoothing Filter, Fourier Filter, Normalize / Transform, Baseline / De-trend, Repair / Impute — the last three are detailed in their own rows below). **Smoothing Filter** — four methods, each with an independent Apply: *Moving Average* (window size); *Gaussian* (window + σ, Gaussian-kernel weighted average); *Savitzky-Golay* (window + polynomial order 2–5, local normal-equation solve, preserves peak heights); *Median* (window size, spike-robust). Masked points are skipped in all methods. **Fourier Filter** — native Cooley-Tukey FFT (zero-padded to next power-of-2): *Low-pass*, *High-pass*, *Band-pass*, *Notch (band-reject)*; cutoff(s) as % of Nyquist; rolloff shapes: Brick-wall, Cosine taper, Hann window. **▤ Show Spectrum** opens an inline frequency analyser with two views — *Spectrum*: 1D power spectrum (dB/linear toggle) with automatic peak detection (red ▾ markers at frequencies ≥10 dB above the noise floor, labeled with their % Nyquist position) and live cutoff marker lines; *Spectrogram*: STFT heatmap (Hann-windowed frames, Viridis colorscale) showing how frequency content varies along the dataset — persistent interference appears as a horizontal band, making contaminating frequencies unambiguous. Both views support scroll-to-zoom and drag-to-pan. **↶ Undo Step** reverts the most recent pre-processing action one at a time; **Restore Original** reverts all the way to the imported y-values; every operation is pushed to the undo stack |
 | **Smart point editing** | Always-on context-aware interaction: click near a point to select/drag, click and drag away from points to pan, scroll to zoom; no mode toggle required |
 | **Residual analysis tabs** | Four sub-panels below the main plot: Residuals vs X · Q-Q Plot (residuals standardised by fit RMSE, Blom quantile approx vs normal) · Histogram (Sturges bins + normal overlay) · Convergence (SSE vs iteration; Log/Linear X and Y toggles, default Log Y) |
 | **Normalized residuals** | **Norm. Res.** toggle in the Residuals panel tab bar — switches all residual plots between raw units and σ (RMSE-normalized) units |
@@ -119,6 +119,13 @@ Click **Start Curve Fitting Studio** on the page. The app opens as a full-screen
 
 Click **Try All** in the toolbar to fit every built-in model to the active dataset and display a ranked comparison table (sorted by R²). Click **Apply** on any row to load that model and its parameters into the right panel for further tuning.
 
+### Fitting many datasets at once
+
+With several datasets loaded you have two distinct options:
+
+- **Fit All Datasets** (toolbar) fits the currently selected model to *every enabled dataset separately* — each gets its own Auto-Init, weighting, and fit curve, and all results are tabulated side-by-side in the stats panel for comparison.
+- **Combine** fits *one* curve across several datasets. **Ctrl/⌘-click** two or more datasets in the left panel to multi-select them (highlighted with a teal outline), then click **⊕ Combine** in the Datasets header. If the selected series share an x-grid they are aggregated to **mean ± σ** (error bars); otherwise their points are pooled and sorted by x. The result is an ordinary dataset, so fitting it gives a single curve through their average. This pairs naturally with the example generator's **Multiple series** output.
+
 ### Point editing
 
 Point editing is always active — no mode toggle is needed. Click near a data point to select it (a circle shows the selection radius). Drag a selected point to move it. Click and drag away from any point to pan the plot. Scroll to zoom. Shift+scroll adjusts the multi-select radius. Selected points can be nudged with arrow keys using the step value shown in the Edit controls panel (open via **Edit**).
@@ -133,7 +140,7 @@ Set **Multi-start** (default: 8) in Algorithm Options. The solver launches N pil
 
 ### Supplied measurement uncertainties (σ data)
 
-If your CSV has a third column of per-point uncertainties (σ_y), select it in the **σ column** dropdown of the column picker. The dataset will display Plotly error bars on the scatter plot. Once loaded:
+If your CSV has a third column of per-point uncertainties (σ_y), select it in the **σ column** dropdown of the column picker (Single Y mode). Per-point σ is also produced automatically by the picker's **Replicates → mean ± σ** and **Group column** modes, and by the example generator's **Replicates** output. The dataset displays Plotly error bars on the scatter plot. Once loaded:
 
 - The **Weights** dropdown gains a **1/σ² (data σ)** option (only active when the selected dataset has σ data).
 - Selecting it fits by minimising χ² = Σ[(yᵢ − f(xᵢ))² / σᵢ²], the correct objective when measurement uncertainties are known.
@@ -339,8 +346,9 @@ x,y,sigma
 
 - Headers are optional (detected automatically).
 - Supports comma, tab, semicolon, or space delimiters.
-- Files with three or more columns open a column picker; choose X, Y, and optionally σ.
+- Files with three or more columns open a column picker with four import modes: Single Y (+ optional σ), Multiple Y → separate datasets, Replicates → mean ± σ, and Group column → one dataset per group.
 - Files with exactly two columns use them as X and Y directly.
+- Sample files demonstrating every mode are in the `Example Datasets/` folder (see `Example Datasets/README.md`).
 
 ### Keyboard shortcuts
 
@@ -350,6 +358,7 @@ x,y,sigma
 | `Ctrl + Z / Y` | Undo / redo point edits (when selection exists) |
 | `↑ ↓ ← →` | Nudge selected points by the step value |
 | `Shift + Scroll` | Adjust multi-select radius |
+| `Ctrl/⌘ + Click` | Multi-select datasets for ⊕ Combine |
 | `?` | Open keyboard shortcuts reference modal |
 | `Escape` | Close open modal / deselect points / close full-screen app |
 
@@ -377,7 +386,7 @@ curve-fitting-studio/
 │   ├── export.js       — CSV, TXT report, Python/R/MATLAB code export
 │   ├── session.js      — Save/load session JSON, multi-tab payload, beforeunload guard
 │   ├── resize.js       — Drag-resize handles for left/right/residual/stats/corr panels
-│   ├── preprocess.js   — Smoothing, FFT/STFT filter, baseline modal
+│   ├── preprocess.js   — Smoothing, FFT/STFT filter, transform/de-trend/repair, dataset list + Combine
 │   ├── examples.js     — 36 built-in example dataset generators
 │   ├── examples-ui.js  — Examples dropdown UI and modal
 │   ├── tutorial.js     — Interactive tutorial overlay (SVG step diagrams)
@@ -408,6 +417,10 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 ---
 
 ## Changelog
+
+### v1.7.4 — 2026-06-02
+- **improve** Pre-Process panel now uses a wider, responsive multi-column (2-column) layout for its five sections instead of one tall scrolling column — collapses to a single column on narrow screens
+- **docs** In-app usage guide and README refreshed for the current feature set (36 examples, 58 models, four import modes, five Pre-Process sections, Fit All & Combine)
 
 ### v1.7.3 — 2026-06-02
 - **new** Combine datasets — Ctrl/⌘-click to multi-select datasets, then **⊕ Combine** pools them into one (mean ± σ when they share an x-grid, else pooled points); fitting it produces a single curve through their average
