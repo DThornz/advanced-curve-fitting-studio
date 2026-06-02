@@ -123,11 +123,11 @@
         <div class="app-dropdown-wrap">
           <button class="btn" id="btn-examples">Examples ▾</button>
           <div class="app-dropdown" id="examples-menu">
-            <div style="padding:4px 8px 6px;border-bottom:1px solid var(--border)">
-              <input type="search" id="examples-search" class="ctrl-input" placeholder="Search examples… (e.g. blood, peak, arrhenius)" autocomplete="off" style="font-size:.72em;width:100%;box-sizing:border-box" title="Filter examples by name, model, or keyword">
+            <div style="padding:5px 8px 6px;border-bottom:1px solid var(--border);flex-shrink:0">
+              <input type="search" id="examples-search" class="ctrl-input" placeholder="Search examples… (e.g. blood, peak, arrhenius)" autocomplete="off" style="font-size:.72em;width:100%;box-sizing:border-box;display:block" title="Filter examples by name, model, or keyword">
             </div>
-            <div id="examples-search-results" style="display:none;padding:4px 0;max-height:280px;overflow-y:auto"></div>
-            <div id="examples-cols-wrap" style="display:flex">
+            <div id="examples-search-results" style="display:none;padding:4px 0;max-height:280px;overflow-y:auto;flex-shrink:0"></div>
+            <div id="examples-cols-wrap">
             <div class="examples-col">
               <div class="examples-col-hdr">General</div>
               <div class="app-dropdown-item" data-example="exponential-decay">Exponential Decay  <span class="app-dropdown-sub">radioactive / RC circuit</span></div>
