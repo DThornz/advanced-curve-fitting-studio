@@ -8,6 +8,10 @@
 // Fits run one at a time (multi-start loops sequentially; the worker handles one
 // job), so a module-level handle is safe.
 let _activeConstraints = null;
+// True when the active fit uses supplied 1/σ² weights (absolute uncertainties):
+// the covariance is then (JᵀWJ)⁻¹ directly, NOT rescaled by reduced χ² (matches
+// scipy's absolute_sigma=True). For relative weights it stays scaled by σ̂² = wSSE/dof.
+let _absSigma = false;
 
 function _boxClamp(p, lo, hi) {
   if (!lo || !lo.length) return;
@@ -44,6 +48,7 @@ function clampToBounds(p, lo, hi) {
 
 function boundsFromOpts(opts) {
   _activeConstraints = (opts && Array.isArray(opts.constraints) && opts.constraints.length) ? opts.constraints : null;
+  _absSigma = !!(opts && opts.absSigma);
   const rows = opts.paramRows || [];
   if (!rows.length) return { lo: null, hi: null };
   const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);
@@ -126,10 +131,12 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     const newSSE = sse(rNew);
 
     if (newSSE < curSSE) {
+      const stepNorm = Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
+      const pNorm = Math.sqrt(p.reduce((s, v) => s + v * v, 0));
       p = pNew;
       lambda = Math.max(lambda / 3, 1e-12);
-      const stepNorm = Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
-      if (stepNorm < tol || Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
+      // Relative convergence (xtol AND ftol): tiny step AND tiny SSE change
+      if (stepNorm < tol * (pNorm + tol) && Math.abs(curSSE - newSSE) < tol * (curSSE + tol)) { converged = true; break; }
     } else {
       lambda = Math.min(lambda * 10, 1e12);
     }
@@ -238,7 +245,8 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
     if (newSSE >= curSSE) break;
     p = pNew;
     const stepNorm = alpha * Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
-    if (stepNorm < tol || Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
+    const pNorm = Math.sqrt(p.reduce((s, v) => s + v * v, 0));
+    if (stepNorm < tol * (pNorm + tol) && Math.abs(curSSE - newSSE) < tol * (curSSE + tol)) { converged = true; break; }
   }
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
@@ -393,7 +401,8 @@ function bfgs(fn, xArr, yArr, p0, opts) {
 
     p = pNew; g = gNew;
     const stepNorm = Math.sqrt(s.reduce((acc, v) => acc + v * v, 0));
-    if (stepNorm < tol) { converged = true; break; }
+    const pNorm = Math.sqrt(p.reduce((acc, v) => acc + v * v, 0));
+    if (stepNorm < tol * (pNorm + tol)) { converged = true; break; }
   }
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
@@ -421,6 +430,8 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
   const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
   const sig2Base = wSSE / dof;
   const wrmse = Math.sqrt(Math.max(sig2Base, 0));
+  // Supplied-σ fits: covariance is (JᵀWJ)⁻¹ directly; relative weights scale by σ̂².
+  const covScale = _absSigma ? 1 : sig2Base;
   try {
     const J_cols = [];
     for (let j = 0; j < m; j++) {
@@ -438,8 +449,8 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
       Array.from({ length: m }, (_, b) => J_cols[a].reduce((s, _, i) => s + J_cols[a][i] * J_cols[b][i], 0)));
     const inv = invertMatrix(JtJ);
     if (inv) {
-      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2Base * row[i])));
-      covMatrix = inv.map(row => row.map(v => sig2Base * v));
+      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(covScale * row[i])));
+      covMatrix = inv.map(row => row.map(v => covScale * v));
     }
   } catch (_) {}
   return { params: p, paramErrors, covMatrix, dof, rSq, adjRSq, rmse, wrmse, sse: sseVal, aic, bic,

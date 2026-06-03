@@ -423,14 +423,14 @@ function runFit() {
   const paramRows = state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max }));
   worker.postMessage({
     jobId, modelKey: model, customExpr, paramNames, p0, x: xArr, y: yArr,
-    opts: { algo: algoKey, maxIter, tol, weights, nStarts, paramRows, constraints: _constraintsForFit(paramNames) },
+    opts: { algo: algoKey, maxIter, tol, weights, nStarts, paramRows, constraints: _constraintsForFit(paramNames), absSigma: weightMode === 'sigma' },
   });
 }
 
 function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows }) {
   const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
   const solve = SOLVERS[algoKey] || levenbergMarquardt;
-  const opts  = { maxIter, tol, weights, paramRows, constraints: _constraintsForFit(paramNames) };
+  const opts  = { maxIter, tol, weights, paramRows, constraints: _constraintsForFit(paramNames), absSigma: weightMode === 'sigma' };
   const m = MODELS[model];
   setConsole('Fitting (sync)…', '');
   let result, modelFn;
@@ -570,7 +570,7 @@ function runFitAllDatasets() {
           : m.autoInit(xArr, yArr);
         const err = validateFitInput(xArr, yArr, model, p0);
         if (err) { skipped.push(`${ds.name}: ${err}`); continue; }
-        const opts = { maxIter, tol, weights, constraints: _constraintsForFit(paramNames) };
+        const opts = { maxIter, tol, weights, constraints: _constraintsForFit(paramNames), absSigma: weightMode === 'sigma' };
         result = nStarts > 1
           ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
           : solve(modelFn, xArr, yArr, p0, opts);

@@ -419,6 +419,10 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.8.3 — 2026-06-03  (numerical trust)
+- **fix** Unified the Levenberg-Marquardt step and convergence test between the Web Worker and the fallback solver (Marquardt diagonal scaling + scipy-style relative xtol/ftol tolerances); Gauss-Newton and BFGS use relative tolerances too. **Validated against NIST StRD certified datasets** (Misra1a, Rat42) to 5–6 sig figs
+- **fix** Standard errors for supplied-σ (1/σ²) fits now use covariance (JᵀWJ)⁻¹ directly (scipy `absolute_sigma=True`) instead of rescaling by reduced χ²
+
 ### v1.8.2 — 2026-06-03  (multi-agent audit fixes)
 - **fix** Unified fit statistics between the Web Worker (default path) and the fallback/polynomial solver: AIC/BIC now include the Gaussian-likelihood constant, adjusted R² uses dof = n−m, and weighted RMSE is computed in the worker (was missing → weighted prediction bands used unweighted RMSE)
 - **fix** Removed `Math.min/max(...array)` spreads from the plot-render and paste paths — fixes a `RangeError` crash on very large datasets

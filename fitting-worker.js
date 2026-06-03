@@ -77,6 +77,8 @@ function invertMatrix(M) {
 /* ── Bounds helpers ──────────────────────────────────────── */
 // Mirror of solvers.js: coupled constraints applied through the box-projection hook.
 let _activeConstraints = null;
+// True for supplied 1/σ² weights → covariance is (JᵀWJ)⁻¹ directly (absolute_sigma=True).
+let _absSigma = false;
 
 function _boxClamp(p, lo, hi) {
   if (!lo || !lo.length) return;
@@ -111,6 +113,7 @@ function clampToBounds(p, lo, hi) {
 
 function boundsFromOpts(opts) {
   _activeConstraints = (opts && Array.isArray(opts.constraints) && opts.constraints.length) ? opts.constraints : null;
+  _absSigma = !!(opts && opts.absSigma);
   const rows = opts.paramRows || [];
   if (!rows.length) return { lo: null, hi: null };
   const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);
@@ -141,6 +144,7 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
   const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
   const sig2Base = wSSE / dof;
   const wrmse = Math.sqrt(Math.max(sig2Base, 0));
+  const covScale = _absSigma ? 1 : sig2Base;
   try {
     const J_cols = [];
     for (let j = 0; j < m; j++) {
@@ -157,8 +161,8 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
       Array.from({ length: m }, (_, b) => J_cols[a].reduce((s, _, i) => s + J_cols[a][i] * J_cols[b][i], 0)));
     const inv = invertMatrix(JtJ);
     if (inv) {
-      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2Base * row[i])));
-      covMatrix = inv.map(row => row.map(v => sig2Base * v));
+      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(covScale * row[i])));
+      covMatrix = inv.map(row => row.map(v => covScale * v));
     }
   } catch (_) {}
   return {
@@ -212,7 +216,8 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     const JtJ = Array.from({ length: m }, (_, a) =>
       Array.from({ length: m }, (_, b) => J[a].reduce((s, _, i) => s + J[a][i] * J[b][i], 0)));
     const beta = J.map(col => col.reduce((s, v, i) => s - v * r[i], 0));
-    const A = JtJ.map((row, a) => row.map((v, b) => a === b ? v * (1 + lambda) + 1e-10 : v));
+    // Marquardt diagonal scaling: JtJ + λ·diag(|JtJ|)  (unified with solvers.js)
+    const A = JtJ.map((row, a) => row.map((v, b) => a === b ? v + lambda * Math.max(Math.abs(v), 1e-10) : v));
     let delta;
     try { delta = solveLinear(A, beta); } catch (_) { lambda *= 10; continue; }
     if (!delta.every(isFinite)) { lambda *= 10; continue; }
@@ -221,10 +226,12 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     const rNew = evalResiduals(pNew);
     const newSSE = sse(rNew);
     if (newSSE < curSSE) {
+      const stepNorm = Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
+      const pNorm = Math.sqrt(p.reduce((s, v) => s + v * v, 0));
       p = pNew;
       lambda = Math.max(lambda / 3, 1e-12);
-      const stepNorm = Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
-      if (stepNorm < tol && Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
+      // Relative convergence (xtol AND ftol): tiny step AND tiny SSE change
+      if (stepNorm < tol * (pNorm + tol) && Math.abs(curSSE - newSSE) < tol * (curSSE + tol)) { converged = true; break; }
     } else {
       lambda = Math.min(lambda * 10, 1e12);
     }
@@ -289,7 +296,8 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
     if (newSSE >= curSSE) break;
     p = pNew;
     const stepNorm = alpha * Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
-    if (stepNorm < tol && Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
+    const pNorm = Math.sqrt(p.reduce((s, v) => s + v * v, 0));
+    if (stepNorm < tol * (pNorm + tol) && Math.abs(curSSE - newSSE) < tol * (curSSE + tol)) { converged = true; break; }
   }
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
@@ -417,7 +425,8 @@ function bfgs(fn, xArr, yArr, p0, opts) {
     }
     p = pNew; g = gNew;
     const stepNorm = Math.sqrt(s.reduce((acc, v) => acc + v * v, 0));
-    if (stepNorm < tol) { converged = true; break; }
+    const pNorm = Math.sqrt(p.reduce((acc, v) => acc + v * v, 0));
+    if (stepNorm < tol * (pNorm + tol)) { converged = true; break; }
   }
   const gNormFinal = Math.sqrt(g.reduce((s, v) => s + v * v, 0));
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights, gradNorm: gNormFinal });
