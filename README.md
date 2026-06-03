@@ -419,6 +419,10 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.9.2 — 2026-06-03  (security: HTML-escaping)
+- **fix** Hardened against HTML injection: dataset names, fit labels, annotation labels, fit notes, and the model-search query are now HTML-escaped at every render site (fit/dataset lists, dataset & comparison dropdowns, annotation list, F-test/prediction panels, and the status console). A crafted name in an imported CSV or shared session file could previously inject markup into the page.
+- **improve** The λ (Levenberg–Marquardt) and |∇| (BFGS) convergence diagnostics now also appear on the main-thread fallback path (e.g. file://), matching the Web Worker path.
+
 ### v1.9.1 — 2026-06-03  (bound sentinel fix)
 - **fix** Parameter bounds with magnitude in [1e9, 1e10] were silently treated as unbounded. The unbounded sentinel is now ±1e300 (JSON-session-safe, unlike ±Infinity) with a 1e290 active-bound threshold, so any realistic bound is honoured. Pre-v1.9.0 sessions are migrated automatically on load.
 

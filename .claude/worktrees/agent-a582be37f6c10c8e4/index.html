@@ -3,24 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Curve Fitting Studio — Asad Mirza</title>
-<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 58 built-in models including pharmacokinetics, adsorption isotherms, rheology, EMG peaks, Arrhenius kinetics, Voigt profiles, Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
+<title>Advanced Curve Fitting Studio — Asad Mirza</title>
+<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 39 built-in models including electrophysiology (Boltzmann G-V, HH, Kir, GHK), Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdn.plot.ly" crossorigin>
-<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <link rel="stylesheet" href="style.css">
-<!-- All heavy libraries load deferred so they never block first paint; defer preserves
-     execution order (Plotly → Math.js → app modules) and runs before DOMContentLoaded. -->
-<script defer src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<!-- auto-render loaded, but invoked lazily per theory section (see main.js) so the
-     ~160 equations don't all render at page load -->
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 </head>
 <body class="light-mode">
 
@@ -51,8 +44,8 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
-  <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.9.2</button></div>
+  <h1 class="hero-title">Advanced Curve Fitting Studio</h1>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.3.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -75,7 +68,7 @@
     <span class="pill">Export-Ready</span>
   </div>
   <div class="hero-meta">
-    <div><div class="hero-stat-num">58</div><div class="hero-stat-label">Built-in Models</div></div>
+    <div><div class="hero-stat-num">39</div><div class="hero-stat-label">Built-in Models</div></div>
     <div><div class="hero-stat-num">4</div><div class="hero-stat-label">Fit Algorithms</div></div>
     <div><div class="hero-stat-num">8+</div><div class="hero-stat-label">Fit Diagnostics</div></div>
     <div><div class="hero-stat-num">100%</div><div class="hero-stat-label">Client-Side</div></div>
@@ -88,14 +81,14 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="app-section app-launch-section" id="app">
   <div class="app-launch-card reveal">
-    <button class="btn btn-primary app-launch-btn" id="btn-launch-app">▶&nbsp; Start Curve Fitting Studio</button>
+    <button class="btn btn-primary app-launch-btn" id="btn-launch-app">▶&nbsp; Start Advanced Curve Fitting Studio</button>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
      FULL-SCREEN APP OVERLAY
 ══════════════════════════════════════════════════════════ -->
-<div class="app-fullscreen-overlay" id="app-overlay" role="dialog" aria-modal="true" aria-label="Curve Fitting Studio application">
+<div class="app-fullscreen-overlay" id="app-overlay">
 
   <!-- ── FIRST-RUN TUTORIAL ──────────────────────────────── -->
   <div id="tut-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Getting started">
@@ -130,11 +123,6 @@
         <div class="app-dropdown-wrap">
           <button class="btn" id="btn-examples">Examples ▾</button>
           <div class="app-dropdown" id="examples-menu">
-            <div style="padding:5px 8px 6px;border-bottom:1px solid var(--border);flex-shrink:0">
-              <input type="search" id="examples-search" class="ctrl-input" placeholder="Search examples… (e.g. blood, peak, arrhenius)" autocomplete="off" style="font-size:.72em;width:100%;box-sizing:border-box;display:block" title="Filter examples by name, model, or keyword">
-            </div>
-            <div id="examples-search-results" style="display:none;padding:4px 0;max-height:280px;overflow-y:auto;flex-shrink:0"></div>
-            <div id="examples-cols-wrap">
             <div class="examples-col">
               <div class="examples-col-hdr">General</div>
               <div class="app-dropdown-item" data-example="exponential-decay">Exponential Decay  <span class="app-dropdown-sub">radioactive / RC circuit</span></div>
@@ -173,26 +161,6 @@
               <div class="app-dropdown-item" data-example="hhna-iv">HH Na Channel I-V  <span class="app-dropdown-sub">Hodgkin-Huxley m³h model</span></div>
               <div class="app-dropdown-item" data-example="tau-voltage">Voltage-Dependent τ  <span class="app-dropdown-sub">gating time constant bell curve</span></div>
             </div>
-            <div class="examples-col">
-              <div class="examples-col-hdr">Pharmacokinetics</div>
-              <div class="app-dropdown-item" data-example="two-compartment-pk">Two-Compartment PK  <span class="app-dropdown-sub">IV bolus biexponential</span></div>
-              <div class="app-dropdown-item" data-example="pk-lag">Oral PK + Lag Time  <span class="app-dropdown-sub">delayed absorption</span></div>
-              <div class="app-dropdown-item" data-example="substrate-inhibition">Substrate Inhibition  <span class="app-dropdown-sub">bell-shaped enzyme kinetics</span></div>
-              <div class="app-dropdown-sep"></div>
-              <div class="examples-col-hdr">Multi-Model Groups ★</div>
-              <div class="app-dropdown-item" data-example="adsorption-isotherm">Adsorption Isotherm  <span class="app-dropdown-sub">Langmuir · Freundlich · Temkin</span></div>
-              <div class="app-dropdown-item" data-example="viscosity-flow">Viscosity vs Shear Rate  <span class="app-dropdown-sub">Blood · Polymer · Cornstarch · Ketchup</span></div>
-              <div class="app-dropdown-item" data-example="spectral-peak">Spectral / Chrom. Peak  <span class="app-dropdown-sub">EMG · Asymmetric-Gaussian · Voigt</span></div>
-              <div class="app-dropdown-item" data-example="thermal-kinetics">Thermal Kinetics  <span class="app-dropdown-sub">Arrhenius · Extended-Arrhenius</span></div>
-              <div class="app-dropdown-item" data-example="sigmoid-activation">Sigmoid / Activation  <span class="app-dropdown-sub">Erf-Sigmoid · Softplus</span></div>
-              <div class="app-dropdown-sep"></div>
-              <div class="examples-col-hdr">Diffusion &amp; Misc</div>
-              <div class="app-dropdown-item" data-example="erf-diffusion">Erf Diffusion Profile  <span class="app-dropdown-sub">semiconductor / materials</span></div>
-              <div class="app-dropdown-sep"></div>
-              <div class="examples-col-hdr">Replicates / Uncertainty ★</div>
-              <div class="app-dropdown-item" data-example="dose-response-replicates">Dose-Response + σ  <span class="app-dropdown-sub">replicate-derived error bars (4PL)</span></div>
-            </div>
-            </div><!-- end examples-cols-wrap -->
           </div>
         </div>
         <button class="btn" id="btn-import" title="Import a CSV, TSV, or TXT file (comma/semicolon delimited)">Import Data</button>
@@ -203,7 +171,6 @@
       <button class="btn btn-primary" id="btn-fit">▶  Fit</button>
       <button class="btn btn-danger" id="btn-cancel-fit" style="display:none" title="Cancel the current fit">✕ Cancel</button>
       <button class="btn" id="btn-try-all" title="Fit every built-in model and rank by R²">Try All</button>
-      <button class="btn" id="btn-fit-all" title="Fit the selected model to every enabled dataset (batch); results tabulated in the stats panel">Fit All Datasets</button>
       <button class="btn btn-danger" id="btn-clear-fit" title="Remove the selected fit">✕  Remove Fit</button>
       <div style="flex:1"></div>
       <div class="app-toolbar-group">
@@ -229,22 +196,14 @@
           <div class="app-dropdown" id="export-menu">
             <div class="app-dropdown-item" id="exp-png">📷  Plot as PNG</div>
             <div class="app-dropdown-item" id="exp-svg">🖼  Plot as SVG</div>
-            <div class="app-dropdown-item" id="exp-copy-plot">📋  Copy Plot to Clipboard</div>
-            <div class="app-dropdown-item" id="exp-html">🌐  Standalone Plotly HTML</div>
             <div class="app-dropdown-sep"></div>
             <div class="app-dropdown-item" id="exp-csv">📊  Fit Results CSV</div>
             <div class="app-dropdown-item" id="exp-report">📄  Full Report TXT</div>
-            <div class="app-dropdown-item" id="exp-excel">📗  Excel Workbook (.xlsx)</div>
-            <div class="app-dropdown-item" id="exp-json">{ }  API JSON Schema</div>
             <div class="app-dropdown-sep"></div>
-            <div class="app-dropdown-item" id="exp-python">🐍  Python / scipy Code</div>
-            <div class="app-dropdown-item" id="exp-jupyter">📓  Jupyter Notebook</div>
+            <div class="app-dropdown-item" id="exp-python">🐍  Python Code</div>
             <div class="app-dropdown-item" id="exp-r">📊  R Code</div>
-            <div class="app-dropdown-item" id="exp-latex">∫  LaTeX Equation (clipboard)</div>
-            <div class="app-dropdown-item" id="exp-latex-doc">∫  LaTeX Doc Fragment (.tex)</div>
+            <div class="app-dropdown-item" id="exp-latex">∫  LaTeX Equation</div>
             <div class="app-dropdown-item" id="exp-matlab">🔢  MATLAB Code</div>
-            <div class="app-dropdown-sep"></div>
-            <div class="app-dropdown-item" id="exp-bibtex">📚  BibTeX Citation</div>
           </div>
         </div>
         <div class="app-dropdown-wrap">
@@ -271,7 +230,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.9.2</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.3.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -291,17 +250,15 @@
       <!-- LEFT PANEL -->
       <div class="app-left" id="panel-left">
         <div class="panel-header">
-          <span>Datasets <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="datasets">?</span></span>
-          <button class="btn panel-action-btn" id="btn-combine-ds" title="Combine the Ctrl/⌘-click-selected datasets into one (mean ± σ if they share an x-grid, else pooled) — then fit it for a single curve through their average" style="display:none">⊕ Combine</button>
+          <span>Datasets <span class="panel-tip" data-tip="datasets">?</span></span>
           <button class="btn panel-action-btn" id="btn-clear-all" title="Remove all datasets and fits">✕ All</button>
         </div>
         <div class="panel-section" id="dataset-list">
           <div class="panel-empty-hint">Load an example<br>or import a CSV to begin.</div>
         </div>
         <div class="panel-header" style="border-top:1px solid var(--border)">
-          <span>Active Fits <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="active-fits">?</span></span>
+          <span>Active Fits <span class="panel-tip" data-tip="active-fits">?</span></span>
           <span class="panel-fit-count" id="fit-count">0</span>
-          <button class="btn panel-action-btn" id="btn-compare-fits" title="Side-by-side stats comparison of two fits">⇆</button>
           <button class="btn panel-action-btn" id="btn-clear-all-fits" title="Remove all fits">✕ All</button>
         </div>
         <div class="panel-section panel-fits-section" id="fit-list">
@@ -340,7 +297,7 @@
       <div class="app-right" id="panel-right">
 
         <div class="ctrl-section">
-          <label class="ctrl-label">Target Dataset <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="target-dataset">?</span></label>
+          <label class="ctrl-label">Target Dataset <span class="panel-tip" data-tip="target-dataset">?</span></label>
           <select class="ctrl-select" id="fit-dataset-select">
             <option value="">— no dataset loaded —</option>
           </select>
@@ -348,7 +305,7 @@
 
         <div class="ctrl-section" id="masking-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <span class="ctrl-label" style="margin:0">Data Preparation <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="point-masking">?</span></span>
+            <span class="ctrl-label" style="margin:0">Point Masking <span class="panel-tip" data-tip="point-masking">?</span></span>
             <span id="mask-count" style="font-size:.68em;color:var(--dimmer)">0 masked</span>
           </div>
           <div style="display:flex;gap:5px">
@@ -360,11 +317,7 @@
         </div>
 
         <div class="ctrl-section">
-          <label class="ctrl-label">Fit Model <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="fit-model">?</span></label>
-          <div style="position:relative;margin-bottom:4px">
-            <input type="search" id="model-search" class="ctrl-input" placeholder="Search models…" autocomplete="off" style="font-size:.72em;width:100%;box-sizing:border-box" title="Type to search — top 8 matches appear below; arrows/Enter to pick">
-            <div id="model-search-results" class="srp" style="display:none"></div>
-          </div>
+          <label class="ctrl-label">Fit Model <span class="panel-tip" data-tip="fit-model">?</span></label>
           <select class="ctrl-select" id="model-select">
             <optgroup label="Basic">
               <option value="Linear">Linear  y = a·x + b</option>
@@ -388,38 +341,18 @@
             </optgroup>
             <optgroup label="Peak / Spectral">
               <option value="Gaussian">Gaussian Peak</option>
-              <option value="Asymmetric-Gaussian">Asymmetric Gaussian  skew-normal</option>
               <option value="Lorentzian">Lorentzian Peak</option>
               <option value="Double-Gaussian">Double Gaussian  A₁·G(x,μ₁,σ₁)+A₂·G(x,μ₂,σ₂)</option>
               <option value="Pseudo-Voigt">Pseudo-Voigt  η·L+(1−η)·G</option>
-              <option value="Voigt">Voigt (Thompson-Cox-Hastings)</option>
-              <option value="EMG">Exponentially Modified Gaussian  chromatography</option>
               <option value="Fano">Fano Resonance  asymmetric lineshape</option>
             </optgroup>
             <optgroup label="Biology / Pharmacology">
               <option value="Michaelis-Menten">Michaelis-Menten</option>
-              <option value="Substrate-Inhibition">Substrate Inhibition  Vmax·S/(Km+S+S²/Ki)</option>
               <option value="Hill">Hill Equation</option>
               <option value="4PL">4-Parameter Logistic (4PL / ELISA)</option>
+              <option value="Oral-PK">Oral 1-Compartment PK</option>
               <option value="Stern-Volmer">Stern-Volmer  fluorescence quenching</option>
               <option value="Rational">Rational (Padé)  (a+bx)/(1+cx)</option>
-            </optgroup>
-            <optgroup label="Pharmacokinetics">
-              <option value="Oral-PK">Oral 1-Compartment PK</option>
-              <option value="Two-Compartment-PK">Two-Compartment PK  A·e⁻ᵅᵗ + B·e⁻ᵝᵗ</option>
-              <option value="PK-Lag">Oral PK + Lag Time  1-compartment, tlag</option>
-            </optgroup>
-            <optgroup label="Adsorption / Isotherms">
-              <option value="Langmuir">Langmuir Isotherm  qm·KL·C/(1+KL·C)</option>
-              <option value="Freundlich">Freundlich Isotherm  KF·C^(1/n)</option>
-              <option value="Temkin">Temkin Isotherm  B·ln(AT·C)</option>
-            </optgroup>
-            <optgroup label="Rheology">
-              <option value="Power-Law-Fluid">Power-Law Fluid  K·γ̇^(n−1)</option>
-              <option value="Herschel-Bulkley">Herschel-Bulkley  τ₀ + K·γ̇ⁿ</option>
-              <option value="Cross-Model">Cross Model  η∞+(η₀−η∞)/(1+(K·γ̇)ᵐ)</option>
-              <option value="Carreau">Carreau Model  [1+(λγ̇)²]^((n−1)/2)</option>
-              <option value="Quemada">Quemada Model  blood / concentrated dispersion</option>
             </optgroup>
             <optgroup label="Oscillation">
               <option value="Sine">Sinusoidal</option>
@@ -428,20 +361,9 @@
             <optgroup label="Distribution">
               <option value="Weibull">Weibull CDF</option>
             </optgroup>
-            <optgroup label="Thermal / Kinetics">
-              <option value="Arrhenius">Arrhenius  A·exp(−Ea/RT)</option>
-              <option value="Extended-Arrhenius">Extended Arrhenius  A·Tⁿ·exp(−Ea/RT)</option>
-              <option value="Van-t-Hoff">Van't Hoff  K vs temperature</option>
-            </optgroup>
-            <optgroup label="Diffusion / Transport">
-              <option value="Erf-Diffusion">Erf Diffusion  A·erf((x−μ)/w)+B</option>
-            </optgroup>
-            <optgroup label="Activation Functions">
-              <option value="Softplus">Softplus  A·ln(1+exp(k·(x−x₀)))+C</option>
-              <option value="Erf-Sigmoid">Erf Sigmoid (Probit)  A·(1+erf(k·(x−x₀)))/2+C</option>
-            </optgroup>
             <optgroup label="Physics / Material">
               <option value="Langevin">Langevin  paramagnetism / polymer</option>
+              <option value="Van-t-Hoff">Van't Hoff  K vs temperature</option>
               <option value="Ramberg-Osgood">Ramberg-Osgood  stress-strain</option>
             </optgroup>
             <optgroup label="Electrophysiology">
@@ -464,7 +386,7 @@
         <!-- Custom equation editor (shown only when Custom is selected) -->
         <div class="ctrl-section" id="custom-eq-section" style="display:none">
           <label class="ctrl-label">
-            Equation &nbsp;<code style="color:var(--teal);font-size:.95em">x</code> is the independent variable <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="custom-eq">?</span>
+            Equation &nbsp;<code style="color:var(--teal);font-size:.95em">x</code> is the independent variable <span class="panel-tip" data-tip="custom-eq">?</span>
           </label>
           <input class="ctrl-input" id="custom-eq-input" type="text"
                  placeholder="a * exp(-b * x) + c"
@@ -479,7 +401,7 @@
         <!-- Parameters -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <span class="ctrl-label" style="margin:0">Parameters <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="parameters">?</span></span>
+            <span class="ctrl-label" style="margin:0">Parameters <span class="panel-tip" data-tip="parameters">?</span></span>
             <div style="display:flex;gap:4px">
               <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-auto-init" title="Auto-estimate initial values from the loaded data">Auto Init</button>
               <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-copy-params" title="Copy fit parameters to clipboard">Copy</button>
@@ -488,25 +410,11 @@
           <div id="param-table-container">
             <div class="panel-empty-hint">Select a model.</div>
           </div>
-          <!-- Constraints (coupled parameter constraints; box presets edit Min/Max) -->
-          <div id="constraints-block" style="display:none;padding:7px 0 0">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-              <span style="font-size:.65em;color:var(--dimmer);text-transform:uppercase;letter-spacing:.04em;flex:1">Constraints <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="constraints">?</span></span>
-              <select class="ctrl-input" id="constraint-add-select" style="font-size:.66em;padding:2px 5px;flex:none;width:auto" title="Add a pre-canned constraint that fits the current model"></select>
-            </div>
-            <div id="constraint-builder"></div>
-            <div id="constraints-list" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"></div>
-          </div>
-          <!-- Fit Notes (shown when a fit is active) -->
-          <div id="fit-notes-section" style="display:none;padding:6px 0 0">
-            <div style="font-size:.65em;color:var(--dimmer);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Fit Notes</div>
-            <textarea id="fit-notes-input" placeholder="Add notes for this fit…" rows="2" style="width:100%;box-sizing:border-box;font-size:.7em;font-family:var(--mono);resize:vertical;min-height:44px;max-height:110px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 6px;line-height:1.4"></textarea>
-          </div>
         </div>
 
         <!-- Algorithm options -->
         <div class="ctrl-section">
-          <label class="ctrl-label">Algorithm Options <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="algorithm-options">?</span></label>
+          <label class="ctrl-label">Algorithm Options <span class="panel-tip" data-tip="algorithm-options">?</span></label>
           <div class="ctrl-row">
             <label class="ctrl-label" style="margin:0;min-width:72px">Solver</label>
             <select class="ctrl-input" id="opt-algo" title="Polynomial models always use analytic fitting regardless of this setting">
@@ -518,7 +426,7 @@
           </div>
           <div class="ctrl-row" style="margin-top:5px">
             <label class="ctrl-label" style="margin:0;min-width:72px">Max Iter.</label>
-            <input class="ctrl-input" id="opt-max-iter" type="number" value="200" min="10" max="50000">
+            <input class="ctrl-input" id="opt-max-iter" type="number" value="20" min="10" max="50000">
           </div>
           <div class="ctrl-row" style="margin-top:5px">
             <label class="ctrl-label" style="margin:0;min-width:72px">Tolerance</label>
@@ -543,7 +451,7 @@
         <!-- Plot labels -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <label class="ctrl-label" style="margin:0">Plot Labels <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="plot-labels">?</span></label>
+            <label class="ctrl-label" style="margin:0">Plot Labels <span class="panel-tip" data-tip="plot-labels">?</span></label>
             <button class="btn" id="btn-graph-style" style="padding:1px 8px;font-size:.65em" title="Edit graph appearance: fonts, colors, grid, axes, legend">⚙ Style</button>
           </div>
           <div class="ctrl-row">
@@ -563,7 +471,7 @@
         <!-- Annotations -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <label class="ctrl-label" style="margin:0">Annotations <span class="panel-fit-count" id="ann-count">0</span> <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="annotations">?</span></label>
+            <label class="ctrl-label" style="margin:0">Annotations <span class="panel-fit-count" id="ann-count">0</span> <span class="panel-tip" data-tip="annotations">?</span></label>
             <div style="display:flex;gap:4px">
               <button class="btn" id="btn-ann-peaks" title="Auto-annotate peak centres from Gaussian / Lorentzian fits" style="padding:1px 8px;font-size:.65em">Peaks</button>
               <button class="btn" id="btn-ann-add" style="padding:1px 8px;font-size:.65em">+ Add</button>
@@ -574,17 +482,14 @@
 
         <!-- Fit curve resolution -->
         <div class="ctrl-section">
-          <label class="ctrl-label">Fit Curve Points <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="fit-curve-points">?</span></label>
-          <div style="display:flex;gap:6px;align-items:center">
-            <input class="ctrl-input" id="opt-curve-pts" type="number" value="300" min="50" max="5000" style="flex:1">
-            <button class="btn" id="btn-axis-range-mode" title="Y-axis: auto range (click for data range only)" style="font-size:.65em;padding:2px 7px;white-space:nowrap">Y: auto</button>
-          </div>
+          <label class="ctrl-label">Fit Curve Points <span class="panel-tip" data-tip="fit-curve-points">?</span></label>
+          <input class="ctrl-input" id="opt-curve-pts" type="number" value="300" min="50" max="5000">
         </div>
 
         <!-- Extrapolation range -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <label class="ctrl-label" style="margin:0">Extrapolation Range <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="extrapolation-range">?</span></label>
+            <label class="ctrl-label" style="margin:0">Extrapolation Range <span class="panel-tip" data-tip="extrapolation-range">?</span></label>
             <button class="btn" style="padding:1px 7px;font-size:.65em" id="btn-extrap-reset" title="Reset to data range">Reset</button>
           </div>
           <div class="ctrl-row">
@@ -600,7 +505,7 @@
         <!-- Predict / Solve -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <label class="ctrl-label" style="margin:0">Predict / Solve <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="predict-solve">?</span></label>
+            <label class="ctrl-label" style="margin:0">Predict / Solve <span class="panel-tip" data-tip="predict-solve">?</span></label>
             <select class="ctrl-select" id="pred-mode" style="font-size:.68em;padding:2px 5px;height:auto" title="X→Y: predict output from input; Y→X: calibration inversion">
               <option value="x2y">X → Y (predict)</option>
               <option value="y2x">Y → X (calibrate)</option>
@@ -616,7 +521,7 @@
 
         <!-- F-test -->
         <div class="ctrl-section">
-          <label class="ctrl-label">F-test (Model Comparison) <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="ftest">?</span></label>
+          <label class="ctrl-label">F-test (Model Comparison) <span class="panel-tip" data-tip="ftest">?</span></label>
           <div class="ctrl-row">
             <label class="ctrl-label" style="margin:0;min-width:30px;flex-shrink:0">A</label>
             <select class="ctrl-select" id="ftest-fit-a" style="font-size:.72em;min-width:0"><option value="">— no fits —</option></select>
@@ -636,14 +541,13 @@
     <div class="panel-resize row" id="rh-stats" title="Drag to resize stats bar"></div>
 
     <!-- STATS BAR -->
-    <div class="app-statsbar corr-empty">
+    <div class="app-statsbar">
       <div class="statsbar-main" id="statsbar-main">
-        <div id="app-console" role="status" aria-live="polite" aria-atomic="true">
+        <div id="app-console">
           <span class="console-hint">Load a dataset and press <strong>▶ Fit</strong> to begin.</span>
         </div>
       </div>
-      <div class="panel-resize col" id="rh-corr" title="Drag to resize correlation panel"></div>
-      <div class="statsbar-corr corr-empty" id="statsbar-corr">
+      <div class="statsbar-corr" id="statsbar-corr">
         <div class="statsbar-corr-inner">
           <div id="corr-matrix-container"></div>
         </div>
@@ -652,30 +556,11 @@
 
   </div><!-- end app-shell -->
 
-  <!-- Unsaved-data guard modal -->
-  <div class="modal-backdrop" id="unsaved-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="unsaved-modal-title">
-    <div class="modal" style="width:400px;max-width:96vw">
-      <div class="modal-header">
-        <span class="modal-title" id="unsaved-modal-title">Unsaved Session</span>
-      </div>
-      <div class="modal-body" style="font-size:.88em">
-        <p style="margin:0 0 8px;color:var(--text)">You have datasets or fits that haven't been saved to a file.</p>
-        <p style="margin:0;color:var(--dim);font-size:.93em">Save a session JSON to keep your work. Your session is also auto-saved to local storage — if <strong>Auto-restore</strong> is enabled, it will be recovered on your next visit even if you leave without saving.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" id="unsaved-cancel">Cancel</button>
-        <button class="btn btn-danger" id="unsaved-leave">Leave without saving</button>
-        <button class="btn btn-primary" id="unsaved-save">Save &amp; refresh</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Pre-Process modal -->
   <div class="app-modal" id="preprocess-modal" style="display:none" role="dialog" aria-modal="true">
-    <div class="modal-box" style="max-width:900px">
-      <div class="modal-header"><span>Pre-Process Data</span><button class="modal-close-btn" id="pp-modal-close" aria-label="Close">×</button></div>
+    <div class="modal-box" style="max-width:530px">
+      <div class="modal-header"><span>Pre-Process Data</span><button class="modal-close-btn" id="pp-modal-close">×</button></div>
       <div style="padding:14px 16px;overflow-y:auto;flex:1;font-size:.82em">
-        <div class="pp-grid">
 
         <!-- Smoothing section -->
         <div class="pp-section">
@@ -770,97 +655,9 @@
           </div>
         </div>
 
-        <!-- Normalize / Transform section -->
-        <div class="pp-section">
-          <p class="pp-section-hd">Normalize / Transform</p>
-          <div class="pp-row">
-            <label>Transform</label>
-            <select class="ctrl-select" id="pp-tf-method" style="flex:1">
-              <option value="minmax">Min–Max → [0, 1]</option>
-              <option value="zscore">Z-score (mean 0, SD 1)</option>
-              <option value="log">Log (natural)</option>
-              <option value="log10">Log₁₀</option>
-              <option value="sqrt">Square root</option>
-              <option value="boxcox">Box–Cox (λ)</option>
-            </select>
-          </div>
-          <div class="pp-row" id="pp-tf-lambda-row" style="display:none">
-            <label>λ (Box–Cox)</label>
-            <input class="ctrl-input" type="number" id="pp-tf-lambda" value="0" min="-5" max="5" step="0.1" style="width:70px;flex:none">
-            <button class="btn" id="pp-tf-lambda-auto" style="font-size:.7em;padding:2px 9px">Auto (MLE)</button>
-          </div>
-          <p class="pp-desc" id="pp-tf-desc">Linearly rescales to the [0, 1] interval. A display convenience — note it changes parameter scale and meaning.</p>
-          <p class="pp-warn">⚠ Transforms change what the model sees; fits run on the transformed data. Use Restore Original to revert.</p>
-          <div style="display:flex;justify-content:flex-end">
-            <button class="btn btn-primary" id="pp-tf-apply">Apply Transform</button>
-          </div>
-        </div>
-
-        <!-- Baseline / De-trend section -->
-        <div class="pp-section">
-          <p class="pp-section-hd">Baseline / De-trend</p>
-          <div class="pp-row">
-            <label>Baseline</label>
-            <select class="ctrl-select" id="pp-bl-method" style="flex:1">
-              <option value="poly">Polynomial</option>
-              <option value="lowess">LOWESS (local regression)</option>
-            </select>
-          </div>
-          <div class="pp-row" id="pp-bl-deg-row">
-            <label>Poly degree</label>
-            <select class="ctrl-select" id="pp-bl-deg" style="flex:1">
-              <option value="1">1 — linear drift</option>
-              <option value="2">2 — quadratic</option>
-              <option value="3">3 — cubic</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-            </select>
-          </div>
-          <div class="pp-row" id="pp-bl-frac-row" style="display:none">
-            <label>Smoothing frac</label>
-            <input class="ctrl-input" type="number" id="pp-bl-frac" value="0.3" min="0.1" max="1" step="0.05" style="width:70px;flex:none">
-            <span class="pp-hint">fraction of points per local fit</span>
-          </div>
-          <p class="pp-desc" id="pp-bl-desc">Fits a low-order polynomial trend and subtracts it — good for removing drift or background under peaks and oscillations.</p>
-          <div style="display:flex;justify-content:flex-end">
-            <button class="btn btn-primary" id="pp-bl-apply">Subtract Baseline</button>
-          </div>
-        </div>
-
-        <!-- Repair / Impute section -->
-        <div class="pp-section">
-          <p class="pp-section-hd">Repair / Impute</p>
-          <div class="pp-row">
-            <label>Action</label>
-            <select class="ctrl-select" id="pp-rp-method" style="flex:1">
-              <option value="outliers">Replace outliers (MAD)</option>
-              <option value="nan">Fill non-finite (NaN) gaps</option>
-            </select>
-          </div>
-          <div class="pp-row" id="pp-rp-thresh-row">
-            <label>MAD threshold</label>
-            <input class="ctrl-input" type="number" id="pp-rp-thresh" value="3.5" min="1" max="10" step="0.5" style="width:70px;flex:none">
-            <span class="pp-hint">flag |robust z| &gt; threshold</span>
-          </div>
-          <div class="pp-row">
-            <label>Fill method</label>
-            <select class="ctrl-select" id="pp-rp-fill" style="flex:1">
-              <option value="spline">Cubic spline</option>
-              <option value="linear">Linear</option>
-            </select>
-          </div>
-          <p class="pp-desc" id="pp-rp-desc">Flags points whose robust (MAD-based) z-score exceeds the threshold and replaces them with an interpolated estimate from the remaining points.</p>
-          <p class="pp-warn">⚠ Imputation can bias estimates and understate uncertainty — masking points (Data Table) is often safer. Use Restore Original to revert.</p>
-          <div style="display:flex;justify-content:flex-end">
-            <button class="btn btn-primary" id="pp-rp-apply">Apply Repair</button>
-          </div>
-        </div>
-
-        </div><!-- .pp-grid -->
       </div>
       <div class="modal-footer">
-        <button class="btn" id="pp-undo" title="Revert the most recent pre-processing step (undo one at a time)">↶ Undo Step</button>
-        <button class="btn" id="pp-restore" style="margin-right:auto" title="Revert all the way back to the original imported y values">Restore Original</button>
+        <button class="btn" id="pp-restore" style="margin-right:auto" title="Revert to the original imported y values">Restore Original</button>
         <button class="btn" id="pp-close">Close</button>
       </div>
     </div>
@@ -869,7 +666,7 @@
   <!-- Keyboard shortcuts modal -->
   <div class="app-modal" id="shortcuts-modal" style="display:none" role="dialog" aria-modal="true">
     <div class="modal-box" style="max-width:480px">
-      <div class="modal-header"><span>Keyboard Shortcuts</span><button class="modal-close-btn" id="shortcuts-modal-close" aria-label="Close">×</button></div>
+      <div class="modal-header"><span>Keyboard Shortcuts</span><button class="modal-close-btn" id="shortcuts-modal-close">×</button></div>
       <div style="padding:12px 16px">
         <table style="width:100%;border-collapse:collapse;font-size:.8em">
           <thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px">Shortcut</th><th style="text-align:left;padding:4px 8px">Action</th></tr></thead>
@@ -882,7 +679,6 @@
             <tr><td style="padding:4px 8px;font-family:var(--mono)">Shift+Scroll</td><td style="padding:4px 8px">Adjust multi-select radius (in edit mode)</td></tr>
             <tr><td style="padding:4px 8px;font-family:var(--mono)">Click empty area</td><td style="padding:4px 8px">Deselect point</td></tr>
             <tr><td style="padding:4px 8px;font-family:var(--mono)">Drag point</td><td style="padding:4px 8px">Move point vertically</td></tr>
-            <tr><td style="padding:4px 8px;font-family:var(--mono)">Ctrl/⌘+Click dataset</td><td style="padding:4px 8px">Multi-select datasets for ⊕ Combine</td></tr>
             <tr><td style="padding:4px 8px;font-family:var(--mono)">?</td><td style="padding:4px 8px">Show this panel</td></tr>
           </tbody>
         </table>
@@ -894,7 +690,7 @@
   <!-- Equation Editor Modal -->
   <div class="app-modal" id="eq-editor-modal" style="display:none" role="dialog" aria-modal="true" aria-label="Equation Editor">
     <div class="modal-box eq-ed-modal-box">
-      <div class="modal-header"><span>Equation Editor</span><button class="modal-close-btn" id="eq-editor-close" aria-label="Close">×</button></div>
+      <div class="modal-header"><span>Equation Editor</span><button class="modal-close-btn" id="eq-editor-close">×</button></div>
       <div class="eq-ed-body">
         <!-- Top: textarea + status -->
         <div class="eq-ed-top">
@@ -932,20 +728,9 @@
                 <button class="eq-pal-btn eq-pal-fn" data-ins="log10()" data-cur="-1" title="Base-10 logarithm">log₁₀( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="log2()" data-cur="-1" title="Base-2 logarithm">log₂( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="sqrt()" data-cur="-1" title="Square root">√( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="cbrt()" data-cur="-1" title="Cube root">∛( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="nthRoot(, )" data-cur="-3" title="nthRoot(value, n) — n-th root">ⁿ√( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="abs()" data-cur="-1" title="Absolute value">|x|</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="sign()" data-cur="-1" title="Sign: −1, 0, or +1">sign( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="pow(, )" data-cur="-3" title="pow(base, exponent)">pow( )</button>
-              </div>
-            </div>
-            <div class="eq-pal-group">
-              <div class="eq-pal-hdr">Special Functions</div>
-              <div class="eq-pal-row">
-                <button class="eq-pal-btn eq-pal-fn" data-ins="erf()" data-cur="-1" title="Error function — integral of the Gaussian; used in diffusion, probit, and EMG peaks">erf( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="erfc()" data-cur="-1" title="Complementary error function: erfc(x) = 1 − erf(x)">erfc( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="lgamma()" data-cur="-1" title="Natural log of the Gamma function, lnΓ(x) — numerically stable. (Use lgamma rather than gamma so 'gamma' stays usable as a free parameter name.)">lnΓ( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="factorial()" data-cur="-1" title="Factorial x! (also Γ(x+1))">x!</button>
               </div>
             </div>
             <div class="eq-pal-group">
@@ -954,9 +739,6 @@
                 <button class="eq-pal-btn eq-pal-fn" data-ins="sin()" data-cur="-1">sin( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="cos()" data-cur="-1">cos( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="tan()" data-cur="-1">tan( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="cot()" data-cur="-1" title="Cotangent = cos/sin">cot( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="sec()" data-cur="-1" title="Secant = 1/cos">sec( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="csc()" data-cur="-1" title="Cosecant = 1/sin">csc( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="asin()" data-cur="-1" title="Inverse sine">asin( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="acos()" data-cur="-1" title="Inverse cosine">acos( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="atan()" data-cur="-1" title="Inverse tangent">atan( )</button>
@@ -969,10 +751,6 @@
                 <button class="eq-pal-btn eq-pal-fn" data-ins="sinh()" data-cur="-1">sinh( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="cosh()" data-cur="-1">cosh( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="tanh()" data-cur="-1">tanh( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="coth()" data-cur="-1" title="Hyperbolic cotangent — appears in Langevin function">coth( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="asinh()" data-cur="-1" title="Inverse hyperbolic sine">asinh( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="acosh()" data-cur="-1" title="Inverse hyperbolic cosine">acosh( )</button>
-                <button class="eq-pal-btn eq-pal-fn" data-ins="atanh()" data-cur="-1" title="Inverse hyperbolic tangent">atanh( )</button>
               </div>
             </div>
             <div class="eq-pal-group">
@@ -984,17 +762,6 @@
                 <button class="eq-pal-btn eq-pal-fn" data-ins="mod(, )" data-cur="-3" title="mod(a, b) — remainder">mod( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="max(, )" data-cur="-3">max( )</button>
                 <button class="eq-pal-btn eq-pal-fn" data-ins="min(, )" data-cur="-3">min( )</button>
-              </div>
-            </div>
-            <div class="eq-pal-group">
-              <div class="eq-pal-hdr">Conditional</div>
-              <div class="eq-pal-row">
-                <button class="eq-pal-btn eq-pal-fn" data-ins="( ? : )" data-cur="-6" title="Ternary: condition ? value_if_true : value_if_false">a ? b : c</button>
-                <button class="eq-pal-btn" data-ins=" == " title="Equal to">=</button>
-                <button class="eq-pal-btn" data-ins=" &lt; " title="Less than">&lt;</button>
-                <button class="eq-pal-btn" data-ins=" &gt; " title="Greater than">&gt;</button>
-                <button class="eq-pal-btn" data-ins=" &lt;= " title="Less than or equal">≤</button>
-                <button class="eq-pal-btn" data-ins=" &gt;= " title="Greater than or equal">≥</button>
               </div>
             </div>
             <div class="eq-pal-group">
@@ -1126,48 +893,6 @@
                 <span class="eq-ex-name">Quadratic rational (Padé 2,2)</span>
                 <code class="eq-ex-code">(a·x²+b·x+c) / (x²+d·x+f)</code>
               </button>
-
-              <div class="eq-ex-cat">Error Function / Special</div>
-              <button class="eq-ex-item" data-eq="A * erf((x - mu) / (sqrt(2) * sigma)) + B">
-                <span class="eq-ex-name">Error-function sigmoid (probit)</span>
-                <code class="eq-ex-code">A·erf((x−μ)/(√2·σ)) + B</code>
-              </button>
-              <button class="eq-ex-item" data-eq="A / 2 * erfc((x - mu) / (sqrt(2) * sigma))">
-                <span class="eq-ex-name">Diffusion / dose front (erfc)</span>
-                <code class="eq-ex-code">A/2·erfc((x−μ)/(√2·σ))</code>
-              </button>
-              <button class="eq-ex-item" data-eq="A / 2 * exp((sigma^2) / (2 * tau^2) - (x - mu) / tau) * erfc((sigma / tau - (x - mu) / sigma) / sqrt(2)) + C">
-                <span class="eq-ex-name">Exp.-modified Gaussian (EMG)</span>
-                <code class="eq-ex-code">EMG chromatography peak</code>
-              </button>
-              <button class="eq-ex-item" data-eq="A * exp(-((x - mu)^2) / (2 * sigma^2)) * (1 + erf(alpha * (x - mu) / (sqrt(2) * sigma)))">
-                <span class="eq-ex-name">Skew-normal peak</span>
-                <code class="eq-ex-code">Gaussian·(1 + erf(α·z))</code>
-              </button>
-
-              <div class="eq-ex-cat">Hyperbolic / Magnetism</div>
-              <button class="eq-ex-item" data-eq="A * (coth(b * x) - 1 / (b * x))">
-                <span class="eq-ex-name">Langevin (paramagnetism)</span>
-                <code class="eq-ex-code">A·(coth(b·x) − 1/(b·x))</code>
-              </button>
-              <button class="eq-ex-item" data-eq="A * tanh(b * x) + C">
-                <span class="eq-ex-name">Saturating tanh</span>
-                <code class="eq-ex-code">A·tanh(b·x) + C</code>
-              </button>
-              <button class="eq-ex-item" data-eq="A * log(1 + exp(k * (x - x0))) + C">
-                <span class="eq-ex-name">Softplus (smooth ReLU)</span>
-                <code class="eq-ex-code">A·ln(1 + exp(k·(x−x₀))) + C</code>
-              </button>
-
-              <div class="eq-ex-cat">Conditional / Piecewise</div>
-              <button class="eq-ex-item" data-eq="(x &lt; x0) ? (a * x + b) : (c * x + d)">
-                <span class="eq-ex-name">Two-segment piecewise linear</span>
-                <code class="eq-ex-code">x&lt;x₀ ? a·x+b : c·x+d</code>
-              </button>
-              <button class="eq-ex-item" data-eq="(x &lt; t0) ? base : base + A * (1 - exp(-k * (x - t0)))">
-                <span class="eq-ex-name">Delayed onset response</span>
-                <code class="eq-ex-code">step + saturating rise after t₀</code>
-              </button>
             </div>
           </div>
         </div>
@@ -1187,7 +912,7 @@
         <div style="display:flex;gap:6px;align-items:center">
           <button class="btn" id="dt-include-all" style="font-size:.72em;padding:2px 8px">Include All</button>
           <button class="btn" id="dt-exclude-selected" style="font-size:.72em;padding:2px 8px" title="Exclude points where residual > 2.5σ (requires active fit on this dataset)">Exclude 2.5σ</button>
-          <button class="modal-close-btn" id="data-table-close" aria-label="Close">×</button>
+          <button class="modal-close-btn" id="data-table-close">×</button>
         </div>
       </div>
       <div style="padding:6px 12px;font-size:.75em;color:var(--dimmer)" id="data-table-summary"></div>
@@ -1216,49 +941,18 @@
       <button class="modal-close" id="col-picker-close">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:.82em;color:var(--muted);margin-bottom:14px">Your file has multiple columns. Pick an import mode, then map the columns.</p>
+      <p style="font-size:.82em;color:var(--muted);margin-bottom:14px">Your file has multiple columns. Choose which to use as X, Y, and optionally σ (measurement uncertainty).</p>
       <div class="ctrl-row">
-        <label class="ctrl-label" style="margin:0;min-width:78px">Import mode</label>
-        <select class="ctrl-select" id="col-picker-mode">
-          <option value="single">Single Y (+ optional σ)</option>
-          <option value="multi">Multiple Y → separate datasets</option>
-          <option value="replicates">Replicates → mean ± σ</option>
-          <option value="grouped">Group column → one dataset per group</option>
-        </select>
-      </div>
-      <p id="col-picker-mode-desc" style="font-size:.72em;color:var(--dim);margin:6px 0 0">One X column, one Y column, and an optional uncertainty (σ) column.</p>
-      <div class="ctrl-row" style="margin-top:10px">
-        <label class="ctrl-label" style="margin:0;min-width:78px">X column</label>
+        <label class="ctrl-label" style="margin:0;min-width:56px">X column</label>
         <select class="ctrl-select" id="col-picker-x"></select>
       </div>
-      <div class="ctrl-row" style="margin-top:8px" id="col-picker-y-row">
-        <label class="ctrl-label" style="margin:0;min-width:78px">Y column</label>
+      <div class="ctrl-row" style="margin-top:8px">
+        <label class="ctrl-label" style="margin:0;min-width:56px">Y column</label>
         <select class="ctrl-select" id="col-picker-y"></select>
       </div>
-      <div class="ctrl-row" style="margin-top:8px" id="col-picker-sig-row">
-        <label class="ctrl-label" style="margin:0;min-width:78px">σ column</label>
+      <div class="ctrl-row" style="margin-top:8px">
+        <label class="ctrl-label" style="margin:0;min-width:56px">σ column</label>
         <select class="ctrl-select" id="col-picker-sig"></select>
-      </div>
-      <div id="col-picker-ycols-row" style="margin-top:8px;display:none">
-        <label class="ctrl-label" style="margin:0 0 5px">Y columns <span id="col-picker-ycols-hint" style="color:var(--dimmer);font-weight:400"></span></label>
-        <div id="col-picker-ycols" style="max-height:132px;overflow-y:auto;border:1px solid var(--border);border-radius:5px;padding:7px 9px;font-size:.78em;display:flex;flex-direction:column;gap:4px"></div>
-      </div>
-      <div class="ctrl-row" style="margin-top:8px;display:none" id="col-picker-group-row">
-        <label class="ctrl-label" style="margin:0;min-width:78px">Group column</label>
-        <select class="ctrl-select" id="col-picker-group"></select>
-      </div>
-      <div class="ctrl-row" style="margin-top:8px;display:none" id="col-picker-agg-row">
-        <label class="ctrl-label" style="margin:0;min-width:78px">Aggregate</label>
-        <select class="ctrl-select" id="col-picker-agg" style="flex:none;width:96px">
-          <option value="mean">Mean</option>
-          <option value="median">Median</option>
-        </select>
-        <label class="ctrl-label" style="margin:0 0 0 12px;min-width:34px">σ as</label>
-        <select class="ctrl-select" id="col-picker-sigmethod" style="flex:1">
-          <option value="sd">Std. dev.</option>
-          <option value="sem">Std. error (SD/√n)</option>
-          <option value="none">None</option>
-        </select>
       </div>
       <div id="col-picker-preview" style="margin-top:12px;font-size:.71em;font-family:var(--mono);color:var(--muted);line-height:1.5;white-space:pre;overflow-x:auto"></div>
     </div>
@@ -1889,408 +1583,12 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
-      <!-- ── v1.8.2 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.9.2</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-          <span class="relnotes-ver-tag">Latest</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Hardened against HTML injection in imported data</strong> — dataset names, fit labels, annotation labels, custom-fit notes, and the model-search box are now HTML-escaped everywhere they're displayed. Previously a crafted name in an imported CSV or a shared session file could inject markup into the page. All user-supplied text is now escaped at every render site.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Convergence diagnostics in fallback path</strong> — the λ (Levenberg–Marquardt) and |∇| (BFGS) diagnostics now appear when fitting runs on the main-thread fallback (e.g. opening the page directly via file://), matching the Web Worker path.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.9.1 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.9.1</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Large parameter bounds no longer dropped</strong> — bounds with magnitude between 1e9 and 1e10 were silently treated as unbounded. The unbounded sentinel is now ±1e300 (JSON-session-safe, unlike ±Infinity) with a 1e290 threshold, so any realistic bound is honoured. Sessions saved before v1.9.0 are migrated automatically.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.9.0 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.9.0</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>More accurate standard errors</strong> — the covariance matrix (and hence parameter standard errors, confidence/prediction bands, and the Jacobian condition number) is now computed with a <strong>central-difference</strong> Jacobian instead of forward-difference, which is ~4 orders of magnitude more accurate (verified against analytic covariances).</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Exact constraint projection</strong> — coupled constraints (A ≤ B, A = B, Σ = value, Σ ≤ value) are now projected by iterating to feasibility (largest violation below a relative tolerance) rather than a fixed 4 passes, so they're satisfied to ~1e-12 for compatible constraints; infeasible combinations terminate cleanly at a capped iteration count.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.9 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.9</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Modals frozen after opening</strong> — a regression in the v1.8.5 accessibility work made the background <code>inert</code> while the app is open, which also froze the modals that live at the page level (Release Notes, Column Picker, Settings, Save, etc.) — they appeared but couldn't be clicked or scrolled. The inert layer now skips modal/tooltip layers, so they're fully interactive again.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.8 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.8</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Fourier-filter warning</strong> — applying a Fourier filter to data with non-uniform x spacing now warns that the % Nyquist cutoffs are approximate (the FFT assumes a uniform grid).</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.7 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.7</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Accurate EMG peak tails</strong> — the Exponentially-Modified Gaussian now evaluates via the scaled complementary error function (<code>erfcx</code>) instead of <code>exp(·)·erfc(·)</code>, which lost all precision (and could overflow) in the peak tails. Matches the exact profile to ~6×10⁻⁸ everywhere; verified against <code>scipy</code>.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Validation report</strong> — added <code>VALIDATION.md</code> documenting cross-checks of the solver against the <strong>NIST StRD</strong> certified datasets (Misra1a, Rat42 — residual SSE matches the certified minimum) and machine-precision round-trip recovery for the built-in model families.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.6 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.6</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Large-dataset hardening</strong> — removed the remaining <code>Math.min/max(...array)</code> spreads from every model's Auto-Init heuristic (77 of them), so fitting very large datasets no longer risks a <code>RangeError</code>.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Import &amp; fit robustness</strong> — file imports now report read errors; the minimum-points check is model-aware (a 2-point linear calibration is allowed, a high-degree model still requires enough points); the unsaved-changes guard no longer rebuilds the whole session payload on every page-close check.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Custom-equation safety</strong> — the equation parser now rejects anything that isn't a single pure expression in <code>x</code> (no assignments, function definitions or <code>;</code>-blocks), so a crafted saved session can't run arbitrary Math.js on restore.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.5 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.5</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">a11y</span><strong>Accessibility pass</strong> — the full-screen app is now a proper <code>role="dialog"</code> that traps the background (<code>inert</code>/<code>aria-hidden</code>), moves focus inside on open and restores it on close; the status bar is an <code>aria-live</code> region so fit results are announced; the <code>?</code> help tooltips are keyboard-focusable and open on focus; and icon-only buttons (dataset toggle/delete, parameter lock, constraint ×) got <code>aria-label</code>s.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Confirm before bulk delete</strong> — “✕ All” (datasets &amp; fits) and “Clear fits” now ask for confirmation, since those actions can’t be undone.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.4 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.4</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Reproducible fits</strong> — multi-start now uses a seeded PRNG instead of <code>Math.random()</code>, so the same data + settings always give the same fit (no more run-to-run wobble in the multi-start result).</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Provenance stamps</strong> — exported Python/R/MATLAB scripts carry a header with the app version, model, solver and weighting; the JSON schema and saved sessions embed the app version too. The fitting worker is now cache-busted by a single canonical version constant (no longer scraped from a DOM label).</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.3 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.3</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Solver unified across paths + relative convergence</strong> — the Web Worker (default) and the fallback solver used <em>different</em> Levenberg-Marquardt damping and convergence tests; both now use Marquardt diagonal scaling and scipy-style relative (xtol AND ftol) tolerances, so a fit gives the same result whichever path runs. <strong>Validated against the NIST StRD certified nonlinear datasets</strong> (Misra1a, Rat42) to 5–6 significant figures.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Correct standard errors for supplied σ</strong> — when fitting with a 1/σ² uncertainty column, the covariance is now (JᵀWJ)⁻¹ directly (like scipy <code>absolute_sigma=True</code>) instead of being rescaled by reduced χ², which had over/under-stated the parameter errors unless χ²ᵣ≈1.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.2 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.2</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Statistics unified across fit paths (audit)</strong> — the Web Worker (the default path for nonlinear fits) computed AIC/BIC <em>without</em> the Gaussian-likelihood constant and used a wrong adjusted-R² dof, so its values weren't comparable to polynomial/fallback fits. Now AIC/BIC include the constant, adjusted R² uses dof = n−m, and weighted RMSE (for prediction bands) is computed in the worker too. All four code paths now agree.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Large-dataset crash</strong> — replaced <code>Math.min/max(...array)</code> spreads in the plot-render path (and paste/preview) with loop-based helpers, removing a <code>RangeError</code> stack overflow on very large datasets.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Expanded stats row now shows the algorithm and weighting (read a stale field — always showed “—”); CSV/Report exports no longer throw for fits without standard errors; <strong>4PL</strong> “Edit as Custom” used an undeclared <code>EC50</code> symbol → now the actual <code>C</code> parameter.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>A custom equation that is non-finite at every point no longer reports a false <strong>R²=1</strong>; <kbd>Ctrl+Z</kbd> while typing in a field no longer reverts a data-point edit; Mask 2.5σ guards against zero residual RMSE.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Accessibility/theming</strong> — defined previously-missing CSS variables (<code>--error</code>, <code>--input-bg</code>, <code>--teal-soft</code>) so themed colours no longer fall back to hardcoded values, and raised the contrast of the faintest text colour in both light and dark themes.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.1 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.1</span>
-          <span class="relnotes-ver-date">2026-06-03</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Min/Max fields clipped multi-digit values</strong> — the bound inputs were content-box with padding, so a value like <code>500</code> overflowed its cell and the last digits were cut off. Now <code>box-sizing:border-box</code> so the full value shows.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Inf / -Inf bounds</strong> — Min/Max now accept <code>Inf</code>, <code>-Inf</code>, <code>Infinity</code>, or <code>∞</code> (any sign) to mean unbounded, in addition to a blank cell. The solver treats these as ±∞.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Editable constraint chips</strong> — click a coupled-constraint chip to reopen it pre-filled and <strong>✓ Update</strong> it in place; click a box-bound chip to jump to and select its Min/Max cell for editing. (× still removes.)</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.8.0 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.8.0</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Unified constraint chips</strong> — parameter <strong>Min/Max bounds now appear as removable chips</strong> alongside the coupled constraints, so the Constraints panel shows everything constraining the fit in one place. Box-bound chips (grey) are a live mirror of the Min/Max cells — set a bound in the table or via a preset and a chip appears; clear the chip and the bound clears. Coupled constraints stay teal. This resolves the previous overlap where box presets silently edited Min/Max without showing up anywhere.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.9 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.9</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Clearer “Add constraint” flow</strong> — picking a constraint type now opens a dashed “draft” builder whose <strong>✓ Add</strong> button briefly pulses green to signal that the constraint isn’t applied until you click it. Added a “Not added yet” hint, and a warning on Fit if a constraint is drafted but not committed. (A constraint configured but not <em>Added</em> was the reason fits appeared to ignore it.)</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.8 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.8</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Active-constraint indicator</strong> — a fit run with N coupled constraints is now tagged <code>C:N</code> in its label (next to the weight/exclusion tags), so you can confirm at a glance that constraints were applied to that fit. If you add <em>A ≤ B</em> and see <code>C:1</code> but the parameters don't change, your browser is still running a cached worker — hard-refresh again (the worker is version-busted, but GitHub Pages' CDN can take a few minutes to propagate a new release).</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.7 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.7</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Constraints not applied (stale worker)</strong> — the fitting Web Worker is now cache-busted by app version, so an updated worker (constraint support, new models, etc.) is never served stale after a deploy. If a constraint seemed ignored before, that was an old cached worker; this guarantees the current one loads. <em>(One-time hard refresh — Ctrl/⌘+Shift+R — clears any already-cached copy.)</em></span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">verify</span><strong>Constraint engine audited</strong> — the projection enforcing A ≤ B, A = B, Σ = value, Σ ≤ value, and box bounds was verified correct across solvers/fit shapes (e.g. Langevin A ≤ B correctly collapses to A = B because its unconstrained optimum has A ≫ B).</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.6 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.6</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Constraint library</strong> — an <em>+ Add constraint</em> menu under the parameter table offers pre-canned constraints, and only lists the ones that fit the current model's parameter count (e.g. “A ≤ B” isn’t offered for a one-parameter model). Box presets (<strong>≥ 0</strong>, <strong>≤ 0</strong>, <strong>0–1</strong>, custom <strong>[lo, hi]</strong>) write into a parameter's Min/Max; coupled constraints — <strong>A ≤ B</strong>, <strong>A = B</strong>, <strong>Σ = value</strong> (e.g. fractions sum to 1), <strong>Σ ≤ value</strong> — appear as removable chips.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Coupled constraints are enforced by all four solvers (and the Huber/multi-start/batch paths) via projection at each step — they slot into the same hook box bounds already use. Saved with the session. <em>Note:</em> standard errors/CIs are approximate when a coupled constraint is active at the optimum.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.5 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.5</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">perf</span><strong>Faster page load</strong> — Plotly (~3.5 MB) and Math.js (~700 KB) were render-blocking; both now load <code>defer</code> so the page paints immediately instead of waiting on them. Added <code>preconnect</code> hints for the script/font CDNs so downloads start sooner.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">perf</span><strong>Lazy equation rendering</strong> — the ~160 KaTeX equations in the theory section now render only as each section scrolls into view (via the existing reveal observer) instead of all at once on load, cutting initial main-thread work and memory for users who jump straight into the app.</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Tooltip audit — correlation-heatmap legend corrected to “Blue = positive” (matches the rendered colour), Datasets tip documents Ctrl/⌘-click → Combine, Custom Equation tip lists erf/erfc/lgamma; stale model counts corrected.</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.4 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.4</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Pre-Process panel multi-column layout</strong> — the five sections (Smoothing, Fourier, Normalize/Transform, Baseline/De-trend, Repair/Impute) now flow into a wider, responsive 2-column grid instead of one tall scrolling column, so most of the panel is visible at once (collapses to one column on narrow screens)</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">docs</span>In-app usage guide refreshed for the current feature set (36 examples, 58 models, four import modes, five Pre-Process sections, Fit All &amp; Combine, Ctrl/⌘-click multi-select)</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.3 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.3</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Combine datasets for one fit</strong> — <strong>Ctrl/⌘-click</strong> two or more datasets in the Datasets panel to multi-select, then press <strong>⊕ Combine</strong>. If the selected series share an x-grid they are aggregated to <em>mean ± σ</em> (error bars); otherwise their points are pooled. Fitting the combined dataset gives a single curve through their average — distinct from <em>Fit All Datasets</em>, which fits each series separately</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.2 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.2</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Undo Step in Pre-Process</strong> — every pre-processing action (smooth, filter, transform, de-trend, repair) can now be reverted one step at a time with the new <strong>↶ Undo Step</strong> button, alongside the existing Restore Original (revert all)</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Inject Trend / Baseline</strong> in the example generator — add a deterministic linear drift, quadratic curvature, and/or baseline offset to generated data, so you can practice removing it with Pre-Process → Baseline / De-trend</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Output format</strong> in the example generator — generate any example as a single dataset, as <strong>Replicates → mean ± σ</strong> (N realisations collapsed to error bars), or as <strong>Multiple series</strong> (N independent datasets) to exercise <em>Fit All Datasets</em></span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.1 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.1</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Normalize / Transform</strong> (Pre-Process) — Min–Max, Z-score, log, log₁₀, √, and Box–Cox (with an Auto maximum-likelihood λ) transforms of Y, fully reversible via Undo / Restore Original</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Baseline / De-trend</strong> (Pre-Process) — subtract a polynomial (degree 1–5) or LOWESS local-regression baseline, fit on non-masked points; removes drift/background under peaks and oscillations</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Repair / Impute</strong> (Pre-Process) — flag outliers by robust MAD z-score (or non-finite gaps) and replace them with a cubic-spline or linear estimate from the remaining points; with a caution that masking is often the safer choice</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.7.0 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.7.0</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Multi-column import modes</strong> — the column picker now offers four modes: <em>Single Y (+σ)</em>, <em>Multiple Y → separate datasets</em>, <em>Replicates → mean ± σ</em>, and <em>Group column → one dataset per group</em>. Wide-format replicates auto-compute per-point σ (SD or SEM); long-format data is split by category label with repeated X aggregated to mean ± σ</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Fit All Datasets</strong> — batch-fits the selected model to every enabled dataset in one click (per-dataset Auto-Init and weighting), with all results tabulated side-by-side in the stats panel for comparison</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Replicate σ everywhere</strong> — imported/aggregated σ drives 1/σ² weighting and reduced χ², and renders as error bars on the plot. New example <strong>Dose-Response + σ</strong> generates replicate-derived error bars (4PL) to demonstrate the workflow</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Code exports now valid for every model</strong> — Python/R/Jupyter sanitise Greek/subscript/∞ parameter names into legal identifiers (e.g. <code>η∞</code> → <code>etainf</code>, guarding the Python keyword <code>lambda</code>); polynomials emit real bodies instead of a stub; a Jupyter indentation bug that broke multi-line models (EMG, Voigt, PK-Lag…) is fixed; R &amp; MATLAB gained all v1.6.0 models</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>JSON export alignment</strong> — <code>x</code>, <code>y</code>, <code>y_fit</code> and <code>residuals</code> are now equal-length and index-aligned with the full dataset (null at excluded points) instead of silently misaligning when points were masked</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.6.5 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.6.5</span>
-          <span class="relnotes-ver-date">2026-06-02</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Edit-as-Custom parse errors</strong> — several models produced invalid Math.js when opened in the custom editor (rheology models used <code>|γ̇|</code> pipe notation, Temkin/Softplus used <code>ln(</code>, PK-Lag had trailing prose, Voigt was a description). All now emit valid Math.js (<code>abs(x)</code>, <code>log(</code>, a proper ternary, and a fully-expanded Voigt)</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>gamma as a parameter</strong> — reverted treating <code>gamma</code> as a built-in function (it broke Damped-Sine, whose damping parameter is <em>γ</em>, and any custom equation using gamma as a free parameter). The Γ palette button was removed; <code>lgamma</code> remains for the special-function need</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Parameter correlation heatmap in dark mode</strong> — low-correlation cells no longer render near-white with invisible light text; the colormap now uses a theme-aware neutral that blends into the panel, and cell text colour is chosen by luminance for guaranteed contrast in both themes</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Correlation panel polish</strong> — "mild dependency" suggestion box and faint correlation bars given subtle tints/outlines so they read cleanly in light mode instead of looking like dim grey blanks</span></li>
-        </ul>
-      </div>
-      <!-- ── v1.6.4 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.6.4</span>
-          <span class="relnotes-ver-date">2026-06-01</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Equation Editor — more functions</strong> — added <strong>Special Functions</strong> (erf, erfc, lnΓ, factorial), extra <strong>trig</strong> (cot, sec, csc), <strong>inverse hyperbolic</strong> (asinh, acosh, atanh, coth), <strong>cbrt / nthRoot</strong>, and a <strong>Conditional</strong> group (ternary <code>?:</code> and comparison operators). Math.js is auto-extended with erfc/lgamma polyfills so every palette function evaluates. New example equations: error-function sigmoid, erfc diffusion front, EMG peak, skew-normal, Langevin, softplus, and piecewise forms</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Examples menu auto-columns</strong> — the dropdown now measures real rendered height and adds columns until no items are cut off at the bottom of the screen; falls back to a scrollable column on very short viewports</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Autocomplete search</strong> — model and example search boxes show a floating top-8 results panel (opaque, arrow-key + mouse selectable) instead of rewriting the dropdown as you type</span></li>
-        </ul>
-      </div>
-      <!-- ── v1.6.3 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.6.3</span>
-          <span class="relnotes-ver-date">2026-06-01</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>2 new rheology models (56 → 58 total)</strong> — <strong>Carreau</strong> (biofluids / polymer melts: [1+(λγ̇)²]^((n−1)/2)) and <strong>Quemada</strong> (blood / concentrated dispersions: 3-parameter geometric-mean form)</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Preset-based grouped examples</strong> — 6 standalone examples replaced by 5 multi-model groups each with a Preset dropdown: <em>Adsorption Isotherm</em> (Langmuir · Freundlich · Temkin), <em>Viscosity vs Shear Rate</em> (Blood/Carreau · Dense suspension/Quemada · Polymer/Cross · Cornstarch · Ketchup/HB), <em>Spectral/Chrom. Peak</em> (EMG · Asymmetric-Gaussian · Voigt), <em>Thermal Kinetics</em> (Arrhenius · Extended-Arrhenius), <em>Sigmoid/Activation</em> (Erf-Sigmoid · Softplus)</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Example search</strong> — search box at the top of the Examples dropdown filters by name, model, and keyword tags (e.g. "blood" → viscosity / rheology examples)</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Third examples column</strong> — Pharmacokinetics, Multi-Model Groups, and Diffusion added as a third column in the Examples dropdown</span></li>
-        </ul>
-      </div>
-      <!-- ── v1.6.2 (moved down) ────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.6.2</span>
-          <span class="relnotes-ver-date">2026-06-01</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>7 new export formats</strong> — Jupyter Notebook (.ipynb), Excel Workbook (.xlsx via SheetJS), Standalone Plotly HTML, Copy Plot to Clipboard (PNG), BibTeX Citation, API JSON Schema, LaTeX Doc Fragment (.tex)</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Python / LaTeX exports now include all 17 v1.6.0 models</span></li>
-        </ul>
-      </div>
-      <!-- ── v1.6.1 (moved down) ────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.6.1</span>
-          <span class="relnotes-ver-date">2026-06-01</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>10 UI/UX features</strong> — dark mode auto-detect, model search filter, fit quality badge, fit comparison modal, drag-drop fit reorder, resize preference memory, fit notes, axis range mode toggle, Ctrl+F quick-fit, sweep clamping cue</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>All 17 v1.6.0 models added to fitting-worker.js MODEL_FNS</span></li>
-        </ul>
-      </div>
-      <!-- ── v1.6.0 (original) ──────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.6.0</span>
-          <span class="relnotes-ver-date">2026-06-01</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>17 new built-in models (39 → 56 total)</strong> — Pharmacokinetics: <strong>Two-Compartment PK</strong>, <strong>PK Lag Time</strong> · Enzyme kinetics: <strong>Substrate Inhibition</strong> · Adsorption isotherms: <strong>Langmuir</strong>, <strong>Freundlich</strong>, <strong>Temkin</strong> · Rheology: <strong>Power-Law Fluid</strong>, <strong>Herschel-Bulkley</strong>, <strong>Cross Model</strong> · Peak shapes: <strong>EMG</strong> (Exponentially Modified Gaussian), <strong>Asymmetric Gaussian</strong> (skew-normal), <strong>Voigt</strong> (Thompson-Cox-Hastings) · Thermal kinetics: <strong>Arrhenius</strong>, <strong>Extended Arrhenius</strong> · Diffusion: <strong>Erf Diffusion</strong> · Activation: <strong>Softplus</strong>, <strong>Erf Sigmoid</strong></span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>erf / erfc helper</strong> — Abramowitz &amp; Stegun 7.1.26 polynomial approximation (max |err| &lt; 1.5×10⁻⁷) added to models.js; powers EMG, Asymmetric Gaussian, Erf Diffusion, and Erf Sigmoid without any external dependency</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>10 new example datasets (26 → 36 total)</strong> — Two-Compartment PK (IV bolus), Oral PK with Lag Time, Substrate Inhibition, Langmuir Isotherm, Freundlich Isotherm, Herschel-Bulkley fluid, Cross Model viscosity, EMG chromatography peak, Arrhenius rate constant, Erf Diffusion profile</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>6 new model-selector optgroups</strong> — Pharmacokinetics, Adsorption / Isotherms, Rheology, Thermal / Kinetics, Diffusion / Transport, Activation Functions</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Model reference table extended</strong> — 8 new section headers and 17 new rows with equations, parameters, and physical interpretation for all new models</span></li>
-        </ul>
-      </div>
-      <!-- ── v1.5.0 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.5.0</span>
-          <span class="relnotes-ver-date">2026-05-27</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>LM damping (Marquardt scaling)</strong> — replaced the flat <code>JtJ*(1+λ)+1e-10</code> augmentation with proper <code>JtJ + λ·diag(|JtJ|)</code>; damping now scales with parameter sensitivity, preventing over-damping of well-conditioned directions</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>LM and GN convergence criterion</strong> — changed AND logic to OR so that a fit converges when <em>either</em> the step norm or the SSE change falls below tolerance; the AND condition was preventing convergence on flat regions</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>AIC / BIC full MLE form</strong> — added the <code>n·(ln 2π + 1)</code> constant so exported AIC/BIC values match R / Python / MATLAB output</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Weighted RMSE for prediction intervals</strong> — PI bands now use the weighted residual variance when a weight scheme is active</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>t-critical table interpolation</strong> — smooth interpolation added for df 121–200, eliminating a 0.020 step discontinuity at df = 120→121</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Huber IRLS iterations 5 → 20</strong> — more stable convergence under heavy outlier contamination</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>1/y² zero-weight warning</strong> — console warning shown when any y = 0 point is present with 1/y² weighting</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Model auto-init heuristics</strong> — Boltzmann/Double-Boltzmann seed from actual A/2 data crossing; Pseudo-Voigt uses distinct γ and σ; Double-Gaussian masks the first peak before searching for the second</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Hill model parameter name</strong> — internal destructuring corrected from <code>Vm</code> to <code>Vmax</code></span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>FFT Nyquist bin</strong> — DC and Nyquist bins scaled once each; conjugate-symmetric bins mirrored correctly</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Session restore null-fn guard</strong> — fits with unknown model receive a <code>() => NaN</code> stub instead of <code>null</code></span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>FileReader error handler</strong> — session file read failures now surface a visible error message</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Session payload validation</strong> — <code>restoreMultiTabPayload</code> throws a descriptive error on null/non-object input</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Bounds preserved in session and exports</strong> — parameter bounds stored on fit records, serialized to session JSON, and emitted in Python / R / MATLAB exports when non-default bounds were set</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Object URL leak</strong> — all blob download links schedule <code>revokeObjectURL</code> 60 s after click</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Log-scale banner z-index</strong> — raised from 15 to 110 so it renders above the topbar</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Correlation panel responsive</strong> — narrows to 280 px on viewports ≤ 700 px wide</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Accessibility: added <code>aria-label="Close"</code> to all modal close buttons</span></li>
-        </ul>
-      </div>
-
-      <!-- ── v1.4.0 ─────────────────────────────────────────── -->
-      <div class="relnotes-version">
-        <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.4.0</span>
-          <span class="relnotes-ver-date">2026-05-26</span>
-        </div>
-        <ul class="relnotes-items">
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Unsaved-data guard</strong> — if any tab contains datasets or fits, closing or refreshing the browser triggers the native "leave page?" confirmation dialog; the session is also silently auto-saved to <code>localStorage</code> at that moment so it can be restored on the next visit</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Stats bar whitespace</strong> — the stats table now fills the full height of the stats bar area, eliminating the blank white gap that appeared below the table when the correlation panel was taller than the fit results</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Correlation panel widened and redesigned</strong> — default width increased from 300 px to 420 px; layout changed from side-by-side (heatmap left, list right) to stacked (heatmap on top, pair list below), giving both the heatmap and every pair-name / value / bar their full panel width with no truncation</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Fixed mojibake (garbled emoji and arrows) in <code>tutorial.js</code> and <code>export.js</code> caused by a double-encode of UTF-8 text as Windows-1252</span></li>
-        </ul>
-      </div>
-
       <!-- ── v1.3.0 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num">v1.3.0</span>
+          <span class="relnotes-ver-num current">v1.3.0</span>
           <span class="relnotes-ver-date">2026-05-26</span>
+          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Settings panel</strong> — ⚙ Settings under the Session ▾ dropdown. Appearance section: UI font size (range slider), UI font family (6 presets), monospace font (6 presets), theme (Light / Dark buttons), animation speed (Normal / Fast / None). Fitting Defaults section: default solver, multi-start pilot count, default weight scheme. Display section: numeric precision (3–6 sig figs), fit line width, scatter marker size, default CI bands, default legend. All settings persist across sessions via <code>localStorage</code></span></li>
@@ -2350,7 +1648,7 @@
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Visual Equation Editor</strong> popup (⊞ Equation Editor…) — a click-to-insert operator and function palette covering common functions, trig, hyperbolic, rounding, and constants π and e; cursor placed between parentheses automatically</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>30+ categorised example equations in the editor (Exponential, Sigmoidal, Peak shapes, Oscillatory, Biochemistry, Rational) — click any row to load it instantly into the editor</span></li>
-          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>9 new built-in models (38 non-Custom total): Van't Hoff Equilibrium, KWW Stretched Exponential, Pseudo-Voigt, Fano Resonance, Stern-Volmer (combined), Double-Gaussian Peak, Biexponential, Rational (1,1), Power Law + Offset</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>10 new built-in models (39 total): Van't Hoff Equilibrium, KWW Stretched Exponential, Voigt Profile, Pseudo-Voigt, Fano Resonance, Stern-Volmer (combined), Double-Gaussian Peak, Biexponential, Rational (1,1), Power Law + Offset</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>10 new example datasets (26 total): XRD Diffraction Peak, Fano Resonance, Superparamagnetic M-H (Langevin), Stress-Strain (Ramberg-Osgood), ELISA Dose-Response (4PL), Oral Drug PK, Polymer Relaxation (KWW), Fluorescence Quenching, Van't Hoff Equilibrium, Voltage-Dependent τ</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>20 downloadable sample CSV files added to the repository across 5 categories (General, Spectral/Physics, Calibration, Biology, Electrophysiology)</span></li>
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span>Mobile and vertical-screen responsive layout — collapsible panel drawers with backdrop, touch-friendly controls, compressed topbar</span></li>
@@ -2694,17 +1992,17 @@
   <h2 class="section-title">Using the Studio</h2>
   <div class="section-body">
 
-    <p>Click <em>Start Curve Fitting Studio</em> on this page to open the full-screen app. On first launch a six-slide tutorial walks through the key features — dismiss it with <em>Skip</em>, or tick <em>Don't show this again</em> to suppress it on future visits. Load a dataset (Examples, Import, or Paste), select a model from the right panel, press <kbd>▶ Fit</kbd> (or <kbd>Ctrl+Enter</kbd>), and read the diagnostics from the stats bar at the bottom. That's the entire core loop.</p>
+    <p>Click <em>Start Advanced Curve Fitting Studio</em> on this page to open the full-screen app. On first launch a six-slide tutorial walks through the key features — dismiss it with <em>Skip</em>, or tick <em>Don't show this again</em> to suppress it on future visits. Load a dataset (Examples, Import, or Paste), select a model from the right panel, press <kbd>▶ Fit</kbd> (or <kbd>Ctrl+Enter</kbd>), and read the diagnostics from the stats bar at the bottom. That's the entire core loop.</p>
 
     <p>Three routes are available for loading data:</p>
     <ul style="margin:8px 0 8px 20px;line-height:1.8">
-      <li><strong>Examples</strong> — 36 built-in synthetic dataset generators with adjustable noise, covering every major model family, laid out in a three-column grouped dropdown with a keyword search box (e.g. typing "blood" surfaces the rheology examples). Each example pre-selects the matching model and sensible initial parameters. Beyond the model parameters, the generator modal offers: an <em>Outliers</em> slider and <em>Outlier scale</em>; additional background noise (Gaussian/uniform/Laplacian) and sinusoidal interference; an <em>Inject Trend / Baseline</em> section (linear drift, quadratic curvature, offset) so you can practise removing it with Pre-Process → De-trend; and an <em>Output Format</em> selector — a single dataset, <em>Replicates → mean ± σ</em> (error bars), or <em>Multiple series</em> (N independent datasets for Fit All / Combine).</li>
-      <li><strong>Import CSV / TSV / TXT</strong> — drag a file onto the plot area or use the Import button. Headers are optional; the first two numeric columns are used as X and Y. Comma, semicolon, tab, and space delimiters are all detected automatically. Files with three or more columns open a <em>Column Picker</em> with four import modes: <em>Single Y (+ optional σ)</em>; <em>Multiple Y → separate datasets</em> (each Y column becomes its own dataset); <em>Replicates → mean ± σ</em> (replicate Y columns collapsed to a mean with auto-computed SD or SEM); and <em>Group column → one dataset per group</em> (long-format X, Y, category data, with repeated X aggregated to mean ± σ). When σ is present, error bars appear on the scatter plot and the 1/σ² weighting option becomes available in Algorithm Options. Sample files for every mode live in the <code>Example Datasets/</code> folder of the repository.</li>
+      <li><strong>Examples</strong> — 16 built-in synthetic datasets with adjustable noise, covering every major model family. The dropdown is split into two columns: <em>General</em> (Exp Decay, Gaussian, Logistic Growth, etc.) and <em>Calibration &amp; Distributions / Electrophysiology</em> (G-V Boltzmann, Kir I-V, HH Na Channel, voltage-dependent τ, and more). Each example pre-selects the matching model and sensible initial parameters. An <em>Outliers</em> slider and <em>Outlier scale</em> control let you inject random outliers to test robustness.</li>
+      <li><strong>Import CSV / TSV / TXT</strong> — drag a file onto the plot area or use the Import button. Headers are optional; the first two numeric columns are used as X and Y. Comma, semicolon, tab, and space delimiters are all detected automatically. Files with more than two columns open a <em>Column Picker</em> where you choose X, Y, and optionally a σ (uncertainty) column. If a σ column is loaded, error bars appear on the scatter plot and the 1/σ² weighting option becomes available in Algorithm Options.</li>
       <li><strong>Paste Data</strong> — paste directly from Excel, a terminal, or any text editor. The delimiter auto-detection handles mixed formats.</li>
     </ul>
-    <p><strong>Multiple datasets</strong> can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled using the toggle button that appears on hover. Disabling a dataset hides it and all its associated fits from the plot, residual panels, stats table, and F-test — they are restored instantly when re-enabled. With several datasets loaded you have two batch options: <strong>Fit All Datasets</strong> (toolbar) fits the selected model to every enabled dataset separately and tabulates the results side-by-side; or <strong>Ctrl/⌘-click</strong> two or more datasets in the left panel to multi-select them and press <strong>⊕ Combine</strong> — this pools them into one dataset (mean ± σ when they share an x-grid, otherwise pooled points) so that fitting it yields a single curve through their average.</p>
+    <p><strong>Multiple datasets</strong> can coexist in one tab. Each is assigned a distinct colour, appears in the left panel, and can be independently enabled/disabled using the toggle button that appears on hover. Disabling a dataset hides it and all its associated fits from the plot, residual panels, stats table, and F-test — they are restored instantly when re-enabled.</p>
 
-    <p>The right panel lists 58 built-in models across 15 categories. A guide to choosing:</p>
+    <p>The right panel lists 39 built-in models across 9 groups. A guide to choosing:</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>If your data looks like…</th><th>Try</th></tr></thead>
       <tbody>
@@ -2733,7 +2031,7 @@
       </tbody>
     </table>
 
-    <p>Every built-in model shows its full mathematical equation — rendered by KaTeX — directly below the Fit Model dropdown, updating instantly whenever you change the selection. Selecting <em>Custom Equation</em> hides the display and opens the custom editor instead. The 36 example dataset generators also display the generating equation (in larger display-mode rendering) at the top of the generator modal, so you always know what function produced the example data.</p>
+    <p>Every built-in model shows its full mathematical equation — rendered by KaTeX — directly below the Fit Model dropdown, updating instantly whenever you change the selection. Selecting <em>Custom Equation</em> hides the display and opens the custom editor instead. The 26 example dataset generators also display the generating equation (in larger display-mode rendering) at the top of the generator modal, so you always know what function produced the example data.</p>
 
     <p>For iterative (nonlinear) models, the quality of the initial guess strongly affects convergence. Click Auto Init to run data-driven heuristics: amplitudes are estimated from the data range, rate constants from zero-crossing counts or log-linear regression, peak centres from the data maximum, and so on. If Auto Init produces a poor fit, inspect the parameter table and adjust manually — look at the plot to understand what each parameter physically controls. Each parameter also has a <strong>sweep slider</strong> directly below its row: drag it to preview the model curve in real time with no fitting. The slider updates the Init input live and draws a dashed amber preview line on the main plot, making it easy to build intuition about what each parameter controls and to narrow initial guesses visually before running the solver. Releasing the slider clears the preview. Enabling Multi-start (default: 8 pilots) perturbs the initial guess log-uniformly across an order of magnitude and picks the best result automatically, at the cost of ~4× compute time.</p>
 
@@ -2743,7 +2041,7 @@
 
     <p>The <strong>Weights</strong> dropdown in Algorithm Options includes a <strong>Huber (IRLS)</strong> option for robust fitting. Standard least squares treats all residuals equally, making it sensitive to outliers. Huber IRLS (Iteratively Reweighted Least Squares) down-weights points with large residuals. At each of 5 reweighting iterations, the scale is estimated as MAD/0.6745 — the median absolute deviation scaled to be a consistent estimator of σ. This is deliberately chosen over RMSE because MAD is itself robust to outliers, so the threshold adapts correctly even when many points are contaminated. Points whose residuals fall within c = 1.345 standard deviations of this scale receive full weight; larger residuals are down-weighted proportionally. The result is a fit that minimises the influence of outliers without discarding them — compare the Huber fit against the OLS fit to quickly identify which points are pulling the curve.</p>
 
-    <p><strong>The stats bar</strong> at the bottom shows all active fits side-by-side. <strong>Click any row</strong> to expand it — the row opens a full-width detail panel. The top section is a parameter table (Value, SE, SEM = SE/√N, 95% CI at the correct t-distribution d.o.f., and t-statistic — green = significant at 95%, amber = not). Below the table, two rows of chip cards show all statistics: <strong>Model Quality</strong> chips — R², Adj-R², RMSE, SSE, AIC, BIC, N, and χ²ᵣ (σ-weighted fits only); <strong>Diagnostics</strong> chips — MAE, Max |residual|, CV%, df, Log-likelihood, F-statistic (with p-value), Durbin-Watson (color-coded: green ≈ 2 ideal, amber if autocorrelation), Runs test p-value (amber "pattern!" if p &lt; 0.05), and Jacobian condition number (green &lt; 100, amber 100–1000, red &gt; 1000). Every chip label has an ⓘ tooltip with the formula and interpretation. Annotated chips (DW, Runs, Cond(J)) show a colored left border so the health status is visible instantly. Click the same row again to collapse. Multiple rows can be expanded simultaneously and the bar scrolls. A <strong>parameter correlation panel</strong> appears automatically as a 300 px side column on the right edge of the stats bar whenever the active fit has ≥ 2 parameters (hidden otherwise). The panel has a two-column layout: a colour-coded heatmap (red = strong negative, blue = strong positive) on the left, and a scrollable list of all pairwise |r| values sorted by magnitude on the right, each with a color bar and numeric label. Below both columns, plain-English <strong>correlation suggestions</strong> flag up to 3 problem pairs: |r| ≥ 0.95 (strong, red) means two parameters are nearly redundant — consider fixing one or reparameterising; |r| ≥ 0.85 (high, amber) suggests checking whether the x-range is wide enough; |r| ≥ 0.70 (moderate) is a caution. A green confirmation appears when all pairs are well-determined.</p>
+    <p><strong>The stats bar</strong> at the bottom shows all active fits side-by-side. <strong>Click any row</strong> to expand it — the row opens a full-width detail panel. The top section is a parameter table (Value, SE, SEM = SE/√N, 95% CI at the correct t-distribution d.o.f., and t-statistic — green = significant at 95%, amber = not). Below the table, two rows of chip cards show all statistics: <strong>Model Quality</strong> chips — R², Adj-R², RMSE, SSE, AIC, BIC, N, and χ²ᵣ (σ-weighted fits only); <strong>Diagnostics</strong> chips — MAE, Max |residual|, CV%, df, Log-likelihood, F-statistic (with p-value), Durbin-Watson (color-coded: green ≈ 2 ideal, amber if autocorrelation), Runs test p-value (amber "pattern!" if p &lt; 0.05), and Jacobian condition number (green &lt; 100, amber 100–1000, red &gt; 1000). Every chip label has an ⓘ tooltip with the formula and interpretation. Annotated chips (DW, Runs, Cond(J)) show a colored left border so the health status is visible instantly. Click the same row again to collapse. Multiple rows can be expanded simultaneously and the bar scrolls. A <strong>parameter correlation panel</strong> appears automatically as a 300 px side column on the right edge of the stats bar whenever the active fit has ≥ 2 parameters (hidden otherwise). The panel has a two-column layout: a colour-coded heatmap (red = strong negative, teal = strong positive) on the left, and a scrollable list of all pairwise |r| values sorted by magnitude on the right, each with a color bar and numeric label. Below both columns, plain-English <strong>correlation suggestions</strong> flag up to 3 problem pairs: |r| ≥ 0.95 (strong, red) means two parameters are nearly redundant — consider fixing one or reparameterising; |r| ≥ 0.85 (high, amber) suggests checking whether the x-range is wide enough; |r| ≥ 0.70 (moderate) is a caution. A green confirmation appears when all pairs are well-determined.</p>
     <table class="param-table" style="margin:10px 0;font-size:.8em">
       <thead><tr><th>Metric</th><th>What it tells you</th><th>Good range</th></tr></thead>
       <tbody>
@@ -2782,16 +2080,15 @@
 
     <p>Click <em>CI Bands</em> in the toolbar to overlay 95% confidence interval ribbons around each fit curve. The ribbon width reflects parameter uncertainty propagated through the Jacobian — narrow ribbons indicate a well-constrained fit; wide ribbons suggest under-determined parameters or sparse data. Click <em>PI Bands</em> to additionally show the wider 95% prediction interval ribbon, which adds per-observation scatter (RMSE²) to the parameter uncertainty. Use PI bands when you want to visualise where a new single measurement is likely to fall, rather than where the true mean curve lies.</p>
 
-    <p>Enable Outliers in the toolbar after fitting. Points where |residual| exceeds 2.5 × RMSE for the active fit are circled in red. The rings update live as you edit or move points. To exclude outliers from the fit entirely, click <em>Mask 2.5σ</em> in the Data Preparation section of the right panel and refit — masked points remain visible on the plot but are excluded from the optimisation. Click <em>Unmask All</em> to restore them.</p>
+    <p>Enable Outliers in the toolbar after fitting. Points where |residual| exceeds 2.5 × RMSE for the active fit are circled in red. The rings update live as you edit or move points. To exclude outliers from the fit entirely, click <em>Mask 2.5σ</em> in the Point Masking section of the right panel and refit — masked points remain visible on the plot but are excluded from the optimisation. Click <em>Unmask All</em> to restore them.</p>
 
-    <p>Click <em>Data Table</em> in the Data Preparation section to open a scrollable table of every x/y pair in the active dataset, with the residual from the active fit shown for each point. A checkbox on each row lets you exclude that individual point from fitting while it remains visible on the plot as a hollow marker. Use <em>Exclude 2.5σ</em> to bulk-exclude all statistical outliers from the table, or <em>Include All</em> to restore the full dataset. This is the recommended way to handle a bad measurement point that should not be deleted entirely.</p>
+    <p>Click <em>Data Table</em> in the Point Masking section to open a scrollable table of every x/y pair in the active dataset, with the residual from the active fit shown for each point. A checkbox on each row lets you exclude that individual point from fitting while it remains visible on the plot as a hollow marker. Use <em>Exclude 2.5σ</em> to bulk-exclude all statistical outliers from the table, or <em>Include All</em> to restore the full dataset. This is the recommended way to handle a bad measurement point that should not be deleted entirely.</p>
 
-    <p>Click <em>Pre-Process…</em> in the Data Preparation section to open the Pre-Process panel. It contains five independent sections — Smoothing Filter, Fourier Filter, Normalize / Transform, Baseline / De-trend, and Repair / Impute — each with its own Apply button.</p>
+    <p>Click <em>Pre-Process…</em> in the Point Masking section to open the Pre-Process panel. It contains two independent sections, each with its own Apply button.</p>
     <p><strong>Smoothing Filter</strong> — select a method and click <em>Apply Smoothing</em>. <em>Moving Average</em> replaces each point with the unweighted mean of the surrounding window; simple and fast but blurs sharp features. <em>Gaussian</em> weights the window with a Gaussian kernel (controlled by σ in points) so that the center point contributes most — better shape preservation than a plain average. <em>Savitzky-Golay</em> fits a local polynomial (order 2–5) to each window by solving normal equations, which preserves peak heights and curvature far better than averaging; choose a higher polynomial order for signals with sharp peaks and a wide window for very noisy data. <em>Median</em> takes the window median rather than the mean, making it highly effective at removing isolated spike noise while keeping smooth regions and edges intact. In all methods, masked (excluded) points are skipped from the window and their values are left unchanged.</p>
     <p><strong>Fourier Filter</strong> — operates in the frequency domain using a native Cooley-Tukey FFT (the data is zero-padded to the next power-of-2 before transforming). <em>Low-pass</em> removes high-frequency noise to reveal a smooth underlying trend. <em>High-pass</em> removes slow baseline drift while keeping rapid variation. <em>Band-pass</em> passes only a specified frequency range, useful for isolating a known periodic signal. <em>Notch</em> (band-reject) zeros out a narrow band — useful for eliminating power-line interference or other periodic artefacts. Cutoffs are entered as a percentage of the Nyquist frequency (50% of sampling rate = 100% Nyquist). The <em>Rolloff shape</em> controls the transition: Brick-wall gives the sharpest possible cutoff but can introduce Gibbs ringing; Cosine taper and Hann window give progressively smoother roll-offs that trade transition-band width for lower ringing.</p>
     <p>Click <em>▤ Show Spectrum</em> to reveal an inline frequency analyser beneath the filter controls. Use the <em>Spectrum / Spectrogram</em> toggle to switch between two views. <strong>Spectrum</strong> shows the 1D power spectrum of the full dataset — frequency runs along the x-axis as a percentage of Nyquist and amplitude on the y-axis in dB (switch to linear with the dB checkbox). Frequencies that stand out at least 10 dB above the noise floor are automatically flagged with red ▾ markers labeled with their exact % Nyquist position, so contaminating tones are immediately visible without having to read individual peaks by eye. Red dashed vertical lines track the current cutoff positions as you type, letting you line them up with flagged peaks before committing. <strong>Spectrogram</strong> switches to an STFT heatmap: the dataset is divided into overlapping Hann-windowed frames, each is FFT'd, and the result is displayed as a 2D colour image (Viridis scale) with frequency on the x-axis and position along the dataset on the y-axis. Persistent sinusoidal interference appears as a sharp horizontal band at a constant frequency, while broadband noise fills the image uniformly — making the two visually unambiguous even when the 1D spectrum is crowded. Both views support scroll-to-zoom and click-drag-to-pan for close inspection. The cutoff lines carry over into spectrogram mode. The filter assumes approximately uniform x-axis spacing; masked-point status is preserved after filtering.</p>
-    <p><strong>Normalize / Transform</strong> applies a Min–Max, Z-score, log, log₁₀, √, or Box–Cox transform to Y (Box–Cox includes an <em>Auto</em> button that finds λ by maximising the profile likelihood). Domain errors (e.g. log of non-positive data) are caught with a plain-language message. <strong>Baseline / De-trend</strong> fits a polynomial (degree 1–5) or LOWESS local-regression baseline on the non-masked points and subtracts it — ideal for removing drift or background under peaks and oscillations. <strong>Repair / Impute</strong> flags outliers by robust MAD z-score (or fills non-finite gaps) and replaces them with a cubic-spline or linear estimate from the remaining points; a note reminds you that masking is often statistically safer than imputation.</p>
-    <p>Two revert paths are always available in the footer: <strong>↶ Undo Step</strong> reverts the most recent pre-processing action one step at a time (every Apply snapshots the prior state), and <em>Restore Original</em> jumps all the way back to the exact imported y-values. Both push onto the shared undo stack, so <kbd>Ctrl+Z</kbd> also steps back through pre-processing changes.</p>
+    <p>Click <em>Restore Original</em> in the footer of the Pre-Process panel at any time to revert to the exact imported y-values. Every Apply and Restore action is pushed onto the undo stack, so <kbd>Ctrl+Z</kbd> also steps back through pre-processing changes.</p>
 
     <p>Click Try All in the toolbar to automatically fit every built-in model to the active dataset. A comparison table opens, ranked by R², showing R², RMSE, AIC, and BIC for each model. Click Apply on any row to load that model and its initial parameter estimates into the right panel for further tuning. Use AIC or BIC — rather than R² alone — to identify the best model without overfitting.</p>
 
@@ -2852,7 +2149,6 @@
         <tr><td><kbd>Ctrl + Z / Y</kbd></td><td>Undo / redo point edits (when selection exists)</td></tr>
         <tr><td><kbd>← → ↑ ↓</kbd></td><td>Nudge selected points by the step value</td></tr>
         <tr><td><kbd>Shift + Scroll</kbd></td><td>Adjust multi-select radius</td></tr>
-        <tr><td><kbd>Ctrl/⌘ + Click</kbd></td><td>Multi-select datasets for ⊕ Combine</td></tr>
         <tr><td><kbd>?</kbd></td><td>Open keyboard shortcuts reference</td></tr>
         <tr><td><kbd>Escape</kbd></td><td>Close open modal / deselect points / close full-screen app</td></tr>
       </tbody>
@@ -2907,34 +2203,8 @@
       <tr><td><strong>Fano Resonance</strong></td><td>$y = A\dfrac{(q+\varepsilon)^2}{1+\varepsilon^2}+C,\;\varepsilon=\dfrac{x-x_0}{\Gamma}$</td><td>A (amplitude), x₀ (resonance center), Γ (linewidth), q (asymmetry / Fano parameter), C (background)</td><td>Asymmetric lineshape arising from quantum interference between a discrete resonance and a continuum. Seen in nanophotonic/plasmonic structures, NEMS resonators, Raman spectra near electronic resonances, photonic crystals, atomic physics. q = 0 gives a symmetric dip (anti-resonance); large |q| approaches a symmetric peak.</td></tr>
       <tr><td colspan="4" class="ref-group-hdr">BIOLOGY / PHARMACOLOGY (EXTENDED)</td></tr>
       <tr><td><strong>4-Parameter Logistic (4PL)</strong></td><td>$y = D + \dfrac{A-D}{1+(x/C)^B}$</td><td>A (top asymptote), D (bottom asymptote), C (EC50/IC50), B (Hill slope)</td><td>Standard model for ELISA, immunoassays, flow cytometry, and dose-response. Unlike Logistic and Hill (which force the lower asymptote to 0), 4PL has free upper and lower plateaux. C is the inflection point (EC50 or IC50); B is the Hill slope (steepness). Reduces to Hill equation when D = 0.</td></tr>
-      <tr><td><strong>Substrate Inhibition</strong></td><td>$v = \dfrac{V_{\max}[S]}{K_m+[S]+[S]^2/K_i}$</td><td>Vmax (max rate), Km (Michaelis constant), Ki (inhibition constant)</td><td>Enzyme kinetics where high substrate concentrations inhibit activity (uncompetitive or mixed inhibition by excess substrate). Produces a characteristic bell-shaped v vs. [S] curve; peak occurs at $[S]_\mathrm{opt}=\sqrt{K_m K_i}$. Reduces to Michaelis-Menten when Ki → ∞.</td></tr>
+      <tr><td><strong>Oral 1-Compartment PK</strong></td><td>$C = \dfrac{\mathrm{Amp}\cdot k_a}{k_a-k_e}(e^{-k_e t}-e^{-k_a t})$</td><td>Amp (dose factor = F·D/V), ka (absorption rate h⁻¹), ke (elimination rate h⁻¹)</td><td>Drug concentration-time profile after oral administration. Rising absorption phase (ka) followed by exponential elimination (ke). Peak concentration at T_max = ln(ka/ke)/(ka−ke). L'Hôpital limit applied analytically when ka ≈ ke. Amp absorbs bioavailability, dose, and volume of distribution.</td></tr>
       <tr><td><strong>Stern-Volmer</strong></td><td>$F = \dfrac{F_0}{(1+K_D[Q])(1+K_S[Q])}$</td><td>F₀ (unquenched fluorescence), KD (dynamic quenching constant M⁻¹), KS (static quenching constant M⁻¹)</td><td>Combined static and dynamic fluorescence quenching. Dynamic quenching (KS = 0) gives a linear Stern-Volmer plot; static + dynamic gives upward curvature. Used in biosensor characterisation, protein-ligand binding studies, FRET, and collisional quenching assays. Setting KS = 0 recovers the classical linear form F₀/F = 1 + Ksv[Q].</td></tr>
-      <tr><td colspan="4" class="ref-group-hdr">PHARMACOKINETICS</td></tr>
-      <tr><td><strong>Oral 1-Compartment PK</strong></td><td>$C = \dfrac{\mathrm{Amp}\cdot k_a}{k_a-k_e}(e^{-k_e t}-e^{-k_a t})$</td><td>Amp (dose factor = F·D/V), ka (absorption rate h⁻¹), ke (elimination rate h⁻¹)</td><td>Drug concentration-time profile after oral administration. Rising absorption phase (ka) followed by exponential elimination (ke). Peak at T_max = ln(ka/ke)/(ka−ke). L'Hôpital limit applied when ka ≈ ke.</td></tr>
-      <tr><td><strong>Two-Compartment PK</strong></td><td>$C = A\,e^{-\alpha t}+B\,e^{-\beta t}$</td><td>A (fast amplitude), α (distribution rate h⁻¹), B (slow amplitude), β (elimination rate h⁻¹)</td><td>IV-bolus two-compartment model: fast α phase reflects distribution into peripheral tissue; slow β phase reflects terminal elimination. α &gt; β always; equivalent mathematically to Biexponential (no offset). Used to extract volume of distribution, clearance, and intercompartmental transfer rates.</td></tr>
-      <tr><td><strong>Oral PK + Lag Time</strong></td><td>$C = \dfrac{A_{mp}\,k_a}{k_a-k_e}\!\left(e^{-k_e(t-t_{lag})}-e^{-k_a(t-t_{lag})}\right),\;t&gt;t_{lag}$</td><td>Amp, ka, ke (as in Oral-PK), tlag (absorption lag time)</td><td>Extends the one-compartment oral PK model with a lag phase (e.g., enteric coating, gastric emptying delay). The drug begins absorbing only after time tlag; the profile is zero for t ≤ tlag.</td></tr>
-      <tr><td colspan="4" class="ref-group-hdr">ADSORPTION / ISOTHERMS</td></tr>
-      <tr><td><strong>Langmuir Isotherm</strong></td><td>$q = \dfrac{q_m K_L C}{1+K_L C}$</td><td>qm (max adsorption capacity mg/g), KL (Langmuir constant L/mg)</td><td>Monolayer adsorption on a surface with finite identical sites; mathematically identical to Michaelis-Menten. Widely used for heavy metals, dyes, and pharmaceuticals on activated carbon or zeolites. Saturation at high C approaches qm; initial slope qm·KL relates to affinity.</td></tr>
-      <tr><td><strong>Freundlich Isotherm</strong></td><td>$q = K_F\,C^{1/n}$</td><td>KF (Freundlich capacity constant), n (heterogeneity factor &gt; 1 for favourable adsorption)</td><td>Empirical power-law isotherm for heterogeneous surfaces with a distribution of binding energies; linearises as log q = log KF + (1/n)·log C. Mathematically identical to Power Law. No saturation plateau. 1/n &lt; 1 indicates normal (favourable) adsorption; 1/n &gt; 1 indicates cooperative or multilayer behaviour.</td></tr>
-      <tr><td><strong>Temkin Isotherm</strong></td><td>$q = B\ln(A_T C)$</td><td>AT (Temkin equilibrium binding constant L/mg), B = RT/b (heat of adsorption factor J/mol)</td><td>Assumes adsorbate-adsorbent interactions cause a linear decrease in adsorption heat with coverage; linearises as q vs. ln C. Used for ion exchange, heavy metal removal, and protein adsorption. B encodes the adsorption energy; large B indicates weak adsorption energy heterogeneity.</td></tr>
-      <tr><td colspan="4" class="ref-group-hdr">RHEOLOGY</td></tr>
-      <tr><td><strong>Power-Law Fluid</strong></td><td>$\eta = K\,|\dot{\gamma}|^{n-1}$</td><td>K (consistency index Pa·sⁿ), n (flow behaviour index)</td><td>Viscosity vs. shear rate for non-Newtonian fluids. n &lt; 1: shear-thinning (pseudoplastic — polymer solutions, blood, paint); n = 1: Newtonian (constant η = K); n &gt; 1: shear-thickening (dilatant — starch suspensions). Mathematically identical to Power Law. Auto-init via log-log regression.</td></tr>
-      <tr><td><strong>Herschel-Bulkley</strong></td><td>$\tau = \tau_0 + K\,|\dot{\gamma}|^n$</td><td>τ₀ (yield stress Pa), K (consistency Pa·sⁿ), n (flow index)</td><td>Yield-stress fluid model generalising Bingham (n = 1) and Power-Law (τ₀ = 0). Flow begins only above τ₀; below it the material deforms elastically. Common for gels, pastes, food products, muds, and fresh concrete. Mathematically identical to Power-Offset. τ₀ = 0 recovers the power-law fluid.</td></tr>
-      <tr><td><strong>Cross Model</strong></td><td>$\eta = \eta_{\infty}+\dfrac{\eta_{0}-\eta_{\infty}}{1+(K\dot{\gamma})^{m}}$</td><td>η₀ (zero-shear viscosity Pa·s), η∞ (infinite-shear viscosity Pa·s), K (relaxation time s), m (rate constant)</td><td>Describes the full viscosity curve from the Newtonian plateau at low shear (η₀) through the power-law region to the high-shear plateau (η∞). Mathematically equivalent to 4PL. Common for polymer melts, concentrated dispersions, and hydrogels. m = 1 gives the Carreau model asymptote; larger m means sharper transition.</td></tr>
-      <tr><td><strong>Carreau Model</strong></td><td>$\eta = \eta_{\infty}+(\eta_{0}-\eta_{\infty})\left[1+(\lambda\dot{\gamma})^{2}\right]^{(n-1)/2}$</td><td>η₀ (zero-shear Pa·s), η∞ (high-shear Pa·s), λ (relaxation time s), n (power index)</td><td>More physically motivated than Cross: the square-root-square structure arises from network theory. n &lt; 1 gives shear-thinning (blood, polymer melts, concentrated emulsions); n = 1 gives Newtonian (η = η₀). λ is the reciprocal critical shear rate. Common for biofluids and non-Newtonian polymer solutions. Reduces to Cross model in the limit of large (λγ̇).</td></tr>
-      <tr><td><strong>Quemada Model</strong></td><td>$\eta = \left(\dfrac{\sqrt{\eta_{0}}+\sqrt{\eta_{\infty}}\,\sqrt{\dot{\gamma}/\dot{\gamma}_{c}}}{1+\sqrt{\dot{\gamma}/\dot{\gamma}_{c}}}\right)^{\!2}$</td><td>η₀ (zero-shear Pa·s), η∞ (infinite-shear Pa·s), γ̇c (critical shear rate s⁻¹)</td><td>Derived from energy-minimisation in concentrated dispersions. Frequently used for blood (captures red blood cell aggregation at low shear and disaggregation at high shear). The geometric mean √(η₀·η∞) lies near the transition point. Three-parameter model; fewer parameters than Carreau. Also used for dense suspensions and pastes.</td></tr>
-      <tr><td colspan="4" class="ref-group-hdr">PEAK / SPECTRAL (EXTENDED)</td></tr>
-      <tr><td><strong>Exponentially Modified Gaussian (EMG)</strong></td><td>$y=\dfrac{A}{2}\exp\!\left(\dfrac{\sigma^2}{2\tau^2}-\dfrac{x-\mu}{\tau}\right)\mathrm{erfc}\!\left(\dfrac{\sigma/\tau-(x-\mu)/\sigma}{\sqrt{2}}\right)+C$</td><td>A (amplitude), μ (Gaussian centre), σ (Gaussian std dev), τ (exponential tail constant), C (baseline)</td><td>Convolution of a Gaussian with a one-sided exponential decay. Standard model for asymmetric chromatography peaks (HPLC, GC). τ &gt; 0 gives right (trailing) tailing; τ → 0 recovers the Gaussian. The asymmetry ratio A = τ/σ characterises peak shape. Implemented with erfc via Abramowitz &amp; Stegun polynomial (|err| &lt; 1.5×10⁻⁷).</td></tr>
-      <tr><td><strong>Asymmetric Gaussian</strong></td><td>$y=A\,e^{-(x-\mu)^2/2\sigma^2}\!\left[1+\mathrm{erf}\!\left(\dfrac{\alpha(x-\mu)}{\sigma\sqrt{2}}\right)\right]+C$</td><td>A (amplitude), μ (centre), σ (width), α (skewness), C (baseline)</td><td>Skew-normal peak model. α = 0 recovers the symmetric Gaussian; α &gt; 0 right-skews (longer right shoulder); α &lt; 0 left-skews. Useful for asymmetric spectroscopic peaks, powder diffraction with strain broadening, and asymmetric chromatographic peaks when the simpler EMG is over-parameterised.</td></tr>
-      <tr><td><strong>Voigt (Thompson-Cox-Hastings)</strong></td><td>$y=A\!\left[\eta\dfrac{(f_V/2)^2}{(x-x_0)^2+(f_V/2)^2}+(1-\eta)e^{-4\ln2\,(x-x_0)^2/f_V^2}\right]+C$</td><td>A (amplitude), x₀ (centre), fG (Gaussian FWHM), fL (Lorentzian FWHM), C (baseline)</td><td>True Voigt profile via the Thompson-Cox-Hastings (1987) approximation: fV and η are computed from fG and fL rather than being free parameters. The Voigt FWHM follows $f_V^5 = f_G^5 + 2.693\,f_G^4 f_L + \cdots + f_L^5$; error &lt; 0.01% vs. numerical Voigt. Use when physical broadening mechanisms are known: fG encodes instrumental/thermal broadening, fL encodes natural/strain linewidth. More constrained and physically meaningful than Pseudo-Voigt.</td></tr>
-      <tr><td colspan="4" class="ref-group-hdr">THERMAL / KINETICS</td></tr>
-      <tr><td><strong>Arrhenius</strong></td><td>$k = A\,\exp\!\left(-\dfrac{E_a/R}{T}\right)$</td><td>A (pre-exponential factor s⁻¹), Ea/R (activation energy / gas constant, K); x = T (Kelvin)</td><td>Rate constant vs. absolute temperature. Mathematically identical to Van't Hoff (K = exp(ΔS/R − ΔH/RT)) with A = exp(ΔS/R) and Ea/R = ΔH/R. Auto-init via linear regression of ln(k) vs. 1/T. Linearise as ln(k) = ln(A) − (Ea/R)·(1/T) for a quick graphical estimate.</td></tr>
-      <tr><td><strong>Extended Arrhenius</strong></td><td>$k = A\,T^n\,\exp\!\left(-\dfrac{E_a/R}{T}\right)$</td><td>A (pre-factor), n (temperature exponent), Ea/R (K)</td><td>Modified Arrhenius with a T^n pre-factor accounting for non-Arrhenius behaviour: collision theory gives n = 0.5; transition-state theory (Eyring) gives n = 1; empirical fits to combustion or atmospheric data yield other values. Reduces to standard Arrhenius when n = 0, and to Eyring (up to constants) when n = 1.</td></tr>
-      <tr><td colspan="4" class="ref-group-hdr">DIFFUSION / TRANSPORT</td></tr>
-      <tr><td><strong>Erf Diffusion</strong></td><td>$C = A\,\mathrm{erf}\!\left(\dfrac{x-\mu}{w}\right)+B$</td><td>A (amplitude), μ (interface position), w (diffusion width ∝ √(Dt)), B (baseline concentration)</td><td>Error-function concentration profile arising from 1D diffusion into a semi-infinite medium. The diffusion width w = 2√(Dt) encodes the product of diffusivity D and time t. Used for dopant profiles in semiconductors, solute diffusion in alloys, drug release, and oxygen uptake. The S-shaped curve transitions from B − A to B + A over a width ∼2w.</td></tr>
-      <tr><td colspan="4" class="ref-group-hdr">ACTIVATION FUNCTIONS</td></tr>
-      <tr><td><strong>Softplus</strong></td><td>$y = A\ln\!\left(1+e^{k(x-x_0)}\right)+C$</td><td>A (scale), k (steepness), x₀ (threshold), C (baseline)</td><td>Smooth approximation to the rectified linear unit (ReLU). For x ≫ x₀: y ≈ A·k·(x−x₀) + C (linear); for x ≪ x₀: y ≈ C. Useful for threshold phenomena, soft-onset activation curves, and fitting data that shows a smooth linear ramp after a transition. Overflow-safe: ln(1+exp(t)) → t for t &gt; 20.</td></tr>
-      <tr><td><strong>Erf Sigmoid (Probit)</strong></td><td>$y = \dfrac{A}{2}\!\left[1+\mathrm{erf}\!\left(k(x-x_0)\right)\right]+C$</td><td>A (amplitude), k (steepness ∝ 1/σ), x₀ (midpoint), C (baseline)</td><td>Normal-CDF-based sigmoid (probit). Differs from the logistic sigmoid (Boltzmann) in that the tails follow a Gaussian rather than an exponential distribution — lighter tails, slower approach to asymptotes. Used in psychophysics (threshold detection), reliability (probit analysis), and neural-network activation curves. k = 0 steepness recovers a flat line at A/2 + C.</td></tr>
       <tr><td colspan="4" class="ref-group-hdr">PHYSICS / MATERIAL</td></tr>
       <tr><td><strong>Langevin</strong></td><td>$y = A\!\left(\coth(Bx)-\dfrac{1}{Bx}\right)$</td><td>A (saturation value Ms), B (Langevin parameter ∝ μ/kT)</td><td>Magnetization of a classical paramagnet or superparamagnetic nanoparticle vs. applied field H. A = saturation magnetization Ms; B = μ/(kBT) where μ is the particle moment. Also describes polymer chain extension (freely-jointed chain model) and orientational polarization in dielectrics. L'Hôpital limit applied at Bx ≈ 0 to avoid 0/0.</td></tr>
       <tr><td><strong>Van't Hoff</strong></td><td>$\ln K = \dfrac{\Delta S}{R} - \dfrac{\Delta H}{RT}$, i.e. $K = e^{\Delta S/R - \Delta H/(RT)}$</td><td>dHR = ΔH/R (K), dSR = ΔS/R (dimensionless); x = T (Kelvin)</td><td>Equilibrium constant K vs. absolute temperature T. Linear in a ln K vs. 1/T (Van't Hoff plot) for constant ΔH; the nonlinear form here fits K vs. T directly. Used for protein folding/unfolding thermodynamics, binding affinity temperature dependence, solubility and reaction equilibria. Auto-init uses log-linear regression on ln K vs. 1/T.</td></tr>
@@ -2965,36 +2235,6 @@
 </div>
 
 </div><!-- end page-wrap -->
-
-<!-- Fit Comparison Modal -->
-<div class="modal-backdrop" id="compare-modal" style="display:none;align-items:center;justify-content:center">
-  <div class="modal" style="width:520px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column">
-    <div class="modal-header">
-      <span class="modal-title">Fit Comparison</span>
-      <button class="modal-close" id="compare-modal-close" aria-label="Close">✕</button>
-    </div>
-    <div class="modal-body" style="overflow-y:auto;flex:1;padding:12px 16px">
-      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
-        <label style="font-size:.72em;white-space:nowrap">Fit A</label>
-        <select id="compare-fit-a" class="ctrl-select" style="flex:1;font-size:.72em"></select>
-        <label style="font-size:.72em;white-space:nowrap">Fit B</label>
-        <select id="compare-fit-b" class="ctrl-select" style="flex:1;font-size:.72em"></select>
-      </div>
-      <table class="param-table" style="font-size:.76em;width:100%">
-        <thead><tr>
-          <th style="text-align:left">Metric</th>
-          <th style="text-align:right">Fit A</th>
-          <th style="text-align:right">Fit B</th>
-        </tr></thead>
-        <tbody id="compare-tbody"></tbody>
-      </table>
-      <p style="font-size:.65em;color:var(--dimmer);margin-top:8px">Teal = better value for that metric. For AIC/BIC/RMSE/SSE lower is better; for R² higher is better.</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-primary" id="compare-modal-close2">Close</button>
-    </div>
-  </div>
-</div>
 
 <!-- ── Accessibility panel ──────────────────────────────── -->
 <button class="acc-btn" id="accBtn" title="Display settings">⚙</button>
@@ -3048,4 +2288,3 @@
 <script defer src="js/main.js"></script>
 </body>
 </html>
-

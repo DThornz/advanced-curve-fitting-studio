@@ -2,65 +2,18 @@
 /* ═══════════════════════════════════════════════════════════
    BOUNDS HELPER
 ═══════════════════════════════════════════════════════════ */
-// Coupled constraints (ordering / sum-equality) for the current solve. Set by
-// boundsFromOpts() at each solver entry and consumed by clampToBounds(), so all
-// four solvers enforce them through the single existing projection chokepoint.
-// Fits run one at a time (multi-start loops sequentially; the worker handles one
-// job), so a module-level handle is safe.
-let _activeConstraints = null;
-// True when the active fit uses supplied 1/σ² weights (absolute uncertainties):
-// the covariance is then (JᵀWJ)⁻¹ directly, NOT rescaled by reduced χ² (matches
-// scipy's absolute_sigma=True). For relative weights it stays scaled by σ̂² = wSSE/dof.
-let _absSigma = false;
-
-function _boxClamp(p, lo, hi) {
+function clampToBounds(p, lo, hi) {
   if (!lo || !lo.length) return;
   for (let i = 0; i < p.length; i++) {
     if (lo[i] > -Infinity) p[i] = Math.max(p[i], lo[i]);
     if (hi[i] < Infinity)  p[i] = Math.min(p[i], hi[i]);
   }
 }
-
-// Projects p onto the feasible set: box bounds first, then coupled constraints,
-// re-applying box bounds and iterating until the largest constraint violation is
-// below a relative tolerance (a fixed cap guards infeasible combinations).
-function clampToBounds(p, lo, hi) {
-  _boxClamp(p, lo, hi);
-  const cons = _activeConstraints;
-  if (!cons || !cons.length) return;
-  let scale = 1; for (let i = 0; i < p.length; i++) { const a = Math.abs(p[i]); if (a > scale) scale = a; }
-  const tol = 1e-12 * scale, MAXIT = 50;
-  for (let it = 0; it < MAXIT; it++) {
-    let maxViol = 0;
-    for (const c of cons) {
-      if (c.type === 'order') {                 // enforce p[a] <= p[b]
-        const d = p[c.a] - p[c.b];
-        if (d > 0) { if (d > maxViol) maxViol = d; const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m; }
-      } else if (c.type === 'equal') {          // enforce p[a] == p[b]
-        const d = Math.abs(p[c.a] - p[c.b]); if (d > maxViol) maxViol = d;
-        const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m;
-      } else if (c.type === 'sum') {            // enforce sum(p[idx]) == value
-        let s = 0; for (const k of c.idx) s += p[k];
-        const dv = c.value - s; if (Math.abs(dv) > maxViol) maxViol = Math.abs(dv);
-        const adj = dv / c.idx.length;
-        if (isFinite(adj)) for (const k of c.idx) p[k] += adj;
-      } else if (c.type === 'sumle') {          // enforce sum(p[idx]) <= value
-        let s = 0; for (const k of c.idx) s += p[k];
-        if (s > c.value) { const dv = s - c.value; if (dv > maxViol) maxViol = dv; const adj = (c.value - s) / c.idx.length; for (const k of c.idx) p[k] += adj; }
-      }
-    }
-    _boxClamp(p, lo, hi);
-    if (maxViol <= tol) break;   // feasible to tolerance (or already satisfied)
-  }
-}
-
 function boundsFromOpts(opts) {
-  _activeConstraints = (opts && Array.isArray(opts.constraints) && opts.constraints.length) ? opts.constraints : null;
-  _absSigma = !!(opts && opts.absSigma);
   const rows = opts.paramRows || [];
   if (!rows.length) return { lo: null, hi: null };
-  const lo = rows.map(r => (r && r.min > -1e290) ? r.min : -Infinity);
-  const hi = rows.map(r => (r && r.max < 1e290)  ? r.max :  Infinity);
+  const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);
+  const hi = rows.map(r => (r && r.max < 1e9)  ? r.max :  Infinity);
   return { lo, hi };
 }
 
@@ -124,9 +77,9 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     // Gauss-Newton step: solve (J_r^T J_r + λD) δ = −J_r^T r, then p_new = p + δ
     const beta = J.map(col => col.reduce((s, v, i) => s - v * r[i], 0));
 
-    // Augment diagonal — proper Marquardt scaling: JtJ + λ·diag(|JtJ|)
+    // Augment diagonal
     const A = JtJ.map((row, a) =>
-      row.map((v, b) => a === b ? v + lambda * Math.max(Math.abs(v), 1e-10) : v)
+      row.map((v, b) => a === b ? v * (1 + lambda) + 1e-10 : v)
     );
 
     let delta;
@@ -139,18 +92,16 @@ function levenbergMarquardt(fn, xArr, yArr, p0, opts) {
     const newSSE = sse(rNew);
 
     if (newSSE < curSSE) {
-      const stepNorm = Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
-      const pNorm = Math.sqrt(p.reduce((s, v) => s + v * v, 0));
       p = pNew;
       lambda = Math.max(lambda / 3, 1e-12);
-      // Relative convergence (xtol AND ftol): tiny step AND tiny SSE change
-      if (stepNorm < tol * (pNorm + tol) && Math.abs(curSSE - newSSE) < tol * (curSSE + tol)) { converged = true; break; }
+      const stepNorm = Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
+      if (stepNorm < tol && Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
     } else {
       lambda = Math.min(lambda * 10, 1e12);
     }
   }
 
-  return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights, finalLambda: lambda });
+  return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
 
 /* ── Analytic polynomial ─────────────────────────────────── */
@@ -171,11 +122,10 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
   const yMean = mean(yArr);
   const sst = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
   const rSq = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
-  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1);
+  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m - 1, 1);
   const rmse = Math.sqrt(sseVal / Math.max(n - m, 1));
-  const LOG2PIE = Math.log(2 * Math.PI) + 1;
-  const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + 2 * m;
-  const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + m * Math.log(n);
+  const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
+  const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
   const dof = Math.max(n - m, 1);
   let paramErrors = coeffs.map(() => NaN);
   let covMatrix = null;
@@ -253,8 +203,7 @@ function gaussNewton(fn, xArr, yArr, p0, opts) {
     if (newSSE >= curSSE) break;
     p = pNew;
     const stepNorm = alpha * Math.sqrt(delta.reduce((s, d) => s + d * d, 0));
-    const pNorm = Math.sqrt(p.reduce((s, v) => s + v * v, 0));
-    if (stepNorm < tol * (pNorm + tol) && Math.abs(curSSE - newSSE) < tol * (curSSE + tol)) { converged = true; break; }
+    if (stepNorm < tol && Math.abs(curSSE - newSSE) < tol) { converged = true; break; }
   }
   return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
@@ -409,61 +358,52 @@ function bfgs(fn, xArr, yArr, p0, opts) {
 
     p = pNew; g = gNew;
     const stepNorm = Math.sqrt(s.reduce((acc, v) => acc + v * v, 0));
-    const pNorm = Math.sqrt(p.reduce((acc, v) => acc + v * v, 0));
-    if (stepNorm < tol * (pNorm + tol)) { converged = true; break; }
+    if (stepNorm < tol) { converged = true; break; }
   }
-  const gNormFinal = Math.sqrt(g.reduce((s, v) => s + v * v, 0));
-  return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights, gradNorm: gNormFinal });
+  return finaliseFit(fn, xArr, yArr, p, { converged, iter, weights: opts.weights });
 }
 
 /* ── Shared finalisation (stats + param errors) ─────────── */
 function finaliseFit(fn, xArr, yArr, p, meta) {
-  const CEPS = 1e-6;  // central-difference step for the covariance Jacobian
+  const EPS = 1e-7;
   const n = xArr.length, m = p.length;
-  let nBad = 0;
-  const r = xArr.map((x, i) => { const v = fn(x, p); if (!isFinite(v)) { nBad++; return 0; } return yArr[i] - v; });
-  const allBad = nBad >= n;   // model non-finite everywhere (e.g. bad custom eq) → not a real fit
+  const r = xArr.map((x, i) => { const v = fn(x, p); return isFinite(v) ? yArr[i] - v : 0; });
   const sseVal = r.reduce((s, v) => s + v * v, 0);
   const yMean  = mean(yArr);
   const sst    = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
-  const rSq    = allBad ? NaN : (sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst));
-  const adjRSq = allBad ? NaN : (sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1));
+  const rSq    = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
+  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m - 1, 1);
   const rmse   = Math.sqrt(sseVal / Math.max(n - m, 1));
-  const LOG2PIE = Math.log(2 * Math.PI) + 1;
-  const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + 2 * m;
-  const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + m * Math.log(n);
+  const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
+  const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
   let paramErrors = p.map(() => NaN);
   let covMatrix = null;
   const dof = Math.max(n - m, 1);
   const weights = meta.weights || null;
-  const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
-  const sig2Base = wSSE / dof;
-  const wrmse = Math.sqrt(Math.max(sig2Base, 0));
-  // Supplied-σ fits: covariance is (JᵀWJ)⁻¹ directly; relative weights scale by σ̂².
-  const covScale = _absSigma ? 1 : sig2Base;
   try {
     const J_cols = [];
     for (let j = 0; j < m; j++) {
-      const h = Math.max(Math.abs(p[j]) * CEPS, 1e-9);
-      const pPlus = p.slice();  pPlus[j]  += h;
-      const pMinus = p.slice(); pMinus[j] -= h;
-      const rP = xArr.map((x, i) => { const v = fn(x, pPlus);  return isFinite(v) ? yArr[i] - v : 0; });
-      const rM = xArr.map((x, i) => { const v = fn(x, pMinus); return isFinite(v) ? yArr[i] - v : 0; });
-      // Central-difference residual derivative, scaled by sqrt(w) for weighted covariance
-      J_cols.push(rP.map((vp, i) => {
-        const dri = (vp - rM[i]) / (2 * h);
+      const pp = p.slice();
+      const h = Math.max(Math.abs(p[j]) * EPS, EPS);
+      pp[j] += h;
+      const r1 = xArr.map((x, i) => { const v = fn(x, pp); return isFinite(v) ? yArr[i] - v : 0; });
+      // Scale Jacobian columns by sqrt(w) for weighted covariance
+      J_cols.push(r1.map((v, i) => {
+        const dri = (v - r[i]) / h;
         return weights ? dri * Math.sqrt(Math.max(weights[i], 0)) : dri;
       }));
     }
     const JtJ = Array.from({ length: m }, (_, a) =>
       Array.from({ length: m }, (_, b) => J_cols[a].reduce((s, _, i) => s + J_cols[a][i] * J_cols[b][i], 0)));
+    // sig2 based on weighted SSE for correct covariance, but report unweighted stats
+    const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
+    const sig2 = wSSE / dof;
     const inv = invertMatrix(JtJ);
     if (inv) {
-      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(covScale * row[i])));
-      covMatrix = inv.map(row => row.map(v => covScale * v));
+      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
+      covMatrix = inv.map(row => row.map(v => sig2 * v));
     }
   } catch (_) {}
-  return { params: p, paramErrors, covMatrix, dof, rSq, adjRSq, rmse, wrmse, sse: sseVal, aic, bic,
-           converged: meta.converged, iter: meta.iter, n, residuals: r,
-           finalLambda: meta.finalLambda ?? null, gradNorm: meta.gradNorm ?? null };
+  return { params: p, paramErrors, covMatrix, dof, rSq, adjRSq, rmse, sse: sseVal, aic, bic,
+           converged: meta.converged, iter: meta.iter, n, residuals: r };
 }

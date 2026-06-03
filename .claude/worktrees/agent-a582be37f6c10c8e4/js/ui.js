@@ -1,14 +1,5 @@
 // UI rendering: fit list, annotation editor, graph style editor, param table, stats table, sync helpers
 
-function _fitQualityBadge(rSq) {
-  if (!isFinite(rSq)) return '<span class="fit-quality-badge badge-none" title="No statistics yet"></span>';
-  const cls = rSq >= 0.99 ? 'badge-green' : rSq >= 0.95 ? 'badge-amber' : 'badge-red';
-  const label = rSq >= 0.99 ? 'excellent' : rSq >= 0.95 ? 'acceptable' : 'poor';
-  return `<span class="fit-quality-badge ${cls}" title="R² = ${rSq.toFixed(4)} (${label})"></span>`;
-}
-
-let _dragSrcFitId = null;
-
 function renderFitList() {
   const el = document.getElementById('fit-list');
   const cnt = document.getElementById('fit-count');
@@ -19,23 +10,16 @@ function renderFitList() {
     if (corrEl) corrEl.innerHTML = '';
     const sidePanel = document.getElementById('statsbar-corr');
     if (sidePanel) sidePanel.classList.add('corr-empty');
-    document.querySelector('.app-statsbar')?.classList.add('corr-empty');
     return;
   }
   el.innerHTML = state.fits.map(fit => {
     const ds = state.datasets.find(d => d.id === fit.dsId);
     const dsOff = ds && ds.enabled === false;
-    const rSq = fit.result?.rSq;
-    const notesTip = fit.notes?.trim() ? ` title="${_esc(fit.notes.trim().slice(0,200))}"` : '';
     return `
-    <div class="fit-item${fit.id === state.activeFitId ? ' active' : ''}${dsOff ? ' fit-item-off' : ''}" data-fitid="${fit.id}" draggable="true">
+    <div class="fit-item${fit.id === state.activeFitId ? ' active' : ''}${dsOff ? ' fit-item-off' : ''}" data-fitid="${fit.id}">
       <span class="ds-swatch" style="background:${fit.color};opacity:${dsOff ? 0.3 : 1}"></span>
       <span class="ds-label">
-        <span style="display:flex;align-items:center;gap:3px;overflow:hidden">
-          ${_fitQualityBadge(rSq)}
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(fit.label)}</span>
-          ${fit.notes?.trim() ? `<span class="fit-notes-dot"${notesTip}>📝</span>` : ''}
-        </span>
+        <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fit.label}</span>
         <span class="fit-item-eq">${fit.model}${dsOff ? ' (dataset off)' : ''}</span>
       </span>
       <button class="ds-delete" data-delid="${fit.id}" title="Remove fit">×</button>
@@ -46,33 +30,10 @@ function renderFitList() {
       const fitId = parseInt(item.dataset.fitid);
       const fit = state.fits.find(f => f.id === fitId);
       const ds = fit && state.datasets.find(d => d.id === fit.dsId);
-      if (ds && ds.enabled === false) return;
+      if (ds && ds.enabled === false) return; // block interaction with disabled-dataset fits
       state.activeFitId = fitId;
       renderFitList();
       if (fit) { renderParamResults(fit); renderStatsTable(); }
-    });
-    // Drag-drop reordering
-    item.addEventListener('dragstart', e => {
-      _dragSrcFitId = parseInt(item.dataset.fitid);
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(_dragSrcFitId));
-      setTimeout(() => item.classList.add('dragging'), 0);
-    });
-    item.addEventListener('dragend', () => item.classList.remove('dragging'));
-    item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; item.classList.add('drag-over'); });
-    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-    item.addEventListener('drop', e => {
-      e.preventDefault();
-      item.classList.remove('drag-over');
-      const tgtId = parseInt(item.dataset.fitid);
-      if (_dragSrcFitId === null || _dragSrcFitId === tgtId) return;
-      const si = state.fits.findIndex(f => f.id === _dragSrcFitId);
-      const ti = state.fits.findIndex(f => f.id === tgtId);
-      if (si < 0 || ti < 0) return;
-      state.fits.splice(ti, 0, state.fits.splice(si, 1)[0]);
-      _dragSrcFitId = null;
-      renderFitList();
-      updatePlots();
     });
   });
   el.querySelectorAll('.ds-delete').forEach(btn => {
@@ -80,6 +41,7 @@ function renderFitList() {
       e.stopPropagation();
       const id = parseInt(btn.dataset.delid);
       state.fits = state.fits.filter(f => f.id !== id);
+      // Remove annotations that referenced this fit (e.g. auto-peak annotations)
       state.annotations = state.annotations.filter(a => a.fitId !== id);
       if (state.activeFitId === id) {
         const enabledFit = state.fits.find(f => {
@@ -98,57 +60,6 @@ function renderFitList() {
   syncFTestSelects();
 }
 
-function showCompareModal() {
-  const modal = document.getElementById('compare-modal');
-  if (!modal) return;
-  const selA = document.getElementById('compare-fit-a');
-  const selB = document.getElementById('compare-fit-b');
-  const fits = state.fits.filter(f => f.result);
-  if (fits.length < 2) { setConsole('Need at least 2 fits with results to compare.', 'warn'); return; }
-  const opts = fits.map(f => `<option value="${f.id}">${_esc(f.label || f.model)}</option>`).join('');
-  selA.innerHTML = opts;
-  selB.innerHTML = opts;
-  if (fits.length >= 2) { selA.value = fits[fits.length - 2].id; selB.value = fits[fits.length - 1].id; }
-  renderCompareTable();
-  modal.style.display = 'flex';
-}
-
-function renderCompareTable() {
-  const selA = document.getElementById('compare-fit-a');
-  const selB = document.getElementById('compare-fit-b');
-  const tbody = document.getElementById('compare-tbody');
-  if (!selA || !selB || !tbody) return;
-  const fitA = state.fits.find(f => f.id === parseInt(selA.value));
-  const fitB = state.fits.find(f => f.id === parseInt(selB.value));
-  if (!fitA?.result || !fitB?.result) { tbody.innerHTML = '<tr><td colspan="3">Select two fits with results.</td></tr>'; return; }
-  const rA = fitA.result, rB = fitB.result;
-  const fmt6 = v => isFinite(v) ? v.toPrecision(6) : '—';
-
-  const metrics = [
-    { name: 'Model', a: fitA.model, b: fitB.model, better: null },
-    { name: 'Dataset', a: (state.datasets.find(d=>d.id===fitA.dsId)||{}).name||'—', b: (state.datasets.find(d=>d.id===fitB.dsId)||{}).name||'—', better: null },
-    { name: 'N points', a: rA.n, b: rB.n, better: null },
-    { name: 'Parameters', a: rA.params.length, b: rB.params.length, better: null },
-    { name: 'R²', a: fmt6(rA.rSq), b: fmt6(rB.rSq), better: rA.rSq >= rB.rSq ? 'a' : 'b' },
-    { name: 'Adj. R²', a: fmt6(rA.adjRSq), b: fmt6(rB.adjRSq), better: rA.adjRSq >= rB.adjRSq ? 'a' : 'b' },
-    { name: 'RMSE', a: fmt6(rA.rmse), b: fmt6(rB.rmse), better: rA.rmse <= rB.rmse ? 'a' : 'b' },
-    { name: 'SSE', a: fmt6(rA.sse), b: fmt6(rB.sse), better: rA.sse <= rB.sse ? 'a' : 'b' },
-    { name: 'AIC', a: fmt6(rA.aic), b: fmt6(rB.aic), better: rA.aic <= rB.aic ? 'a' : 'b' },
-    { name: 'BIC', a: fmt6(rA.bic), b: fmt6(rB.bic), better: rA.bic <= rB.bic ? 'a' : 'b' },
-    { name: 'Status', a: rA.converged ? '✓ Converged' : '⚠ Max iter', b: rB.converged ? '✓ Converged' : '⚠ Max iter', better: null },
-  ];
-  if (rA.chiSqRed != null || rB.chiSqRed != null)
-    metrics.push({ name: 'χ²ᵣ', a: rA.chiSqRed != null ? fmt6(rA.chiSqRed) : '—', b: rB.chiSqRed != null ? fmt6(rB.chiSqRed) : '—',
-      better: (rA.chiSqRed != null && rB.chiSqRed != null) ? (Math.abs(rA.chiSqRed - 1) <= Math.abs(rB.chiSqRed - 1) ? 'a' : 'b') : null });
-
-  tbody.innerHTML = metrics.map(m => `
-    <tr>
-      <td style="font-weight:500;padding:3px 8px;white-space:nowrap">${m.name}</td>
-      <td style="padding:3px 8px;text-align:right;${m.better==='a'?'color:var(--teal);font-weight:600':''}">${m.a}</td>
-      <td style="padding:3px 8px;text-align:right;${m.better==='b'?'color:var(--teal);font-weight:600':''}">${m.b}</td>
-    </tr>`).join('');
-}
-
 function syncFTestSelects() {
   const selA = document.getElementById('ftest-fit-a');
   const selB = document.getElementById('ftest-fit-b');
@@ -158,7 +69,7 @@ function syncFTestSelects() {
     return ds && ds.enabled !== false;
   });
   const empty = '<option value="">— no fits —</option>';
-  const opts = fits.map(f => `<option value="${f.id}">${_esc(f.label || f.model)}</option>`).join('');
+  const opts = fits.map(f => `<option value="${f.id}">${f.label || f.model}</option>`).join('');
   selA.innerHTML = opts || empty;
   selB.innerHTML = opts || empty;
   if (fits.length >= 2) {
@@ -205,7 +116,7 @@ function renderFTestResult(result) {
   const el = document.getElementById('ftest-result');
   if (!el) return;
   if (result.error) {
-    el.innerHTML = `<div class="pred-note" style="color:var(--error,#e53e3e)">${_esc(result.error)}</div>`;
+    el.innerHTML = `<div class="pred-note" style="color:var(--error,#e53e3e)">${result.error}</div>`;
     el.style.display = '';
     return;
   }
@@ -219,7 +130,7 @@ function renderFTestResult(result) {
     <tr><td>SSE (complex)</td><td>${fmt(result.sseComplex)}</td></tr>
   </table>
   <div class="pred-note">${sig
-    ? `Significant (p&lt;0.05): <em>${_esc(result.complex.label || result.complex.model)}</em> fits better.`
+    ? `Significant (p&lt;0.05): <em>${result.complex.label || result.complex.model}</em> fits better.`
     : `Not significant (p≥0.05): extra parameters not justified.`}</div>`;
   el.style.display = '';
 }
@@ -238,7 +149,7 @@ function renderAnnList() {
   }
   const typeLabel = { hline: 'H—', vline: '|V', text: 'T', peak: '⌃' };
   el.innerHTML = state.annotations.map(ann => {
-    const disp = _esc(ann.label || (ann.type === 'hline' ? `y = ${fmt(ann.y)}` : ann.type === 'vline' ? `x = ${fmt(ann.x)}` : `(${fmt(ann.x)}, ${fmt(ann.y)})`));
+    const disp = ann.label || (ann.type === 'hline' ? `y = ${fmt(ann.y)}` : ann.type === 'vline' ? `x = ${fmt(ann.x)}` : `(${fmt(ann.x)}, ${fmt(ann.y)})`);
     return `<div class="ann-item${ann.visible ? '' : ' ann-disabled'}" data-annid="${ann.id}">
       <span class="ann-item-type" title="${ann.type}">${typeLabel[ann.type] || '?'}</span>
       <span class="ann-item-label" title="${disp}">${disp}</span>
@@ -548,8 +459,8 @@ function saveGraphStyle() {
 }
 
 function sweepRange(row) {
-  const lo = row.min > -1e290 ? row.min : -Infinity;
-  const hi = row.max <  1e290 ? row.max :  Infinity;
+  const lo = row.min > -1e9 ? row.min : -Infinity;
+  const hi = row.max <  1e9 ? row.max :  Infinity;
   const init = row.init;
   let rMin, rMax;
   if (isFinite(lo) && isFinite(hi)) {
@@ -575,14 +486,12 @@ function renderParamTable() {
   const paramNames = model === 'Custom' ? state.fitConfig.customParams : (m ? m.params : []);
   if (m && m.analytic) {
     container.innerHTML = `<div class="panel-empty-hint" style="text-align:left;padding:6px 0;font-size:.72em">Analytic fit — no initial values needed.</div>`;
-    state.paramRows = paramNames.map(name => ({ name, init: 1, min: -1e300, max: 1e300 }));
-    renderConstraintsUI();
+    state.paramRows = paramNames.map(name => ({ name, init: 1, min: -Infinity, max: Infinity }));
     return;
   }
   if (!paramNames.length) {
     container.innerHTML = '<div class="panel-empty-hint">No parameters.</div>';
     state.paramRows = [];
-    renderConstraintsUI();
     return;
   }
   // Preserve existing values for same names
@@ -591,8 +500,8 @@ function renderParamTable() {
   state.paramRows = paramNames.map(name => ({
     name,
     init: prev[name] ? prev[name].init : 1,
-    min: prev[name] ? prev[name].min : -1e300,
-    max: prev[name] ? prev[name].max : 1e300,
+    min: prev[name] ? prev[name].min : -1e10,
+    max: prev[name] ? prev[name].max : 1e10,
     locked: prev[name] ? (prev[name].locked || false) : false,
   }));
 
@@ -608,10 +517,10 @@ function renderParamTable() {
     <div class="param-row" data-pi="${i}">
       <span class="param-name">${row.name}</span>
       <input class="param-input" data-field="init" type="number" value="${fmt(row.init)}" step="any" title="Initial value">
-      <input class="param-input param-bound" data-field="min"  type="text" inputmode="text" value="${row.min <= -1e290 ? '' : fmt(row.min)}" placeholder="-∞" title="Lower bound — number, blank, or -Inf for unbounded">
-      <input class="param-input param-bound" data-field="max"  type="text" inputmode="text" value="${row.max >= 1e290 ? '' : fmt(row.max)}" placeholder="+∞" title="Upper bound — number, blank, or Inf for unbounded">
+      <input class="param-input param-bound" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" placeholder="-∞" title="Lower bound (leave blank for -∞)">
+      <input class="param-input param-bound" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" placeholder="+∞" title="Upper bound (leave blank for +∞)">
       <span class="param-fit-val" title="">—</span>
-      <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" aria-label="${row.locked ? 'Unlock' : 'Lock'} parameter ${_esc(row.name)}" aria-pressed="${row.locked ? 'true' : 'false'}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? '🔒' : '🔓'}</button>
+      <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? '🔒' : '🔓'}</button>
     </div>
     <div class="param-sweep-row" data-si="${i}">
       <span style="font-size:.62em;color:var(--dimmer);font-family:var(--mono)">sweep</span>
@@ -623,18 +532,16 @@ function renderParamTable() {
     const i = parseInt(row.dataset.pi);
     row.querySelectorAll('.param-input').forEach(inp => {
       inp.addEventListener('change', () => {
-        const field = inp.dataset.field;
-        if (field === 'min' || field === 'max') {
-          state.paramRows[i][field] = _parseBound(inp.value, field === 'max');
-          renderConstraintChips();   // keep unified chips in sync with Min/Max
-        } else {                     // init
-          const v = parseFloat(inp.value);
-          if (isFinite(v)) {
-            state.paramRows[i].init = v;
+        const v = parseFloat(inp.value);
+        if (isFinite(v)) {
+          state.paramRows[i][inp.dataset.field] = v;
+          // Recalibrate sweep range if init changed
+          if (inp.dataset.field === 'init') {
             const sld = container.querySelector(`.param-sweep-range[data-si="${i}"]`);
             if (sld) { const { rMin, rMax } = sweepRange(state.paramRows[i]); sld.min = rMin; sld.max = rMax; sld.step = (rMax - rMin) / 200; sld.value = v; }
           }
-        }
+        } else if (inp.dataset.field === 'min') state.paramRows[i].min = -1e10;
+        else if (inp.dataset.field === 'max') state.paramRows[i].max = 1e10;
       });
     });
   });
@@ -674,10 +581,6 @@ function renderParamTable() {
         const sld = container.querySelector(`.param-sweep-range[data-si="${j}"]`);
         return sld ? parseFloat(sld.value) : r.init;
       });
-      // Visual cue when slider is pinned at a bound
-      const span = parseFloat(slider.max) - parseFloat(slider.min);
-      const pct = span > 0 ? (v - parseFloat(slider.min)) / span : 0.5;
-      slider.classList.toggle('at-bound', pct < 0.015 || pct > 0.985);
       updateSweepPreview();
     });
 
@@ -686,233 +589,6 @@ function renderParamTable() {
       updatePlots();
     });
   });
-
-  renderConstraintsUI();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   CONSTRAINT LIBRARY  (coupled constraints + box presets)
-   Box presets edit the parameter Min/Max directly; coupled
-   constraints (order / equal / sum / sum≤) live in state.constraints.
-═══════════════════════════════════════════════════════════ */
-// type → { label, min params, coupled? }
-const CONSTRAINT_TYPES = {
-  nonneg: { label: 'Parameter ≥ 0',        need: 1, coupled: false },
-  nonpos: { label: 'Parameter ≤ 0',        need: 1, coupled: false },
-  unit:   { label: '0 ≤ Parameter ≤ 1',    need: 1, coupled: false },
-  range:  { label: 'Parameter in [lo, hi]', need: 1, coupled: false },
-  order:  { label: 'A ≤ B  (ordering)',     need: 2, coupled: true  },
-  equal:  { label: 'A = B  (equality)',     need: 2, coupled: true  },
-  sum:    { label: 'Σ params = value',      need: 2, coupled: true  },
-  sumle:  { label: 'Σ params ≤ value',      need: 2, coupled: true  },
-};
-
-function _esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
-// Parse a Min/Max cell: number → that value; blank or any "inf"/"∞" form → the
-// unbounded sentinel (-1e300 for min, 1e300 for max), which the solver treats as ±∞.
-function _parseBound(s, isMax) {
-  const z = String(s == null ? '' : s).trim().toLowerCase();
-  const unbounded = isMax ? 1e300 : -1e300;
-  if (z === '' || /^[+-]?(inf|infinity|∞)$/.test(z)) return unbounded;
-  const v = parseFloat(z);
-  return isFinite(v) ? v : unbounded;
-}
-function _paramOpts(sel) { return state.paramRows.map((r, i) => `<option value="${i}"${i === sel ? ' selected' : ''}>${_esc(r.name)}</option>`).join(''); }
-
-function renderConstraintsUI() {
-  const block = document.getElementById('constraints-block');
-  if (!block) return;
-  const builder = document.getElementById('constraint-builder');
-  if (builder) builder.innerHTML = '';   // reset any half-built form (e.g. on model change)
-  const names = state.paramRows.map(r => r.name);
-  const model = state.fitConfig.model;
-  const isAnalytic = MODELS[model] && MODELS[model].analytic;
-
-  // Drop constraints that no longer reference valid current params
-  state.constraints = (state.constraints || []).filter(c => {
-    if (c.type === 'order' || c.type === 'equal') return names.includes(c.a) && names.includes(c.b);
-    if (c.type === 'sum' || c.type === 'sumle') return Array.isArray(c.params) && c.params.length >= 2 && c.params.every(n => names.includes(n));
-    return false;
-  });
-
-  // Hide entirely for analytic (constraints don't apply) or when there are no params
-  if (isAnalytic || names.length < 1) { block.style.display = 'none'; return; }
-  block.style.display = '';
-
-  // Build the add-menu, offering only types whose minimum param count is met
-  const sel = document.getElementById('constraint-add-select');
-  const avail = Object.entries(CONSTRAINT_TYPES).filter(([, t]) => names.length >= t.need);
-  sel.innerHTML = `<option value="">+ Add constraint…</option>` +
-    avail.map(([k, t]) => `<option value="${k}">${t.label}</option>`).join('');
-
-  renderConstraintChips();
-}
-
-function _constraintLabel(c) {
-  const nm = n => _esc(n);
-  if (c.type === 'order') return `${nm(c.a)} ≤ ${nm(c.b)}`;
-  if (c.type === 'equal') return `${nm(c.a)} = ${nm(c.b)}`;
-  if (c.type === 'sum')   return `Σ(${c.params.map(nm).join('+')}) = ${c.value}`;
-  if (c.type === 'sumle') return `Σ(${c.params.map(nm).join('+')}) ≤ ${c.value}`;
-  return '';
-}
-
-function renderConstraintChips() {
-  const list = document.getElementById('constraints-list');
-  if (!list) return;
-  const chips = [];
-  // Box-bound chips — derived live from the parameter Min/Max cells (single source
-  // of truth is paramRows.min/max; the chip is just a view of it).
-  state.paramRows.forEach((r, i) => {
-    const hasMin = r.min > -1e290, hasMax = r.max < 1e290;
-    if (!hasMin && !hasMax) return;
-    let label;
-    if (hasMin && hasMax) label = `${fmt(r.min)} ≤ ${_esc(r.name)} ≤ ${fmt(r.max)}`;
-    else if (hasMin)      label = `${_esc(r.name)} ≥ ${fmt(r.min)}`;
-    else                  label = `${_esc(r.name)} ≤ ${fmt(r.max)}`;
-    chips.push({ box: true, idx: i, label });
-  });
-  // Coupled-constraint chips
-  (state.constraints || []).forEach((c, ci) => chips.push({ box: false, idx: ci, label: _constraintLabel(c) }));
-
-  list.innerHTML = chips.map(ch =>
-    `<span class="constraint-chip${ch.box ? ' constraint-chip-box' : ''}" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" title="${ch.box ? 'Box bound — click to edit in the table · × clears it' : 'Coupled constraint — click to edit · × removes it'}">${ch.label}<button class="constraint-chip-x" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" aria-label="Remove constraint ${_esc(ch.label)}" title="Remove">×</button></span>`
-  ).join('');
-
-  // Click a chip body to edit it
-  list.querySelectorAll('.constraint-chip').forEach(chip => {
-    chip.addEventListener('click', (e) => {
-      if (e.target.classList.contains('constraint-chip-x')) return;  // × handled separately
-      const idx = parseInt(chip.dataset.idx);
-      if (chip.dataset.box === '1') {
-        // Box bound lives in the Min/Max cells — focus the relevant one to edit there
-        const row = state.paramRows[idx];
-        const field = (row && row.min > -1e290) ? 'min' : 'max';
-        const cell = document.querySelector(`.param-row[data-pi="${idx}"] [data-field="${field}"]`);
-        if (cell) { cell.focus(); cell.select(); }
-      } else {
-        const c = state.constraints[idx];
-        if (!c) return;
-        const sel = document.getElementById('constraint-add-select');
-        if (sel) sel.value = c.type;
-        renderConstraintBuilder(c.type, idx);   // pre-filled edit mode
-      }
-    });
-  });
-
-  // × removes (box: clears bounds; coupled: deletes)
-  list.querySelectorAll('.constraint-chip-x').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const idx = parseInt(btn.dataset.idx);
-      if (btn.dataset.box === '1') {
-        const row = state.paramRows[idx];
-        const nm = row ? row.name : 'parameter';
-        if (row) { row.min = -1e300; row.max = 1e300; }
-        renderParamTable();    // refresh Min/Max cells + chips
-        setConsole(`Cleared bounds on ${nm}.`, '');
-      } else {
-        state.constraints.splice(idx, 1);
-        renderConstraintChips();
-        setConsole('Constraint removed.', '');
-      }
-    });
-  });
-}
-
-// Renders the inline builder into #constraint-builder. `editCi` (optional) is the
-// index of an existing coupled constraint being edited → the form is pre-filled and
-// the button becomes ✓ Update (replaces in place) instead of ✓ Add.
-function renderConstraintBuilder(type, editCi) {
-  const host = document.getElementById('constraint-builder');
-  if (!host) return;
-  if (!type || !CONSTRAINT_TYPES[type]) { host.innerHTML = ''; return; }
-  const t = CONSTRAINT_TYPES[type];
-  const editing = Number.isInteger(editCi);
-  const ec = editing ? state.constraints[editCi] : null;
-  const names = state.paramRows.map(r => r.name);
-  // Dashed accent border signals an unsaved "draft" that must be committed.
-  const wrapCss = 'display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:5px 0;padding:7px;border:1px dashed var(--teal);border-radius:5px;background:var(--teal-glow)';
-  const selCss = 'font-size:.68em;padding:2px 4px;width:auto;flex:none';
-  let inner;
-  if (!t.coupled) {
-    // single parameter; 'range' also needs lo/hi
-    inner = `<span style="font-size:.66em;color:var(--dim)">${t.label}:</span>` +
-      `<select class="ctrl-input" id="cb-p1" style="${selCss}">${_paramOpts(0)}</select>` +
-      (type === 'range'
-        ? `<input class="ctrl-input" id="cb-lo" type="number" step="any" placeholder="lo" style="${selCss};width:54px">` +
-          `<input class="ctrl-input" id="cb-hi" type="number" step="any" placeholder="hi" style="${selCss};width:54px">`
-        : '');
-  } else if (type === 'order' || type === 'equal') {
-    const aSel = ec ? names.indexOf(ec.a) : 0;
-    const bSel = ec ? names.indexOf(ec.b) : 1;
-    const op = type === 'order' ? '≤' : '=';
-    inner = `<select class="ctrl-input" id="cb-p1" style="${selCss}">${_paramOpts(aSel)}</select>` +
-      `<span style="font-size:.72em;color:var(--dim)">${op}</span>` +
-      `<select class="ctrl-input" id="cb-p2" style="${selCss}">${_paramOpts(bSel)}</select>`;
-  } else {
-    // sum / sumle: checkboxes for each param + value
-    const op = type === 'sum' ? '=' : '≤';
-    const checked = new Set(ec ? ec.params.map(n => names.indexOf(n)) : []);
-    inner = `<div style="display:flex;flex-wrap:wrap;gap:6px;font-size:.68em;width:100%">${
-      state.paramRows.map((r, i) => `<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="cb-sum" value="${i}"${checked.has(i) ? ' checked' : ''}> ${_esc(r.name)}</label>`).join('')
-    }</div><span style="font-size:.72em;color:var(--dim)">Σ ${op}</span><input class="ctrl-input" id="cb-val" type="number" step="any" value="${ec ? ec.value : 1}" style="${selCss};width:60px">`;
-  }
-  const label = editing ? '✓ Update' : '✓ Add';
-  const hint  = editing ? 'Editing — change values, then click <b>✓ Update</b>.' : 'Not added yet — set the parameters above, then click <b>✓ Add</b>.';
-  host.innerHTML = `<div style="${wrapCss}">${inner}` +
-    `<button class="btn btn-primary cb-pulse" id="cb-apply" style="font-size:.66em;padding:2px 11px">${label}</button>` +
-    `<button class="btn" id="cb-cancel" style="font-size:.66em;padding:2px 7px" title="Discard">✕</button>` +
-    `<span style="flex-basis:100%;font-size:.62em;color:var(--dim);margin-top:1px">${hint}</span>` +
-    `</div>`;
-
-  host.querySelector('#cb-cancel').addEventListener('click', () => { host.innerHTML = ''; document.getElementById('constraint-add-select').value = ''; });
-  host.querySelector('#cb-apply').addEventListener('click', () => applyConstraintFromBuilder(type, editCi));
-}
-
-function applyConstraintFromBuilder(type, editCi) {
-  const host = document.getElementById('constraint-builder');
-  const names = state.paramRows.map(r => r.name);
-  const pVal = id => parseInt((document.getElementById(id) || {}).value);
-  const editing = Number.isInteger(editCi);
-
-  // Box presets edit Min/Max directly (never via edit mode — box chips edit in-table)
-  if (!CONSTRAINT_TYPES[type].coupled) {
-    const i = pVal('cb-p1');
-    if (!(i >= 0)) { setConsole('Pick a parameter.', 'warn'); return; }
-    const row = state.paramRows[i];
-    if (type === 'nonneg') { row.min = 0; }
-    else if (type === 'nonpos') { row.max = 0; }
-    else if (type === 'unit') { row.min = 0; row.max = 1; }
-    else if (type === 'range') {
-      const lo = parseFloat(document.getElementById('cb-lo').value);
-      const hi = parseFloat(document.getElementById('cb-hi').value);
-      if (isFinite(lo)) row.min = lo;
-      if (isFinite(hi)) row.max = hi;
-      if (isFinite(lo) && isFinite(hi) && lo > hi) { setConsole('lo must be ≤ hi.', 'error'); return; }
-    }
-    renderParamTable();
-    setConsole(`Set bound on ${row.name}.`, '');
-    return;
-  }
-
-  let nc;
-  if (type === 'order' || type === 'equal') {
-    const a = pVal('cb-p1'), b = pVal('cb-p2');
-    if (a === b) { setConsole('Pick two different parameters.', 'warn'); return; }
-    nc = { type, a: names[a], b: names[b] };
-  } else {
-    const idx = [...document.querySelectorAll('.cb-sum:checked')].map(cb => parseInt(cb.value));
-    if (idx.length < 2) { setConsole('Select at least two parameters.', 'warn'); return; }
-    const value = parseFloat(document.getElementById('cb-val').value);
-    if (!isFinite(value)) { setConsole('Enter a numeric value.', 'error'); return; }
-    nc = { type, params: idx.map(i => names[i]), value };
-  }
-  if (editing) state.constraints[editCi] = nc; else state.constraints.push(nc);
-  host.innerHTML = '';
-  document.getElementById('constraint-add-select').value = '';
-  renderConstraintChips();
-  setConsole(editing ? 'Constraint updated — applied on the next fit.' : 'Constraint added — applied on the next fit.', '');
 }
 
 function updateSweepPreview() {
@@ -963,23 +639,6 @@ function renderParamResults(fit) {
       if (valSpan) valSpan.textContent = fmt(val);
     }
   });
-  // Update fit notes textarea
-  const notesSection = document.getElementById('fit-notes-section');
-  const notesInput   = document.getElementById('fit-notes-input');
-  if (notesSection && notesInput) {
-    notesSection.style.display = '';
-    notesInput.value = fit.notes || '';
-    notesInput.oninput = () => {
-      fit.notes = notesInput.value;
-      // Refresh badge in fit list (notes icon)
-      const item = document.querySelector(`.fit-item[data-fitid="${fit.id}"] .ds-label`);
-      if (item) {
-        const dot = item.querySelector('.fit-notes-dot');
-        if (fit.notes.trim() && !dot) renderFitList();
-        else if (!fit.notes.trim() && dot) renderFitList();
-      }
-    };
-  }
   renderCorrMatrix(fit);
 }
 
@@ -992,11 +651,9 @@ function renderCorrMatrix(fit) {
   if (!covMatrix || names.length < 2) {
     el.innerHTML = '';
     if (sidePanel) sidePanel.classList.add('corr-empty');
-    document.querySelector('.app-statsbar')?.classList.add('corr-empty');
     return;
   }
   if (sidePanel) sidePanel.classList.remove('corr-empty');
-  document.querySelector('.app-statsbar')?.classList.remove('corr-empty');
   const m = names.length;
   const corr = Array.from({ length: m }, (_, i) =>
     Array.from({ length: m }, (_, j) => {
@@ -1004,28 +661,24 @@ function renderCorrMatrix(fit) {
       return denom < 1e-20 ? (i === j ? 1 : 0) : covMatrix[i][j] / denom;
     })
   );
-  const isDk = document.body.classList.contains('dark-mode');
-  // Diverging colormap: neutral (v≈0) blends into the panel background so it
-  // works in both themes; positive → blue, negative → red.
-  const neutral = isDk ? [18, 36, 63] : [247, 249, 252];
   function corrColor(v) {
-    const t = Math.min(1, Math.abs(Math.max(-1, Math.min(1, v))));
-    const end = v >= 0 ? [37, 99, 235] : [220, 38, 38];
-    const mix = k => Math.round(neutral[k] + (end[k] - neutral[k]) * t);
-    return `rgb(${mix(0)},${mix(1)},${mix(2)})`;
+    const c = Math.max(-1, Math.min(1, v));
+    if (c >= 0) {
+      const t = c;
+      return `rgb(${Math.round(255-t*(255-29))},${Math.round(255-t*(255-78))},${Math.round(255-t*(255-216))})`;
+    } else {
+      const t = -c;
+      return `rgb(${Math.round(255-t*(255-220))},${Math.round(255-t*(255-38))},${Math.round(255-t*(255-38))})`;
+    }
   }
-  // Pick black/white text by the cell's relative luminance for guaranteed contrast.
-  function textOn(rgb) {
-    const m = rgb.match(/\d+/g).map(Number);
-    const lum = (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255;
-    return lum < 0.55 ? '#ffffff' : '#15212e';
-  }
+  const isDk = document.body.classList.contains('dark-mode');
   const header = `<tr><th></th>${names.map(n => `<th title="${n}">${n.length>4?n.slice(0,4):n}</th>`).join('')}</tr>`;
   const bodyRows = corr.map((row, i) =>
     `<tr><td>${names[i].length>4?names[i].slice(0,4):names[i]}</td>` +
     row.map((v, j) => {
       const bg = corrColor(v);
-      return `<td style="background:${bg};color:${textOn(bg)}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
+      const txtClr = Math.abs(v) > 0.55 ? '#fff' : (isDk ? '#e2e8f0' : '#1a202c');
+      return `<td style="background:${bg};color:${txtClr}" title="${names[i]}↔${names[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
     }).join('') + '</tr>'
   ).join('');
 
@@ -1037,7 +690,7 @@ function renderCorrMatrix(fit) {
   allPairs.sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
   const listHtml = allPairs.map(({ i, j, v }) => {
     const av = Math.abs(v);
-    const barColor = corrColor(v);
+    const barColor = v > 0 ? corrColor(av) : corrColor(-av < 0 ? -av : av);
     const valCls = av >= 0.95 ? 'style="color:var(--red)"' : av >= 0.70 ? 'style="color:var(--amber)"' : '';
     return `<div class="corr-list-row">
       <span class="corr-list-pair" title="${names[i]} ↔ ${names[j]}">${names[i]} ↔ ${names[j]}</span>
@@ -1063,7 +716,7 @@ function renderCorrMatrix(fit) {
   }
 
   el.innerHTML = `
-    <div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="corr-matrix">?</span></div>
+    <div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" data-tip="corr-matrix">?</span></div>
     <div class="corr-panel-cols">
       <div class="corr-panel-heatmap">
         <table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>
@@ -1103,7 +756,7 @@ function renderStatsTable() {
   let msgHtml = '';
   if (_consoleMsg.text) {
     const cls = _consoleMsg.type === 'error' ? 'console-status-err' : _consoleMsg.type === 'warn' ? 'console-status-warn' : 'console-hint';
-    msgHtml = `<div class="stats-msg-row"><span class="${cls}">${_esc(_consoleMsg.text)}</span></div>`;
+    msgHtml = `<div class="stats-msg-row"><span class="${cls}">${_consoleMsg.text}</span></div>`;
   }
 
   if (!state.fits.length) {
@@ -1183,7 +836,7 @@ function buildStatExpandRow(fit, r, colSpan) {
   const iterStr = r.iter != null ? ` (${r.iter} iter)` : '';
   const metaStr = [
     statusStr + iterStr,
-    algoNames[fit.algo] || fit.algo || '—',
+    algoNames[fit.algoKey] || fit.algoKey || '—',
     `N = ${r.n}`,
     `dof = ${dof}`,
     `Weights: ${weightNames[fit.weightMode] || fit.weightMode || 'none'}`,
@@ -1358,7 +1011,7 @@ function syncFitDatasetSelect() {
   const cur = sel.value;
   const fittable = state.datasets.filter(d => d.enabled !== false);
   sel.innerHTML = fittable.length
-    ? fittable.map(ds => `<option value="${ds.id}">${_esc(ds.name)}</option>`).join('')
+    ? fittable.map(ds => `<option value="${ds.id}">${ds.name}</option>`).join('')
     : '<option value="">— no enabled dataset —</option>';
   const activeEnabled = fittable.find(d => d.id === state.activeDatasetId);
   if (activeEnabled) sel.value = state.activeDatasetId;

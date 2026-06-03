@@ -33,125 +33,9 @@ function initEvents() {
       requestAnimationFrame(() => { if (!menu.classList.contains('open')) menu.style.cssText = ''; });
     });
   }
-  setupDropdown('btn-examples', 'examples-menu', 740);
+  setupDropdown('btn-examples', 'examples-menu', 540);
   setupDropdown('btn-export',   'export-menu',   220);
   setupDropdown('btn-session',  'session-menu',  200);
-
-  /* ── Examples menu: auto-column layout ───────────────────
-     Parse all items/sections ONCE from original HTML, then
-     rebuild columns to fill available viewport height on open. */
-  let _exSections = null;
-
-  function _getExSections() {
-    if (_exSections) return _exSections;
-    _exSections = [];
-    let cur = null;
-    document.getElementById('examples-cols-wrap')
-      ?.querySelectorAll('.examples-col-hdr, .app-dropdown-item[data-example]')
-      .forEach(el => {
-        if (el.classList.contains('examples-col-hdr')) {
-          if (cur) _exSections.push(cur);
-          cur = { hdr: el.textContent.trim(), items: [] };
-        } else {
-          if (!cur) cur = { hdr: '', items: [] };
-          cur.items.push({ key: el.dataset.example, html: el.outerHTML });
-        }
-      });
-    if (cur) _exSections.push(cur);
-    return _exSections;
-  }
-
-  const EX_COL_W = 210;  // fixed column width (px) → consistent text wrapping
-
-  // Split sections into exactly `n` order-preserving columns, balancing item weight.
-  function _splitExColumns(sections, n) {
-    const weight = sec => (sec.hdr ? 1 : 0) + sec.items.length + 0.4; // +sep allowance
-    const total  = sections.reduce((s, sec) => s + weight(sec), 0);
-    const target = total / n;
-    const cols = []; let col = [], w = 0;
-    sections.forEach(sec => {
-      const sw = weight(sec);
-      // move to next column once we've met our share AND more columns remain
-      if (col.length && cols.length < n - 1 && w >= target - sw / 2) {
-        cols.push(col); col = []; w = 0;
-      }
-      col.push(sec); w += sw;
-    });
-    if (col.length) cols.push(col);
-    return cols;
-  }
-
-  function _renderExColumns(columns) {
-    const colsWrap = document.getElementById('examples-cols-wrap');
-    colsWrap.innerHTML = columns.map(secs =>
-      `<div class="examples-col">${secs.map((sec, si) =>
-        (sec.hdr ? `<div class="examples-col-hdr">${sec.hdr}</div>` : '') +
-        sec.items.map(it => it.html).join('') +
-        (si < secs.length - 1 ? '<div class="app-dropdown-sep"></div>' : '')
-      ).join('')}</div>`
-    ).join('');
-    colsWrap.querySelectorAll('.app-dropdown-item[data-example]').forEach(el => {
-      el.addEventListener('click', () => {
-        const menu = document.getElementById('examples-menu');
-        openExampleEditor(el.dataset.example);
-        menu.classList.remove('open');
-        menu.style.cssText = '';
-      });
-    });
-  }
-
-  function _rebuildExMenuColumns() {
-    if (window.innerWidth < 640) return;   // mobile handled by CSS
-    const menu = document.getElementById('examples-menu');
-    const colsWrap = document.getElementById('examples-cols-wrap');
-    if (!menu || !colsWrap || !menu.classList.contains('open')) return;
-
-    const sections = _getExSections();
-    if (!sections.length) return;
-
-    // Clear any prior scroll fallback before measuring
-    colsWrap.style.maxHeight = '';
-    colsWrap.style.overflowY = '';
-
-    // How many columns can fit horizontally
-    const maxByWidth = Math.max(1, Math.floor((window.innerWidth - 24) / EX_COL_W));
-    const maxCols    = Math.min(sections.length, maxByWidth, 8);
-
-    // Anchor left edge from current fixed position (set by positionMenu)
-    const startLeft = parseFloat(menu.style.left) || menu.getBoundingClientRect().left;
-
-    // Try increasing column counts until the rendered content fits the viewport
-    const availFor = () => window.innerHeight - colsWrap.getBoundingClientRect().top - 12;
-    for (let n = 1; n <= maxCols; n++) {
-      const columns = _splitExColumns(sections, n);
-      _renderExColumns(columns);
-
-      // Size + reposition so we measure at the real on-screen geometry
-      const width = columns.length * EX_COL_W + 8;
-      const left  = Math.max(8, Math.min(startLeft, window.innerWidth - width - 8));
-      menu.style.width = width + 'px';
-      menu.style.left  = Math.round(left) + 'px';
-
-      if (colsWrap.scrollHeight <= availFor()) break;  // fits — done
-    }
-
-    // If even the widest layout overflows (very short viewport), scroll the columns
-    if (colsWrap.scrollHeight > availFor()) {
-      colsWrap.style.maxHeight = Math.max(120, availFor()) + 'px';
-      colsWrap.style.overflowY = 'auto';
-    }
-  }
-
-  // Hook: rebuild columns whenever the examples menu opens
-  document.getElementById('btn-examples').addEventListener('click', () => {
-    // Run after positionMenu() sets the fixed position/width
-    setTimeout(_rebuildExMenuColumns, 0);
-  });
-  // Also rebuild on window resize while open
-  window.addEventListener('resize', () => {
-    if (document.getElementById('examples-menu')?.classList.contains('open'))
-      _rebuildExMenuColumns();
-  }, { passive: true });
 
   /* ── Example datasets ─────────────────────────────────── */
   document.getElementById('examples-menu').querySelectorAll('.app-dropdown-item').forEach(item => {
@@ -193,7 +77,6 @@ function initEvents() {
         setConsole(`Imported: ${ds.name} (${x.length} points).`, '');
       } catch (err) { setConsole('Import error: ' + err.message, 'error'); }
     };
-    reader.onerror = () => setConsole("Could not read the file (it may be unreadable or locked).", "error");
     reader.readAsText(file);
     e.target.value = '';
   });
@@ -220,7 +103,6 @@ function initEvents() {
         setConsole(`Imported: ${ds.name} (${x.length} points).`, '');
       } catch (err) { setConsole('Drop import error: ' + err.message, 'error'); }
     };
-    reader.onerror = () => setConsole("Could not read the file (it may be unreadable or locked).", "error");
     reader.readAsText(file);
   });
 
@@ -240,7 +122,7 @@ function initEvents() {
       const delim = document.getElementById('paste-delim').value;
       const rows = parseDelimited(text, delim);
       const { x, y } = rowsToXY(rows);
-      document.getElementById('paste-preview').textContent = x.length ? `Preview: ${x.length} rows parsed. X ∈ [${fmt(arrMin(x))}, ${fmt(arrMax(x))}], Y ∈ [${fmt(arrMin(y))}, ${fmt(arrMax(y))}]` : 'No numeric pairs found.';
+      document.getElementById('paste-preview').textContent = x.length ? `Preview: ${x.length} rows parsed. X ∈ [${fmt(Math.min(...x))}, ${fmt(Math.max(...x))}], Y ∈ [${fmt(Math.min(...y))}, ${fmt(Math.max(...y))}]` : 'No numeric pairs found.';
     } catch (_) { document.getElementById('paste-preview').textContent = 'Parse error.'; }
   });
   document.getElementById('paste-import').addEventListener('click', () => {
@@ -265,13 +147,6 @@ function initEvents() {
   /* ── Fit button ───────────────────────────────────────── */
   document.getElementById('btn-fit').addEventListener('click', runFit);
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runFit(); });
-  // Ctrl+F: quick re-fit (overrides browser find when app is open)
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f' && !e.shiftKey && !e.altKey) {
-      const appOverlay = document.getElementById('app-overlay');
-      if (appOverlay && appOverlay.classList.contains('open')) { e.preventDefault(); runFit(); }
-    }
-  });
 
   /* ── Cancel fit button ────────────────────────────────── */
   document.getElementById('btn-cancel-fit').addEventListener('click', () => {
@@ -296,23 +171,16 @@ function initEvents() {
 
   /* ── Clear all ────────────────────────────────────────── */
   document.getElementById('btn-clear-all').addEventListener('click', () => {
-    if (!state.datasets.length && !state.fits.length) return;
-    if (!confirm(`Remove all ${state.datasets.length} dataset(s) and ${state.fits.length} fit(s)? This cannot be undone.`)) return;
     state.datasets = []; state.fits = [];
     state.activeDatasetId = null; state.activeFitId = null;
     state.selection = { dsId: null, indices: new Set() };
-    if (state.selectedDatasetIds) state.selectedDatasetIds.clear();
     syncFitDatasetSelect(); renderDatasetList(); renderFitList();
     updatePlots();
     setConsole('All datasets and fits cleared.', '');
   });
 
-  document.getElementById('btn-combine-ds').addEventListener('click', combineSelectedDatasets);
-
   /* ── Clear all fits ───────────────────────────────────── */
   document.getElementById('btn-clear-all-fits').addEventListener('click', () => {
-    if (!state.fits.length) return;
-    if (!confirm(`Remove all ${state.fits.length} fit(s)? This cannot be undone.`)) return;
     state.fits = [];
     state.activeFitId = null;
     renderFitList();
@@ -344,10 +212,6 @@ function initEvents() {
   /* ── Auto init ────────────────────────────────────────── */
   document.getElementById('btn-auto-init').addEventListener('click', autoInitParams);
   document.getElementById('btn-try-all').addEventListener('click', tryAllModels);
-  document.getElementById('btn-fit-all').addEventListener('click', runFitAllDatasets);
-  document.getElementById('constraint-add-select').addEventListener('change', function () {
-    renderConstraintBuilder(this.value);
-  });
   document.getElementById('model-compare-close').addEventListener('click', () => {
     document.getElementById('model-compare-modal').style.display = 'none';
   });
@@ -392,7 +256,7 @@ function initEvents() {
     const _res2 = r.residuals || [];
     if (_res2.length) {
       const _mae = _res2.reduce((s, e) => s + Math.abs(e), 0) / _res2.length;
-      const _maxE = arrMax(_res2.map(Math.abs));
+      const _maxE = Math.max(..._res2.map(Math.abs));
       const _ym = _yv2.length ? _yv2.reduce((s, y) => s + y, 0) / _yv2.length : 0;
       lines.push('');
       lines.push('Diagnostics');
@@ -482,7 +346,6 @@ function initEvents() {
     if (!ds) return;
     if (!ds.excludedIndices) ds.excludedIndices = new Set();
     const { pairs, rmse } = getLiveResidualsWithIdx(fit, ds);
-    if (!(rmse > 0) || !isFinite(rmse)) { setConsole('Residual RMSE is zero — nothing to threshold.', 'warn'); return; }
     const threshold = 2.5 * rmse;
     let added = 0;
     pairs.forEach(({ origIdx, r }) => {
@@ -505,7 +368,7 @@ function initEvents() {
   (function() {
     const ppModal = document.getElementById('preprocess-modal');
     const closePP = () => { ppModal.style.display = 'none'; };
-    document.getElementById('btn-preprocess').addEventListener('click', () => { ppModal.style.display = 'flex'; syncUndoRedoButtons(); });
+    document.getElementById('btn-preprocess').addEventListener('click', () => { ppModal.style.display = 'flex'; });
     document.getElementById('pp-modal-close').addEventListener('click', closePP);
     document.getElementById('pp-close').addEventListener('click', closePP);
     ppModal.addEventListener('click', e => { if (e.target === ppModal) closePP(); });
@@ -567,78 +430,8 @@ function initEvents() {
       if (_specVisible) renderFFTSpectrum(); // re-render with filtered data
     });
 
-    document.getElementById('pp-undo').addEventListener('click', () => {
-      if (!state.editHistory.undo.length) { setConsole('Nothing to undo.', ''); return; }
-      undoEdit();
-      if (_specVisible) renderFFTSpectrum();
-    });
-
     document.getElementById('pp-restore').addEventListener('click', () => {
       restoreOriginalData();
-      if (_specVisible) renderFFTSpectrum();
-    });
-
-    // ── Normalize / Transform (#3) ────────────────────────────
-    const tfDescs = {
-      minmax: 'Linearly rescales to the [0, 1] interval. A display convenience — note it changes parameter scale and meaning.',
-      zscore: 'Centres to mean 0 and scales to unit standard deviation. Useful for comparing differently-scaled signals.',
-      log:    'Natural logarithm — variance-stabilising for multiplicative/exponential data. Requires all Y > 0.',
-      log10:  'Base-10 logarithm — same as ln but in decades. Requires all Y > 0.',
-      sqrt:   'Square root — variance-stabilising for Poisson-like count data. Requires Y ≥ 0.',
-      boxcox: 'Box–Cox power transform with parameter λ (λ = 0 ⇒ log). Requires all Y > 0. Use Auto to maximise the profile likelihood.'
-    };
-    const tfMethod = document.getElementById('pp-tf-method');
-    tfMethod.addEventListener('change', () => {
-      document.getElementById('pp-tf-lambda-row').style.display = tfMethod.value === 'boxcox' ? 'flex' : 'none';
-      document.getElementById('pp-tf-desc').textContent = tfDescs[tfMethod.value] || '';
-    });
-    document.getElementById('pp-tf-lambda-auto').addEventListener('click', () => {
-      const ds = state.datasets.find(d => d.id === state.activeDatasetId);
-      if (!ds) { setConsole('No active dataset.', 'warn'); return; }
-      if (ds.y.some(v => !(v > 0))) { setConsole('Box–Cox requires all Y > 0.', 'error'); return; }
-      const lam = _boxcoxAutoLambda(ds.y);
-      document.getElementById('pp-tf-lambda').value = lam;
-      setConsole(`Auto Box–Cox λ = ${lam} (maximum-likelihood estimate).`, '');
-    });
-    document.getElementById('pp-tf-apply').addEventListener('click', () => {
-      const lam = parseFloat(document.getElementById('pp-tf-lambda').value);
-      applyTransform(tfMethod.value, lam);
-      if (_specVisible) renderFFTSpectrum();
-    });
-
-    // ── Baseline / De-trend (#5) ──────────────────────────────
-    const blDescs = {
-      poly:   'Fits a low-order polynomial trend and subtracts it — good for removing drift or background under peaks and oscillations.',
-      lowess: 'Fits a locally-weighted regression (tricube kernel) baseline and subtracts it — follows slow, non-polynomial trends.'
-    };
-    const blMethod = document.getElementById('pp-bl-method');
-    blMethod.addEventListener('change', () => {
-      const poly = blMethod.value === 'poly';
-      document.getElementById('pp-bl-deg-row').style.display  = poly ? 'flex' : 'none';
-      document.getElementById('pp-bl-frac-row').style.display = poly ? 'none' : 'flex';
-      document.getElementById('pp-bl-desc').textContent = blDescs[blMethod.value] || '';
-    });
-    document.getElementById('pp-bl-apply').addEventListener('click', () => {
-      const deg  = parseInt(document.getElementById('pp-bl-deg').value) || 1;
-      const frac = parseFloat(document.getElementById('pp-bl-frac').value) || 0.3;
-      applyBaseline(blMethod.value, deg, frac);
-      if (_specVisible) renderFFTSpectrum();
-    });
-
-    // ── Repair / Impute (#4) ──────────────────────────────────
-    const rpDescs = {
-      outliers: 'Flags points whose robust (MAD-based) z-score exceeds the threshold and replaces them with an interpolated estimate from the remaining points.',
-      nan:      'Replaces any non-finite (NaN/Inf) Y values with an interpolated estimate from the surrounding finite points.'
-    };
-    const rpMethod = document.getElementById('pp-rp-method');
-    rpMethod.addEventListener('change', () => {
-      document.getElementById('pp-rp-thresh-row').style.display = rpMethod.value === 'outliers' ? 'flex' : 'none';
-      document.getElementById('pp-rp-desc').textContent = rpDescs[rpMethod.value] || '';
-    });
-    document.getElementById('pp-rp-apply').addEventListener('click', () => {
-      const thresh = parseFloat(document.getElementById('pp-rp-thresh').value) || 3.5;
-      const fill   = document.getElementById('pp-rp-fill').value;
-      applyRepair(rpMethod.value, thresh, fill);
       if (_specVisible) renderFFTSpectrum();
     });
 
@@ -717,7 +510,6 @@ function initEvents() {
     if (!ds) return;
     if (!ds.excludedIndices) ds.excludedIndices = new Set();
     const { pairs, rmse } = getLiveResidualsWithIdx(fit, ds);
-    if (!(rmse > 0) || !isFinite(rmse)) { setConsole('Residual RMSE is zero — nothing to threshold.', 'warn'); return; }
     const threshold = 2.5 * rmse;
     let added = 0;
     pairs.forEach(({ origIdx, r }) => {
@@ -741,13 +533,9 @@ function initEvents() {
       document.getElementById('col-picker-modal').style.display = 'none'; _pendingImport = null;
     }
   });
-  document.getElementById('col-picker-mode').addEventListener('change', updateColPickerMode);
   document.getElementById('col-picker-x').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-y').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-sig').addEventListener('change', updateColPickerPreview);
-  document.getElementById('col-picker-group').addEventListener('change', updateColPickerPreview);
-  document.getElementById('col-picker-agg').addEventListener('change', updateColPickerPreview);
-  document.getElementById('col-picker-sigmethod').addEventListener('change', updateColPickerPreview);
   document.getElementById('col-picker-import').addEventListener('click', importFromColumnPicker);
 
   /* ── Residual tabs ────────────────────────────────────── */
@@ -785,22 +573,14 @@ function initEvents() {
   });
 
   /* ── Export ───────────────────────────────────────────── */
-  const _closeExport = () => document.getElementById('export-menu').classList.remove('open');
-  document.getElementById('exp-png')       .addEventListener('click', () => { exportPNG();              _closeExport(); });
-  document.getElementById('exp-svg')       .addEventListener('click', () => { exportSVG();              _closeExport(); });
-  document.getElementById('exp-copy-plot') .addEventListener('click', () => { copyPlotToClipboard();    _closeExport(); });
-  document.getElementById('exp-html')      .addEventListener('click', () => { exportStandaloneHTML();   _closeExport(); });
-  document.getElementById('exp-csv')       .addEventListener('click', () => { exportCSV();              _closeExport(); });
-  document.getElementById('exp-report')    .addEventListener('click', () => { exportReport();           _closeExport(); });
-  document.getElementById('exp-excel')     .addEventListener('click', () => { exportExcel();            _closeExport(); });
-  document.getElementById('exp-json')      .addEventListener('click', () => { exportJSON();             _closeExport(); });
-  document.getElementById('exp-python')    .addEventListener('click', () => { exportPython();           _closeExport(); });
-  document.getElementById('exp-jupyter')   .addEventListener('click', () => { exportJupyter();          _closeExport(); });
-  document.getElementById('exp-r')         .addEventListener('click', () => { exportR();                _closeExport(); });
-  document.getElementById('exp-latex')     .addEventListener('click', () => { exportLatex();            _closeExport(); });
-  document.getElementById('exp-latex-doc') .addEventListener('click', () => { exportLatexDoc();         _closeExport(); });
-  document.getElementById('exp-matlab')    .addEventListener('click', () => { exportMATLAB();           _closeExport(); });
-  document.getElementById('exp-bibtex')    .addEventListener('click', () => { exportBibTeX();           _closeExport(); });
+  document.getElementById('exp-png').addEventListener('click', () => { exportPNG(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-svg').addEventListener('click', () => { exportSVG(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-csv').addEventListener('click', () => { exportCSV(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-report').addEventListener('click', () => { exportReport(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-python').addEventListener('click', () => { exportPython(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-r').addEventListener('click', () => { exportR(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-latex').addEventListener('click', () => { exportLatex(); document.getElementById('export-menu').classList.remove('open'); });
+  document.getElementById('exp-matlab').addEventListener('click', () => { exportMATLAB(); document.getElementById('export-menu').classList.remove('open'); });
 
   /* ── Session ──────────────────────────────────────────── */
   document.getElementById('btn-save').addEventListener('click', saveSession);
@@ -960,26 +740,10 @@ function initEvents() {
   /* ── Full-screen overlay open / close ─────────────────── */
   const appOverlay = document.getElementById('app-overlay');
   let appEverOpened = false;
-  let _appPrevFocus = null;
-  // Make the landing page behind the full-screen app un-focusable/hidden to AT
-  function _setBgInert(on) {
-    [...document.body.children].forEach(el => {
-      if (el === appOverlay) return;
-      // Skip modal/tooltip layers — they sit at <body> level but are opened FROM the
-      // app (e.g. Release Notes, Column Picker), so they must stay interactive.
-      if (el.classList && (el.classList.contains('modal-backdrop') || el.classList.contains('app-modal') || el.id === 'ui-tooltip')) return;
-      if (on) { el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); }
-      else { el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
-    });
-  }
   function openApp() {
-    _appPrevFocus = document.activeElement;
     appOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('accBtn').style.display = 'none';
-    _setBgInert(true);
-    // Move focus into the app so keyboard users aren't left on the now-hidden launch button
-    requestAnimationFrame(() => { const c = document.getElementById('btn-close-app'); if (c) c.focus(); });
     requestAnimationFrame(() => {
       if (!appEverOpened) {
         // First open: plots were init'd in a hidden zero-size div — do a full re-render
@@ -997,8 +761,6 @@ function initEvents() {
     appOverlay.classList.remove('open');
     document.body.style.overflow = '';
     document.getElementById('accBtn').style.display = '';
-    _setBgInert(false);
-    if (_appPrevFocus && _appPrevFocus.focus) _appPrevFocus.focus();
   }
   const btnLaunch = document.getElementById('btn-launch-app');
   if (btnLaunch) btnLaunch.addEventListener('click', openApp);
@@ -1279,8 +1041,8 @@ function initEvents() {
     } else {
       const ds = state.datasets.find(d => d.id === fit.dsId);
       const xArr = ds ? ds.x.filter((_, i) => !(ds.excludedIndices || new Set()).has(i)) : [];
-      const xMin = state.fitConfig.xExtraMin ?? (xArr.length ? arrMin(xArr) : -100);
-      const xMax = state.fitConfig.xExtraMax ?? (xArr.length ? arrMax(xArr) : 100);
+      const xMin = state.fitConfig.xExtraMin ?? (xArr.length ? Math.min(...xArr) : -100);
+      const xMax = state.fitConfig.xExtraMax ?? (xArr.length ? Math.max(...xArr) : 100);
       const roots = solveXfromY(fit, val, xMin, xMax);
       renderPredResult(roots, 'y2x');
       if (!roots.length) setConsole(`No X found where model = ${fmt(val)} in data range.`, 'warn');
@@ -1313,271 +1075,4 @@ function initEvents() {
   syncModelCustomSection();
   initResizablePanels();
   tutInit();
-
-  /* ── Unsaved-data guard ────────────────────────────────── */
-  let _allowLeave = false;
-
-  function _hasSessionData() {
-    // Cheap path: live data in the current tab (the usual case) — avoid rebuilding
-    // and JSON-stringifying every tab's payload inside beforeunload.
-    if (state.datasets.length || state.fits.length) return true;
-    const payload = buildMultiTabPayload();
-    return payload.tabs.some(t => {
-      const p = t.payload;
-      return p && ((p.datasets && p.datasets.length > 0) || (p.fits && p.fits.length > 0));
-    });
-  }
-
-  function _saveAllAndLeave(doLeave) {
-    const payload = buildMultiTabPayload();
-    const json = JSON.stringify(payload, null, 2);
-    try { localStorage.setItem('cfs_session', json); } catch (_) {}
-    const blob = new Blob([json], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `curve-fit-session-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    if (doLeave) { _allowLeave = true; location.reload(); }
-  }
-
-  // Native dialog for browser X button, address-bar navigation, etc.
-  window.addEventListener('beforeunload', function(e) {
-    if (_allowLeave) return;
-    if (!_hasSessionData()) return;
-    // Auto-save to localStorage so Auto-restore can recover the session
-    try { localStorage.setItem('cfs_session', JSON.stringify(buildMultiTabPayload())); } catch (_) {}
-    e.preventDefault();
-    e.returnValue = '';
-  });
-
-  // Custom modal for F5 / Ctrl+R / Cmd+R — intercept before browser refresh
-  const _unsavedModal = document.getElementById('unsaved-modal');
-  let _pendingLeave = null;
-
-  function _showUnsavedModal(leaveCallback) {
-    _pendingLeave = leaveCallback;
-    _unsavedModal.style.display = 'flex';
-  }
-  function _hideUnsavedModal() {
-    _unsavedModal.style.display = 'none';
-    _pendingLeave = null;
-  }
-
-  document.getElementById('unsaved-cancel').addEventListener('click', _hideUnsavedModal);
-
-  document.getElementById('unsaved-leave').addEventListener('click', function() {
-    const cb = _pendingLeave;
-    _hideUnsavedModal();
-    _allowLeave = true;
-    if (cb) cb();
-  });
-
-  document.getElementById('unsaved-save').addEventListener('click', function() {
-    _hideUnsavedModal();
-    _saveAllAndLeave(true);
-  });
-
-  // Capture-phase keydown so we run before any other handler
-  document.addEventListener('keydown', function(e) {
-    const isRefresh = e.key === 'F5' ||
-                      ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R'));
-    if (!isRefresh) return;
-    if (!_hasSessionData()) return;
-    e.preventDefault();
-    _showUnsavedModal(() => location.reload());
-  }, true);
-
-  /* ── Example dataset search ─────────────────────────────── */
-  (function initExampleSearch() {
-    const searchEl  = document.getElementById('examples-search');
-    const resultsEl = document.getElementById('examples-search-results');
-    const colsEl    = document.getElementById('examples-cols-wrap');
-    if (!searchEl || !resultsEl || !colsEl) return;
-
-    let focusIdx = -1;
-    let currentHits = [];
-
-    function score(key, ex, q) {
-      const title = (ex.title || '').toLowerCase();
-      const tags  = (ex.tags  || '').toLowerCase();
-      const presets = (ex.presets || []).map(p => p.label + ' ' + (p.suggestModel || '')).join(' ').toLowerCase();
-      const blob = key + ' ' + title + ' ' + tags + ' ' + presets;
-      if (!blob.includes(q)) return 0;
-      if (title.startsWith(q) || key.startsWith(q)) return 3;
-      if (title.split(/\s+/).some(w => w.startsWith(q))) return 2;
-      return 1;
-    }
-
-    function render() {
-      resultsEl.querySelectorAll('.srp-item').forEach((el, i) => el.classList.toggle('focused', i === focusIdx));
-    }
-
-    function pick(key) {
-      searchEl.value = '';
-      resultsEl.style.display = 'none';
-      colsEl.style.display = 'flex';
-      focusIdx = -1; currentHits = [];
-      openExampleEditor(key);
-      document.getElementById('examples-menu').classList.remove('open');
-    }
-
-    function buildResults(q) {
-      if (!q) { resultsEl.style.display = 'none'; colsEl.style.display = 'flex'; return; }
-      currentHits = Object.entries(EXAMPLES)
-        .map(([k, ex]) => ({ k, ex, s: score(k, ex, q) }))
-        .filter(e => e.s > 0)
-        .sort((a, b) => b.s - a.s)
-        .slice(0, 8);
-      colsEl.style.display = 'none';
-      if (!currentHits.length) {
-        resultsEl.innerHTML = `<div class="srp-empty">No examples match "<strong>${q}</strong>"</div>`;
-        resultsEl.style.display = '';
-        return;
-      }
-      resultsEl.innerHTML = currentHits.map(({ k, ex }, i) => {
-        const desc = ex.presets
-          ? ex.presets.map(p => p.label.split(/[—–-]/)[0].trim()).join(' · ')
-          : (ex.tags || '').split(' ').slice(0, 5).join(' ');
-        return `<div class="srp-item" data-idx="${i}" data-example="${k}">
-          <span class="srp-name">${ex.title || k}</span>
-          <span class="srp-desc">${desc}</span>
-        </div>`;
-      }).join('');
-      resultsEl.style.display = '';
-      focusIdx = -1;
-      resultsEl.querySelectorAll('.srp-item').forEach(item => {
-        item.addEventListener('mousedown', e => { e.preventDefault(); pick(item.dataset.example); });
-        item.addEventListener('mouseover', () => { focusIdx = parseInt(item.dataset.idx); render(); });
-      });
-    }
-
-    searchEl.addEventListener('input', () => buildResults(searchEl.value.trim().toLowerCase()));
-    searchEl.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { searchEl.value = ''; buildResults(''); return; }
-      if (!currentHits.length) return;
-      if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx + 1, currentHits.length - 1); render(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx - 1, 0); render(); }
-      else if (e.key === 'Enter') {
-        if (focusIdx >= 0) { e.preventDefault(); pick(currentHits[focusIdx].k); }
-        else if (currentHits.length === 1) { e.preventDefault(); pick(currentHits[0].k); }
-      }
-    });
-    document.getElementById('btn-examples')?.addEventListener('click', () => {
-      setTimeout(() => { if (document.getElementById('examples-menu').classList.contains('open')) searchEl.focus(); }, 50);
-    });
-  })();
-
-  /* ── Model search autocomplete ───────────────────────────── */
-  (function initModelSearch() {
-    const searchEl  = document.getElementById('model-search');
-    const resultsEl = document.getElementById('model-search-results');
-    const sel       = document.getElementById('model-select');
-    if (!searchEl || !resultsEl || !sel) return;
-
-    // Snapshot all options once — never modify the <select> while typing
-    const allOpts = Array.from(sel.querySelectorAll('option'))
-      .filter(o => o.value)
-      .map(o => {
-        const parts = o.textContent.trim().split(/\s{2,}/);
-        return {
-          value: o.value,
-          name:  parts[0] || o.value,
-          desc:  parts.slice(1).join('  '),
-          group: (o.parentElement instanceof HTMLOptGroupElement) ? o.parentElement.label : '',
-        };
-      });
-
-    let focusIdx = -1;
-    let currentHits = [];
-
-    function score(o, q) {
-      const v = o.value.toLowerCase(), n = o.name.toLowerCase(), g = o.group.toLowerCase(), d = o.desc.toLowerCase();
-      if (v === q || n === q) return 4;
-      if (v.startsWith(q) || n.startsWith(q)) return 3;
-      if (n.split(/\s+/).some(w => w.startsWith(q))) return 2;
-      if (v.includes(q) || n.includes(q) || g.includes(q) || d.includes(q)) return 1;
-      return 0;
-    }
-
-    function render() {
-      resultsEl.querySelectorAll('.srp-item').forEach((el, i) => el.classList.toggle('focused', i === focusIdx));
-    }
-
-    function pick(opt) {
-      sel.value = opt.value;
-      sel.dispatchEvent(new Event('change'));
-      searchEl.value = '';
-      resultsEl.style.display = 'none';
-      focusIdx = -1; currentHits = [];
-    }
-
-    function buildResults(q) {
-      if (!q) { resultsEl.style.display = 'none'; return; }
-      currentHits = allOpts
-        .map(o => ({ o, s: score(o, q) }))
-        .filter(e => e.s > 0)
-        .sort((a, b) => b.s - a.s)
-        .slice(0, 8)
-        .map(e => e.o);
-      if (!currentHits.length) {
-        resultsEl.innerHTML = `<div class="srp-empty">No models match "<strong>${_esc(q)}</strong>"</div>`;
-        resultsEl.style.display = '';
-        return;
-      }
-      resultsEl.innerHTML = currentHits.map((o, i) =>
-        `<div class="srp-item" data-idx="${i}">
-          <span class="srp-name">${o.name}</span>
-          ${o.desc ? `<span class="srp-desc">${o.desc}</span>` : ''}
-          <span class="srp-group">${o.group}</span>
-        </div>`
-      ).join('');
-      resultsEl.style.display = '';
-      focusIdx = -1;
-      resultsEl.querySelectorAll('.srp-item').forEach(item => {
-        item.addEventListener('mousedown', e => { e.preventDefault(); pick(currentHits[parseInt(item.dataset.idx)]); });
-        item.addEventListener('mouseover', () => { focusIdx = parseInt(item.dataset.idx); render(); });
-      });
-    }
-
-    searchEl.addEventListener('input', () => buildResults(searchEl.value.trim().toLowerCase()));
-    searchEl.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { searchEl.value = ''; resultsEl.style.display = 'none'; return; }
-      if (!currentHits.length) return;
-      if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx + 1, currentHits.length - 1); render(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx - 1, 0); render(); }
-      else if (e.key === 'Enter') {
-        if (focusIdx >= 0) { e.preventDefault(); pick(currentHits[focusIdx]); }
-        else if (currentHits.length === 1) { e.preventDefault(); pick(currentHits[0]); }
-      }
-    });
-    // Hide panel when focus leaves both the input and the results
-    searchEl.addEventListener('blur', () => setTimeout(() => {
-      if (!resultsEl.contains(document.activeElement)) resultsEl.style.display = 'none';
-    }, 150));
-    document.addEventListener('click', e => {
-      if (!searchEl.contains(e.target) && !resultsEl.contains(e.target)) resultsEl.style.display = 'none';
-    });
-  })();
-
-  /* ── Fit comparison modal ─────────────────────────────── */
-  const compareModal = document.getElementById('compare-modal');
-  if (compareModal) {
-    document.getElementById('btn-compare-fits')?.addEventListener('click', showCompareModal);
-    document.getElementById('compare-modal-close')?.addEventListener('click',  () => { compareModal.style.display = 'none'; });
-    document.getElementById('compare-modal-close2')?.addEventListener('click', () => { compareModal.style.display = 'none'; });
-    compareModal.addEventListener('click', e => { if (e.target === compareModal) compareModal.style.display = 'none'; });
-    document.getElementById('compare-fit-a')?.addEventListener('change', renderCompareTable);
-    document.getElementById('compare-fit-b')?.addEventListener('change', renderCompareTable);
-  }
-
-  /* ── Axis range mode toggle ───────────────────────────── */
-  document.getElementById('btn-axis-range-mode')?.addEventListener('click', function() {
-    state.plotConfig.axisRangeMode = state.plotConfig.axisRangeMode === 'data' ? 'auto' : 'data';
-    this.classList.toggle('active', state.plotConfig.axisRangeMode === 'data');
-    this.title = state.plotConfig.axisRangeMode === 'data'
-      ? 'Y-axis: data range only (click for auto)'
-      : 'Y-axis: auto range (click for data range only)';
-    updatePlots();
-  });
 }

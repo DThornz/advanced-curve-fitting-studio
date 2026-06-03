@@ -292,14 +292,6 @@ function applyFourierFilter(type, cutoffLo, cutoffHi, rolloff) {
   if (!ds) { setConsole('No active dataset.', 'warn'); return; }
   const n = ds.y.length;
   if (n < 8) { setConsole('Need at least 8 points for Fourier filtering.', 'warn'); return; }
-  // Fourier filtering assumes uniform x spacing — flag if the grid is irregular.
-  let nonUniform = false;
-  if (n > 2 && ds.x) {
-    let dmin = Infinity, dmax = -Infinity;
-    for (let i = 1; i < n; i++) { const d = ds.x[i] - ds.x[i - 1]; if (d < dmin) dmin = d; if (d > dmax) dmax = d; }
-    const span = Math.abs(ds.x[n - 1] - ds.x[0]) / (n - 1) || 1;
-    nonUniform = (dmax - dmin) > 0.05 * Math.abs(span);
-  }
   _ppPushUndo(ds);
 
   const N = _nextPow2(n);
@@ -330,227 +322,17 @@ function applyFourierFilter(type, cutoffLo, cutoffHi, rolloff) {
     }
   }
 
-  re[0] *= gain(0); im[0] *= gain(0);
-  if (halfN > 0) { re[halfN] *= gain(halfN); im[halfN] *= gain(halfN); }
-  for (let k = 1; k < halfN; k++) {
+  for (let k = 0; k <= halfN; k++) {
     const g = gain(k);
     re[k] *= g; im[k] *= g;
-    re[N - k] *= g; im[N - k] *= g;
+    if (k > 0 && k < halfN) { re[N - k] *= g; im[N - k] *= g; }
   }
   _ifftInPlace(re, im);
 
   for (let i = 0; i < n; i++) ds.y[i] = re[i];
   updatePlots();
   const labels = { lowpass: 'Low-pass', highpass: 'High-pass', bandpass: 'Band-pass', notch: 'Notch' };
-  setConsole(`Applied ${labels[type]} Fourier filter to "${ds.name}".` + (nonUniform ? ' (x spacing is non-uniform — cutoffs are approximate.)' : ''), nonUniform ? 'warn' : '');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   NORMALIZE / TRANSFORM   (#3)   — operates on Y only (reversible)
-═══════════════════════════════════════════════════════════ */
-function _ppMean(a)   { return a.reduce((s, v) => s + v, 0) / a.length; }
-function _ppMedian(a) {
-  const b = a.slice().sort((x, y) => x - y), m = b.length >> 1;
-  return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2;
-}
-
-// Box–Cox profile log-likelihood maximised over λ on a grid (data must be > 0).
-function _boxcoxAutoLambda(y) {
-  const n = y.length;
-  const lnSum = y.reduce((s, v) => s + Math.log(v), 0);
-  const ll = lam => {
-    const z = Math.abs(lam) < 1e-8 ? y.map(v => Math.log(v)) : y.map(v => (Math.pow(v, lam) - 1) / lam);
-    const mu = _ppMean(z);
-    const varz = z.reduce((s, v) => s + (v - mu) ** 2, 0) / n;
-    if (!(varz > 0)) return -Infinity;
-    return -0.5 * n * Math.log(varz) + (lam - 1) * lnSum;
-  };
-  let best = 0, bestLL = -Infinity;
-  for (let lam = -3; lam <= 3.0001; lam += 0.05) {
-    const v = ll(lam);
-    if (v > bestLL) { bestLL = v; best = lam; }
-  }
-  return Math.round(best * 100) / 100;
-}
-
-function applyTransform(method, lambda) {
-  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
-  if (!ds) { setConsole('No active dataset.', 'warn'); return; }
-  const y = ds.y;
-  const needPos = method === 'log' || method === 'log10' || method === 'boxcox';
-  if (needPos && y.some(v => !(v > 0))) { setConsole(`This transform requires all Y > 0 — shift or mask non-positive points first.`, 'error'); return; }
-  if (method === 'sqrt' && y.some(v => v < 0)) { setConsole('Square root requires Y ≥ 0.', 'error'); return; }
-
-  let out, label;
-  if (method === 'minmax') {
-    const lo = Math.min(...y), hi = Math.max(...y), rng = hi - lo;
-    if (rng === 0) { setConsole('Cannot min–max normalize constant data.', 'error'); return; }
-    out = y.map(v => (v - lo) / rng); label = 'Min–Max [0,1]';
-  } else if (method === 'zscore') {
-    const mu = _ppMean(y), sd = Math.sqrt(y.reduce((s, v) => s + (v - mu) ** 2, 0) / Math.max(y.length - 1, 1));
-    if (sd === 0) { setConsole('Cannot z-score constant data.', 'error'); return; }
-    out = y.map(v => (v - mu) / sd); label = 'Z-score';
-  } else if (method === 'log')    { out = y.map(Math.log);        label = 'ln(y)'; }
-  else if (method === 'log10')    { out = y.map(v => Math.log10(v)); label = 'log₁₀(y)'; }
-  else if (method === 'sqrt')     { out = y.map(Math.sqrt);       label = '√y'; }
-  else if (method === 'boxcox') {
-    const lam = isFinite(lambda) ? lambda : 0;
-    out = Math.abs(lam) < 1e-8 ? y.map(Math.log) : y.map(v => (Math.pow(v, lam) - 1) / lam);
-    label = `Box–Cox (λ=${lam})`;
-  } else { return; }
-
-  if (out.some(v => !isFinite(v))) { setConsole('Transform produced non-finite values — aborted.', 'error'); return; }
-  _ppPushUndo(ds);
-  ds.y = out;
-  updatePlots();
-  setConsole(`Applied ${label} to "${ds.name}". (fits now run on transformed Y)`, '');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   BASELINE / DE-TREND   (#5)
-═══════════════════════════════════════════════════════════ */
-// Least-squares polynomial fit on (xFit,yFit), evaluated at xEval (reuses _solveLU).
-function _polyBaseline(xFit, yFit, degree, xEval) {
-  const d = Math.min(degree, xFit.length - 1) + 1;
-  const ATA = Array.from({ length: d }, () => new Array(d).fill(0));
-  const ATy = new Array(d).fill(0);
-  for (let r = 0; r < xFit.length; r++) {
-    const row = Array.from({ length: d }, (_, k) => Math.pow(xFit[r], k));
-    for (let a = 0; a < d; a++) {
-      ATy[a] += row[a] * yFit[r];
-      for (let b = 0; b < d; b++) ATA[a][b] += row[a] * row[b];
-    }
-  }
-  const c = _solveLU(ATA, ATy);
-  if (!c) return null;
-  return xEval.map(x => c.reduce((s, ck, k) => s + ck * Math.pow(x, k), 0));
-}
-
-// LOWESS: tricube-weighted local linear regression, fit on (xFit,yFit), eval at xEval.
-function _lowessBaseline(xFit, yFit, frac, xEval) {
-  const n = xFit.length;
-  const k = Math.max(2, Math.min(n, Math.round(frac * n)));
-  return xEval.map(x0 => {
-    const near = xFit.map((x, i) => [Math.abs(x - x0), i]).sort((a, b) => a[0] - b[0]).slice(0, k);
-    const dmax = near[near.length - 1][0] || 1e-12;
-    let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
-    for (const [dist, i] of near) {
-      const u = Math.min(dist / dmax, 1), w = Math.pow(1 - u * u * u, 3);
-      const xi = xFit[i], yi = yFit[i];
-      sw += w; swx += w * xi; swy += w * yi; swxx += w * xi * xi; swxy += w * xi * yi;
-    }
-    const denom = sw * swxx - swx * swx;
-    if (Math.abs(denom) < 1e-15) return sw ? swy / sw : 0;
-    const b = (sw * swxy - swx * swy) / denom;
-    const a = (swy - b * swx) / sw;
-    return a + b * x0;
-  });
-}
-
-function applyBaseline(method, degree, frac) {
-  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
-  if (!ds) { setConsole('No active dataset.', 'warn'); return; }
-  if (ds.y.length < 3) { setConsole('Need at least 3 points to de-trend.', 'warn'); return; }
-  const excl = ds.excludedIndices || new Set();
-  const xFit = ds.x.filter((_, i) => !excl.has(i));
-  const yFit = ds.y.filter((_, i) => !excl.has(i));
-  if (xFit.length < 3) { setConsole('Need at least 3 non-masked points.', 'warn'); return; }
-
-  const baseAll = method === 'lowess'
-    ? _lowessBaseline(xFit, yFit, frac, ds.x)
-    : _polyBaseline(xFit, yFit, degree, ds.x);
-  if (!baseAll || baseAll.some(v => !isFinite(v))) { setConsole('Baseline fit failed (singular or non-finite).', 'error'); return; }
-
-  _ppPushUndo(ds);
-  ds.y = ds.y.map((v, i) => v - baseAll[i]);
-  updatePlots();
-  const lbl = method === 'lowess' ? `LOWESS (frac=${frac})` : `polynomial (deg ${degree})`;
-  setConsole(`Subtracted ${lbl} baseline from "${ds.name}".`, '');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   REPAIR / IMPUTE   (#4)
-═══════════════════════════════════════════════════════════ */
-// Natural cubic spline through strictly-increasing xs; returns evaluator f(x).
-function _cubicSpline(xs, ys) {
-  const n = xs.length;
-  const h = new Array(n - 1);
-  for (let i = 0; i < n - 1; i++) h[i] = xs[i + 1] - xs[i];
-  const al = new Array(n).fill(0);
-  for (let i = 1; i < n - 1; i++)
-    al[i] = 3 * ((ys[i + 1] - ys[i]) / h[i] - (ys[i] - ys[i - 1]) / h[i - 1]);
-  const l = new Array(n).fill(1), mu = new Array(n).fill(0), z = new Array(n).fill(0);
-  for (let i = 1; i < n - 1; i++) {
-    l[i] = 2 * (xs[i + 1] - xs[i - 1]) - h[i - 1] * mu[i - 1];
-    mu[i] = h[i] / l[i];
-    z[i] = (al[i] - h[i - 1] * z[i - 1]) / l[i];
-  }
-  const c = new Array(n).fill(0), b = new Array(n).fill(0), d = new Array(n).fill(0);
-  for (let j = n - 2; j >= 0; j--) {
-    c[j] = z[j] - mu[j] * c[j + 1];
-    b[j] = (ys[j + 1] - ys[j]) / h[j] - h[j] * (c[j + 1] + 2 * c[j]) / 3;
-    d[j] = (c[j + 1] - c[j]) / (3 * h[j]);
-  }
-  return x => {
-    let i = n - 2;
-    if (x <= xs[0]) i = 0;
-    else if (x < xs[n - 1]) { for (let k = 0; k < n - 1; k++) if (x >= xs[k] && x <= xs[k + 1]) { i = k; break; } }
-    const dx = x - xs[i];
-    return ys[i] + b[i] * dx + c[i] * dx * dx + d[i] * dx * dx * dx;
-  };
-}
-
-function _linInterp(xs, ys, x) {
-  const n = xs.length;
-  if (x <= xs[0]) return ys[0] + (ys[1] - ys[0]) / (xs[1] - xs[0]) * (x - xs[0]);
-  if (x >= xs[n - 1]) return ys[n - 2] + (ys[n - 1] - ys[n - 2]) / (xs[n - 1] - xs[n - 2]) * (x - xs[n - 2]);
-  for (let i = 0; i < n - 1; i++) if (x >= xs[i] && x <= xs[i + 1]) {
-    const t = (x - xs[i]) / (xs[i + 1] - xs[i]);
-    return ys[i] + t * (ys[i + 1] - ys[i]);
-  }
-  return ys[n - 1];
-}
-
-function applyRepair(method, thresh, fillMethod) {
-  const ds = state.datasets.find(d => d.id === state.activeDatasetId);
-  if (!ds) { setConsole('No active dataset.', 'warn'); return; }
-  const n = ds.y.length;
-  if (n < 4) { setConsole('Need at least 4 points to repair.', 'warn'); return; }
-
-  const flagged = new Set();
-  if (method === 'nan') {
-    ds.y.forEach((v, i) => { if (!isFinite(v)) flagged.add(i); });
-    if (!flagged.size) { setConsole('No non-finite values found — nothing to fill.', ''); return; }
-  } else {
-    const finite = ds.y.filter(isFinite);
-    const med = _ppMedian(finite);
-    const mad = _ppMedian(finite.map(v => Math.abs(v - med)));
-    if (mad === 0) { setConsole('MAD is zero (too many identical values) — cannot flag outliers.', 'warn'); return; }
-    ds.y.forEach((v, i) => {
-      if (!isFinite(v)) { flagged.add(i); return; }
-      if (Math.abs(0.6745 * (v - med) / mad) > thresh) flagged.add(i);
-    });
-    if (!flagged.size) { setConsole(`No points exceed |robust z| > ${thresh}.`, ''); return; }
-  }
-
-  // Clean anchor points (non-flagged, finite), sorted by x and de-duplicated.
-  const keep = [];
-  for (let i = 0; i < n; i++) if (!flagged.has(i) && isFinite(ds.y[i])) keep.push([ds.x[i], ds.y[i]]);
-  keep.sort((a, b) => a[0] - b[0]);
-  const kx = [], ky = [];
-  for (const [x, y] of keep) {
-    if (kx.length && x === kx[kx.length - 1]) ky[ky.length - 1] = (ky[ky.length - 1] + y) / 2;
-    else { kx.push(x); ky.push(y); }
-  }
-  if (kx.length < 2) { setConsole('Not enough clean points to interpolate.', 'error'); return; }
-  const evalFn = (fillMethod === 'spline' && kx.length >= 3) ? _cubicSpline(kx, ky) : (x => _linInterp(kx, ky, x));
-
-  _ppPushUndo(ds);
-  const newY = ds.y.slice();
-  flagged.forEach(i => { const v = evalFn(ds.x[i]); newY[i] = isFinite(v) ? v : ds.y[i]; });
-  ds.y = newY;
-  updatePlots();
-  setConsole(`Repaired ${flagged.size} point${flagged.size === 1 ? '' : 's'} in "${ds.name}" (${method === 'nan' ? 'NaN fill' : 'MAD outliers'}, ${fillMethod}).`, '');
+  setConsole(`Applied ${labels[type]} Fourier filter to "${ds.name}".`, '');
 }
 
 function restoreOriginalData() {
@@ -633,40 +415,26 @@ function renderDatasetList() {
     el.innerHTML = '<div class="panel-empty-hint">Load an example<br>or import a CSV to begin.</div>';
     return;
   }
-  if (!state.selectedDatasetIds) state.selectedDatasetIds = new Set();
-  const sel = state.selectedDatasetIds;
   el.innerHTML = state.datasets.map(ds => {
     const off = ds.enabled === false;
     return `
-    <div class="ds-item${ds.id === state.activeDatasetId ? ' active' : ''}${sel.has(ds.id) ? ' ds-multi-sel' : ''}${off ? ' ds-item-off' : ''}" data-dsid="${ds.id}" title="Click to select · Ctrl/⌘-click to multi-select for Combine">
+    <div class="ds-item${ds.id === state.activeDatasetId ? ' active' : ''}${off ? ' ds-item-off' : ''}" data-dsid="${ds.id}">
       <span class="ds-swatch" style="background:${ds.color}"></span>
-      <span class="ds-label" title="${_esc(ds.name)}">${_esc(ds.name)}</span>
+      <span class="ds-label" title="${ds.name}">${ds.name}</span>
       <span class="ds-count">${ds.x.length}pt</span>
-      <button class="ds-toggle${off ? ' ds-off' : ''}" data-toggleid="${ds.id}" aria-label="${off ? 'Enable' : 'Disable'} dataset ${_esc(ds.name)}" title="${off ? 'Enable dataset' : 'Disable dataset'}">${off ? '○' : '●'}</button>
-      ${ds._exKey ? `<button class="ds-edit" data-editid="${ds.id}" aria-label="Edit generated dataset ${_esc(ds.name)}" title="Re-open example generator with saved parameters">✏</button>` : ''}
-      <button class="ds-delete" data-delid="${ds.id}" aria-label="Remove dataset ${_esc(ds.name)}" title="Remove dataset">×</button>
+      <button class="ds-toggle${off ? ' ds-off' : ''}" data-toggleid="${ds.id}" title="${off ? 'Enable dataset' : 'Disable dataset'}">${off ? '○' : '●'}</button>
+      ${ds._exKey ? `<button class="ds-edit" data-editid="${ds.id}" title="Re-open example generator with saved parameters">✏</button>` : ''}
+      <button class="ds-delete" data-delid="${ds.id}" title="Remove dataset">×</button>
     </div>`;
   }).join('');
   el.querySelectorAll('.ds-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      const id = parseInt(item.dataset.dsid);
-      if (e.ctrlKey || e.metaKey) {
-        if (sel.has(id)) sel.delete(id); else sel.add(id);
-      } else {
-        sel.clear();
-      }
-      state.activeDatasetId = id;
+    item.addEventListener('click', () => {
+      state.activeDatasetId = parseInt(item.dataset.dsid);
       syncFitDatasetSelect();
       renderDatasetList();
       renderFitList();
     });
   });
-  // Combine button: visible only when 2+ datasets are multi-selected
-  const combineBtn = document.getElementById('btn-combine-ds');
-  if (combineBtn) {
-    combineBtn.style.display = sel.size >= 2 ? '' : 'none';
-    combineBtn.textContent = sel.size >= 2 ? `⊕ Combine ${sel.size}` : '⊕ Combine';
-  }
   el.querySelectorAll('.ds-toggle').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -707,7 +475,6 @@ function renderDatasetList() {
       state.editHistory.redo = state.editHistory.redo.filter(h => h.dsId !== id);
       syncUndoRedoButtons();
       if (state.selection.dsId === id) state.selection = { dsId: null, indices: new Set() };
-      if (state.selectedDatasetIds) state.selectedDatasetIds.delete(id);
       if (state.activeDatasetId === id) {
         state.activeDatasetId = state.datasets.length ? state.datasets[state.datasets.length - 1].id : null;
       }
@@ -730,53 +497,4 @@ function renderDatasetList() {
     });
   });
   renderMaskCount();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   COMBINE SELECTED DATASETS → one pooled / averaged dataset
-   (so a single fit yields one curve through their average)
-═══════════════════════════════════════════════════════════ */
-function combineSelectedDatasets() {
-  const sel = state.selectedDatasetIds || new Set();
-  const dsList = [...sel].map(id => state.datasets.find(d => d.id === id)).filter(d => d && d.enabled !== false);
-  if (dsList.length < 2) { setConsole('Ctrl/⌘-click at least two datasets to combine.', 'warn'); return; }
-
-  // Do all selected datasets share the same x-grid? Then aggregate to mean ± σ.
-  const x0 = dsList[0].x;
-  const sameGrid = dsList.every(d =>
-    d.x.length === x0.length && d.x.every((xv, i) => Math.abs(xv - x0[i]) <= 1e-9 * (Math.abs(xv) + 1)));
-
-  let cx, cy, csig, name;
-  if (sameGrid) {
-    cx = x0.slice(); cy = []; csig = [];
-    for (let i = 0; i < x0.length; i++) {
-      const col = dsList.map(d => d.y[i]).filter(isFinite);
-      if (!col.length) { cy.push(NaN); csig.push(NaN); continue; }
-      const m = col.reduce((s, v) => s + v, 0) / col.length;
-      const sd = col.length > 1 ? Math.sqrt(col.reduce((s, v) => s + (v - m) ** 2, 0) / (col.length - 1)) : NaN;
-      cy.push(m); csig.push(sd > 0 ? sd : NaN);
-    }
-    // Drop any all-NaN rows
-    const keep = cy.map((v, i) => isFinite(v) ? i : -1).filter(i => i >= 0);
-    cx = keep.map(i => cx[i]); csig = keep.map(i => csig[i]); cy = keep.map(i => cy[i]);
-    csig = csig.some(isFinite) ? csig : null;
-    name = `Combined mean (${dsList.length} series)`;
-  } else {
-    const pts = [];
-    dsList.forEach(d => d.x.forEach((xv, i) => { if (isFinite(xv) && isFinite(d.y[i])) pts.push([xv, d.y[i]]); }));
-    pts.sort((a, b) => a[0] - b[0]);
-    cx = pts.map(p => p[0]); cy = pts.map(p => p[1]); csig = null;
-    name = `Combined (${dsList.length} series, pooled)`;
-  }
-  if (cx.length < 2) { setConsole('Not enough valid points to combine.', 'error'); return; }
-
-  const ds = importDataset(name, cx, cy, csig);
-  if (!ds) { setConsole('Combine failed.', 'error'); return; }
-  state.selectedDatasetIds = new Set();
-  state.activeDatasetId = ds.id;
-  syncFitDatasetSelect();
-  renderDatasetList();
-  updatePlots();
-  if (typeof autoInitParams === 'function') autoInitParams();
-  setConsole(`Created "${name}" — ${cx.length} points${csig ? ', mean ± σ error bars' : ', pooled'}. Pick a model and press ▶ Fit for one curve through the average.`, '');
 }
