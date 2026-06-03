@@ -965,6 +965,9 @@ function initEvents() {
   function _setBgInert(on) {
     [...document.body.children].forEach(el => {
       if (el === appOverlay) return;
+      // Skip modal/tooltip layers — they sit at <body> level but are opened FROM the
+      // app (e.g. Release Notes, Column Picker), so they must stay interactive.
+      if (el.classList && (el.classList.contains('modal-backdrop') || el.classList.contains('app-modal') || el.id === 'ui-tooltip')) return;
       if (on) { el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); }
       else { el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
     });

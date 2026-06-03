@@ -419,6 +419,9 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.8.9 — 2026-06-03
+- **fix** Regression from v1.8.5: page-level modals (Release Notes, Column Picker, Settings, Save, Annotations, Compare…) were frozen/uninteractive because the app's background-`inert` layer also covered them. The inert layer now skips modal/tooltip layers
+
 ### v1.8.8 — 2026-06-03
 - **improve** Fourier filter warns when x spacing is non-uniform (FFT cutoffs assume a uniform grid)
 
