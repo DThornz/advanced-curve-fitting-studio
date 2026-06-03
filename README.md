@@ -419,6 +419,10 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.8.7 — 2026-06-03  (EMG accuracy + validation)
+- **fix** EMG peak model now uses the scaled complementary error function (`erfcx`) — accurate and overflow-free in the tails (was `exp·erfc`, which cancelled); matches the exact profile to ~6e−8, verified vs scipy
+- **new** `VALIDATION.md` — solver cross-checked against NIST StRD (Misra1a, Rat42; SSE matches certified) + machine-precision round-trip recovery for built-in models
+
 ### v1.8.6 — 2026-06-03  (robustness)
 - **fix** Replaced the remaining `Math.min/max(...array)` spreads in all 77 model Auto-Init heuristics (large-dataset `RangeError` hardening)
 - **fix** File imports report read errors (`reader.onerror`); minimum-points check is model-aware (2-point linear allowed; high-degree models need enough points); unsaved-changes guard no longer rebuilds the full payload on each close check

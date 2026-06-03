@@ -10,6 +10,15 @@ function _erf(z) {
   return Math.sign(z) * (1 - p * Math.exp(-z * z));
 }
 function _erfc(z) { return 1 - _erf(z); }
+// Scaled complementary error function erfcx(x)=exp(x²)·erfc(x) for x≥0 (Numerical
+// Recipes rational, |rel err| < 1.1e-7). Used by the numerically-stable EMG so the
+// peak tails don't suffer exp(·)·erfc(·) cancellation.
+function _erfcx(x) {
+  const t = 1 / (1 + 0.5 * x);
+  return t * Math.exp(-1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 +
+    t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 +
+    t * (-0.82215223 + t * 0.17087277)))))))));
+}
 
 const MODELS = {
   'Linear': {
@@ -715,9 +724,12 @@ const MODELS = {
       const tk = Math.abs(tau) || 1e-10;
       const u = sg / tk;            // σ/τ
       const z = (x - mu) / sg;     // (x-μ)/σ
-      const erfcArg = (u - z) * 0.7071067811865476; // (u-z)/√2
-      if (erfcArg > 25) return C;
-      return 0.5 * A * Math.exp(0.5 * u * u - z * u) * _erfc(erfcArg) + C;
+      const t = (u - z) * 0.7071067811865476; // (u-z)/√2
+      // EMG = ½A·e^(−z²/2)·erfcx(t)+C (exact). Split at t=0 so erfcx stays in its
+      // overflow-free domain; the t<0 branch is the algebraically-equal form.
+      return (t >= 0
+        ? 0.5 * A * Math.exp(-0.5 * z * z) * _erfcx(t)
+        : A * Math.exp(0.5 * u * u - z * u) - 0.5 * A * Math.exp(-0.5 * z * z) * _erfcx(-t)) + C;
     },
     analytic: false,
     autoInit(x, y) {
