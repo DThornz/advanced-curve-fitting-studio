@@ -102,7 +102,8 @@ const PANEL_TIPS = {
   'datasets':
     `<b>Datasets</b><br>Lists all loaded datasets in this tab. Each entry shows the dataset name, point count, and colour swatch.<br><br>` +
     `Click the <b>toggle</b> (on hover) to enable/disable a dataset — disabled datasets are hidden from the plot and excluded from fitting, residual panels, and the F-test.<br><br>` +
-    `Double-click a name to rename it.`,
+    `Double-click a name to rename it.<br><br>` +
+    `<b>Ctrl/⌘-click</b> two or more datasets to multi-select them, then press <b>⊕ Combine</b> to merge them into one (mean ± σ if they share an x-grid, otherwise pooled) for a single combined fit.`,
 
   'active-fits':
     `<b>Active Fits</b><br>Lists every fit run in this tab. Click a fit to make it active — its parameters and result load into the right panel.<br><br>` +
@@ -126,7 +127,7 @@ const PANEL_TIPS = {
   'custom-eq':
     `<b>Custom Equation</b><br>Type any expression in the variable <code>x</code> using Math.js syntax. All symbols other than <code>x</code> and standard math functions become free parameters.<br><br>` +
     `<b>Examples:</b> <code>a*exp(-b*x)+c</code> &nbsp; <code>a*x^b+c</code> &nbsp; <code>a/(1+exp(-b*(x-c)))</code><br><br>` +
-    `Supported: <code>exp log sin cos sqrt abs atan ^</code> and all Math.js built-ins.`,
+    `Supported: <code>exp log sin cos sqrt abs atan ^</code>, special functions <code>erf erfc lgamma factorial</code>, and all Math.js built-ins. Click <b>⊞ Equation Editor</b> for a click-to-insert palette.`,
 
   'parameters':
     `<b>Parameters</b><br>One row per model parameter.<br><br>` +
@@ -204,7 +205,7 @@ const PANEL_TIPS = {
     `<b>Near +1</b> — parameters increase together; the solver struggles to tell them apart.<br>` +
     `<b>Near −1</b> — parameters trade off; one can compensate for the other.<br><br>` +
     `<b>|r| &gt; 0.95</b> is a warning: the model may be over-parameterised. Try locking one parameter (🔒) or choosing a simpler model.<br><br>` +
-    `<span style="color:var(--teal)">■</span> Teal = positive &nbsp; <span style="color:#ef4444">■</span> Red = negative`,
+    `<span style="color:#2563eb">■</span> Blue = positive &nbsp; <span style="color:#dc2626">■</span> Red = negative`,
 };
 
 (function wirePanelTips() {
