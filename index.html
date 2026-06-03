@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.5</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.6</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.5</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.6</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1892,9 +1892,22 @@
       <!-- ── v1.8.2 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.8.5</span>
+          <span class="relnotes-ver-num current">v1.8.6</span>
           <span class="relnotes-ver-date">2026-06-03</span>
           <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Large-dataset hardening</strong> — removed the remaining <code>Math.min/max(...array)</code> spreads from every model's Auto-Init heuristic (77 of them), so fitting very large datasets no longer risks a <code>RangeError</code>.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Import &amp; fit robustness</strong> — file imports now report read errors; the minimum-points check is model-aware (a 2-point linear calibration is allowed, a high-degree model still requires enough points); the unsaved-changes guard no longer rebuilds the whole session payload on every page-close check.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Custom-equation safety</strong> — the equation parser now rejects anything that isn't a single pure expression in <code>x</code> (no assignments, function definitions or <code>;</code>-blocks), so a crafted saved session can't run arbitrary Math.js on restore.</span></li>
+        </ul>
+      </div>
+
+      <!-- ── v1.8.5 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.8.5</span>
+          <span class="relnotes-ver-date">2026-06-03</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-imp">a11y</span><strong>Accessibility pass</strong> — the full-screen app is now a proper <code>role="dialog"</code> that traps the background (<code>inert</code>/<code>aria-hidden</code>), moves focus inside on open and restores it on close; the status bar is an <code>aria-live</code> region so fit results are announced; the <code>?</code> help tooltips are keyboard-focusable and open on focus; and icon-only buttons (dataset toggle/delete, parameter lock, constraint ×) got <code>aria-label</code>s.</span></li>

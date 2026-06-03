@@ -63,6 +63,18 @@ function parseCustomEquation(expr) {
   }
   try {
     const node = math.parse(expr);
+    // Security: only allow a pure expression in x. Reject assignments, function
+    // definitions and statement blocks (these could run on session restore).
+    let unsafe = false;
+    node.traverse(n => {
+      if (n.type === 'AssignmentNode' || n.type === 'FunctionAssignmentNode' || n.type === 'BlockNode') unsafe = true;
+    });
+    if (unsafe) {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '✗ Only a single expression in x is allowed (no "=", function definitions, or ";").';
+      customCompiled = null;
+      return false;
+    }
     const syms = new Set();
     node.traverse(n => { if (n.type === 'SymbolNode') syms.add(n.name); });
     const mathFns = CUSTOM_EQ_MATH_SYMS;
@@ -158,7 +170,12 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
    FIT ENGINE — INPUT VALIDATION
 ═══════════════════════════════════════════════════════════ */
 function validateFitInput(xArr, yArr, model, p0) {
-  if (xArr.length < 3) return 'Need at least 3 non-masked points to fit.';
+  // Need at least as many points as free parameters (min 2). e.g. a 2-point
+  // linear calibration is a valid exact fit; an under-determined fit is refused.
+  const mDef = MODELS[model];
+  const nP = (p0 && p0.length) || (mDef && mDef.params ? mDef.params.length : 2);
+  const need = Math.max(2, nP);
+  if (xArr.length < need) return `Need at least ${need} non-masked points to fit this model (${nP} parameters).`;
   if (xArr.some(v => !isFinite(v)) || yArr.some(v => !isFinite(v))) return 'Data contains non-finite values (NaN or Infinity).';
   const yMean = yArr.reduce((s, v) => s + v, 0) / yArr.length;
   const yVar  = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);

@@ -193,6 +193,7 @@ function initEvents() {
         setConsole(`Imported: ${ds.name} (${x.length} points).`, '');
       } catch (err) { setConsole('Import error: ' + err.message, 'error'); }
     };
+    reader.onerror = () => setConsole("Could not read the file (it may be unreadable or locked).", "error");
     reader.readAsText(file);
     e.target.value = '';
   });
@@ -219,6 +220,7 @@ function initEvents() {
         setConsole(`Imported: ${ds.name} (${x.length} points).`, '');
       } catch (err) { setConsole('Drop import error: ' + err.message, 'error'); }
     };
+    reader.onerror = () => setConsole("Could not read the file (it may be unreadable or locked).", "error");
     reader.readAsText(file);
   });
 
@@ -1313,6 +1315,9 @@ function initEvents() {
   let _allowLeave = false;
 
   function _hasSessionData() {
+    // Cheap path: live data in the current tab (the usual case) — avoid rebuilding
+    // and JSON-stringifying every tab's payload inside beforeunload.
+    if (state.datasets.length || state.fits.length) return true;
     const payload = buildMultiTabPayload();
     return payload.tabs.some(t => {
       const p = t.payload;

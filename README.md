@@ -419,6 +419,11 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.8.6 — 2026-06-03  (robustness)
+- **fix** Replaced the remaining `Math.min/max(...array)` spreads in all 77 model Auto-Init heuristics (large-dataset `RangeError` hardening)
+- **fix** File imports report read errors (`reader.onerror`); minimum-points check is model-aware (2-point linear allowed; high-degree models need enough points); unsaved-changes guard no longer rebuilds the full payload on each close check
+- **fix** Custom-equation parser rejects non-pure expressions (assignments / function defs / `;`) — a crafted session can't execute arbitrary Math.js on restore
+
 ### v1.8.5 — 2026-06-03  (accessibility)
 - **a11y** Full-screen app is a `role="dialog"` with background `inert`/`aria-hidden`, focus moved inside on open and restored on close; status bar is an `aria-live` region; `?` help tooltips are keyboard-focusable and open on focus; icon-only buttons gained `aria-label`s
 - **new** Confirmation prompts before "✕ All" (datasets & fits) and "Clear fits" (irreversible)

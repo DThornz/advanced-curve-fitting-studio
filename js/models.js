@@ -51,7 +51,7 @@ const MODELS = {
     analytic: false,
     autoInit(x, y) {
       const pos = y.filter(v => v > 0);
-      if (pos.length < 2) return [Math.max(...y.map(Math.abs)) || 1, -0.1];
+      if (pos.length < 2) return [arrMax(y.map(Math.abs)) || 1, -0.1];
       const lny = pos.map(Math.log);
       const posX = x.filter((_, i) => y[i] > 0);
       const xm = mean(posX), lym = mean(lny);
@@ -65,7 +65,7 @@ const MODELS = {
     fn: (x, [a, b, c]) => a * Math.exp(-b * x) + c,
     analytic: false,
     autoInit(x, y) {
-      const c = Math.min(...y);
+      const c = arrMin(y);
       const shifted = y.map(v => Math.max(v - c, 1e-10));
       const lny = shifted.map(Math.log);
       const xm = mean(x), lym = mean(lny);
@@ -79,7 +79,7 @@ const MODELS = {
     fn: (x, [L, k, x0]) => L / (1 + Math.exp(-k * (x - x0))),
     analytic: false,
     autoInit(x, y) {
-      const L = Math.max(...y) * 1.05;
+      const L = arrMax(y) * 1.05;
       const half = L / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       const x0 = x[idx];
@@ -100,13 +100,13 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.25));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const maxI = shifted.indexOf(Math.max(...shifted));
+      const maxI = shifted.indexOf(arrMax(shifted));
       const mu = x[maxI];
       const A = Math.max(shifted[maxI], 1e-6);
       const halfAmp = A / 2;
       let half = -1;
       for (let i = 0; i < maxI; i++) { if (shifted[i] >= halfAmp) { half = i; break; } }
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       const sig = half >= 0 ? Math.max(Math.abs(x[half] - mu) / 1.177, xRange / 10) : xRange / 6;
       return [A, mu, sig, C];
     }
@@ -120,14 +120,14 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.25));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const maxI = shifted.indexOf(Math.max(...shifted));
+      const maxI = shifted.indexOf(arrMax(shifted));
       const A = Math.max(shifted[maxI], 1e-6);
       const x0 = x[maxI];
       // HWHM estimate from left side of peak
       const halfAmp = A / 2;
       let half = -1;
       for (let i = 0; i < maxI; i++) { if (shifted[i] >= halfAmp) { half = i; break; } }
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       const g = half >= 0 ? Math.max(Math.abs(x[half] - x0), xRange / 10) : xRange / 8;
       return [A, x0, g, C];
     }
@@ -137,8 +137,8 @@ const MODELS = {
     fn: (x, [Vm, Km]) => Vm * x / ((Km || 1e-10) + x),
     analytic: false,
     autoInit(x, y) {
-      const Vmax = Math.max(...y) * 1.5;
-      const half = Math.max(...y) / 2;
+      const Vmax = arrMax(y) * 1.5;
+      const half = arrMax(y) / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       return [Vmax, Math.max(x[idx], 1e-6)];
     }
@@ -148,8 +148,8 @@ const MODELS = {
     fn: (x, [Vmax, Kd, n]) => Vmax * Math.pow(x, n) / (Math.pow(Math.abs(Kd), n) + Math.pow(x, n)),
     analytic: false,
     autoInit(x, y) {
-      const Vmax = Math.max(...y) * 1.2;
-      const half = Math.max(...y) / 2;
+      const Vmax = arrMax(y) * 1.2;
+      const half = arrMax(y) / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       return [Vmax, Math.max(x[idx], 1e-6), 1.5];
     }
@@ -159,13 +159,13 @@ const MODELS = {
     fn: (x, [A, w, phi, C]) => A * Math.sin(w * x + phi) + C,
     analytic: false,
     autoInit(x, y) {
-      const C = (Math.max(...y) + Math.min(...y)) / 2;
-      const A = (Math.max(...y) - Math.min(...y)) / 2;
+      const C = (arrMax(y) + arrMin(y)) / 2;
+      const A = (arrMax(y) - arrMin(y)) / 2;
       const centered = y.map(v => v - C);
       // Count zero crossings to estimate frequency
       let zc = 0;
       for (let i = 1; i < centered.length; i++) { if (centered[i - 1] * centered[i] < 0) zc++; }
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       const omega = zc > 1 ? Math.PI * zc / xRange : 2 * Math.PI / Math.max(xRange, 1e-10);
       return [A, omega, 0, C];
     }
@@ -177,15 +177,15 @@ const MODELS = {
     autoInit(x, y) {
       const C = mean(y);
       const centered = y.map(v => v - C);
-      const A = Math.max(...centered.map(Math.abs)) || 1;
+      const A = arrMax(centered.map(Math.abs)) || 1;
       let zc = 0;
       for (let i = 1; i < centered.length; i++) { if (centered[i - 1] * centered[i] < 0) zc++; }
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       const omega = zc > 1 ? Math.PI * zc / xRange : 4 * Math.PI / Math.max(xRange, 1e-10);
       // Estimate damping from ratio of early vs late peak amplitudes
       const q = Math.ceil(y.length / 4);
-      const earlyAmp = Math.max(...centered.slice(0, q).map(Math.abs)) || A;
-      const lateAmp  = Math.max(...centered.slice(y.length - q).map(Math.abs)) || 0.01;
+      const earlyAmp = arrMax(centered.slice(0, q).map(Math.abs)) || A;
+      const lateAmp  = arrMax(centered.slice(y.length - q).map(Math.abs)) || 0.01;
       const gamma = earlyAmp > lateAmp ? Math.log(earlyAmp / lateAmp) / (xRange * 0.75) : 0.1;
       return [A, Math.max(gamma, 0.01), omega, 0, C];
     }
@@ -218,7 +218,7 @@ const MODELS = {
     analytic: false,
     autoInit(x, y) {
       const yf = y.filter(isFinite);
-      const A = Math.max(...yf);
+      const A = arrMax(yf);
       const half = A / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       return [isFinite(A) ? A : 1, x[idx], 10];
@@ -232,7 +232,7 @@ const MODELS = {
     analytic: false,
     autoInit(x, y) {
       const yf = y.filter(isFinite);
-      const A = Math.max(...yf);
+      const A = arrMax(yf);
       const q1 = A * 0.25, q3 = A * 0.75;
       const idx1 = y.reduce((b, yi, i) => Math.abs(yi - q1) < Math.abs(y[b] - q1) ? i : b, 0);
       const idx2 = y.reduce((b, yi, i) => Math.abs(yi - q3) < Math.abs(y[b] - q3) ? i : b, 0);
@@ -254,7 +254,7 @@ const MODELS = {
           break;
         }
       }
-      const maxAbs = Math.max(...y.map(Math.abs).filter(isFinite));
+      const maxAbs = arrMax(y.map(Math.abs).filter(isFinite));
       const Vm = x[Math.floor(x.length * 0.3)];
       return [isFinite(maxAbs) ? maxAbs / 50 : 1, Vm, 10, 2, Erev];
     }
@@ -278,7 +278,7 @@ const MODELS = {
       const xRng = x[x.length - 1] - x[0];
       const Vm = x[0] + xRng * 0.35;
       const Vh = x[0] + xRng * 0.6;
-      const maxAbs = Math.max(...y.map(Math.abs).filter(isFinite));
+      const maxAbs = arrMax(y.map(Math.abs).filter(isFinite));
       return [isFinite(maxAbs) ? maxAbs / 80 : 0.5, Vm, 7, Vh, 7, Erev];
     }
   },
@@ -294,7 +294,7 @@ const MODELS = {
           break;
         }
       }
-      const maxAbs = Math.max(...y.map(Math.abs).filter(isFinite));
+      const maxAbs = arrMax(y.map(Math.abs).filter(isFinite));
       return [isFinite(maxAbs) ? maxAbs / 50 : 0.5, EK, EK - 20, 10];
     }
   },
@@ -307,7 +307,7 @@ const MODELS = {
     },
     analytic: false,
     autoInit(x, y) {
-      const maxAbs = Math.max(...y.map(Math.abs).filter(isFinite));
+      const maxAbs = arrMax(y.map(Math.abs).filter(isFinite));
       return [isFinite(maxAbs) ? maxAbs / 80 : 0.5, 0.1, 25.7];
     }
   },
@@ -318,9 +318,9 @@ const MODELS = {
     analytic: false,
     autoInit(x, y) {
       const yf = y.filter(isFinite);
-      const tau_min = Math.max(Math.min(...yf), 0);
-      const tau_max = Math.max(...yf) - tau_min;
-      const imax = y.indexOf(Math.max(...yf));
+      const tau_min = Math.max(arrMin(yf), 0);
+      const tau_max = arrMax(yf) - tau_min;
+      const imax = y.indexOf(arrMax(yf));
       const Vpeak = x[imax >= 0 ? imax : Math.floor(x.length / 2)];
       const xRng = (x[x.length - 1] - x[0]) / 4;
       return [isFinite(tau_max) ? tau_max : 1, Vpeak, xRng, tau_min];
@@ -337,14 +337,14 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.25));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const peak1 = Math.max(...shifted);
+      const peak1 = arrMax(shifted);
       const imax1 = shifted.indexOf(peak1);
       const mu1 = x[imax1] ?? x[Math.floor(x.length / 2)];
       const A1 = Math.max(peak1, 1e-6);
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       const sig = xRange / 8 || 1;
       const masked = shifted.map((v, i) => Math.abs(x[i] - mu1) > sig * 2 ? v : -Infinity);
-      const peak2 = Math.max(...masked);
+      const peak2 = arrMax(masked);
       const imax2 = masked.indexOf(peak2);
       const mu2 = imax2 >= 0 && peak2 > -Infinity ? x[imax2] : (mu1 + xRange / 3);
       const A2 = Math.max(peak2 > 0 ? peak2 : A1 * 0.5, 1e-6);
@@ -357,9 +357,9 @@ const MODELS = {
       A1 * Math.exp(-Math.abs(b1) * x) + A2 * Math.exp(-Math.abs(b2) * x) + C,
     analytic: false,
     autoInit(x, y) {
-      const C = Math.min(...y);
-      const range = Math.max(...y) - C;
-      const xRange = Math.max(Math.max(...x) - Math.min(...x), 1e-10);
+      const C = arrMin(y);
+      const range = arrMax(y) - C;
+      const xRange = Math.max(arrMax(x) - arrMin(x), 1e-10);
       return [range * 0.7, 2 / xRange, range * 0.3, 0.3 / xRange, C];
     }
   },
@@ -378,7 +378,7 @@ const MODELS = {
     fn: (x, [a, b, c]) => a * Math.pow(Math.abs(x) + 1e-12, b) + c,
     analytic: false,
     autoInit(x, y) {
-      const c = Math.min(...y);
+      const c = arrMin(y);
       const shifted = y.map(v => Math.max(v - c, 1e-10));
       const pairs = x.map((xi, i) => [xi, shifted[i]]).filter(([xi, yi]) => xi > 0 && yi > 0);
       if (pairs.length < 2) return [Math.abs(y.reduce((s, v) => s + v, 0) / y.length) || 1, 1, c];
@@ -397,7 +397,7 @@ const MODELS = {
     fn: (x, [A, D, C, B]) => D + (A - D) / (1 + Math.pow(Math.max(x, 0) / Math.max(Math.abs(C), 1e-12), B)),
     analytic: false,
     autoInit(x, y) {
-      const A = Math.max(...y), D = Math.min(...y);
+      const A = arrMax(y), D = arrMin(y);
       const mid = (A + D) / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - mid) < Math.abs(y[b] - mid) ? i : b, 0);
       const C = Math.max(x[idx], 1e-6);
@@ -412,11 +412,11 @@ const MODELS = {
     fn: (x, [A, k, x0]) => A * Math.exp(-Math.exp(-k * (x - x0))),
     analytic: false,
     autoInit(x, y) {
-      const A = Math.max(...y) * 1.05;
+      const A = arrMax(y) * 1.05;
       const inflY = A * Math.exp(-1);
       const idx = y.reduce((b, yi, i) => Math.abs(yi - inflY) < Math.abs(y[b] - inflY) ? i : b, 0);
       const x0 = x[idx];
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       return [isFinite(A) ? A : 1, 2 / Math.max(xRange, 1), x0];
     }
   },
@@ -434,9 +434,9 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.25));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const maxI = shifted.indexOf(Math.max(...shifted));
+      const maxI = shifted.indexOf(arrMax(shifted));
       const A = Math.max(shifted[maxI], 1e-6), x0 = x[maxI];
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       const fwhm = xRange / 6 || 1;
       const g = fwhm / 2;
       const s = fwhm / 2.355;
@@ -455,9 +455,9 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.25));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const maxI = shifted.indexOf(Math.max(...shifted));
+      const maxI = shifted.indexOf(arrMax(shifted));
       const A = Math.max(shifted[maxI], 1e-6), x0 = x[maxI];
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       return [A, x0, xRange / 10 || 1, 1, C];
     }
   },
@@ -471,11 +471,11 @@ const MODELS = {
     },
     analytic: false,
     autoInit(x, y) {
-      const peakI = y.indexOf(Math.max(...y));
+      const peakI = y.indexOf(arrMax(y));
       const tmax = x[peakI] || (x[x.length - 1] - x[0]) * 0.3;
       const ka = 3 / Math.max(tmax, 1e-6), ke = ka / 10;
       const predPeak = ka / (ka - ke) * (Math.exp(-ke * tmax) - Math.exp(-ka * tmax));
-      const Amp = Math.max(...y) / Math.max(predPeak, 1e-10);
+      const Amp = arrMax(y) / Math.max(predPeak, 1e-10);
       return [isFinite(Amp) ? Amp : 1, ka, ke];
     }
   },
@@ -485,8 +485,8 @@ const MODELS = {
       A * Math.exp(-Math.pow(Math.max(x, 0) / Math.max(tau, 1e-12), Math.max(beta, 1e-6))) + C,
     analytic: false,
     autoInit(x, y) {
-      const C = Math.min(...y);
-      const A = Math.max(Math.max(...y) - C, 1e-6);
+      const C = arrMin(y);
+      const A = Math.max(arrMax(y) - C, 1e-6);
       const target = A * Math.exp(-1) + C;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - target) < Math.abs(y[b] - target) ? i : b, 0);
       const tau = Math.max(x[idx] - x[0], (x[x.length - 1] - x[0]) / 3, 1e-6);
@@ -502,7 +502,7 @@ const MODELS = {
     },
     analytic: false,
     autoInit(x, y) {
-      const A = Math.max(...y.filter(isFinite)) * 1.05;
+      const A = arrMax(y.filter(isFinite)) * 1.05;
       const half = A / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       const B = 1.6 / Math.max(Math.abs(x[idx]), 1e-6);
@@ -515,7 +515,7 @@ const MODELS = {
       F0 / (Math.max(1 + KD * x, 1e-10) * Math.max(1 + KS * x, 1e-10)),
     analytic: false,
     autoInit(x, y) {
-      const F0 = Math.max(...y.filter(isFinite));
+      const F0 = arrMax(y.filter(isFinite));
       const xm = mean(x);
       const ratio = y.map(yi => Math.max(F0 / Math.max(yi, 1e-10) - 1, 0));
       const rm = mean(ratio);
@@ -555,7 +555,7 @@ const MODELS = {
       const slope = xL.reduce((s, xi, i) => s + (xi - xmL) * (yL[i] - ymL), 0) /
                     Math.max(xL.reduce((s, xi) => s + (xi - xmL) ** 2, 0), 1e-15);
       const E = (slope > 1e-10) ? Math.min(1 / slope, 1e9) : 200000;
-      const xMax = Math.max(...x.filter(isFinite));
+      const xMax = arrMax(x.filter(isFinite));
       return [isFinite(E) ? E : 200000, xMax * 0.5 || 250, 5];
     }
   },
@@ -566,8 +566,8 @@ const MODELS = {
       A * Math.exp(-Math.abs(alpha) * x) + B * Math.exp(-Math.abs(beta) * x),
     analytic: false,
     autoInit(x, y) {
-      const range = Math.max(...y) - Math.min(...y);
-      const xRange = Math.max(Math.max(...x) - Math.min(...x), 1e-10);
+      const range = arrMax(y) - arrMin(y);
+      const xRange = Math.max(arrMax(x) - arrMin(x), 1e-10);
       return [range * 0.7, 3 / xRange, range * 0.3, 0.3 / xRange];
     }
   },
@@ -582,14 +582,14 @@ const MODELS = {
     },
     analytic: false,
     autoInit(x, y) {
-      const peakI = y.indexOf(Math.max(...y));
+      const peakI = y.indexOf(arrMax(y));
       const tmax = x[peakI] || (x[x.length - 1] - x[0]) * 0.4;
       const tlag = tmax * 0.15;
       const ka = 3 / Math.max(tmax - tlag, 1e-6);
       const ke = ka / 8;
       const tEff = tmax - tlag;
       const predPeak = ka / (ka - ke) * (Math.exp(-ke * tEff) - Math.exp(-ka * tEff));
-      const Amp = Math.max(...y) / Math.max(predPeak, 1e-10);
+      const Amp = arrMax(y) / Math.max(predPeak, 1e-10);
       return [isFinite(Amp) ? Amp : 1, ka, ke, Math.max(tlag, 0)];
     }
   },
@@ -600,13 +600,13 @@ const MODELS = {
       Vmax * x / (Km + x + x * x / Math.max(Math.abs(Ki), 1e-10)),
     analytic: false,
     autoInit(x, y) {
-      const peakI = y.indexOf(Math.max(...y));
+      const peakI = y.indexOf(arrMax(y));
       const Sopt = Math.max(x[peakI], 1e-6);
       const vPeak = y[peakI];
       const Km = Sopt / 4;
       const Ki = Sopt * 4;
       const Vmax = vPeak * (Km + Sopt + Sopt * Sopt / Ki) / Sopt;
-      return [isFinite(Vmax) ? Vmax : Math.max(...y) * 2, Km, Ki];
+      return [isFinite(Vmax) ? Vmax : arrMax(y) * 2, Km, Ki];
     }
   },
   // ── Adsorption Isotherms ─────────────────────────────────
@@ -615,8 +615,8 @@ const MODELS = {
     fn: (x, [qm, KL]) => qm * KL * x / (1 + KL * x),
     analytic: false,
     autoInit(x, y) {
-      const qm = Math.max(...y) * 1.5;
-      const half = Math.max(...y) / 2;
+      const qm = arrMax(y) * 1.5;
+      const half = arrMax(y) / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       const KL = 1 / Math.max(x[idx], 1e-6);
       return [qm, isFinite(KL) ? KL : 1];
@@ -679,10 +679,10 @@ const MODELS = {
     analytic: false,
     autoInit(x, y) {
       const yf = y.filter(v => isFinite(v));
-      const tau0 = Math.max(Math.min(...yf) * 0.5, 0);
+      const tau0 = Math.max(arrMin(yf) * 0.5, 0);
       const shifted = y.map(v => Math.max(v - tau0, 1e-10));
       const pairs = x.map((xi, i) => [xi, shifted[i]]).filter(([xi]) => xi > 0);
-      if (pairs.length < 2) return [tau0, Math.max(...yf) * 0.5 || 1, 1];
+      if (pairs.length < 2) return [tau0, arrMax(yf) * 0.5 || 1, 1];
       const lx = pairs.map(([xi]) => Math.log(xi));
       const ly = pairs.map(([, yi]) => Math.log(yi));
       const xlm = mean(lx), ylm = mean(ly);
@@ -699,8 +699,8 @@ const MODELS = {
     analytic: false,
     autoInit(x, y) {
       const yf = y.filter(v => isFinite(v) && v > 0);
-      const eta0 = Math.max(...yf) || 1;
-      const etaInf = Math.min(...yf) * 0.5 || 0.001;
+      const eta0 = arrMax(yf) || 1;
+      const etaInf = arrMin(yf) * 0.5 || 0.001;
       const half = (eta0 + etaInf) / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       const K = 1 / Math.max(x[idx], 1e-6);
@@ -725,10 +725,10 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.2));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const peakI = shifted.indexOf(Math.max(...shifted));
+      const peakI = shifted.indexOf(arrMax(shifted));
       const A = Math.max(shifted[peakI], 1e-6);
       const mu = x[peakI];
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       const sig = xRange / (6 * 2.355) || 0.5;
       const tau = Math.max(sig * 0.6, 1e-6);
       return [A, mu, sig, tau, C];
@@ -747,10 +747,10 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.25));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const peakI = shifted.indexOf(Math.max(...shifted));
+      const peakI = shifted.indexOf(arrMax(shifted));
       const A = Math.max(shifted[peakI], 1e-6);
       const mu = x[peakI];
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       return [A, mu, xRange / 8 || 1, 0, C];
     }
   },
@@ -776,9 +776,9 @@ const MODELS = {
       const nBase = Math.max(2, Math.ceil(y.length * 0.25));
       const C = sortedY.slice(0, nBase).reduce((s, v) => s + v, 0) / nBase;
       const shifted = y.map(v => v - C);
-      const peakI = shifted.indexOf(Math.max(...shifted));
+      const peakI = shifted.indexOf(arrMax(shifted));
       const A = Math.max(shifted[peakI], 1e-6), x0 = x[peakI];
-      const xRange = Math.max(...x) - Math.min(...x);
+      const xRange = arrMax(x) - arrMin(x);
       const fwhm = xRange / 6 || 1;
       return [A, x0, fwhm * 0.7, fwhm * 0.3, C];
     }
@@ -823,9 +823,9 @@ const MODELS = {
     fn: (x, [A, mu, w, B]) => A * _erf((x - mu) / Math.max(Math.abs(w), 1e-10)) + B,
     analytic: false,
     autoInit(x, y) {
-      const A = (Math.max(...y) - Math.min(...y)) / 2;
-      const B = (Math.max(...y) + Math.min(...y)) / 2;
-      const xRange = Math.max(...x) - Math.min(...x);
+      const A = (arrMax(y) - arrMin(y)) / 2;
+      const B = (arrMax(y) + arrMin(y)) / 2;
+      const xRange = arrMax(x) - arrMin(x);
       return [isFinite(A) ? A : 1, mean(x), xRange / 4 || 1, isFinite(B) ? B : 0];
     }
   },
@@ -837,8 +837,8 @@ const MODELS = {
     analytic: false,
     autoInit(x, y) {
       const yf = y.filter(v => isFinite(v) && v > 0);
-      const eta0 = Math.max(...yf) || 1;
-      const etaInf = Math.min(...yf) * 0.5 || 0.001;
+      const eta0 = arrMax(yf) || 1;
+      const etaInf = arrMin(yf) * 0.5 || 0.001;
       const half = (eta0 + etaInf) / 2;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       return [eta0, isFinite(etaInf) ? etaInf : 0.001, 1 / Math.max(x[idx], 1e-6), 0.5];
@@ -854,8 +854,8 @@ const MODELS = {
     analytic: false,
     autoInit(x, y) {
       const yf = y.filter(v => isFinite(v) && v > 0);
-      const eta0 = Math.max(...yf) || 1;
-      const etaInf = Math.min(...yf) * 0.5 || 0.001;
+      const eta0 = arrMax(yf) || 1;
+      const etaInf = arrMin(yf) * 0.5 || 0.001;
       const target = Math.sqrt(eta0 * etaInf);
       const idx = y.reduce((b, yi, i) => Math.abs(yi - target) < Math.abs(y[b] - target) ? i : b, 0);
       return [eta0, isFinite(etaInf) ? etaInf : 0.001, Math.max(x[idx], 1e-6)];
@@ -870,9 +870,9 @@ const MODELS = {
     },
     analytic: false,
     autoInit(x, y) {
-      const yRange = Math.max(...y) - Math.min(...y);
+      const yRange = arrMax(y) - arrMin(y);
       const A = yRange || 1;
-      const C = Math.min(...y);
+      const C = arrMin(y);
       const half = A / 2 + C;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       const x0 = x[idx];
@@ -887,8 +887,8 @@ const MODELS = {
     fn: (x, [A, k, x0, C]) => A * 0.5 * (1 + _erf(k * (x - x0))) + C,
     analytic: false,
     autoInit(x, y) {
-      const A = (Math.max(...y) - Math.min(...y)) || 1;
-      const C = Math.min(...y);
+      const A = (arrMax(y) - arrMin(y)) || 1;
+      const C = arrMin(y);
       const half = A / 2 + C;
       const idx = y.reduce((b, yi, i) => Math.abs(yi - half) < Math.abs(y[b] - half) ? i : b, 0);
       const x0 = x[idx];
