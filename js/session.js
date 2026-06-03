@@ -19,6 +19,7 @@ function buildSessionPayload() {
 
   return {
     version: 2,
+    appVersion: (typeof APP_VERSION !== 'undefined') ? APP_VERSION : null,
     savedAt: new Date().toISOString(),
     datasets: state.datasets.map(d => Object.assign({}, d, { excludedIndices: [...(d.excludedIndices || [])] })),
     fits: state.fits.map(f => ({

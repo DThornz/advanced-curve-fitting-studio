@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.3</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.4</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.3</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.4</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1892,9 +1892,21 @@
       <!-- ── v1.8.2 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.8.3</span>
+          <span class="relnotes-ver-num current">v1.8.4</span>
           <span class="relnotes-ver-date">2026-06-03</span>
           <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Reproducible fits</strong> — multi-start now uses a seeded PRNG instead of <code>Math.random()</code>, so the same data + settings always give the same fit (no more run-to-run wobble in the multi-start result).</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Provenance stamps</strong> — exported Python/R/MATLAB scripts carry a header with the app version, model, solver and weighting; the JSON schema and saved sessions embed the app version too. The fitting worker is now cache-busted by a single canonical version constant (no longer scraped from a DOM label).</span></li>
+        </ul>
+      </div>
+
+      <!-- ── v1.8.3 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.8.3</span>
+          <span class="relnotes-ver-date">2026-06-03</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Solver unified across paths + relative convergence</strong> — the Web Worker (default) and the fallback solver used <em>different</em> Levenberg-Marquardt damping and convergence tests; both now use Marquardt diagonal scaling and scipy-style relative (xtol AND ftol) tolerances, so a fit gives the same result whichever path runs. <strong>Validated against the NIST StRD certified nonlinear datasets</strong> (Misra1a, Rat42) to 5–6 significant figures.</span></li>

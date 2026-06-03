@@ -467,9 +467,20 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
 }
 
 /* ── Multi-start wrapper ─────────────────────────────────── */
+// Seeded PRNG (mulberry32) → reproducible multi-start. Mirrors math-utils.js.
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
   const pilotMax = Math.max(150, Math.ceil(opts.maxIter / 4));
   const pilotOpts = { ...opts, maxIter: pilotMax, onProgress: null };
+  const rand = mulberry32((opts.seed >>> 0) || 0x9E3779B9);   // seeded → reproducible
   function quickSSE(params) {
     let s = 0;
     for (let i = 0; i < xArr.length; i++) {
@@ -484,8 +495,8 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
     const pPerturb = p0.map((v, i) => {
       const row = paramRows[i];
       let pv = Math.abs(v) > 1e-10
-        ? v * Math.pow(10, (Math.random() * 2 - 1))
-        : (Math.random() * 2 - 1) * 2;
+        ? v * Math.pow(10, (rand() * 2 - 1))
+        : (rand() * 2 - 1) * 2;
       if (row) {
         if (row.min > -1e9) pv = Math.max(pv, row.min);
         if (row.max <  1e9) pv = Math.min(pv, row.max);

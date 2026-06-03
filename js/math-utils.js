@@ -5,6 +5,16 @@ function sumArr(arr) { return arr.reduce((s, v) => s + v, 0); }
 // very large arrays, so use these in any path that may see big datasets.
 function arrMin(arr) { let m = Infinity; for (let i = 0; i < arr.length; i++) if (arr[i] < m) m = arr[i]; return m; }
 function arrMax(arr) { let m = -Infinity; for (let i = 0; i < arr.length; i++) if (arr[i] > m) m = arr[i]; return m; }
+// Deterministic PRNG (mulberry32) so multi-start fits are reproducible run-to-run.
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 function linspace(a, b, n) {
   if (n < 2) return [a];
   return Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));

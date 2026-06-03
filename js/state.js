@@ -2,6 +2,9 @@
 /* ═══════════════════════════════════════════════════════════
    APPLICATION STATE
 ═══════════════════════════════════════════════════════════ */
+// Canonical app version — bump on release. Drives worker cache-busting and export
+// provenance stamps (single source of truth, not scraped from the DOM).
+const APP_VERSION = '1.8.4';
 const DS_COLORS = ['#0b7a6e','#2563eb','#dc2626','#7c3aed','#f59e0b','#15803d','#c2410c','#db2777','#0891b2'];
 let colorIdx = 0;
 let idCounter = 0;

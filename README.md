@@ -419,6 +419,10 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.8.4 — 2026-06-03  (reproducibility)
+- **new** Multi-start fitting uses a seeded PRNG (mulberry32) instead of `Math.random()` → fits are reproducible run-to-run
+- **new** Exported Python/R/MATLAB scripts carry a provenance header (app version, model, solver, weighting); JSON schema and saved sessions embed the app version; worker cache-bust now uses a single `APP_VERSION` constant (was scraped from the DOM)
+
 ### v1.8.3 — 2026-06-03  (numerical trust)
 - **fix** Unified the Levenberg-Marquardt step and convergence test between the Web Worker and the fallback solver (Marquardt diagonal scaling + scipy-style relative xtol/ftol tolerances); Gauss-Newton and BFGS use relative tolerances too. **Validated against NIST StRD certified datasets** (Misra1a, Rat42) to 5–6 sig figs
 - **fix** Standard errors for supplied-σ (1/σ²) fits now use covariance (JᵀWJ)⁻¹ directly (scipy `absolute_sigma=True`) instead of rescaling by reduced χ²

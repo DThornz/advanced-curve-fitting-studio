@@ -117,6 +117,7 @@ function autoInitParams() {
 ═══════════════════════════════════════════════════════════ */
 function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
   const pilotOpts = { ...opts, maxIter: Math.max(150, Math.ceil(opts.maxIter / 4)) };
+  const rand = mulberry32((opts.seed >>> 0) || 0x9E3779B9);   // seeded → reproducible
 
   function quickSSE(params) {
     let s = 0;
@@ -136,8 +137,8 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
       const row = state.paramRows[i];
       // Log-scale perturbation: multiply by 10^U(-1,1)
       let pv = Math.abs(v) > 1e-10
-        ? v * Math.pow(10, (Math.random() * 2 - 1))
-        : (Math.random() * 2 - 1) * 2;
+        ? v * Math.pow(10, (rand() * 2 - 1))
+        : (rand() * 2 - 1) * 2;
       if (row) {
         if (row.min > -1e9) pv = Math.max(pv, row.min);
         if (row.max <  1e9) pv = Math.min(pv, row.max);
@@ -363,11 +364,9 @@ function runFit() {
   const jobId = nextId();
   let worker;
   try {
-    // Cache-bust the worker by the app version (read from the version chip) so an
-    // updated fitting-worker.js — e.g. new models or constraint support — is never
-    // served stale from the browser's worker cache after a deploy.
-    const _ver = ((document.getElementById('hero-relnotes') || document.getElementById('btn-relnotes') || {}).textContent || '').replace(/[^\d.]/g, '');
-    worker = new Worker('fitting-worker.js' + (_ver ? '?v=' + _ver : ''));
+    // Cache-bust the worker by the canonical app version so an updated
+    // fitting-worker.js is never served stale from the worker cache after a deploy.
+    worker = new Worker('fitting-worker.js?v=' + APP_VERSION);
   } catch (e) {
     // Web Workers may be blocked (e.g. file:// protocol) — fall back to synchronous fit
     _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows: state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max })) });
