@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.9</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.9.0</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.9</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.9.0</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1892,9 +1892,21 @@
       <!-- ── v1.8.2 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.8.9</span>
+          <span class="relnotes-ver-num current">v1.9.0</span>
           <span class="relnotes-ver-date">2026-06-03</span>
           <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>More accurate standard errors</strong> — the covariance matrix (and hence parameter standard errors, confidence/prediction bands, and the Jacobian condition number) is now computed with a <strong>central-difference</strong> Jacobian instead of forward-difference, which is ~4 orders of magnitude more accurate (verified against analytic covariances).</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Exact constraint projection</strong> — coupled constraints (A ≤ B, A = B, Σ = value, Σ ≤ value) are now projected by iterating to feasibility (largest violation below a relative tolerance) rather than a fixed 4 passes, so they're satisfied to ~1e-12 for compatible constraints; infeasible combinations terminate cleanly at a capped iteration count.</span></li>
+        </ul>
+      </div>
+
+      <!-- ── v1.8.9 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.8.9</span>
+          <span class="relnotes-ver-date">2026-06-03</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Modals frozen after opening</strong> — a regression in the v1.8.5 accessibility work made the background <code>inert</code> while the app is open, which also froze the modals that live at the page level (Release Notes, Column Picker, Settings, Save, etc.) — they appeared but couldn't be clicked or scrolled. The inert layer now skips modal/tooltip layers, so they're fully interactive again.</span></li>

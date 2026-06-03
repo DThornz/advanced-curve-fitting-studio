@@ -22,27 +22,35 @@ function _boxClamp(p, lo, hi) {
 }
 
 // Projects p onto the feasible set: box bounds first, then coupled constraints,
-// re-applying box bounds after each pass (a few iterations reconcile overlaps).
+// re-applying box bounds and iterating until the largest constraint violation is
+// below a relative tolerance (a fixed cap guards infeasible combinations).
 function clampToBounds(p, lo, hi) {
   _boxClamp(p, lo, hi);
   const cons = _activeConstraints;
   if (!cons || !cons.length) return;
-  for (let it = 0; it < 4; it++) {
+  let scale = 1; for (let i = 0; i < p.length; i++) { const a = Math.abs(p[i]); if (a > scale) scale = a; }
+  const tol = 1e-12 * scale, MAXIT = 50;
+  for (let it = 0; it < MAXIT; it++) {
+    let maxViol = 0;
     for (const c of cons) {
       if (c.type === 'order') {                 // enforce p[a] <= p[b]
-        if (p[c.a] > p[c.b]) { const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m; }
+        const d = p[c.a] - p[c.b];
+        if (d > 0) { if (d > maxViol) maxViol = d; const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m; }
       } else if (c.type === 'equal') {          // enforce p[a] == p[b]
+        const d = Math.abs(p[c.a] - p[c.b]); if (d > maxViol) maxViol = d;
         const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m;
       } else if (c.type === 'sum') {            // enforce sum(p[idx]) == value
         let s = 0; for (const k of c.idx) s += p[k];
-        const adj = (c.value - s) / c.idx.length;
+        const dv = c.value - s; if (Math.abs(dv) > maxViol) maxViol = Math.abs(dv);
+        const adj = dv / c.idx.length;
         if (isFinite(adj)) for (const k of c.idx) p[k] += adj;
       } else if (c.type === 'sumle') {          // enforce sum(p[idx]) <= value
         let s = 0; for (const k of c.idx) s += p[k];
-        if (s > c.value) { const adj = (c.value - s) / c.idx.length; for (const k of c.idx) p[k] += adj; }
+        if (s > c.value) { const dv = s - c.value; if (dv > maxViol) maxViol = dv; const adj = (c.value - s) / c.idx.length; for (const k of c.idx) p[k] += adj; }
       }
     }
     _boxClamp(p, lo, hi);
+    if (maxViol <= tol) break;   // feasible to tolerance (or already satisfied)
   }
 }
 
@@ -409,7 +417,7 @@ function bfgs(fn, xArr, yArr, p0, opts) {
 
 /* ── Shared finalisation (stats + param errors) ─────────── */
 function finaliseFit(fn, xArr, yArr, p, meta) {
-  const EPS = 1e-7;
+  const CEPS = 1e-6;  // central-difference step for the covariance Jacobian
   const n = xArr.length, m = p.length;
   let nBad = 0;
   const r = xArr.map((x, i) => { const v = fn(x, p); if (!isFinite(v)) { nBad++; return 0; } return yArr[i] - v; });
@@ -435,13 +443,14 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
   try {
     const J_cols = [];
     for (let j = 0; j < m; j++) {
-      const pp = p.slice();
-      const h = Math.max(Math.abs(p[j]) * EPS, EPS);
-      pp[j] += h;
-      const r1 = xArr.map((x, i) => { const v = fn(x, pp); return isFinite(v) ? yArr[i] - v : 0; });
-      // Scale Jacobian columns by sqrt(w) for weighted covariance
-      J_cols.push(r1.map((v, i) => {
-        const dri = (v - r[i]) / h;
+      const h = Math.max(Math.abs(p[j]) * CEPS, 1e-9);
+      const pPlus = p.slice();  pPlus[j]  += h;
+      const pMinus = p.slice(); pMinus[j] -= h;
+      const rP = xArr.map((x, i) => { const v = fn(x, pPlus);  return isFinite(v) ? yArr[i] - v : 0; });
+      const rM = xArr.map((x, i) => { const v = fn(x, pMinus); return isFinite(v) ? yArr[i] - v : 0; });
+      // Central-difference residual derivative, scaled by sqrt(w) for weighted covariance
+      J_cols.push(rP.map((vp, i) => {
+        const dri = (vp - rM[i]) / (2 * h);
         return weights ? dri * Math.sqrt(Math.max(weights[i], 0)) : dri;
       }));
     }
