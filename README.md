@@ -15,7 +15,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Fitting algorithms** | Levenberg-Marquardt · Gauss-Newton · Nelder-Mead Simplex · BFGS (selectable per fit); analytic Vandermonde normal equations for polynomials |
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
-| **Constraint library** | *+ Add constraint* menu under the parameter table, offering only constraints that fit the current model's parameter count. Box presets (≥ 0, ≤ 0, 0–1, custom [lo, hi]) set a parameter's Min/Max; coupled constraints — A ≤ B, A = B, Σ = value (e.g. fractions sum to 1), Σ ≤ value — show as removable chips and are enforced by all solvers via projection. Saved with the session |
+| **Constraint library** | *+ Add constraint* menu under the parameter table, offering only constraints that fit the current model's parameter count. Everything constraining the fit shows as removable chips: **box bounds** (grey — a live mirror of each parameter's Min/Max, set in the table or via the ≥ 0 / ≤ 0 / 0–1 / custom-range presets) and **coupled constraints** (teal — A ≤ B, A = B, Σ = value, Σ ≤ value), all enforced by every solver via projection. Saved with the session |
 | **Parameter bounds** | Optional min/max per parameter; all four solvers enforce box constraints via projection at every iteration; init is auto-clamped before dispatch; blank = unconstrained |
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^`, plus special functions `erf`, `erfc`, `gamma`, `lgamma`, `factorial`, `cbrt`, `nthRoot`, full trig (`cot`/`sec`/`csc`), inverse hyperbolic (`asinh`/`acosh`/`atanh`/`coth`), and conditional/ternary logic. **Visual Equation Editor** popup (⊞ button) provides a click-to-insert palette (operators, common + special functions, trig, hyperbolic, rounding, conditional, constants), 35+ categorised example equations, and live Math.js validation with parameter detection. Math.js is auto-extended with `erfc`/`lgamma` polyfills so every palette function evaluates in both the main thread and the fitting Web Worker. **Edit as Custom…** button appears below every built-in model — pre-fills the custom editor with a Math.js translation of the selected model's equation for use as a starting point. |
 | **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, convergence status, final λ (LM), gradient norm (BFGS). Parameter correlation heatmap + scrollable pair list in the stats bar side panel — plain-English suggestions flag strongly correlated pairs with targeted advice |
@@ -418,6 +418,9 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 ---
 
 ## Changelog
+
+### v1.8.0 — 2026-06-02
+- **improve** Unified constraint chips — parameter Min/Max bounds now show as removable grey chips next to the (teal) coupled-constraint chips, mirroring the Min/Max cells two-way (set in the table or via a preset → chip appears; clear the chip → bound clears). Resolves the box-preset/Min-Max overlap
 
 ### v1.7.9 — 2026-06-02
 - **improve** Constraint builder UX: picking a type opens a dashed "draft" panel whose **✓ Add** button pulses green (it isn't applied until clicked); added a "Not added yet" hint and a Fit-time warning if a constraint is drafted but not committed

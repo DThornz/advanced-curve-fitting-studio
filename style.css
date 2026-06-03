@@ -365,8 +365,10 @@ body.dark-mode .topbar-close-pin{background:#0a1628!important;box-shadow:-6px 0 
 .ds-item.ds-multi-sel{box-shadow:inset 0 0 0 2px var(--teal);border-color:var(--teal)}
 /* Constraint library chips */
 .constraint-chip{display:inline-flex;align-items:center;gap:4px;font-size:.66em;font-family:var(--mono);background:var(--teal-glow);color:var(--teal);border:1px solid rgba(11,122,110,.25);border-radius:4px;padding:2px 4px 2px 6px}
-.constraint-chip-x{background:none;border:none;color:var(--teal);cursor:pointer;font-size:1.15em;line-height:1;padding:0 1px;opacity:.7}
+.constraint-chip-x{background:none;border:none;color:inherit;cursor:pointer;font-size:1.15em;line-height:1;padding:0 1px;opacity:.7}
 .constraint-chip-x:hover{opacity:1;color:var(--red)}
+/* Box-bound chips (derived from Min/Max) read as neutral, distinct from the teal coupled chips */
+.constraint-chip-box{background:var(--bg3);color:var(--muted);border-color:var(--border)}
 /* Brief green glow drawing the eye to the ✓ Add button after a constraint type is picked */
 @keyframes cbAddPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}50%{box-shadow:0 0 0 4px rgba(34,197,94,.5)}}
 .cb-pulse{animation:cbAddPulse 1s ease-in-out 3}

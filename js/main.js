@@ -142,11 +142,10 @@ const PANEL_TIPS = {
     `Supported: <code>exp log sin cos sqrt abs atan ^</code>, special functions <code>erf erfc lgamma factorial</code>, and all Math.js built-ins. Click <b>⊞ Equation Editor</b> for a click-to-insert palette.`,
 
   'constraints':
-    `<b>Constraints</b><br>Pre-canned constraints that the solver enforces during fitting. Only the types that fit the current model's parameter count are offered.<br><br>` +
-    `<b>Box presets</b> (Parameter ≥ 0, ≤ 0, 0–1, or a custom range) write directly into that parameter's Min/Max.<br>` +
-    `<b>Coupled constraints</b> appear as removable chips:<br>` +
-    `• <b>A ≤ B</b> ordering &nbsp; • <b>A = B</b> equality &nbsp; • <b>Σ = value</b> (e.g. fractions sum to 1) &nbsp; • <b>Σ ≤ value</b>.<br><br>` +
-    `Enforced by projection at every solver step. Note: when a coupled constraint is <i>active</i> at the optimum, the reported standard errors / CIs become approximate.`,
+    `<b>Constraints</b><br>Everything constraining the fit shows here as removable chips. The menu only offers types that fit the current model's parameter count.<br><br>` +
+    `<b>Box bounds</b> (grey chips) mirror each parameter's Min/Max — set them in the table or via the presets (≥ 0, ≤ 0, 0–1, custom range); clearing the chip clears the bound.<br>` +
+    `<b>Coupled constraints</b> (teal chips): • <b>A ≤ B</b> • <b>A = B</b> • <b>Σ = value</b> (e.g. fractions sum to 1) • <b>Σ ≤ value</b>.<br><br>` +
+    `All are enforced by projection at every solver step. Note: when a coupled constraint (or an active box bound) sits at the optimum, the reported standard errors / CIs become approximate.`,
 
   'parameters':
     `<b>Parameters</b><br>One row per model parameter.<br><br>` +

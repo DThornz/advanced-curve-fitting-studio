@@ -633,6 +633,8 @@ function renderParamTable() {
           }
         } else if (inp.dataset.field === 'min') state.paramRows[i].min = -1e10;
         else if (inp.dataset.field === 'max') state.paramRows[i].max = 1e10;
+        // Keep the unified constraint chips in sync with the Min/Max cells
+        if (inp.dataset.field === 'min' || inp.dataset.field === 'max') renderConstraintChips();
       });
     });
   });
@@ -749,14 +751,39 @@ function _constraintLabel(c) {
 function renderConstraintChips() {
   const list = document.getElementById('constraints-list');
   if (!list) return;
-  list.innerHTML = (state.constraints || []).map((c, i) =>
-    `<span class="constraint-chip" title="Active during fitting">${_constraintLabel(c)}<button class="constraint-chip-x" data-ci="${i}" title="Remove constraint">×</button></span>`
+  const chips = [];
+  // Box-bound chips — derived live from the parameter Min/Max cells (single source
+  // of truth is paramRows.min/max; the chip is just a view of it).
+  state.paramRows.forEach((r, i) => {
+    const hasMin = r.min > -1e9, hasMax = r.max < 1e9;
+    if (!hasMin && !hasMax) return;
+    let label;
+    if (hasMin && hasMax) label = `${fmt(r.min)} ≤ ${_esc(r.name)} ≤ ${fmt(r.max)}`;
+    else if (hasMin)      label = `${_esc(r.name)} ≥ ${fmt(r.min)}`;
+    else                  label = `${_esc(r.name)} ≤ ${fmt(r.max)}`;
+    chips.push({ box: true, idx: i, label });
+  });
+  // Coupled-constraint chips
+  (state.constraints || []).forEach((c, ci) => chips.push({ box: false, idx: ci, label: _constraintLabel(c) }));
+
+  list.innerHTML = chips.map(ch =>
+    `<span class="constraint-chip${ch.box ? ' constraint-chip-box' : ''}" title="${ch.box ? 'Box bound (Min/Max) — × clears it' : 'Coupled constraint — × removes it'}">${ch.label}<button class="constraint-chip-x" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" title="Remove">×</button></span>`
   ).join('');
+
   list.querySelectorAll('.constraint-chip-x').forEach(btn => {
     btn.addEventListener('click', () => {
-      state.constraints.splice(parseInt(btn.dataset.ci), 1);
-      renderConstraintChips();
-      setConsole('Constraint removed.', '');
+      const idx = parseInt(btn.dataset.idx);
+      if (btn.dataset.box === '1') {
+        const row = state.paramRows[idx];
+        const nm = row ? row.name : 'parameter';
+        if (row) { row.min = -1e10; row.max = 1e10; }
+        renderParamTable();    // refresh Min/Max cells + chips
+        setConsole(`Cleared bounds on ${nm}.`, '');
+      } else {
+        state.constraints.splice(idx, 1);
+        renderConstraintChips();
+        setConsole('Constraint removed.', '');
+      }
     });
   });
 }
