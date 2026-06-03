@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.7</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.8</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.7</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.8</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1892,9 +1892,20 @@
       <!-- ── v1.8.2 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.8.7</span>
+          <span class="relnotes-ver-num current">v1.8.8</span>
           <span class="relnotes-ver-date">2026-06-03</span>
           <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Fourier-filter warning</strong> — applying a Fourier filter to data with non-uniform x spacing now warns that the % Nyquist cutoffs are approximate (the FFT assumes a uniform grid).</span></li>
+        </ul>
+      </div>
+
+      <!-- ── v1.8.7 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.8.7</span>
+          <span class="relnotes-ver-date">2026-06-03</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Accurate EMG peak tails</strong> — the Exponentially-Modified Gaussian now evaluates via the scaled complementary error function (<code>erfcx</code>) instead of <code>exp(·)·erfc(·)</code>, which lost all precision (and could overflow) in the peak tails. Matches the exact profile to ~6×10⁻⁸ everywhere; verified against <code>scipy</code>.</span></li>

@@ -292,6 +292,14 @@ function applyFourierFilter(type, cutoffLo, cutoffHi, rolloff) {
   if (!ds) { setConsole('No active dataset.', 'warn'); return; }
   const n = ds.y.length;
   if (n < 8) { setConsole('Need at least 8 points for Fourier filtering.', 'warn'); return; }
+  // Fourier filtering assumes uniform x spacing — flag if the grid is irregular.
+  let nonUniform = false;
+  if (n > 2 && ds.x) {
+    let dmin = Infinity, dmax = -Infinity;
+    for (let i = 1; i < n; i++) { const d = ds.x[i] - ds.x[i - 1]; if (d < dmin) dmin = d; if (d > dmax) dmax = d; }
+    const span = Math.abs(ds.x[n - 1] - ds.x[0]) / (n - 1) || 1;
+    nonUniform = (dmax - dmin) > 0.05 * Math.abs(span);
+  }
   _ppPushUndo(ds);
 
   const N = _nextPow2(n);
@@ -334,7 +342,7 @@ function applyFourierFilter(type, cutoffLo, cutoffHi, rolloff) {
   for (let i = 0; i < n; i++) ds.y[i] = re[i];
   updatePlots();
   const labels = { lowpass: 'Low-pass', highpass: 'High-pass', bandpass: 'Band-pass', notch: 'Notch' };
-  setConsole(`Applied ${labels[type]} Fourier filter to "${ds.name}".`, '');
+  setConsole(`Applied ${labels[type]} Fourier filter to "${ds.name}".` + (nonUniform ? ' (x spacing is non-uniform — cutoffs are approximate.)' : ''), nonUniform ? 'warn' : '');
 }
 
 /* ═══════════════════════════════════════════════════════════
