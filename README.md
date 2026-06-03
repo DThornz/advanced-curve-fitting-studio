@@ -419,6 +419,9 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.7.9 — 2026-06-02
+- **improve** Constraint builder UX: picking a type opens a dashed "draft" panel whose **✓ Add** button pulses green (it isn't applied until clicked); added a "Not added yet" hint and a Fit-time warning if a constraint is drafted but not committed
+
 ### v1.7.8 — 2026-06-02
 - **new** Fit labels show a `C:N` tag when N coupled constraints were applied — a quick way to confirm constraints took effect (if `C:N` shows but params don't change, an old worker is still cached: hard-refresh; the CDN can lag a few minutes after a release)
 

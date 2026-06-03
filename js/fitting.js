@@ -222,6 +222,10 @@ function runFit() {
   const ds    = state.datasets.find(d => d.id === dsId);
   if (!ds) { setConsole('No dataset selected. Load data first.', 'error'); return; }
 
+  // Nudge if a constraint is drafted in the builder but not committed with ✓ Add
+  const _cb = document.getElementById('constraint-builder');
+  if (_cb && _cb.children.length) setConsole('Heads up: a constraint is drafted but not added — click ✓ Add to include it before fitting.', 'warn');
+
   const maxIter    = parseInt(document.getElementById('opt-max-iter').value) || 20;
   const tol        = parseFloat(document.getElementById('opt-tol').value)    || 1e-8;
   const curvePts   = Math.max(10, parseInt(document.getElementById('opt-curve-pts').value) || 300);

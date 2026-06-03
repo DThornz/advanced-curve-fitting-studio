@@ -767,7 +767,8 @@ function renderConstraintBuilder(type) {
   if (!host) return;
   if (!type || !CONSTRAINT_TYPES[type]) { host.innerHTML = ''; return; }
   const t = CONSTRAINT_TYPES[type];
-  const wrapCss = 'display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:5px 0;padding:6px;border:1px solid var(--border);border-radius:5px';
+  // Dashed accent border signals an unsaved "draft" that must be committed with ✓ Add.
+  const wrapCss = 'display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:5px 0;padding:7px;border:1px dashed var(--teal);border-radius:5px;background:var(--teal-glow)';
   const selCss = 'font-size:.68em;padding:2px 4px;width:auto;flex:none';
   let inner;
   if (!t.coupled) {
@@ -790,7 +791,11 @@ function renderConstraintBuilder(type) {
       state.paramRows.map((r, i) => `<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="cb-sum" value="${i}"> ${_esc(r.name)}</label>`).join('')
     }</div><span style="font-size:.72em;color:var(--dim)">Σ ${op}</span><input class="ctrl-input" id="cb-val" type="number" step="any" value="1" style="${selCss};width:60px">`;
   }
-  host.innerHTML = `<div style="${wrapCss}">${inner}<button class="btn" id="cb-apply" style="font-size:.66em;padding:2px 9px">Add</button><button class="btn" id="cb-cancel" style="font-size:.66em;padding:2px 7px">✕</button></div>`;
+  host.innerHTML = `<div style="${wrapCss}">${inner}` +
+    `<button class="btn btn-primary cb-pulse" id="cb-apply" style="font-size:.66em;padding:2px 11px">✓ Add</button>` +
+    `<button class="btn" id="cb-cancel" style="font-size:.66em;padding:2px 7px" title="Discard this constraint">✕</button>` +
+    `<span style="flex-basis:100%;font-size:.62em;color:var(--dim);margin-top:1px">Not added yet — set the parameters above, then click <b>✓ Add</b>.</span>` +
+    `</div>`;
 
   host.querySelector('#cb-cancel').addEventListener('click', () => { host.innerHTML = ''; document.getElementById('constraint-add-select').value = ''; });
   host.querySelector('#cb-apply').addEventListener('click', () => applyConstraintFromBuilder(type));
