@@ -4,16 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Curve Fitting Studio — Asad Mirza</title>
-<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 56 built-in models including pharmacokinetics, adsorption isotherms, rheology, EMG peaks, Arrhenius kinetics, Voigt profiles, Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
+<meta name="description" content="A browser-native, offline-capable curve fitting and nonlinear regression platform. 58 built-in models including pharmacokinetics, adsorption isotherms, rheology, EMG peaks, Arrhenius kinetics, Voigt profiles, Levenberg-Marquardt algorithm, interactive Plotly plots, custom equations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.plot.ly" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <link rel="stylesheet" href="style.css">
+<!-- All heavy libraries load deferred so they never block first paint; defer preserves
+     execution order (Plotly → Math.js → app modules) and runs before DOMContentLoaded. -->
+<script defer src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
-    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+<!-- auto-render loaded, but invoked lazily per theory section (see main.js) so the
+     ~160 equations don't all render at page load -->
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 </head>
 <body class="light-mode">
 
@@ -45,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.4</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.5</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -264,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.4</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.5</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1873,12 +1880,25 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.7.5 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.7.5</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">perf</span><strong>Faster page load</strong> — Plotly (~3.5 MB) and Math.js (~700 KB) were render-blocking; both now load <code>defer</code> so the page paints immediately instead of waiting on them. Added <code>preconnect</code> hints for the script/font CDNs so downloads start sooner.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">perf</span><strong>Lazy equation rendering</strong> — the ~160 KaTeX equations in the theory section now render only as each section scrolls into view (via the existing reveal observer) instead of all at once on load, cutting initial main-thread work and memory for users who jump straight into the app.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Tooltip audit — correlation-heatmap legend corrected to “Blue = positive” (matches the rendered colour), Datasets tip documents Ctrl/⌘-click → Combine, Custom Equation tip lists erf/erfc/lgamma; stale model counts corrected.</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.7.4 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.7.4</span>
+          <span class="relnotes-ver-num">v1.7.4</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Pre-Process panel multi-column layout</strong> — the five sections (Smoothing, Fourier, Normalize/Transform, Baseline/De-trend, Repair/Impute) now flow into a wider, responsive 2-column grid instead of one tall scrolling column, so most of the panel is visible at once (collapses to one column on narrow screens)</span></li>

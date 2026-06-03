@@ -418,6 +418,11 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.7.5 — 2026-06-02
+- **perf** Plotly and Math.js now load `defer` (were render-blocking) so the page paints immediately; added `preconnect` hints for the script/font CDNs
+- **perf** Theory-section KaTeX equations (~160) render lazily as each section scrolls into view instead of all at once on load
+- **fix** Tooltip audit — correlation legend corrected to “Blue = positive”, Datasets tip notes Ctrl/⌘-click → Combine, Custom Equation tip lists erf/erfc/lgamma; stale model counts fixed
+
 ### v1.7.4 — 2026-06-02
 - **improve** Pre-Process panel now uses a wider, responsive multi-column (2-column) layout for its five sections instead of one tall scrolling column — collapses to a single column on narrow screens
 - **docs** In-app usage guide and README refreshed for the current feature set (36 examples, 58 models, four import modes, five Pre-Process sections, Fit All & Combine)

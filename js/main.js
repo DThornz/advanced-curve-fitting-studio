@@ -68,10 +68,22 @@ function init() {
   updatePlots(); // Must run before initEditMode so Plotly element exists
   initEditMode();
 
-  // Scroll-reveal for page sections
+  // Scroll-reveal for page sections + lazy KaTeX rendering.
+  // All ~160 theory equations live inside .reveal sections below the fold; rendering
+  // them only when scrolled into view keeps page load fast and avoids rendering math
+  // the user never scrolls to.
+  const _mathCfg = { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false };
   const revealObs = new IntersectionObserver(entries => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.07 });
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('visible');
+      if (!e.target._mathRendered && typeof renderMathInElement === 'function') {
+        e.target._mathRendered = true;
+        try { renderMathInElement(e.target, _mathCfg); } catch (_) { /* ignore */ }
+      }
+      revealObs.unobserve(e.target);
+    });
+  }, { threshold: 0.07, rootMargin: '300px 0px' });
   document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
   // Hide nav when app section scrolls into view
