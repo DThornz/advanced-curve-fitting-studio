@@ -112,14 +112,14 @@ const PANEL_TIPS = {
     `<b>Target Dataset</b><br>Selects which dataset the solver runs against when you press <b>▶ Fit</b>. Only non-masked points from this dataset are used.`,
 
   'point-masking':
-    `<b>Point Masking</b><br>Excludes individual points from fitting without deleting them — masked points stay visible as hollow markers on the plot.<br><br>` +
+    `<b>Data Preparation</b><br>Clean, transform, and mask the active dataset before fitting. Masked points stay visible as hollow markers but are excluded from the optimisation.<br><br>` +
     `<b>Mask 2.5σ</b> — exclude all points where |residual| &gt; 2.5 × RMSE for the active fit.<br>` +
     `<b>Unmask All</b> — restore all masked points for the active dataset.<br>` +
-    `<b>Pre-Process…</b> — open the Pre-Process panel to smooth (Moving Average, Gaussian, Savitzky-Golay, Median) or Fourier-filter (low-pass, high-pass, band-pass, notch) the active dataset, or restore it to original imported values. Masked points are skipped during smoothing.<br>` +
+    `<b>Pre-Process…</b> — open the Pre-Process panel: Smoothing, Fourier filter, Normalize / Transform, Baseline / De-trend, and Repair / Impute — each reversible via ↶ Undo Step or Restore Original.<br>` +
     `<b>Data Table</b> — per-point view with checkboxes, live residuals, and bulk exclude / include controls.`,
 
   'fit-model':
-    `<b>Fit Model</b><br>The mathematical equation to fit to the data. 38 built-in models are grouped by type.<br><br>` +
+    `<b>Fit Model</b><br>The mathematical equation to fit to the data. 58 built-in models are grouped by type.<br><br>` +
     `Select <b>Custom Equation</b> to type any expression in <code>x</code> — parameters are detected automatically from symbol names (any symbol other than <code>x</code> and math functions).<br><br>` +
     `Use <b>Try All</b> in the toolbar to fit every model at once and rank by R².`,
 
