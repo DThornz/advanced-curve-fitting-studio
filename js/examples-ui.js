@@ -351,7 +351,7 @@ function loadExampleFromModal() {
 // Adds a deterministic trend/baseline across the x-range: offset + slope·u + curv·u²,
 // where u = (x − xmin)/(xmax − xmin) ∈ [0, 1]. slope/curv are total Δy across the range.
 function _addTrend(x, y, t) {
-  const xmin = Math.min(...x), xmax = Math.max(...x), rng = (xmax - xmin) || 1;
+  const xmin = arrMin(x), xmax = arrMax(x), rng = (xmax - xmin) || 1;
   return y.map((v, i) => {
     const u = (x[i] - xmin) / rng;
     return v + t.offset + t.slope * u + t.curv * u * u;

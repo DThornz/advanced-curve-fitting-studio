@@ -482,7 +482,7 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
   } : null;
 
   const fitRecord = {
-    id: nextId(), dsId, model, algo: algoKey,
+    id: nextId(), dsId, model, algo: algoKey, weightMode,
     label: fitLabel, color: fitColor,
     result, fn: modelFn, visible: true,
     paramNames, curvePoints: curvePts, sseHistory,

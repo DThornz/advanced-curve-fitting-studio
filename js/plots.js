@@ -27,8 +27,8 @@ function computeAutoLegendPos() {
     xs.push(...ds.x); ys.push(...ds.y);
   }
   if (!xs.length) return { x: 0.99, y: 0.02 };
-  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  const xMin = arrMin(xs), xMax = arrMax(xs);
+  const yMin = arrMin(ys), yMax = arrMax(ys);
   const xRange = xMax - xMin || 1, yRange = yMax - yMin || 1;
   let brCount = 0, trCount = 0;
   for (let i = 0; i < xs.length; i++) {
@@ -143,7 +143,7 @@ function baseLayout(extra) {
         // Clamp Y-axis to data extent only, ignoring extrapolated fit curve values
         const allY = state.datasets.filter(d => d.enabled !== false).flatMap(d => d.y.filter(isFinite));
         if (allY.length) {
-          const dMin = Math.min(...allY), dMax = Math.max(...allY);
+          const dMin = arrMin(allY), dMax = arrMax(allY);
           const pad = (dMax - dMin) * 0.05 || 1;
           out.range = [dMin - pad, dMax + pad]; out.autorange = false;
         }
@@ -343,8 +343,8 @@ function buildMainTraces() {
     if (!fit.visible || !fit.result) continue;
     const ds = state.datasets.find(d => d.id === fit.dsId);
     if (!ds || ds.enabled === false) continue;
-    const xMin = state.fitConfig.xExtraMin ?? Math.min(...ds.x);
-    const xMax = state.fitConfig.xExtraMax ?? Math.max(...ds.x);
+    const xMin = state.fitConfig.xExtraMin ?? arrMin(ds.x);
+    const xMax = state.fitConfig.xExtraMax ?? arrMax(ds.x);
     const xs = linspace(xMin, xMax, fit.curvePoints || 300);
     const ys = xs.map(x => {
       const v = fitEval(fit, x);
@@ -427,8 +427,8 @@ function buildMainTraces() {
     const fn = _getSweepFn();
     const sweepDs = state.datasets.find(d => d.id === state.activeDatasetId);
     if (fn && sweepDs && sweepDs.x.length) {
-      const xMin = state.fitConfig.xExtraMin ?? Math.min(...sweepDs.x);
-      const xMax = state.fitConfig.xExtraMax ?? Math.max(...sweepDs.x);
+      const xMin = state.fitConfig.xExtraMin ?? arrMin(sweepDs.x);
+      const xMax = state.fitConfig.xExtraMax ?? arrMax(sweepDs.x);
       const xs = linspace(xMin, xMax, 200);
       const ys = xs.map(x => { try { const v = fn(x, state.sweepParams); return isFinite(v) ? v : null; } catch (_) { return null; } });
       traces.push({ x: xs, y: ys, mode: 'lines', type: 'scatter', name: '_sweep', showlegend: false, hoverinfo: 'skip', line: { color: '#f59e0b', width: 2, dash: 'dot' } });
@@ -481,7 +481,7 @@ function buildResidualVsXPanel(xlabel, tc) {
       showlegend: false,
     });
     traces.push({
-      x: [Math.min(...ds.x), Math.max(...ds.x)], y: [0, 0],
+      x: [arrMin(ds.x), arrMax(ds.x)], y: [0, 0],
       mode: 'lines', type: 'scatter',
       line: { color: tc.gridCol, width: 1, dash: 'dot' },
       opacity: 1,
@@ -543,7 +543,7 @@ function buildHistPanel(tc) {
   const nBins = Math.max(5, Math.ceil(Math.log2(n)) + 1);
   const mu = residuals.reduce((s, r) => s + r, 0) / n;
   const sigma = Math.sqrt(residuals.reduce((s, r) => s + (r - mu) ** 2, 0) / Math.max(n - 1, 1));
-  const rMin = Math.min(...residuals), rMax = Math.max(...residuals);
+  const rMin = arrMin(residuals), rMax = arrMax(residuals);
   const pad = sigma || Math.abs(rMax - rMin) * 0.1 || 1;
   const xs = linspace(rMin - pad, rMax + pad, 200);
   const binWidth = (rMax - rMin) / Math.max(nBins, 1);
@@ -726,8 +726,8 @@ function checkLogSuggest() {
     for (const v of ds.x) if (isFinite(v) && v > 0) allX.push(v);
     for (const v of ds.y) if (isFinite(v) && v > 0) allY.push(v);
   }
-  const xSpan = allX.length > 1 ? Math.max(...allX) / Math.min(...allX) : 1;
-  const ySpan = allY.length > 1 ? Math.max(...allY) / Math.min(...allY) : 1;
+  const xSpan = allX.length > 1 ? arrMax(allX) / arrMin(allX) : 1;
+  const ySpan = allY.length > 1 ? arrMax(allY) / arrMin(allY) : 1;
   const suggestX = xSpan > 100 && !state.plotConfig.logX && !dis.x;
   const suggestY = ySpan > 100 && !state.plotConfig.logY && !dis.y;
   if (!suggestX && !suggestY) { banner.style.display = 'none'; return; }

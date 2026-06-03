@@ -1,6 +1,10 @@
 // Math utility functions: mean, linspace, matrix solvers, statistical helpers, fmt, hexToRgba
 function mean(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
 function sumArr(arr) { return arr.reduce((s, v) => s + v, 0); }
+// Spread-free min/max — `Math.min(...arr)` throws RangeError (stack overflow) for
+// very large arrays, so use these in any path that may see big datasets.
+function arrMin(arr) { let m = Infinity; for (let i = 0; i < arr.length; i++) if (arr[i] < m) m = arr[i]; return m; }
+function arrMax(arr) { let m = -Infinity; for (let i = 0; i < arr.length; i++) if (arr[i] > m) m = arr[i]; return m; }
 function linspace(a, b, n) {
   if (n < 2) return [a];
   return Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));

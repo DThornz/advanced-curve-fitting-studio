@@ -419,6 +419,13 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.8.2 — 2026-06-03  (multi-agent audit fixes)
+- **fix** Unified fit statistics between the Web Worker (default path) and the fallback/polynomial solver: AIC/BIC now include the Gaussian-likelihood constant, adjusted R² uses dof = n−m, and weighted RMSE is computed in the worker (was missing → weighted prediction bands used unweighted RMSE)
+- **fix** Removed `Math.min/max(...array)` spreads from the plot-render and paste paths — fixes a `RangeError` crash on very large datasets
+- **fix** Expanded stats row shows algorithm + weighting (was a stale field, always "—"); CSV/Report exports guard missing `paramErrors`; 4PL Edit-as-Custom used undeclared `EC50` → now `C`
+- **fix** Non-finite-everywhere custom equation no longer reports R²=1; Ctrl+Z in a text field no longer reverts a point edit; Mask 2.5σ guards zero RMSE
+- **improve** Defined missing CSS vars (`--error`, `--input-bg`, `--teal-soft`); raised faint-text contrast in both themes
+
 ### v1.8.1 — 2026-06-03
 - **fix** Parameter Min/Max inputs no longer clip multi-digit values (e.g. `500`) — switched to `box-sizing:border-box`
 - **new** Min/Max accept `Inf` / `-Inf` / `Infinity` / `∞` (any sign) to mean unbounded, treated as ±∞ by the solver

@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.1</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.2</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.1</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.2</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1889,12 +1889,27 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.8.2 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.8.2</span>
+          <span class="relnotes-ver-date">2026-06-03</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Statistics unified across fit paths (audit)</strong> — the Web Worker (the default path for nonlinear fits) computed AIC/BIC <em>without</em> the Gaussian-likelihood constant and used a wrong adjusted-R² dof, so its values weren't comparable to polynomial/fallback fits. Now AIC/BIC include the constant, adjusted R² uses dof = n−m, and weighted RMSE (for prediction bands) is computed in the worker too. All four code paths now agree.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Large-dataset crash</strong> — replaced <code>Math.min/max(...array)</code> spreads in the plot-render path (and paste/preview) with loop-based helpers, removing a <code>RangeError</code> stack overflow on very large datasets.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>Expanded stats row now shows the algorithm and weighting (read a stale field — always showed “—”); CSV/Report exports no longer throw for fits without standard errors; <strong>4PL</strong> “Edit as Custom” used an undeclared <code>EC50</code> symbol → now the actual <code>C</code> parameter.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span>A custom equation that is non-finite at every point no longer reports a false <strong>R²=1</strong>; <kbd>Ctrl+Z</kbd> while typing in a field no longer reverts a data-point edit; Mask 2.5σ guards against zero residual RMSE.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Accessibility/theming</strong> — defined previously-missing CSS variables (<code>--error</code>, <code>--input-bg</code>, <code>--teal-soft</code>) so themed colours no longer fall back to hardcoded values, and raised the contrast of the faintest text colour in both light and dark themes.</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.8.1 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.8.1</span>
+          <span class="relnotes-ver-num">v1.8.1</span>
           <span class="relnotes-ver-date">2026-06-03</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Min/Max fields clipped multi-digit values</strong> — the bound inputs were content-box with padding, so a value like <code>500</code> overflowed its cell and the last digits were cut off. Now <code>box-sizing:border-box</code> so the full value shows.</span></li>

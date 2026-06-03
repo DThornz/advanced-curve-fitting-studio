@@ -316,11 +316,15 @@ function initEditMode() {
       if (state.selection.indices.size) { state.selection = { dsId: null, indices: new Set() }; updatePlots(); syncUndoRedoButtons(); }
       return;
     }
-    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoEdit(); return; }
-    if (e.ctrlKey && (e.key === 'y' || e.key === 'Z')) { e.preventDefault(); redoEdit(); return; }
-    if (!state.selection.indices.size) return;
+    // Let inputs/textarea/select handle their own native undo/redo & keys
     const tag = document.activeElement && document.activeElement.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (document.activeElement && document.activeElement.isContentEditable);
+    if (!inField) {
+      if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoEdit(); return; }
+      if (e.ctrlKey && (e.key === 'y' || e.key === 'Z')) { e.preventDefault(); redoEdit(); return; }
+    }
+    if (!state.selection.indices.size) return;
+    if (inField) return;
 
     if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && state.selection.indices.size === 1) {
       e.preventDefault();

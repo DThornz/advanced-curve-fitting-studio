@@ -4,8 +4,9 @@
   --border:#d4d9e8;--border2:#c5cad8;
   --teal:#0b7a6e;--teal-dim:#0b7a6e;--teal-glow:rgba(11,122,110,.08);--teal-light:#e8f4f2;
   --amber:#b45309;--amber-bg:rgba(180,83,9,.08);
-  --text:#1a202c;--muted:#4a5568;--dim:#718096;--dimmer:#a0aec0;
+  --text:#1a202c;--muted:#4a5568;--dim:#718096;--dimmer:#6b7280;
   --red:#dc2626;--blue:#1d4ed8;--violet:#7c3aed;--green:#15803d;--orange:#c2410c;
+  --error:#dc2626;--input-bg:#f8f9fc;--teal-soft:rgba(11,122,110,.12);
   --mono:'DM Mono',monospace;--serif:'DM Serif Display',Georgia,serif;
   --sans:'DM Sans',system-ui,sans-serif;
   --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.05);
@@ -166,9 +167,10 @@ body.size-lg{font-size:17px!important}
 /* ─── Dark Mode ──────────────────────────────────────────── */
 body.dark-mode{
   background:#060e1c!important;color:#e2e8f0!important;
-  --text:#e2e8f0;--muted:#a0aec0;--dim:#7a90ae;--dimmer:#3d5470;
+  --text:#e2e8f0;--muted:#a0aec0;--dim:#7a90ae;--dimmer:#5c759a;
   --bg:#060e1c;--bg2:#0a1628;--bg3:#0f1f38;--bg4:#1c3050;
   --border:#1c3050;--border2:#263a52;
+  --error:#f87171;--input-bg:#0a1628;--teal-soft:rgba(45,212,191,.15);
 }
 body.dark-mode .site-nav{background:rgba(6,14,28,.96)!important;border-color:#1c3050!important}
 body.dark-mode .site-nav-link{color:#7a90ae!important}

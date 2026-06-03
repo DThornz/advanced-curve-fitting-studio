@@ -928,7 +928,7 @@ const MODEL_EQ_JS = {
   'Fano':             'A * (q + (x - x0) / G)^2 / (1 + ((x - x0) / G)^2) + C',
   'Michaelis-Menten': 'Vmax * x / (Km + x)',
   'Hill':             'Vmax * x^n / (Kd^n + x^n)',
-  '4PL':              'D + (A - D) / (1 + (x / EC50)^B)',
+  '4PL':              'D + (A - D) / (1 + (x / C)^B)',
   'Oral-PK':          'Amp * ka / (ka - ke) * (exp(-ke * x) - exp(-ka * x))',
   'Stern-Volmer':     'F0 / ((1 + KD * x) * (1 + KS * x))',
   'Rational':         '(a + b * x) / (1 + c * x)',

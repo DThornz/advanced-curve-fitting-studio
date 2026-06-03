@@ -402,12 +402,14 @@ function bfgs(fn, xArr, yArr, p0, opts) {
 function finaliseFit(fn, xArr, yArr, p, meta) {
   const EPS = 1e-7;
   const n = xArr.length, m = p.length;
-  const r = xArr.map((x, i) => { const v = fn(x, p); return isFinite(v) ? yArr[i] - v : 0; });
+  let nBad = 0;
+  const r = xArr.map((x, i) => { const v = fn(x, p); if (!isFinite(v)) { nBad++; return 0; } return yArr[i] - v; });
+  const allBad = nBad >= n;   // model non-finite everywhere (e.g. bad custom eq) → not a real fit
   const sseVal = r.reduce((s, v) => s + v * v, 0);
   const yMean  = mean(yArr);
   const sst    = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
-  const rSq    = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
-  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1);
+  const rSq    = allBad ? NaN : (sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst));
+  const adjRSq = allBad ? NaN : (sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1));
   const rmse   = Math.sqrt(sseVal / Math.max(n - m, 1));
   const LOG2PIE = Math.log(2 * Math.PI) + 1;
   const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + 2 * m;

@@ -122,19 +122,25 @@ function boundsFromOpts(opts) {
 function finaliseFit(fn, xArr, yArr, p, meta) {
   const EPS = 1e-7;
   const n = xArr.length, m = p.length;
-  const r = xArr.map((x, i) => { const v = fn(x, p); return isFinite(v) ? yArr[i] - v : 0; });
+  let nBad = 0;
+  const r = xArr.map((x, i) => { const v = fn(x, p); if (!isFinite(v)) { nBad++; return 0; } return yArr[i] - v; });
+  const allBad = nBad >= n;   // model non-finite everywhere (e.g. bad custom eq) → not a real fit
   const sseVal = r.reduce((s, v) => s + v * v, 0);
   const yMean  = mean(yArr);
   const sst    = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
-  const rSq    = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
-  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m - 1, 1);
+  const rSq    = allBad ? NaN : (sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst));
+  const adjRSq = allBad ? NaN : (sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1));
   const rmse   = Math.sqrt(sseVal / Math.max(n - m, 1));
-  const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
-  const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
+  const LOG2PIE = Math.log(2 * Math.PI) + 1;
+  const aic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + 2 * m;
+  const bic    = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + m * Math.log(n);
   let paramErrors = p.map(() => NaN);
   let covMatrix = null;
   const dof = Math.max(n - m, 1);
   const weights = meta.weights || null;
+  const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
+  const sig2Base = wSSE / dof;
+  const wrmse = Math.sqrt(Math.max(sig2Base, 0));
   try {
     const J_cols = [];
     for (let j = 0; j < m; j++) {
@@ -149,17 +155,15 @@ function finaliseFit(fn, xArr, yArr, p, meta) {
     }
     const JtJ = Array.from({ length: m }, (_, a) =>
       Array.from({ length: m }, (_, b) => J_cols[a].reduce((s, _, i) => s + J_cols[a][i] * J_cols[b][i], 0)));
-    const wSSE = weights ? r.reduce((s, ri, i) => s + ri * ri * Math.max(weights[i], 0), 0) : sseVal;
-    const sig2 = wSSE / dof;
     const inv = invertMatrix(JtJ);
     if (inv) {
-      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2 * row[i])));
-      covMatrix = inv.map(row => row.map(v => sig2 * v));
+      paramErrors = inv.map((row, i) => Math.sqrt(Math.abs(sig2Base * row[i])));
+      covMatrix = inv.map(row => row.map(v => sig2Base * v));
     }
   } catch (_) {}
   return {
     params: p, paramErrors, covMatrix, dof,
-    rSq, adjRSq, rmse, sse: sseVal, aic, bic,
+    rSq, adjRSq, rmse, wrmse, sse: sseVal, aic, bic,
     converged: meta.converged, iter: meta.iter, n, residuals: r,
     finalLambda: meta.finalLambda ?? null,
     gradNorm:    meta.gradNorm    ?? null,
@@ -433,10 +437,11 @@ function fitPolynomialAnalytic(degree, xArr, yArr) {
   const yMean = mean(yArr);
   const sst = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
   const rSq = sst < 1e-15 ? 1 : Math.max(0, 1 - sseVal / sst);
-  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m - 1, 1);
+  const adjRSq = sst < 1e-15 ? 1 : 1 - (1 - rSq) * Math.max(n - 1, 1) / Math.max(n - m, 1);
   const rmse = Math.sqrt(sseVal / Math.max(n - m, 1));
-  const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + 2 * m;
-  const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + m * Math.log(n);
+  const LOG2PIE = Math.log(2 * Math.PI) + 1;
+  const aic = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + 2 * m;
+  const bic = n * Math.log(Math.max(sseVal / n, 1e-20)) + n * LOG2PIE + m * Math.log(n);
   const dof = Math.max(n - m, 1);
   let paramErrors = coeffs.map(() => NaN), covMatrix = null;
   try {

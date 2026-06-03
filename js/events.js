@@ -238,7 +238,7 @@ function initEvents() {
       const delim = document.getElementById('paste-delim').value;
       const rows = parseDelimited(text, delim);
       const { x, y } = rowsToXY(rows);
-      document.getElementById('paste-preview').textContent = x.length ? `Preview: ${x.length} rows parsed. X ∈ [${fmt(Math.min(...x))}, ${fmt(Math.max(...x))}], Y ∈ [${fmt(Math.min(...y))}, ${fmt(Math.max(...y))}]` : 'No numeric pairs found.';
+      document.getElementById('paste-preview').textContent = x.length ? `Preview: ${x.length} rows parsed. X ∈ [${fmt(arrMin(x))}, ${fmt(arrMax(x))}], Y ∈ [${fmt(arrMin(y))}, ${fmt(arrMax(y))}]` : 'No numeric pairs found.';
     } catch (_) { document.getElementById('paste-preview').textContent = 'Parse error.'; }
   });
   document.getElementById('paste-import').addEventListener('click', () => {
@@ -386,7 +386,7 @@ function initEvents() {
     const _res2 = r.residuals || [];
     if (_res2.length) {
       const _mae = _res2.reduce((s, e) => s + Math.abs(e), 0) / _res2.length;
-      const _maxE = Math.max(..._res2.map(Math.abs));
+      const _maxE = arrMax(_res2.map(Math.abs));
       const _ym = _yv2.length ? _yv2.reduce((s, y) => s + y, 0) / _yv2.length : 0;
       lines.push('');
       lines.push('Diagnostics');
@@ -476,6 +476,7 @@ function initEvents() {
     if (!ds) return;
     if (!ds.excludedIndices) ds.excludedIndices = new Set();
     const { pairs, rmse } = getLiveResidualsWithIdx(fit, ds);
+    if (!(rmse > 0) || !isFinite(rmse)) { setConsole('Residual RMSE is zero — nothing to threshold.', 'warn'); return; }
     const threshold = 2.5 * rmse;
     let added = 0;
     pairs.forEach(({ origIdx, r }) => {
@@ -710,6 +711,7 @@ function initEvents() {
     if (!ds) return;
     if (!ds.excludedIndices) ds.excludedIndices = new Set();
     const { pairs, rmse } = getLiveResidualsWithIdx(fit, ds);
+    if (!(rmse > 0) || !isFinite(rmse)) { setConsole('Residual RMSE is zero — nothing to threshold.', 'warn'); return; }
     const threshold = 2.5 * rmse;
     let added = 0;
     pairs.forEach(({ origIdx, r }) => {
@@ -1253,8 +1255,8 @@ function initEvents() {
     } else {
       const ds = state.datasets.find(d => d.id === fit.dsId);
       const xArr = ds ? ds.x.filter((_, i) => !(ds.excludedIndices || new Set()).has(i)) : [];
-      const xMin = state.fitConfig.xExtraMin ?? (xArr.length ? Math.min(...xArr) : -100);
-      const xMax = state.fitConfig.xExtraMax ?? (xArr.length ? Math.max(...xArr) : 100);
+      const xMin = state.fitConfig.xExtraMin ?? (xArr.length ? arrMin(xArr) : -100);
+      const xMax = state.fitConfig.xExtraMax ?? (xArr.length ? arrMax(xArr) : 100);
       const roots = solveXfromY(fit, val, xMin, xMax);
       renderPredResult(roots, 'y2x');
       if (!roots.length) setConsole(`No X found where model = ${fmt(val)} in data range.`, 'warn');

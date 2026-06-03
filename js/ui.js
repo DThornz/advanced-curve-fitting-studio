@@ -1183,7 +1183,7 @@ function buildStatExpandRow(fit, r, colSpan) {
   const iterStr = r.iter != null ? ` (${r.iter} iter)` : '';
   const metaStr = [
     statusStr + iterStr,
-    algoNames[fit.algoKey] || fit.algoKey || '—',
+    algoNames[fit.algo] || fit.algo || '—',
     `N = ${r.n}`,
     `dof = ${dof}`,
     `Weights: ${weightNames[fit.weightMode] || fit.weightMode || 'none'}`,

@@ -132,7 +132,7 @@ function exportCSV() {
   let csv = `Curve Fitting Studio — Fit Results\nModel: ${fit.model}\nDataset: ${ds ? ds.name : 'unknown'}\n\n`;
   csv += 'Parameter,Value,StdError\n';
   fit.paramNames.forEach((n, i) => {
-    csv += `${n},${fit.result.params[i]},${isFinite(fit.result.paramErrors[i]) ? fit.result.paramErrors[i] : 'NaN'}\n`;
+    csv += `${n},${fit.result.params[i]},${isFinite(fit.result.paramErrors?.[i]) ? fit.result.paramErrors[i] : 'NaN'}\n`;
   });
   csv += `\nR2,${fit.result.rSq}\nAdjR2,${fit.result.adjRSq}\nRMSE,${fit.result.rmse}\nSSE,${fit.result.sse}\nAIC,${fit.result.aic}\nBIC,${fit.result.bic}\n`;
   if (ds) {
@@ -173,7 +173,7 @@ function exportReport() {
   txt += `${'-'.repeat(46)}\n`;
   fit.paramNames.forEach((n, i) => {
     const v  = fmt(r.params[i]);
-    const se = isFinite(r.paramErrors[i]) ? fmt(r.paramErrors[i]) : '—';
+    const se = isFinite(r.paramErrors?.[i]) ? fmt(r.paramErrors[i]) : '—';
     txt += `${n.padEnd(12)}  ${v.padEnd(16)}  ${se}\n`;
   });
   txt += `\n─── Goodness of Fit ──────────────────────────────────\n`;
@@ -954,7 +954,7 @@ function exportBibTeX() {
   author       = {Mirza, Asad},
   title        = {{Curve Fitting Studio}},
   year         = {${year}},
-  version      = {1.8.1},
+  version      = {1.8.2},
   url          = {https://dthornz.github.io/curve-fitting-studio/},
   urldate      = {${new Date().toISOString().slice(0, 10)}},
   note         = {Browser-native nonlinear regression platform.${modelNote}${statsNote}},
