@@ -419,6 +419,9 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.9.1 — 2026-06-03  (bound sentinel fix)
+- **fix** Parameter bounds with magnitude in [1e9, 1e10] were silently treated as unbounded. The unbounded sentinel is now ±1e300 (JSON-session-safe, unlike ±Infinity) with a 1e290 active-bound threshold, so any realistic bound is honoured. Pre-v1.9.0 sessions are migrated automatically on load.
+
 ### v1.9.0 — 2026-06-03  (covariance + constraint accuracy)
 - **improve** Covariance/standard errors now use a central-difference Jacobian (≈4 orders of magnitude more accurate than forward-difference; verified vs analytic) — tightens SEs, CI/PI bands, and the Jacobian condition number
 - **improve** Coupled-constraint projection iterates to feasibility (largest violation < relative tol) instead of a fixed 4 passes — satisfied to ~1e-12 for compatible constraints; infeasible combinations terminate at a capped iteration count

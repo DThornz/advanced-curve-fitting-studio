@@ -123,8 +123,8 @@ function boundsFromOpts(opts) {
   _absSigma = !!(opts && opts.absSigma);
   const rows = opts.paramRows || [];
   if (!rows.length) return { lo: null, hi: null };
-  const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);
-  const hi = rows.map(r => (r && r.max < 1e9)  ? r.max :  Infinity);
+  const lo = rows.map(r => (r && r.min > -1e290) ? r.min : -Infinity);
+  const hi = rows.map(r => (r && r.max < 1e290)  ? r.max :  Infinity);
   return { lo, hi };
 }
 
@@ -506,8 +506,8 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
         ? v * Math.pow(10, (rand() * 2 - 1))
         : (rand() * 2 - 1) * 2;
       if (row) {
-        if (row.min > -1e9) pv = Math.max(pv, row.min);
-        if (row.max <  1e9) pv = Math.min(pv, row.max);
+        if (row.min > -1e290) pv = Math.max(pv, row.min);
+        if (row.max <  1e290) pv = Math.min(pv, row.max);
       }
       return isFinite(pv) ? pv : v;
     });

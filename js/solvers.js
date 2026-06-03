@@ -59,8 +59,8 @@ function boundsFromOpts(opts) {
   _absSigma = !!(opts && opts.absSigma);
   const rows = opts.paramRows || [];
   if (!rows.length) return { lo: null, hi: null };
-  const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);
-  const hi = rows.map(r => (r && r.max < 1e9)  ? r.max :  Infinity);
+  const lo = rows.map(r => (r && r.min > -1e290) ? r.min : -Infinity);
+  const hi = rows.map(r => (r && r.max < 1e290)  ? r.max :  Infinity);
   return { lo, hi };
 }
 

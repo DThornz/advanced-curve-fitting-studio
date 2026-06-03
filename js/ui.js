@@ -548,8 +548,8 @@ function saveGraphStyle() {
 }
 
 function sweepRange(row) {
-  const lo = row.min > -1e9 ? row.min : -Infinity;
-  const hi = row.max <  1e9 ? row.max :  Infinity;
+  const lo = row.min > -1e290 ? row.min : -Infinity;
+  const hi = row.max <  1e290 ? row.max :  Infinity;
   const init = row.init;
   let rMin, rMax;
   if (isFinite(lo) && isFinite(hi)) {
@@ -575,7 +575,7 @@ function renderParamTable() {
   const paramNames = model === 'Custom' ? state.fitConfig.customParams : (m ? m.params : []);
   if (m && m.analytic) {
     container.innerHTML = `<div class="panel-empty-hint" style="text-align:left;padding:6px 0;font-size:.72em">Analytic fit — no initial values needed.</div>`;
-    state.paramRows = paramNames.map(name => ({ name, init: 1, min: -Infinity, max: Infinity }));
+    state.paramRows = paramNames.map(name => ({ name, init: 1, min: -1e300, max: 1e300 }));
     renderConstraintsUI();
     return;
   }
@@ -591,8 +591,8 @@ function renderParamTable() {
   state.paramRows = paramNames.map(name => ({
     name,
     init: prev[name] ? prev[name].init : 1,
-    min: prev[name] ? prev[name].min : -1e10,
-    max: prev[name] ? prev[name].max : 1e10,
+    min: prev[name] ? prev[name].min : -1e300,
+    max: prev[name] ? prev[name].max : 1e300,
     locked: prev[name] ? (prev[name].locked || false) : false,
   }));
 
@@ -608,8 +608,8 @@ function renderParamTable() {
     <div class="param-row" data-pi="${i}">
       <span class="param-name">${row.name}</span>
       <input class="param-input" data-field="init" type="number" value="${fmt(row.init)}" step="any" title="Initial value">
-      <input class="param-input param-bound" data-field="min"  type="text" inputmode="text" value="${row.min <= -1e9 ? '' : fmt(row.min)}" placeholder="-∞" title="Lower bound — number, blank, or -Inf for unbounded">
-      <input class="param-input param-bound" data-field="max"  type="text" inputmode="text" value="${row.max >= 1e9 ? '' : fmt(row.max)}" placeholder="+∞" title="Upper bound — number, blank, or Inf for unbounded">
+      <input class="param-input param-bound" data-field="min"  type="text" inputmode="text" value="${row.min <= -1e290 ? '' : fmt(row.min)}" placeholder="-∞" title="Lower bound — number, blank, or -Inf for unbounded">
+      <input class="param-input param-bound" data-field="max"  type="text" inputmode="text" value="${row.max >= 1e290 ? '' : fmt(row.max)}" placeholder="+∞" title="Upper bound — number, blank, or Inf for unbounded">
       <span class="param-fit-val" title="">—</span>
       <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" aria-label="${row.locked ? 'Unlock' : 'Lock'} parameter ${_esc(row.name)}" aria-pressed="${row.locked ? 'true' : 'false'}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? '🔒' : '🔓'}</button>
     </div>
@@ -709,10 +709,10 @@ const CONSTRAINT_TYPES = {
 
 function _esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
 // Parse a Min/Max cell: number → that value; blank or any "inf"/"∞" form → the
-// unbounded sentinel (-1e10 for min, 1e10 for max), which the solver treats as ±∞.
+// unbounded sentinel (-1e300 for min, 1e300 for max), which the solver treats as ±∞.
 function _parseBound(s, isMax) {
   const z = String(s == null ? '' : s).trim().toLowerCase();
-  const unbounded = isMax ? 1e10 : -1e10;
+  const unbounded = isMax ? 1e300 : -1e300;
   if (z === '' || /^[+-]?(inf|infinity|∞)$/.test(z)) return unbounded;
   const v = parseFloat(z);
   return isFinite(v) ? v : unbounded;
@@ -764,7 +764,7 @@ function renderConstraintChips() {
   // Box-bound chips — derived live from the parameter Min/Max cells (single source
   // of truth is paramRows.min/max; the chip is just a view of it).
   state.paramRows.forEach((r, i) => {
-    const hasMin = r.min > -1e9, hasMax = r.max < 1e9;
+    const hasMin = r.min > -1e290, hasMax = r.max < 1e290;
     if (!hasMin && !hasMax) return;
     let label;
     if (hasMin && hasMax) label = `${fmt(r.min)} ≤ ${_esc(r.name)} ≤ ${fmt(r.max)}`;
@@ -787,7 +787,7 @@ function renderConstraintChips() {
       if (chip.dataset.box === '1') {
         // Box bound lives in the Min/Max cells — focus the relevant one to edit there
         const row = state.paramRows[idx];
-        const field = (row && row.min > -1e9) ? 'min' : 'max';
+        const field = (row && row.min > -1e290) ? 'min' : 'max';
         const cell = document.querySelector(`.param-row[data-pi="${idx}"] [data-field="${field}"]`);
         if (cell) { cell.focus(); cell.select(); }
       } else {
@@ -808,7 +808,7 @@ function renderConstraintChips() {
       if (btn.dataset.box === '1') {
         const row = state.paramRows[idx];
         const nm = row ? row.name : 'parameter';
-        if (row) { row.min = -1e10; row.max = 1e10; }
+        if (row) { row.min = -1e300; row.max = 1e300; }
         renderParamTable();    // refresh Min/Max cells + chips
         setConsole(`Cleared bounds on ${nm}.`, '');
       } else {

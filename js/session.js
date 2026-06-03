@@ -59,6 +59,15 @@ function buildSessionPayload() {
   };
 }
 
+// True for sessions saved before v1.9.0 (or unversioned), used to migrate the
+// legacy ±1e10 unbounded-bound sentinel to the current ±1e300 sentinel.
+function _isPreV190(v) {
+  if (!v) return true;
+  const parts = String(v).split('.').map(n => parseInt(n, 10) || 0);
+  const maj = parts[0] || 0, min = parts[1] || 0;
+  return maj < 1 || (maj === 1 && min < 9);
+}
+
 function restoreSessionPayload(payload) {
   state.datasets = (payload.datasets || []).map(d => {
     if (!d.originalY) d.originalY = d.y.slice();  // backfill for older saves
@@ -103,7 +112,18 @@ function restoreSessionPayload(payload) {
   state.activeFitId = payload.activeFitId;
 
   // Restore paramRows before syncModelCustomSection so renderParamTable picks them up
-  if (payload.paramRows) state.paramRows = payload.paramRows;
+  if (payload.paramRows) {
+    state.paramRows = payload.paramRows;
+    // Pre-v1.9.0 stored "unbounded" as ±1e10 and ignored any bound with |v|≥1e9.
+    // The current sentinel is ±1e300 (and bounds up to 1e290 are now honoured), so
+    // map those legacy sentinels back to unbounded — faithful to the old behaviour.
+    if (_isPreV190(payload.appVersion)) {
+      state.paramRows.forEach(r => {
+        if (r && typeof r.min === 'number' && r.min <= -1e9) r.min = -1e300;
+        if (r && typeof r.max === 'number' && r.max >=  1e9) r.max =  1e300;
+      });
+    }
+  }
   state.constraints = Array.isArray(payload.constraints) ? payload.constraints : [];
 
   const modelSel = document.getElementById('model-select');

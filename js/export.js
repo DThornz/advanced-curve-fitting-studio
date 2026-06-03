@@ -964,7 +964,7 @@ function exportBibTeX() {
   author       = {Mirza, Asad},
   title        = {{Curve Fitting Studio}},
   year         = {${year}},
-  version      = {1.9.0},
+  version      = {1.9.1},
   url          = {https://dthornz.github.io/curve-fitting-studio/},
   urldate      = {${new Date().toISOString().slice(0, 10)}},
   note         = {Browser-native nonlinear regression platform.${modelNote}${statsNote}},

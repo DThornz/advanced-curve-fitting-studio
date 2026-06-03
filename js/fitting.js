@@ -152,8 +152,8 @@ function multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts) {
         ? v * Math.pow(10, (rand() * 2 - 1))
         : (rand() * 2 - 1) * 2;
       if (row) {
-        if (row.min > -1e9) pv = Math.max(pv, row.min);
-        if (row.max <  1e9) pv = Math.min(pv, row.max);
+        if (row.min > -1e290) pv = Math.max(pv, row.min);
+        if (row.max <  1e290) pv = Math.min(pv, row.max);
       }
       return isFinite(pv) ? pv : v;
     });
@@ -365,11 +365,11 @@ function runFit() {
     if (row.locked) {
       p0[i] = row.init;
     }
-    if (lo > -1e9 && hi < 1e9 && lo > hi && !row.locked) {
+    if (lo > -1e290 && hi < 1e290 && lo > hi && !row.locked) {
       setConsole(`Bound error: min > max for parameter "${row.name}".`, 'error'); return;
     }
-    if (lo > -1e9 && p0[i] < lo) p0[i] = lo;
-    if (hi < 1e9  && p0[i] > hi) p0[i] = hi;
+    if (lo > -1e290 && p0[i] < lo) p0[i] = lo;
+    if (hi < 1e290  && p0[i] > hi) p0[i] = hi;
   }
 
   const errMsg = validateFitInput(xArr, yArr, model, p0);
@@ -493,8 +493,8 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
 
   const rows = capturedRows || state.paramRows;
   const fitBounds = rows && rows.length ? {
-    lo: rows.map(r => (r && typeof r.min === 'number' && r.min > -1e9) ? r.min : null),
-    hi: rows.map(r => (r && typeof r.max === 'number' && r.max < 1e9) ? r.max : null),
+    lo: rows.map(r => (r && typeof r.min === 'number' && r.min > -1e290) ? r.min : null),
+    hi: rows.map(r => (r && typeof r.max === 'number' && r.max < 1e290) ? r.max : null),
   } : null;
 
   const fitRecord = {
