@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.6</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.7</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.6</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.7</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1889,12 +1889,24 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.7.7 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.7.7</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Constraints not applied (stale worker)</strong> — the fitting Web Worker is now cache-busted by app version, so an updated worker (constraint support, new models, etc.) is never served stale after a deploy. If a constraint seemed ignored before, that was an old cached worker; this guarantees the current one loads. <em>(One-time hard refresh — Ctrl/⌘+Shift+R — clears any already-cached copy.)</em></span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">verify</span><strong>Constraint engine audited</strong> — the projection enforcing A ≤ B, A = B, Σ = value, Σ ≤ value, and box bounds was verified correct across solvers/fit shapes (e.g. Langevin A ≤ B correctly collapses to A = B because its unconstrained optimum has A ≫ B).</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.7.6 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.7.6</span>
+          <span class="relnotes-ver-num">v1.7.6</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Constraint library</strong> — an <em>+ Add constraint</em> menu under the parameter table offers pre-canned constraints, and only lists the ones that fit the current model's parameter count (e.g. “A ≤ B” isn’t offered for a one-parameter model). Box presets (<strong>≥ 0</strong>, <strong>≤ 0</strong>, <strong>0–1</strong>, custom <strong>[lo, hi]</strong>) write into a parameter's Min/Max; coupled constraints — <strong>A ≤ B</strong>, <strong>A = B</strong>, <strong>Σ = value</strong> (e.g. fractions sum to 1), <strong>Σ ≤ value</strong> — appear as removable chips.</span></li>

@@ -359,7 +359,11 @@ function runFit() {
   const jobId = nextId();
   let worker;
   try {
-    worker = new Worker('fitting-worker.js');
+    // Cache-bust the worker by the app version (read from the version chip) so an
+    // updated fitting-worker.js — e.g. new models or constraint support — is never
+    // served stale from the browser's worker cache after a deploy.
+    const _ver = ((document.getElementById('hero-relnotes') || document.getElementById('btn-relnotes') || {}).textContent || '').replace(/[^\d.]/g, '');
+    worker = new Worker('fitting-worker.js' + (_ver ? '?v=' + _ver : ''));
   } catch (e) {
     // Web Workers may be blocked (e.g. file:// protocol) — fall back to synchronous fit
     _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows: state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max })) });

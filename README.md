@@ -419,6 +419,10 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.7.7 — 2026-06-02
+- **fix** Fitting Web Worker is now cache-busted by app version, so an updated `fitting-worker.js` (constraint support, new models, etc.) is never served stale after a deploy — the cause of constraints appearing to be ignored. A one-time hard refresh clears any already-cached copy
+- **verify** Audited the constraint projection (A ≤ B, A = B, Σ = value, Σ ≤ value, box bounds) across solvers/fit shapes — all enforced correctly (e.g. Langevin A ≤ B collapses to A = B since its unconstrained optimum has A ≫ B)
+
 ### v1.7.6 — 2026-06-02
 - **new** Constraint library — *+ Add constraint* menu (context-aware: only offers types the current parameter count supports). Box presets (≥0, ≤0, 0–1, custom range) edit Min/Max; coupled constraints (A ≤ B, A = B, Σ = value, Σ ≤ value) appear as removable chips
 - **new** Coupled constraints enforced by projection across all four solvers + Huber/multi-start/batch paths; saved with the session (SE/CI approximate when a coupled constraint is active)
