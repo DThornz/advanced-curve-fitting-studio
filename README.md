@@ -419,6 +419,9 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.7.8 — 2026-06-02
+- **new** Fit labels show a `C:N` tag when N coupled constraints were applied — a quick way to confirm constraints took effect (if `C:N` shows but params don't change, an old worker is still cached: hard-refresh; the CDN can lag a few minutes after a release)
+
 ### v1.7.7 — 2026-06-02
 - **fix** Fitting Web Worker is now cache-busted by app version, so an updated `fitting-worker.js` (constraint support, new models, etc.) is never served stale after a deploy — the cause of constraints appearing to be ignored. A one-time hard refresh clears any already-cached copy
 - **verify** Audited the constraint projection (A ≤ B, A = B, Σ = value, Σ ≤ value, box bounds) across solvers/fit shapes — all enforced correctly (e.g. Langevin A ≤ B collapses to A = B since its unconstrained optimum has A ≫ B)

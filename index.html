@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.7</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.8</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.7</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.8</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1889,12 +1889,23 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.7.8 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.7.8</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Active-constraint indicator</strong> — a fit run with N coupled constraints is now tagged <code>C:N</code> in its label (next to the weight/exclusion tags), so you can confirm at a glance that constraints were applied to that fit. If you add <em>A ≤ B</em> and see <code>C:1</code> but the parameters don't change, your browser is still running a cached worker — hard-refresh again (the worker is version-busted, but GitHub Pages' CDN can take a few minutes to propagate a new release).</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.7.7 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.7.7</span>
+          <span class="relnotes-ver-num">v1.7.7</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Constraints not applied (stale worker)</strong> — the fitting Web Worker is now cache-busted by app version, so an updated worker (constraint support, new models, etc.) is never served stale after a deploy. If a constraint seemed ignored before, that was an old cached worker; this guarantees the current one loads. <em>(One-time hard refresh — Ctrl/⌘+Shift+R — clears any already-cached copy.)</em></span></li>

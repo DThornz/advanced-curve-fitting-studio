@@ -456,7 +456,9 @@ function _finaliseFitRecord({ result, modelFn, paramNames, model, algoKey, dsId,
   const msTag     = (nStarts > 1 && !m?.analytic) ? `×${nStarts}` : '';
   const wTag      = weightMode === 'sigma' ? ' W:σ' : weightMode !== 'none' ? ` W:${weightMode}` : '';
   const excTag    = excluded.size > 0 ? ` -${excluded.size}pt` : '';
-  const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}${msTag}${wTag}${excTag}]${rSqStr}`;
+  const nCons     = (m && !m.analytic) ? _constraintsForFit(paramNames).length : 0;
+  const cTag      = nCons > 0 ? ` C:${nCons}` : '';
+  const fitLabel  = `${model} [${algoNames[algoKey] || algoKey}${msTag}${wTag}${cTag}${excTag}]${rSqStr}`;
 
   // Compute reduced chi-square when σ weights were used
   if (weightMode === 'sigma' && ds.sigY && result.residuals) {
