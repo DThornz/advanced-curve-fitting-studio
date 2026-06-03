@@ -50,14 +50,14 @@ function openExampleEditor(key, savedState = null) {
     (eqHtml ? `<div id="ex-eq-display" style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:10px;overflow-x:auto;text-align:center">${eqHtml}</div>` : `<div id="ex-eq-display"></div>`) + `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
       <span style="font-weight:600;font-size:.8em;flex:1">Model Parameters</span>
-      <span class="panel-tip" data-tip="ex-model-params">?</span>
+      <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="ex-model-params">?</span>
     </div>
     <div id="ex-params-container">${_buildExParamsHtml(activeDef.params)}</div>
 
     <div class="ex-noise-section">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
         <span class="ex-noise-hd" style="margin:0;flex:1">Additional Background Noise</span>
-        <span class="panel-tip" data-tip="ex-extra-noise">?</span>
+        <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="ex-extra-noise">?</span>
       </div>
       <div class="ex-param-row">
         <label class="ex-param-label">Noise type</label>
@@ -76,7 +76,7 @@ function openExampleEditor(key, savedState = null) {
     <div class="ex-noise-section">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
         <span class="ex-noise-hd" style="margin:0;flex:1">Sinusoidal Interference (up to 3)</span>
-        <span class="panel-tip" data-tip="ex-freq-noise">?</span>
+        <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="ex-freq-noise">?</span>
       </div>
       <div class="ex-freq-hdr"><span>Amplitude</span><span>Freq (cyc/range)</span><span>Phase (0–1)</span></div>
       ${[1, 2, 3].map(i => `

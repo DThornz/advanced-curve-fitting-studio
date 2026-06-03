@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.4</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.5</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -95,7 +95,7 @@
 <!-- ══════════════════════════════════════════════════════════
      FULL-SCREEN APP OVERLAY
 ══════════════════════════════════════════════════════════ -->
-<div class="app-fullscreen-overlay" id="app-overlay">
+<div class="app-fullscreen-overlay" id="app-overlay" role="dialog" aria-modal="true" aria-label="Curve Fitting Studio application">
 
   <!-- ── FIRST-RUN TUTORIAL ──────────────────────────────── -->
   <div id="tut-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Getting started">
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.4</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.5</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -291,7 +291,7 @@
       <!-- LEFT PANEL -->
       <div class="app-left" id="panel-left">
         <div class="panel-header">
-          <span>Datasets <span class="panel-tip" data-tip="datasets">?</span></span>
+          <span>Datasets <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="datasets">?</span></span>
           <button class="btn panel-action-btn" id="btn-combine-ds" title="Combine the Ctrl/⌘-click-selected datasets into one (mean ± σ if they share an x-grid, else pooled) — then fit it for a single curve through their average" style="display:none">⊕ Combine</button>
           <button class="btn panel-action-btn" id="btn-clear-all" title="Remove all datasets and fits">✕ All</button>
         </div>
@@ -299,7 +299,7 @@
           <div class="panel-empty-hint">Load an example<br>or import a CSV to begin.</div>
         </div>
         <div class="panel-header" style="border-top:1px solid var(--border)">
-          <span>Active Fits <span class="panel-tip" data-tip="active-fits">?</span></span>
+          <span>Active Fits <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="active-fits">?</span></span>
           <span class="panel-fit-count" id="fit-count">0</span>
           <button class="btn panel-action-btn" id="btn-compare-fits" title="Side-by-side stats comparison of two fits">⇆</button>
           <button class="btn panel-action-btn" id="btn-clear-all-fits" title="Remove all fits">✕ All</button>
@@ -340,7 +340,7 @@
       <div class="app-right" id="panel-right">
 
         <div class="ctrl-section">
-          <label class="ctrl-label">Target Dataset <span class="panel-tip" data-tip="target-dataset">?</span></label>
+          <label class="ctrl-label">Target Dataset <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="target-dataset">?</span></label>
           <select class="ctrl-select" id="fit-dataset-select">
             <option value="">— no dataset loaded —</option>
           </select>
@@ -348,7 +348,7 @@
 
         <div class="ctrl-section" id="masking-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <span class="ctrl-label" style="margin:0">Data Preparation <span class="panel-tip" data-tip="point-masking">?</span></span>
+            <span class="ctrl-label" style="margin:0">Data Preparation <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="point-masking">?</span></span>
             <span id="mask-count" style="font-size:.68em;color:var(--dimmer)">0 masked</span>
           </div>
           <div style="display:flex;gap:5px">
@@ -360,7 +360,7 @@
         </div>
 
         <div class="ctrl-section">
-          <label class="ctrl-label">Fit Model <span class="panel-tip" data-tip="fit-model">?</span></label>
+          <label class="ctrl-label">Fit Model <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="fit-model">?</span></label>
           <div style="position:relative;margin-bottom:4px">
             <input type="search" id="model-search" class="ctrl-input" placeholder="Search models…" autocomplete="off" style="font-size:.72em;width:100%;box-sizing:border-box" title="Type to search — top 8 matches appear below; arrows/Enter to pick">
             <div id="model-search-results" class="srp" style="display:none"></div>
@@ -464,7 +464,7 @@
         <!-- Custom equation editor (shown only when Custom is selected) -->
         <div class="ctrl-section" id="custom-eq-section" style="display:none">
           <label class="ctrl-label">
-            Equation &nbsp;<code style="color:var(--teal);font-size:.95em">x</code> is the independent variable <span class="panel-tip" data-tip="custom-eq">?</span>
+            Equation &nbsp;<code style="color:var(--teal);font-size:.95em">x</code> is the independent variable <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="custom-eq">?</span>
           </label>
           <input class="ctrl-input" id="custom-eq-input" type="text"
                  placeholder="a * exp(-b * x) + c"
@@ -479,7 +479,7 @@
         <!-- Parameters -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <span class="ctrl-label" style="margin:0">Parameters <span class="panel-tip" data-tip="parameters">?</span></span>
+            <span class="ctrl-label" style="margin:0">Parameters <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="parameters">?</span></span>
             <div style="display:flex;gap:4px">
               <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-auto-init" title="Auto-estimate initial values from the loaded data">Auto Init</button>
               <button class="btn" style="padding:2px 8px;font-size:.65em;line-height:1.5" id="btn-copy-params" title="Copy fit parameters to clipboard">Copy</button>
@@ -491,7 +491,7 @@
           <!-- Constraints (coupled parameter constraints; box presets edit Min/Max) -->
           <div id="constraints-block" style="display:none;padding:7px 0 0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-              <span style="font-size:.65em;color:var(--dimmer);text-transform:uppercase;letter-spacing:.04em;flex:1">Constraints <span class="panel-tip" data-tip="constraints">?</span></span>
+              <span style="font-size:.65em;color:var(--dimmer);text-transform:uppercase;letter-spacing:.04em;flex:1">Constraints <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="constraints">?</span></span>
               <select class="ctrl-input" id="constraint-add-select" style="font-size:.66em;padding:2px 5px;flex:none;width:auto" title="Add a pre-canned constraint that fits the current model"></select>
             </div>
             <div id="constraint-builder"></div>
@@ -506,7 +506,7 @@
 
         <!-- Algorithm options -->
         <div class="ctrl-section">
-          <label class="ctrl-label">Algorithm Options <span class="panel-tip" data-tip="algorithm-options">?</span></label>
+          <label class="ctrl-label">Algorithm Options <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="algorithm-options">?</span></label>
           <div class="ctrl-row">
             <label class="ctrl-label" style="margin:0;min-width:72px">Solver</label>
             <select class="ctrl-input" id="opt-algo" title="Polynomial models always use analytic fitting regardless of this setting">
@@ -543,7 +543,7 @@
         <!-- Plot labels -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <label class="ctrl-label" style="margin:0">Plot Labels <span class="panel-tip" data-tip="plot-labels">?</span></label>
+            <label class="ctrl-label" style="margin:0">Plot Labels <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="plot-labels">?</span></label>
             <button class="btn" id="btn-graph-style" style="padding:1px 8px;font-size:.65em" title="Edit graph appearance: fonts, colors, grid, axes, legend">⚙ Style</button>
           </div>
           <div class="ctrl-row">
@@ -563,7 +563,7 @@
         <!-- Annotations -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <label class="ctrl-label" style="margin:0">Annotations <span class="panel-fit-count" id="ann-count">0</span> <span class="panel-tip" data-tip="annotations">?</span></label>
+            <label class="ctrl-label" style="margin:0">Annotations <span class="panel-fit-count" id="ann-count">0</span> <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="annotations">?</span></label>
             <div style="display:flex;gap:4px">
               <button class="btn" id="btn-ann-peaks" title="Auto-annotate peak centres from Gaussian / Lorentzian fits" style="padding:1px 8px;font-size:.65em">Peaks</button>
               <button class="btn" id="btn-ann-add" style="padding:1px 8px;font-size:.65em">+ Add</button>
@@ -574,7 +574,7 @@
 
         <!-- Fit curve resolution -->
         <div class="ctrl-section">
-          <label class="ctrl-label">Fit Curve Points <span class="panel-tip" data-tip="fit-curve-points">?</span></label>
+          <label class="ctrl-label">Fit Curve Points <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="fit-curve-points">?</span></label>
           <div style="display:flex;gap:6px;align-items:center">
             <input class="ctrl-input" id="opt-curve-pts" type="number" value="300" min="50" max="5000" style="flex:1">
             <button class="btn" id="btn-axis-range-mode" title="Y-axis: auto range (click for data range only)" style="font-size:.65em;padding:2px 7px;white-space:nowrap">Y: auto</button>
@@ -584,7 +584,7 @@
         <!-- Extrapolation range -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <label class="ctrl-label" style="margin:0">Extrapolation Range <span class="panel-tip" data-tip="extrapolation-range">?</span></label>
+            <label class="ctrl-label" style="margin:0">Extrapolation Range <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="extrapolation-range">?</span></label>
             <button class="btn" style="padding:1px 7px;font-size:.65em" id="btn-extrap-reset" title="Reset to data range">Reset</button>
           </div>
           <div class="ctrl-row">
@@ -600,7 +600,7 @@
         <!-- Predict / Solve -->
         <div class="ctrl-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <label class="ctrl-label" style="margin:0">Predict / Solve <span class="panel-tip" data-tip="predict-solve">?</span></label>
+            <label class="ctrl-label" style="margin:0">Predict / Solve <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="predict-solve">?</span></label>
             <select class="ctrl-select" id="pred-mode" style="font-size:.68em;padding:2px 5px;height:auto" title="X→Y: predict output from input; Y→X: calibration inversion">
               <option value="x2y">X → Y (predict)</option>
               <option value="y2x">Y → X (calibrate)</option>
@@ -616,7 +616,7 @@
 
         <!-- F-test -->
         <div class="ctrl-section">
-          <label class="ctrl-label">F-test (Model Comparison) <span class="panel-tip" data-tip="ftest">?</span></label>
+          <label class="ctrl-label">F-test (Model Comparison) <span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="ftest">?</span></label>
           <div class="ctrl-row">
             <label class="ctrl-label" style="margin:0;min-width:30px;flex-shrink:0">A</label>
             <select class="ctrl-select" id="ftest-fit-a" style="font-size:.72em;min-width:0"><option value="">— no fits —</option></select>
@@ -638,7 +638,7 @@
     <!-- STATS BAR -->
     <div class="app-statsbar corr-empty">
       <div class="statsbar-main" id="statsbar-main">
-        <div id="app-console">
+        <div id="app-console" role="status" aria-live="polite" aria-atomic="true">
           <span class="console-hint">Load a dataset and press <strong>▶ Fit</strong> to begin.</span>
         </div>
       </div>
@@ -1892,9 +1892,21 @@
       <!-- ── v1.8.2 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.8.4</span>
+          <span class="relnotes-ver-num current">v1.8.5</span>
           <span class="relnotes-ver-date">2026-06-03</span>
           <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">a11y</span><strong>Accessibility pass</strong> — the full-screen app is now a proper <code>role="dialog"</code> that traps the background (<code>inert</code>/<code>aria-hidden</code>), moves focus inside on open and restores it on close; the status bar is an <code>aria-live</code> region so fit results are announced; the <code>?</code> help tooltips are keyboard-focusable and open on focus; and icon-only buttons (dataset toggle/delete, parameter lock, constraint ×) got <code>aria-label</code>s.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Confirm before bulk delete</strong> — “✕ All” (datasets &amp; fits) and “Clear fits” now ask for confirmation, since those actions can’t be undone.</span></li>
+        </ul>
+      </div>
+
+      <!-- ── v1.8.4 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num">v1.8.4</span>
+          <span class="relnotes-ver-date">2026-06-03</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Reproducible fits</strong> — multi-start now uses a seeded PRNG instead of <code>Math.random()</code>, so the same data + settings always give the same fit (no more run-to-run wobble in the multi-start result).</span></li>

@@ -611,7 +611,7 @@ function renderParamTable() {
       <input class="param-input param-bound" data-field="min"  type="text" inputmode="text" value="${row.min <= -1e9 ? '' : fmt(row.min)}" placeholder="-∞" title="Lower bound — number, blank, or -Inf for unbounded">
       <input class="param-input param-bound" data-field="max"  type="text" inputmode="text" value="${row.max >= 1e9 ? '' : fmt(row.max)}" placeholder="+∞" title="Upper bound — number, blank, or Inf for unbounded">
       <span class="param-fit-val" title="">—</span>
-      <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? '🔒' : '🔓'}</button>
+      <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" aria-label="${row.locked ? 'Unlock' : 'Lock'} parameter ${_esc(row.name)}" aria-pressed="${row.locked ? 'true' : 'false'}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? '🔒' : '🔓'}</button>
     </div>
     <div class="param-sweep-row" data-si="${i}">
       <span style="font-size:.62em;color:var(--dimmer);font-family:var(--mono)">sweep</span>
@@ -776,7 +776,7 @@ function renderConstraintChips() {
   (state.constraints || []).forEach((c, ci) => chips.push({ box: false, idx: ci, label: _constraintLabel(c) }));
 
   list.innerHTML = chips.map(ch =>
-    `<span class="constraint-chip${ch.box ? ' constraint-chip-box' : ''}" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" title="${ch.box ? 'Box bound — click to edit in the table · × clears it' : 'Coupled constraint — click to edit · × removes it'}">${ch.label}<button class="constraint-chip-x" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" title="Remove">×</button></span>`
+    `<span class="constraint-chip${ch.box ? ' constraint-chip-box' : ''}" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" title="${ch.box ? 'Box bound — click to edit in the table · × clears it' : 'Coupled constraint — click to edit · × removes it'}">${ch.label}<button class="constraint-chip-x" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" aria-label="Remove constraint ${_esc(ch.label)}" title="Remove">×</button></span>`
   ).join('');
 
   // Click a chip body to edit it
@@ -1063,7 +1063,7 @@ function renderCorrMatrix(fit) {
   }
 
   el.innerHTML = `
-    <div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" data-tip="corr-matrix">?</span></div>
+    <div class="corr-matrix-label">Parameter Correlations<span class="panel-tip" tabindex="0" role="button" aria-label="Help" data-tip="corr-matrix">?</span></div>
     <div class="corr-panel-cols">
       <div class="corr-panel-heatmap">
         <table class="corr-matrix"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>

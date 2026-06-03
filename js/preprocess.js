@@ -634,9 +634,9 @@ function renderDatasetList() {
       <span class="ds-swatch" style="background:${ds.color}"></span>
       <span class="ds-label" title="${ds.name}">${ds.name}</span>
       <span class="ds-count">${ds.x.length}pt</span>
-      <button class="ds-toggle${off ? ' ds-off' : ''}" data-toggleid="${ds.id}" title="${off ? 'Enable dataset' : 'Disable dataset'}">${off ? '○' : '●'}</button>
-      ${ds._exKey ? `<button class="ds-edit" data-editid="${ds.id}" title="Re-open example generator with saved parameters">✏</button>` : ''}
-      <button class="ds-delete" data-delid="${ds.id}" title="Remove dataset">×</button>
+      <button class="ds-toggle${off ? ' ds-off' : ''}" data-toggleid="${ds.id}" aria-label="${off ? 'Enable' : 'Disable'} dataset ${_esc(ds.name)}" title="${off ? 'Enable dataset' : 'Disable dataset'}">${off ? '○' : '●'}</button>
+      ${ds._exKey ? `<button class="ds-edit" data-editid="${ds.id}" aria-label="Edit generated dataset ${_esc(ds.name)}" title="Re-open example generator with saved parameters">✏</button>` : ''}
+      <button class="ds-delete" data-delid="${ds.id}" aria-label="Remove dataset ${_esc(ds.name)}" title="Remove dataset">×</button>
     </div>`;
   }).join('');
   el.querySelectorAll('.ds-item').forEach(item => {

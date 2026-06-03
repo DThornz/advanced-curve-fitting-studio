@@ -229,25 +229,21 @@ const PANEL_TIPS = {
 (function wirePanelTips() {
   const tt = document.getElementById('ui-tooltip');
   if (!tt) return;
-  document.addEventListener('mouseover', e => {
-    const el = e.target.closest('.panel-tip');
-    if (!el) return;
-    const html = PANEL_TIPS[el.dataset.tip] || el.dataset.tip;
-    tt.innerHTML = html;
+  function showTip(el) {
+    tt.innerHTML = PANEL_TIPS[el.dataset.tip] || el.dataset.tip;
     tt.style.display = 'block';
     const r   = el.getBoundingClientRect();
-    const ttW = tt.offsetWidth;
-    const ttH = tt.offsetHeight;
-    const left = Math.min(Math.max(4, r.left), window.innerWidth  - ttW - 8);
-    const top  = (window.innerHeight - r.bottom - 6 >= ttH)
-      ? r.bottom + 6
-      : Math.max(4, r.top - ttH - 6);
-    tt.style.left = left + 'px';
-    tt.style.top  = top  + 'px';
-  });
-  document.addEventListener('mouseout', e => {
-    if (e.target.closest('.panel-tip')) tt.style.display = 'none';
-  });
+    const ttW = tt.offsetWidth, ttH = tt.offsetHeight;
+    tt.style.left = Math.min(Math.max(4, r.left), window.innerWidth - ttW - 8) + 'px';
+    tt.style.top  = (window.innerHeight - r.bottom - 6 >= ttH) ? (r.bottom + 6) + 'px' : Math.max(4, r.top - ttH - 6) + 'px';
+  }
+  const hideTip = () => { tt.style.display = 'none'; };
+  // Hover AND keyboard focus (the tips are the app's primary docs)
+  document.addEventListener('mouseover', e => { const el = e.target.closest('.panel-tip'); if (el) showTip(el); });
+  document.addEventListener('mouseout',  e => { if (e.target.closest('.panel-tip')) hideTip(); });
+  document.addEventListener('focusin',   e => { const el = e.target.closest('.panel-tip'); if (el) showTip(el); });
+  document.addEventListener('focusout',  e => { if (e.target.closest('.panel-tip')) hideTip(); });
+  document.addEventListener('keydown',   e => { if (e.key === 'Escape') hideTip(); });
 })();
 
 })();

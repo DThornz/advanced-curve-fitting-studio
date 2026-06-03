@@ -419,6 +419,10 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.8.5 — 2026-06-03  (accessibility)
+- **a11y** Full-screen app is a `role="dialog"` with background `inert`/`aria-hidden`, focus moved inside on open and restored on close; status bar is an `aria-live` region; `?` help tooltips are keyboard-focusable and open on focus; icon-only buttons gained `aria-label`s
+- **new** Confirmation prompts before "✕ All" (datasets & fits) and "Clear fits" (irreversible)
+
 ### v1.8.4 — 2026-06-03  (reproducibility)
 - **new** Multi-start fitting uses a seeded PRNG (mulberry32) instead of `Math.random()` → fits are reproducible run-to-run
 - **new** Exported Python/R/MATLAB scripts carry a provenance header (app version, model, solver, weighting); JSON schema and saved sessions embed the app version; worker cache-bust now uses a single `APP_VERSION` constant (was scraped from the DOM)

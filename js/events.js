@@ -294,6 +294,8 @@ function initEvents() {
 
   /* ── Clear all ────────────────────────────────────────── */
   document.getElementById('btn-clear-all').addEventListener('click', () => {
+    if (!state.datasets.length && !state.fits.length) return;
+    if (!confirm(`Remove all ${state.datasets.length} dataset(s) and ${state.fits.length} fit(s)? This cannot be undone.`)) return;
     state.datasets = []; state.fits = [];
     state.activeDatasetId = null; state.activeFitId = null;
     state.selection = { dsId: null, indices: new Set() };
@@ -307,6 +309,8 @@ function initEvents() {
 
   /* ── Clear all fits ───────────────────────────────────── */
   document.getElementById('btn-clear-all-fits').addEventListener('click', () => {
+    if (!state.fits.length) return;
+    if (!confirm(`Remove all ${state.fits.length} fit(s)? This cannot be undone.`)) return;
     state.fits = [];
     state.activeFitId = null;
     renderFitList();
@@ -954,10 +958,23 @@ function initEvents() {
   /* ── Full-screen overlay open / close ─────────────────── */
   const appOverlay = document.getElementById('app-overlay');
   let appEverOpened = false;
+  let _appPrevFocus = null;
+  // Make the landing page behind the full-screen app un-focusable/hidden to AT
+  function _setBgInert(on) {
+    [...document.body.children].forEach(el => {
+      if (el === appOverlay) return;
+      if (on) { el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); }
+      else { el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
+    });
+  }
   function openApp() {
+    _appPrevFocus = document.activeElement;
     appOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('accBtn').style.display = 'none';
+    _setBgInert(true);
+    // Move focus into the app so keyboard users aren't left on the now-hidden launch button
+    requestAnimationFrame(() => { const c = document.getElementById('btn-close-app'); if (c) c.focus(); });
     requestAnimationFrame(() => {
       if (!appEverOpened) {
         // First open: plots were init'd in a hidden zero-size div — do a full re-render
@@ -975,6 +992,8 @@ function initEvents() {
     appOverlay.classList.remove('open');
     document.body.style.overflow = '';
     document.getElementById('accBtn').style.display = '';
+    _setBgInert(false);
+    if (_appPrevFocus && _appPrevFocus.focus) _appPrevFocus.focus();
   }
   const btnLaunch = document.getElementById('btn-launch-app');
   if (btnLaunch) btnLaunch.addEventListener('click', openApp);
