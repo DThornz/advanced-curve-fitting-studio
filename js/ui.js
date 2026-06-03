@@ -608,8 +608,8 @@ function renderParamTable() {
     <div class="param-row" data-pi="${i}">
       <span class="param-name">${row.name}</span>
       <input class="param-input" data-field="init" type="number" value="${fmt(row.init)}" step="any" title="Initial value">
-      <input class="param-input param-bound" data-field="min"  type="number" value="${row.min <= -1e9 ? '' : fmt(row.min)}" step="any" placeholder="-∞" title="Lower bound (leave blank for -∞)">
-      <input class="param-input param-bound" data-field="max"  type="number" value="${row.max >= 1e9 ? '' : fmt(row.max)}" step="any" placeholder="+∞" title="Upper bound (leave blank for +∞)">
+      <input class="param-input param-bound" data-field="min"  type="text" inputmode="text" value="${row.min <= -1e9 ? '' : fmt(row.min)}" placeholder="-∞" title="Lower bound — number, blank, or -Inf for unbounded">
+      <input class="param-input param-bound" data-field="max"  type="text" inputmode="text" value="${row.max >= 1e9 ? '' : fmt(row.max)}" placeholder="+∞" title="Upper bound — number, blank, or Inf for unbounded">
       <span class="param-fit-val" title="">—</span>
       <button class="param-lock-btn${row.locked ? ' locked' : ''}" data-pi="${i}" title="${row.locked ? 'Unlock parameter' : 'Lock parameter (hold fixed)'}">${row.locked ? '🔒' : '🔓'}</button>
     </div>
@@ -623,18 +623,18 @@ function renderParamTable() {
     const i = parseInt(row.dataset.pi);
     row.querySelectorAll('.param-input').forEach(inp => {
       inp.addEventListener('change', () => {
-        const v = parseFloat(inp.value);
-        if (isFinite(v)) {
-          state.paramRows[i][inp.dataset.field] = v;
-          // Recalibrate sweep range if init changed
-          if (inp.dataset.field === 'init') {
+        const field = inp.dataset.field;
+        if (field === 'min' || field === 'max') {
+          state.paramRows[i][field] = _parseBound(inp.value, field === 'max');
+          renderConstraintChips();   // keep unified chips in sync with Min/Max
+        } else {                     // init
+          const v = parseFloat(inp.value);
+          if (isFinite(v)) {
+            state.paramRows[i].init = v;
             const sld = container.querySelector(`.param-sweep-range[data-si="${i}"]`);
             if (sld) { const { rMin, rMax } = sweepRange(state.paramRows[i]); sld.min = rMin; sld.max = rMax; sld.step = (rMax - rMin) / 200; sld.value = v; }
           }
-        } else if (inp.dataset.field === 'min') state.paramRows[i].min = -1e10;
-        else if (inp.dataset.field === 'max') state.paramRows[i].max = 1e10;
-        // Keep the unified constraint chips in sync with the Min/Max cells
-        if (inp.dataset.field === 'min' || inp.dataset.field === 'max') renderConstraintChips();
+        }
       });
     });
   });
@@ -708,6 +708,15 @@ const CONSTRAINT_TYPES = {
 };
 
 function _esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+// Parse a Min/Max cell: number → that value; blank or any "inf"/"∞" form → the
+// unbounded sentinel (-1e10 for min, 1e10 for max), which the solver treats as ±∞.
+function _parseBound(s, isMax) {
+  const z = String(s == null ? '' : s).trim().toLowerCase();
+  const unbounded = isMax ? 1e10 : -1e10;
+  if (z === '' || /^[+-]?(inf|infinity|∞)$/.test(z)) return unbounded;
+  const v = parseFloat(z);
+  return isFinite(v) ? v : unbounded;
+}
 function _paramOpts(sel) { return state.paramRows.map((r, i) => `<option value="${i}"${i === sel ? ' selected' : ''}>${_esc(r.name)}</option>`).join(''); }
 
 function renderConstraintsUI() {
@@ -767,11 +776,34 @@ function renderConstraintChips() {
   (state.constraints || []).forEach((c, ci) => chips.push({ box: false, idx: ci, label: _constraintLabel(c) }));
 
   list.innerHTML = chips.map(ch =>
-    `<span class="constraint-chip${ch.box ? ' constraint-chip-box' : ''}" title="${ch.box ? 'Box bound (Min/Max) — × clears it' : 'Coupled constraint — × removes it'}">${ch.label}<button class="constraint-chip-x" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" title="Remove">×</button></span>`
+    `<span class="constraint-chip${ch.box ? ' constraint-chip-box' : ''}" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" title="${ch.box ? 'Box bound — click to edit in the table · × clears it' : 'Coupled constraint — click to edit · × removes it'}">${ch.label}<button class="constraint-chip-x" data-box="${ch.box ? 1 : 0}" data-idx="${ch.idx}" title="Remove">×</button></span>`
   ).join('');
 
+  // Click a chip body to edit it
+  list.querySelectorAll('.constraint-chip').forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      if (e.target.classList.contains('constraint-chip-x')) return;  // × handled separately
+      const idx = parseInt(chip.dataset.idx);
+      if (chip.dataset.box === '1') {
+        // Box bound lives in the Min/Max cells — focus the relevant one to edit there
+        const row = state.paramRows[idx];
+        const field = (row && row.min > -1e9) ? 'min' : 'max';
+        const cell = document.querySelector(`.param-row[data-pi="${idx}"] [data-field="${field}"]`);
+        if (cell) { cell.focus(); cell.select(); }
+      } else {
+        const c = state.constraints[idx];
+        if (!c) return;
+        const sel = document.getElementById('constraint-add-select');
+        if (sel) sel.value = c.type;
+        renderConstraintBuilder(c.type, idx);   // pre-filled edit mode
+      }
+    });
+  });
+
+  // × removes (box: clears bounds; coupled: deletes)
   list.querySelectorAll('.constraint-chip-x').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const idx = parseInt(btn.dataset.idx);
       if (btn.dataset.box === '1') {
         const row = state.paramRows[idx];
@@ -788,13 +820,18 @@ function renderConstraintChips() {
   });
 }
 
-// Renders the inline builder for the chosen constraint type into #constraint-builder.
-function renderConstraintBuilder(type) {
+// Renders the inline builder into #constraint-builder. `editCi` (optional) is the
+// index of an existing coupled constraint being edited → the form is pre-filled and
+// the button becomes ✓ Update (replaces in place) instead of ✓ Add.
+function renderConstraintBuilder(type, editCi) {
   const host = document.getElementById('constraint-builder');
   if (!host) return;
   if (!type || !CONSTRAINT_TYPES[type]) { host.innerHTML = ''; return; }
   const t = CONSTRAINT_TYPES[type];
-  // Dashed accent border signals an unsaved "draft" that must be committed with ✓ Add.
+  const editing = Number.isInteger(editCi);
+  const ec = editing ? state.constraints[editCi] : null;
+  const names = state.paramRows.map(r => r.name);
+  // Dashed accent border signals an unsaved "draft" that must be committed.
   const wrapCss = 'display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:5px 0;padding:7px;border:1px dashed var(--teal);border-radius:5px;background:var(--teal-glow)';
   const selCss = 'font-size:.68em;padding:2px 4px;width:auto;flex:none';
   let inner;
@@ -807,32 +844,39 @@ function renderConstraintBuilder(type) {
           `<input class="ctrl-input" id="cb-hi" type="number" step="any" placeholder="hi" style="${selCss};width:54px">`
         : '');
   } else if (type === 'order' || type === 'equal') {
+    const aSel = ec ? names.indexOf(ec.a) : 0;
+    const bSel = ec ? names.indexOf(ec.b) : 1;
     const op = type === 'order' ? '≤' : '=';
-    inner = `<select class="ctrl-input" id="cb-p1" style="${selCss}">${_paramOpts(0)}</select>` +
+    inner = `<select class="ctrl-input" id="cb-p1" style="${selCss}">${_paramOpts(aSel)}</select>` +
       `<span style="font-size:.72em;color:var(--dim)">${op}</span>` +
-      `<select class="ctrl-input" id="cb-p2" style="${selCss}">${_paramOpts(1)}</select>`;
+      `<select class="ctrl-input" id="cb-p2" style="${selCss}">${_paramOpts(bSel)}</select>`;
   } else {
     // sum / sumle: checkboxes for each param + value
     const op = type === 'sum' ? '=' : '≤';
+    const checked = new Set(ec ? ec.params.map(n => names.indexOf(n)) : []);
     inner = `<div style="display:flex;flex-wrap:wrap;gap:6px;font-size:.68em;width:100%">${
-      state.paramRows.map((r, i) => `<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="cb-sum" value="${i}"> ${_esc(r.name)}</label>`).join('')
-    }</div><span style="font-size:.72em;color:var(--dim)">Σ ${op}</span><input class="ctrl-input" id="cb-val" type="number" step="any" value="1" style="${selCss};width:60px">`;
+      state.paramRows.map((r, i) => `<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="cb-sum" value="${i}"${checked.has(i) ? ' checked' : ''}> ${_esc(r.name)}</label>`).join('')
+    }</div><span style="font-size:.72em;color:var(--dim)">Σ ${op}</span><input class="ctrl-input" id="cb-val" type="number" step="any" value="${ec ? ec.value : 1}" style="${selCss};width:60px">`;
   }
+  const label = editing ? '✓ Update' : '✓ Add';
+  const hint  = editing ? 'Editing — change values, then click <b>✓ Update</b>.' : 'Not added yet — set the parameters above, then click <b>✓ Add</b>.';
   host.innerHTML = `<div style="${wrapCss}">${inner}` +
-    `<button class="btn btn-primary cb-pulse" id="cb-apply" style="font-size:.66em;padding:2px 11px">✓ Add</button>` +
-    `<button class="btn" id="cb-cancel" style="font-size:.66em;padding:2px 7px" title="Discard this constraint">✕</button>` +
-    `<span style="flex-basis:100%;font-size:.62em;color:var(--dim);margin-top:1px">Not added yet — set the parameters above, then click <b>✓ Add</b>.</span>` +
+    `<button class="btn btn-primary cb-pulse" id="cb-apply" style="font-size:.66em;padding:2px 11px">${label}</button>` +
+    `<button class="btn" id="cb-cancel" style="font-size:.66em;padding:2px 7px" title="Discard">✕</button>` +
+    `<span style="flex-basis:100%;font-size:.62em;color:var(--dim);margin-top:1px">${hint}</span>` +
     `</div>`;
 
   host.querySelector('#cb-cancel').addEventListener('click', () => { host.innerHTML = ''; document.getElementById('constraint-add-select').value = ''; });
-  host.querySelector('#cb-apply').addEventListener('click', () => applyConstraintFromBuilder(type));
+  host.querySelector('#cb-apply').addEventListener('click', () => applyConstraintFromBuilder(type, editCi));
 }
 
-function applyConstraintFromBuilder(type) {
+function applyConstraintFromBuilder(type, editCi) {
   const host = document.getElementById('constraint-builder');
   const names = state.paramRows.map(r => r.name);
   const pVal = id => parseInt((document.getElementById(id) || {}).value);
+  const editing = Number.isInteger(editCi);
 
+  // Box presets edit Min/Max directly (never via edit mode — box chips edit in-table)
   if (!CONSTRAINT_TYPES[type].coupled) {
     const i = pVal('cb-p1');
     if (!(i >= 0)) { setConsole('Pick a parameter.', 'warn'); return; }
@@ -847,26 +891,28 @@ function applyConstraintFromBuilder(type) {
       if (isFinite(hi)) row.max = hi;
       if (isFinite(lo) && isFinite(hi) && lo > hi) { setConsole('lo must be ≤ hi.', 'error'); return; }
     }
-    renderParamTable();   // reflects new Min/Max (also re-renders this UI)
+    renderParamTable();
     setConsole(`Set bound on ${row.name}.`, '');
     return;
   }
 
+  let nc;
   if (type === 'order' || type === 'equal') {
     const a = pVal('cb-p1'), b = pVal('cb-p2');
     if (a === b) { setConsole('Pick two different parameters.', 'warn'); return; }
-    state.constraints.push({ type, a: names[a], b: names[b] });
+    nc = { type, a: names[a], b: names[b] };
   } else {
     const idx = [...document.querySelectorAll('.cb-sum:checked')].map(cb => parseInt(cb.value));
     if (idx.length < 2) { setConsole('Select at least two parameters.', 'warn'); return; }
     const value = parseFloat(document.getElementById('cb-val').value);
     if (!isFinite(value)) { setConsole('Enter a numeric value.', 'error'); return; }
-    state.constraints.push({ type, params: idx.map(i => names[i]), value });
+    nc = { type, params: idx.map(i => names[i]), value };
   }
+  if (editing) state.constraints[editCi] = nc; else state.constraints.push(nc);
   host.innerHTML = '';
   document.getElementById('constraint-add-select').value = '';
   renderConstraintChips();
-  setConsole('Constraint added — applied on the next fit.', '');
+  setConsole(editing ? 'Constraint updated — applied on the next fit.' : 'Constraint added — applied on the next fit.', '');
 }
 
 function updateSweepPreview() {

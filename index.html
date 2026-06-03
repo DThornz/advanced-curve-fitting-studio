@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.0</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.8.1</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.0</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.8.1</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -1889,12 +1889,25 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.8.1 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.8.1</span>
+          <span class="relnotes-ver-date">2026-06-03</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-fix">fix</span><strong>Min/Max fields clipped multi-digit values</strong> — the bound inputs were content-box with padding, so a value like <code>500</code> overflowed its cell and the last digits were cut off. Now <code>box-sizing:border-box</code> so the full value shows.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Inf / -Inf bounds</strong> — Min/Max now accept <code>Inf</code>, <code>-Inf</code>, <code>Infinity</code>, or <code>∞</code> (any sign) to mean unbounded, in addition to a blank cell. The solver treats these as ±∞.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Editable constraint chips</strong> — click a coupled-constraint chip to reopen it pre-filled and <strong>✓ Update</strong> it in place; click a box-bound chip to jump to and select its Min/Max cell for editing. (× still removes.)</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.8.0 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.8.0</span>
+          <span class="relnotes-ver-num">v1.8.0</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span><strong>Unified constraint chips</strong> — parameter <strong>Min/Max bounds now appear as removable chips</strong> alongside the coupled constraints, so the Constraints panel shows everything constraining the fit in one place. Box-bound chips (grey) are a live mirror of the Min/Max cells — set a bound in the table or via a preset and a chip appears; clear the chip and the bound clears. Coupled constraints stay teal. This resolves the previous overlap where box presets silently edited Min/Max without showing up anywhere.</span></li>

@@ -419,6 +419,11 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 
 ## Changelog
 
+### v1.8.1 — 2026-06-03
+- **fix** Parameter Min/Max inputs no longer clip multi-digit values (e.g. `500`) — switched to `box-sizing:border-box`
+- **new** Min/Max accept `Inf` / `-Inf` / `Infinity` / `∞` (any sign) to mean unbounded, treated as ±∞ by the solver
+- **new** Constraint chips are editable: click a coupled chip to reopen it pre-filled and ✓ Update in place; click a box-bound chip to focus its Min/Max cell
+
 ### v1.8.0 — 2026-06-02
 - **improve** Unified constraint chips — parameter Min/Max bounds now show as removable grey chips next to the (teal) coupled-constraint chips, mirroring the Min/Max cells two-way (set in the table or via a preset → chip appears; clear the chip → bound clears). Resolves the box-preset/Min-Max overlap
 
