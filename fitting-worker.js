@@ -75,14 +75,42 @@ function invertMatrix(M) {
 }
 
 /* ── Bounds helpers ──────────────────────────────────────── */
-function clampToBounds(p, lo, hi) {
+// Mirror of solvers.js: coupled constraints applied through the box-projection hook.
+let _activeConstraints = null;
+
+function _boxClamp(p, lo, hi) {
   if (!lo || !lo.length) return;
   for (let i = 0; i < p.length; i++) {
     if (lo[i] > -Infinity) p[i] = Math.max(p[i], lo[i]);
     if (hi[i] < Infinity)  p[i] = Math.min(p[i], hi[i]);
   }
 }
+
+function clampToBounds(p, lo, hi) {
+  _boxClamp(p, lo, hi);
+  const cons = _activeConstraints;
+  if (!cons || !cons.length) return;
+  for (let it = 0; it < 4; it++) {
+    for (const c of cons) {
+      if (c.type === 'order') {
+        if (p[c.a] > p[c.b]) { const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m; }
+      } else if (c.type === 'equal') {
+        const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m;
+      } else if (c.type === 'sum') {
+        let s = 0; for (const k of c.idx) s += p[k];
+        const adj = (c.value - s) / c.idx.length;
+        if (isFinite(adj)) for (const k of c.idx) p[k] += adj;
+      } else if (c.type === 'sumle') {
+        let s = 0; for (const k of c.idx) s += p[k];
+        if (s > c.value) { const adj = (c.value - s) / c.idx.length; for (const k of c.idx) p[k] += adj; }
+      }
+    }
+    _boxClamp(p, lo, hi);
+  }
+}
+
 function boundsFromOpts(opts) {
+  _activeConstraints = (opts && Array.isArray(opts.constraints) && opts.constraints.length) ? opts.constraints : null;
   const rows = opts.paramRows || [];
   if (!rows.length) return { lo: null, hi: null };
   const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);

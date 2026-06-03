@@ -15,6 +15,7 @@ A browser-native, fully offline curve fitting and nonlinear regression platform 
 | **Fitting algorithms** | Levenberg-Marquardt · Gauss-Newton · Nelder-Mead Simplex · BFGS (selectable per fit); analytic Vandermonde normal equations for polynomials |
 | **Multi-start optimisation** | Log-scale-perturbed pilot runs (default 8) to escape local minima; polishes the best candidate |
 | **Auto initial guesses** | Data-driven heuristics per model (amplitude, rate, frequency, decay, peak centre, etc.) |
+| **Constraint library** | *+ Add constraint* menu under the parameter table, offering only constraints that fit the current model's parameter count. Box presets (≥ 0, ≤ 0, 0–1, custom [lo, hi]) set a parameter's Min/Max; coupled constraints — A ≤ B, A = B, Σ = value (e.g. fractions sum to 1), Σ ≤ value — show as removable chips and are enforced by all solvers via projection. Saved with the session |
 | **Parameter bounds** | Optional min/max per parameter; all four solvers enforce box constraints via projection at every iteration; init is auto-clamped before dispatch; blank = unconstrained |
 | **Custom equations** | Any Math.js expression in `x`; parameters auto-detected; supports `exp`, `log`, `sin`, `cos`, `sqrt`, `abs`, `atan`, `^`, plus special functions `erf`, `erfc`, `gamma`, `lgamma`, `factorial`, `cbrt`, `nthRoot`, full trig (`cot`/`sec`/`csc`), inverse hyperbolic (`asinh`/`acosh`/`atanh`/`coth`), and conditional/ternary logic. **Visual Equation Editor** popup (⊞ button) provides a click-to-insert palette (operators, common + special functions, trig, hyperbolic, rounding, conditional, constants), 35+ categorised example equations, and live Math.js validation with parameter detection. Math.js is auto-extended with `erfc`/`lgamma` polyfills so every palette function evaluates in both the main thread and the fitting Web Worker. **Edit as Custom…** button appears below every built-in model — pre-fills the custom editor with a Math.js translation of the selected model's equation for use as a starting point. |
 | **Fit diagnostics** | R², Adjusted R², RMSE, SSE, AIC, BIC, parameter std errors, convergence status, final λ (LM), gradient norm (BFGS). Parameter correlation heatmap + scrollable pair list in the stats bar side panel — plain-English suggestions flag strongly correlated pairs with targeted advice |
@@ -417,6 +418,10 @@ Four iterative solvers are available (selectable per fit in the Algorithm Option
 ---
 
 ## Changelog
+
+### v1.7.6 — 2026-06-02
+- **new** Constraint library — *+ Add constraint* menu (context-aware: only offers types the current parameter count supports). Box presets (≥0, ≤0, 0–1, custom range) edit Min/Max; coupled constraints (A ≤ B, A = B, Σ = value, Σ ≤ value) appear as removable chips
+- **new** Coupled constraints enforced by projection across all four solvers + Huber/multi-start/batch paths; saved with the session (SE/CI approximate when a coupled constraint is active)
 
 ### v1.7.5 — 2026-06-02
 - **perf** Plotly and Math.js now load `defer` (were render-blocking) so the page paints immediately; added `preconnect` hints for the script/font CDNs

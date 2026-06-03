@@ -576,11 +576,13 @@ function renderParamTable() {
   if (m && m.analytic) {
     container.innerHTML = `<div class="panel-empty-hint" style="text-align:left;padding:6px 0;font-size:.72em">Analytic fit — no initial values needed.</div>`;
     state.paramRows = paramNames.map(name => ({ name, init: 1, min: -Infinity, max: Infinity }));
+    renderConstraintsUI();
     return;
   }
   if (!paramNames.length) {
     container.innerHTML = '<div class="panel-empty-hint">No parameters.</div>';
     state.paramRows = [];
+    renderConstraintsUI();
     return;
   }
   // Preserve existing values for same names
@@ -682,6 +684,157 @@ function renderParamTable() {
       updatePlots();
     });
   });
+
+  renderConstraintsUI();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONSTRAINT LIBRARY  (coupled constraints + box presets)
+   Box presets edit the parameter Min/Max directly; coupled
+   constraints (order / equal / sum / sum≤) live in state.constraints.
+═══════════════════════════════════════════════════════════ */
+// type → { label, min params, coupled? }
+const CONSTRAINT_TYPES = {
+  nonneg: { label: 'Parameter ≥ 0',        need: 1, coupled: false },
+  nonpos: { label: 'Parameter ≤ 0',        need: 1, coupled: false },
+  unit:   { label: '0 ≤ Parameter ≤ 1',    need: 1, coupled: false },
+  range:  { label: 'Parameter in [lo, hi]', need: 1, coupled: false },
+  order:  { label: 'A ≤ B  (ordering)',     need: 2, coupled: true  },
+  equal:  { label: 'A = B  (equality)',     need: 2, coupled: true  },
+  sum:    { label: 'Σ params = value',      need: 2, coupled: true  },
+  sumle:  { label: 'Σ params ≤ value',      need: 2, coupled: true  },
+};
+
+function _esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+function _paramOpts(sel) { return state.paramRows.map((r, i) => `<option value="${i}"${i === sel ? ' selected' : ''}>${_esc(r.name)}</option>`).join(''); }
+
+function renderConstraintsUI() {
+  const block = document.getElementById('constraints-block');
+  if (!block) return;
+  const builder = document.getElementById('constraint-builder');
+  if (builder) builder.innerHTML = '';   // reset any half-built form (e.g. on model change)
+  const names = state.paramRows.map(r => r.name);
+  const model = state.fitConfig.model;
+  const isAnalytic = MODELS[model] && MODELS[model].analytic;
+
+  // Drop constraints that no longer reference valid current params
+  state.constraints = (state.constraints || []).filter(c => {
+    if (c.type === 'order' || c.type === 'equal') return names.includes(c.a) && names.includes(c.b);
+    if (c.type === 'sum' || c.type === 'sumle') return Array.isArray(c.params) && c.params.length >= 2 && c.params.every(n => names.includes(n));
+    return false;
+  });
+
+  // Hide entirely for analytic (constraints don't apply) or when there are no params
+  if (isAnalytic || names.length < 1) { block.style.display = 'none'; return; }
+  block.style.display = '';
+
+  // Build the add-menu, offering only types whose minimum param count is met
+  const sel = document.getElementById('constraint-add-select');
+  const avail = Object.entries(CONSTRAINT_TYPES).filter(([, t]) => names.length >= t.need);
+  sel.innerHTML = `<option value="">+ Add constraint…</option>` +
+    avail.map(([k, t]) => `<option value="${k}">${t.label}</option>`).join('');
+
+  renderConstraintChips();
+}
+
+function _constraintLabel(c) {
+  const nm = n => _esc(n);
+  if (c.type === 'order') return `${nm(c.a)} ≤ ${nm(c.b)}`;
+  if (c.type === 'equal') return `${nm(c.a)} = ${nm(c.b)}`;
+  if (c.type === 'sum')   return `Σ(${c.params.map(nm).join('+')}) = ${c.value}`;
+  if (c.type === 'sumle') return `Σ(${c.params.map(nm).join('+')}) ≤ ${c.value}`;
+  return '';
+}
+
+function renderConstraintChips() {
+  const list = document.getElementById('constraints-list');
+  if (!list) return;
+  list.innerHTML = (state.constraints || []).map((c, i) =>
+    `<span class="constraint-chip" title="Active during fitting">${_constraintLabel(c)}<button class="constraint-chip-x" data-ci="${i}" title="Remove constraint">×</button></span>`
+  ).join('');
+  list.querySelectorAll('.constraint-chip-x').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.constraints.splice(parseInt(btn.dataset.ci), 1);
+      renderConstraintChips();
+      setConsole('Constraint removed.', '');
+    });
+  });
+}
+
+// Renders the inline builder for the chosen constraint type into #constraint-builder.
+function renderConstraintBuilder(type) {
+  const host = document.getElementById('constraint-builder');
+  if (!host) return;
+  if (!type || !CONSTRAINT_TYPES[type]) { host.innerHTML = ''; return; }
+  const t = CONSTRAINT_TYPES[type];
+  const wrapCss = 'display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:5px 0;padding:6px;border:1px solid var(--border);border-radius:5px';
+  const selCss = 'font-size:.68em;padding:2px 4px;width:auto;flex:none';
+  let inner;
+  if (!t.coupled) {
+    // single parameter; 'range' also needs lo/hi
+    inner = `<span style="font-size:.66em;color:var(--dim)">${t.label}:</span>` +
+      `<select class="ctrl-input" id="cb-p1" style="${selCss}">${_paramOpts(0)}</select>` +
+      (type === 'range'
+        ? `<input class="ctrl-input" id="cb-lo" type="number" step="any" placeholder="lo" style="${selCss};width:54px">` +
+          `<input class="ctrl-input" id="cb-hi" type="number" step="any" placeholder="hi" style="${selCss};width:54px">`
+        : '');
+  } else if (type === 'order' || type === 'equal') {
+    const op = type === 'order' ? '≤' : '=';
+    inner = `<select class="ctrl-input" id="cb-p1" style="${selCss}">${_paramOpts(0)}</select>` +
+      `<span style="font-size:.72em;color:var(--dim)">${op}</span>` +
+      `<select class="ctrl-input" id="cb-p2" style="${selCss}">${_paramOpts(1)}</select>`;
+  } else {
+    // sum / sumle: checkboxes for each param + value
+    const op = type === 'sum' ? '=' : '≤';
+    inner = `<div style="display:flex;flex-wrap:wrap;gap:6px;font-size:.68em;width:100%">${
+      state.paramRows.map((r, i) => `<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="cb-sum" value="${i}"> ${_esc(r.name)}</label>`).join('')
+    }</div><span style="font-size:.72em;color:var(--dim)">Σ ${op}</span><input class="ctrl-input" id="cb-val" type="number" step="any" value="1" style="${selCss};width:60px">`;
+  }
+  host.innerHTML = `<div style="${wrapCss}">${inner}<button class="btn" id="cb-apply" style="font-size:.66em;padding:2px 9px">Add</button><button class="btn" id="cb-cancel" style="font-size:.66em;padding:2px 7px">✕</button></div>`;
+
+  host.querySelector('#cb-cancel').addEventListener('click', () => { host.innerHTML = ''; document.getElementById('constraint-add-select').value = ''; });
+  host.querySelector('#cb-apply').addEventListener('click', () => applyConstraintFromBuilder(type));
+}
+
+function applyConstraintFromBuilder(type) {
+  const host = document.getElementById('constraint-builder');
+  const names = state.paramRows.map(r => r.name);
+  const pVal = id => parseInt((document.getElementById(id) || {}).value);
+
+  if (!CONSTRAINT_TYPES[type].coupled) {
+    const i = pVal('cb-p1');
+    if (!(i >= 0)) { setConsole('Pick a parameter.', 'warn'); return; }
+    const row = state.paramRows[i];
+    if (type === 'nonneg') { row.min = 0; }
+    else if (type === 'nonpos') { row.max = 0; }
+    else if (type === 'unit') { row.min = 0; row.max = 1; }
+    else if (type === 'range') {
+      const lo = parseFloat(document.getElementById('cb-lo').value);
+      const hi = parseFloat(document.getElementById('cb-hi').value);
+      if (isFinite(lo)) row.min = lo;
+      if (isFinite(hi)) row.max = hi;
+      if (isFinite(lo) && isFinite(hi) && lo > hi) { setConsole('lo must be ≤ hi.', 'error'); return; }
+    }
+    renderParamTable();   // reflects new Min/Max (also re-renders this UI)
+    setConsole(`Set bound on ${row.name}.`, '');
+    return;
+  }
+
+  if (type === 'order' || type === 'equal') {
+    const a = pVal('cb-p1'), b = pVal('cb-p2');
+    if (a === b) { setConsole('Pick two different parameters.', 'warn'); return; }
+    state.constraints.push({ type, a: names[a], b: names[b] });
+  } else {
+    const idx = [...document.querySelectorAll('.cb-sum:checked')].map(cb => parseInt(cb.value));
+    if (idx.length < 2) { setConsole('Select at least two parameters.', 'warn'); return; }
+    const value = parseFloat(document.getElementById('cb-val').value);
+    if (!isFinite(value)) { setConsole('Enter a numeric value.', 'error'); return; }
+    state.constraints.push({ type, params: idx.map(i => names[i]), value });
+  }
+  host.innerHTML = '';
+  document.getElementById('constraint-add-select').value = '';
+  renderConstraintChips();
+  setConsole('Constraint added — applied on the next fit.', '');
 }
 
 function updateSweepPreview() {

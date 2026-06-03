@@ -37,6 +37,7 @@ const state = {
   fitConfig: { model: 'Exponential', customExpr: 'a * exp(-b * x) + c', customParams: [], xExtraMin: null, xExtraMax: null },
   plotConfig: { showResiduals: true, logX: false, logY: false, showCI: false, showPI: false, normalizeResiduals: false, showOutliers: false, showLegend: true, residualTab: 'residuals', logSuggestDismissed: { x: false, y: false }, axisRangeMode: 'auto' },
   paramRows: [],   // [{name, init, min, max}]  — live init guess state
+  constraints: [], // coupled parameter constraints (name-based): {type:'order'|'equal'|'sum'|'sumle', a?, b?, params?, value?}
   sweepParams: null,  // non-null while sweep slider is active
   selection: { dsId: null, indices: new Set() },
   selectedDatasetIds: new Set(),  // Ctrl/⌘-click multi-selection for Combine

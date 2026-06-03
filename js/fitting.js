@@ -197,6 +197,25 @@ function setFitting(active) {
   else syncResidualDimState();
 }
 
+// Convert the user's name-based coupled constraints into index-based ones for the
+// given parameter ordering, dropping any that don't apply to the current model.
+function _constraintsForFit(paramNames) {
+  const cs = state.constraints || [];
+  if (!cs.length || !paramNames || !paramNames.length) return [];
+  const idxOf = n => paramNames.indexOf(n);
+  const out = [];
+  for (const c of cs) {
+    if (c.type === 'order' || c.type === 'equal') {
+      const a = idxOf(c.a), b = idxOf(c.b);
+      if (a >= 0 && b >= 0 && a !== b) out.push({ type: c.type, a, b });
+    } else if (c.type === 'sum' || c.type === 'sumle') {
+      const idx = (c.params || []).map(idxOf);
+      if (idx.length >= 2 && idx.every(i => i >= 0)) out.push({ type: c.type, idx, value: c.value });
+    }
+  }
+  return out;
+}
+
 function runFit() {
   const model = state.fitConfig.model;
   const dsId  = parseInt(document.getElementById('fit-dataset-select').value);
@@ -263,7 +282,8 @@ function runFit() {
     const solve2 = SOLVERS2[algoKey2] || levenbergMarquardt;
     const paramRows2 = state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max }));
     setConsole('IRLS fitting (Huber)…', '');
-    let result2 = solve2(modelFn, xArr, yArr, p02, { maxIter: maxIter2, tol: tol2, paramRows: paramRows2 });
+    const consH = _constraintsForFit(paramNames2);
+    let result2 = solve2(modelFn, xArr, yArr, p02, { maxIter: maxIter2, tol: tol2, paramRows: paramRows2, constraints: consH });
     const IRLS_ITERS = 20, HUBER_C = 1.345;
     for (let iter = 0; iter < IRLS_ITERS; iter++) {
       const resid = result2.residuals || xArr.map((x, i) => yArr[i] - modelFn(x, result2.params));
@@ -280,7 +300,7 @@ function runFit() {
         return ar <= thresh ? 1 : thresh / ar;
       });
       const p02b = result2.params.slice();
-      result2 = solve2(modelFn, xArr, yArr, p02b, { maxIter: maxIter2, tol: tol2, weights: huberW, paramRows: paramRows2 });
+      result2 = solve2(modelFn, xArr, yArr, p02b, { maxIter: maxIter2, tol: tol2, weights: huberW, paramRows: paramRows2, constraints: consH });
     }
     _finaliseFitRecord({ result: result2, modelFn, paramNames: paramNames2, model: state.fitConfig.model, algoKey: algoKey2, dsId: parseInt(document.getElementById('fit-dataset-select').value), ds: state.datasets.find(d => d.id === parseInt(document.getElementById('fit-dataset-select').value)), excluded, weightMode: 'huber', nStarts: nStarts2, curvePts: curvePts2, sseHistory: null });
     return;
@@ -395,14 +415,14 @@ function runFit() {
   const paramRows = state.paramRows.map(r => ({ init: r.init, min: r.locked ? r.init : r.min, max: r.locked ? r.init : r.max }));
   worker.postMessage({
     jobId, modelKey: model, customExpr, paramNames, p0, x: xArr, y: yArr,
-    opts: { algo: algoKey, maxIter, tol, weights, nStarts, paramRows },
+    opts: { algo: algoKey, maxIter, tol, weights, nStarts, paramRows, constraints: _constraintsForFit(paramNames) },
   });
 }
 
 function _runFitSync({ model, dsId, ds, excluded, xArr, yArr, weights, algoKey, nStarts, maxIter, tol, curvePts, weightMode, paramNames, p0, paramRows }) {
   const SOLVERS = { lm: levenbergMarquardt, gn: gaussNewton, nm: nelderMead, bfgs };
   const solve = SOLVERS[algoKey] || levenbergMarquardt;
-  const opts  = { maxIter, tol, weights, paramRows };
+  const opts  = { maxIter, tol, weights, paramRows, constraints: _constraintsForFit(paramNames) };
   const m = MODELS[model];
   setConsole('Fitting (sync)…', '');
   let result, modelFn;
@@ -540,7 +560,7 @@ function runFitAllDatasets() {
           : m.autoInit(xArr, yArr);
         const err = validateFitInput(xArr, yArr, model, p0);
         if (err) { skipped.push(`${ds.name}: ${err}`); continue; }
-        const opts = { maxIter, tol, weights };
+        const opts = { maxIter, tol, weights, constraints: _constraintsForFit(paramNames) };
         result = nStarts > 1
           ? multiStartFit(solve, modelFn, xArr, yArr, p0, opts, nStarts)
           : solve(modelFn, xArr, yArr, p0, opts);

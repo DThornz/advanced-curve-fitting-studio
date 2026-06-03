@@ -31,6 +31,7 @@ function buildSessionPayload() {
     fitConfig: state.fitConfig,
     plotConfig: Object.assign({}, state.plotConfig, { legendPos }),
     paramRows: state.paramRows,
+    constraints: state.constraints,
     axisLabels: {
       xlabel: document.getElementById('plot-xlabel').value,
       ylabel: document.getElementById('plot-ylabel').value,
@@ -102,6 +103,7 @@ function restoreSessionPayload(payload) {
 
   // Restore paramRows before syncModelCustomSection so renderParamTable picks them up
   if (payload.paramRows) state.paramRows = payload.paramRows;
+  state.constraints = Array.isArray(payload.constraints) ? payload.constraints : [];
 
   const modelSel = document.getElementById('model-select');
   if (modelSel) { modelSel.value = state.fitConfig.model; syncModelCustomSection(); }

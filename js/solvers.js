@@ -2,14 +2,48 @@
 /* ═══════════════════════════════════════════════════════════
    BOUNDS HELPER
 ═══════════════════════════════════════════════════════════ */
-function clampToBounds(p, lo, hi) {
+// Coupled constraints (ordering / sum-equality) for the current solve. Set by
+// boundsFromOpts() at each solver entry and consumed by clampToBounds(), so all
+// four solvers enforce them through the single existing projection chokepoint.
+// Fits run one at a time (multi-start loops sequentially; the worker handles one
+// job), so a module-level handle is safe.
+let _activeConstraints = null;
+
+function _boxClamp(p, lo, hi) {
   if (!lo || !lo.length) return;
   for (let i = 0; i < p.length; i++) {
     if (lo[i] > -Infinity) p[i] = Math.max(p[i], lo[i]);
     if (hi[i] < Infinity)  p[i] = Math.min(p[i], hi[i]);
   }
 }
+
+// Projects p onto the feasible set: box bounds first, then coupled constraints,
+// re-applying box bounds after each pass (a few iterations reconcile overlaps).
+function clampToBounds(p, lo, hi) {
+  _boxClamp(p, lo, hi);
+  const cons = _activeConstraints;
+  if (!cons || !cons.length) return;
+  for (let it = 0; it < 4; it++) {
+    for (const c of cons) {
+      if (c.type === 'order') {                 // enforce p[a] <= p[b]
+        if (p[c.a] > p[c.b]) { const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m; }
+      } else if (c.type === 'equal') {          // enforce p[a] == p[b]
+        const m = (p[c.a] + p[c.b]) / 2; p[c.a] = m; p[c.b] = m;
+      } else if (c.type === 'sum') {            // enforce sum(p[idx]) == value
+        let s = 0; for (const k of c.idx) s += p[k];
+        const adj = (c.value - s) / c.idx.length;
+        if (isFinite(adj)) for (const k of c.idx) p[k] += adj;
+      } else if (c.type === 'sumle') {          // enforce sum(p[idx]) <= value
+        let s = 0; for (const k of c.idx) s += p[k];
+        if (s > c.value) { const adj = (c.value - s) / c.idx.length; for (const k of c.idx) p[k] += adj; }
+      }
+    }
+    _boxClamp(p, lo, hi);
+  }
+}
+
 function boundsFromOpts(opts) {
+  _activeConstraints = (opts && Array.isArray(opts.constraints) && opts.constraints.length) ? opts.constraints : null;
   const rows = opts.paramRows || [];
   if (!rows.length) return { lo: null, hi: null };
   const lo = rows.map(r => (r && r.min > -1e9) ? r.min : -Infinity);

@@ -141,6 +141,13 @@ const PANEL_TIPS = {
     `<b>Examples:</b> <code>a*exp(-b*x)+c</code> &nbsp; <code>a*x^b+c</code> &nbsp; <code>a/(1+exp(-b*(x-c)))</code><br><br>` +
     `Supported: <code>exp log sin cos sqrt abs atan ^</code>, special functions <code>erf erfc lgamma factorial</code>, and all Math.js built-ins. Click <b>⊞ Equation Editor</b> for a click-to-insert palette.`,
 
+  'constraints':
+    `<b>Constraints</b><br>Pre-canned constraints that the solver enforces during fitting. Only the types that fit the current model's parameter count are offered.<br><br>` +
+    `<b>Box presets</b> (Parameter ≥ 0, ≤ 0, 0–1, or a custom range) write directly into that parameter's Min/Max.<br>` +
+    `<b>Coupled constraints</b> appear as removable chips:<br>` +
+    `• <b>A ≤ B</b> ordering &nbsp; • <b>A = B</b> equality &nbsp; • <b>Σ = value</b> (e.g. fractions sum to 1) &nbsp; • <b>Σ ≤ value</b>.<br><br>` +
+    `Enforced by projection at every solver step. Note: when a coupled constraint is <i>active</i> at the optimum, the reported standard errors / CIs become approximate.`,
+
   'parameters':
     `<b>Parameters</b><br>One row per model parameter.<br><br>` +
     `<b>Init</b> — starting guess; preserved across refits.<br>` +

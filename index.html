@@ -52,7 +52,7 @@
 <div class="hero">
   <div class="hero-kicker">Interactive Scientific Software</div>
   <h1 class="hero-title">Curve Fitting Studio</h1>
-  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.5</button></div>
+  <div class="hero-version"><button class="version-chip" id="hero-relnotes" title="View release notes">v1.7.6</button></div>
   <p class="hero-sub">A browser-native, fully offline curve fitting and nonlinear regression platform — inspired by MATLAB's Curve Fitting App, built for scientists, engineers, and researchers.</p>
   <div class="hero-pills">
     <span class="pill">Nonlinear Regression</span>
@@ -271,7 +271,7 @@
       </div>
       </div><!-- end .app-topbar-scroll -->
       <div class="topbar-close-pin">
-        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.5</button>
+        <button class="version-chip" id="btn-relnotes" title="Release notes" style="margin-right:6px">v1.7.6</button>
         <button class="btn btn-danger" id="btn-close-app" title="Close full-screen app">✕ Close</button>
       </div>
     </div>
@@ -487,6 +487,15 @@
           </div>
           <div id="param-table-container">
             <div class="panel-empty-hint">Select a model.</div>
+          </div>
+          <!-- Constraints (coupled parameter constraints; box presets edit Min/Max) -->
+          <div id="constraints-block" style="display:none;padding:7px 0 0">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              <span style="font-size:.65em;color:var(--dimmer);text-transform:uppercase;letter-spacing:.04em;flex:1">Constraints <span class="panel-tip" data-tip="constraints">?</span></span>
+              <select class="ctrl-input" id="constraint-add-select" style="font-size:.66em;padding:2px 5px;flex:none;width:auto" title="Add a pre-canned constraint that fits the current model"></select>
+            </div>
+            <div id="constraint-builder"></div>
+            <div id="constraints-list" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"></div>
           </div>
           <!-- Fit Notes (shown when a fit is active) -->
           <div id="fit-notes-section" style="display:none;padding:6px 0 0">
@@ -1880,12 +1889,24 @@
     </div>
     <div class="modal-body relnotes-body" style="overflow-y:auto;flex:1;padding:4px 16px 12px">
 
+      <!-- ── v1.7.6 ─────────────────────────────────────────── -->
+      <div class="relnotes-version">
+        <div class="relnotes-ver-header">
+          <span class="relnotes-ver-num current">v1.7.6</span>
+          <span class="relnotes-ver-date">2026-06-02</span>
+          <span class="relnotes-ver-tag">Latest</span>
+        </div>
+        <ul class="relnotes-items">
+          <li class="relnotes-item"><span><span class="rn-cat rn-new">new</span><strong>Constraint library</strong> — an <em>+ Add constraint</em> menu under the parameter table offers pre-canned constraints, and only lists the ones that fit the current model's parameter count (e.g. “A ≤ B” isn’t offered for a one-parameter model). Box presets (<strong>≥ 0</strong>, <strong>≤ 0</strong>, <strong>0–1</strong>, custom <strong>[lo, hi]</strong>) write into a parameter's Min/Max; coupled constraints — <strong>A ≤ B</strong>, <strong>A = B</strong>, <strong>Σ = value</strong> (e.g. fractions sum to 1), <strong>Σ ≤ value</strong> — appear as removable chips.</span></li>
+          <li class="relnotes-item"><span><span class="rn-cat rn-imp">improve</span>Coupled constraints are enforced by all four solvers (and the Huber/multi-start/batch paths) via projection at each step — they slot into the same hook box bounds already use. Saved with the session. <em>Note:</em> standard errors/CIs are approximate when a coupled constraint is active at the optimum.</span></li>
+        </ul>
+      </div>
+
       <!-- ── v1.7.5 ─────────────────────────────────────────── -->
       <div class="relnotes-version">
         <div class="relnotes-ver-header">
-          <span class="relnotes-ver-num current">v1.7.5</span>
+          <span class="relnotes-ver-num">v1.7.5</span>
           <span class="relnotes-ver-date">2026-06-02</span>
-          <span class="relnotes-ver-tag">Latest</span>
         </div>
         <ul class="relnotes-items">
           <li class="relnotes-item"><span><span class="rn-cat rn-imp">perf</span><strong>Faster page load</strong> — Plotly (~3.5 MB) and Math.js (~700 KB) were render-blocking; both now load <code>defer</code> so the page paints immediately instead of waiting on them. Added <code>preconnect</code> hints for the script/font CDNs so downloads start sooner.</span></li>

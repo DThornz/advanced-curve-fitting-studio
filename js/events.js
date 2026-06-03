@@ -339,6 +339,9 @@ function initEvents() {
   document.getElementById('btn-auto-init').addEventListener('click', autoInitParams);
   document.getElementById('btn-try-all').addEventListener('click', tryAllModels);
   document.getElementById('btn-fit-all').addEventListener('click', runFitAllDatasets);
+  document.getElementById('constraint-add-select').addEventListener('change', function () {
+    renderConstraintBuilder(this.value);
+  });
   document.getElementById('model-compare-close').addEventListener('click', () => {
     document.getElementById('model-compare-modal').style.display = 'none';
   });
